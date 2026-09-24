@@ -1,0 +1,1796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Green Planet</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { overflow:hidden; background:#02040a; touch-action:none; font-family:'Segoe UI',sans-serif; user-select:none; -webkit-user-select:none; }
+        #canvas-container { width:100vw; height:100vh; }
+        #ui-layer { position:absolute; top:0; left:0; width:100%; height:100%; z-index:10; pointer-events:none; }
+        .joystick-base { position:absolute; width:120px; height:120px; border-radius:50%; border:2px solid rgba(255,255,255,0.18); background:rgba(0,0,0,0.22); transform:translate(-50%,-50%); display:none; }
+        .joystick-knob { position:absolute; width:50px; height:50px; border-radius:50%; background:rgba(255,255,255,0.7); top:50%; left:50%; transform:translate(-50%,-50%); }
+        #crosshair { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:14px; height:14px; pointer-events:none; }
+        #crosshair::before,#crosshair::after { content:''; position:absolute; background:rgba(255,255,255,0.28); }
+        #crosshair::before { width:1px; height:100%; left:50%; transform:translateX(-50%); }
+        #crosshair::after  { width:100%; height:1px; top:50%; transform:translateY(-50%); }
+        #loading { position:fixed; inset:0; background:#02040a; display:flex; align-items:center; justify-content:center; z-index:100; color:rgba(255,255,255,0.65); font-size:1rem; letter-spacing:0.25em; flex-direction:column; gap:18px; }
+        #loading-bar-wrap { width:220px; height:3px; background:rgba(255,255,255,0.1); border-radius:2px; }
+        #loading-bar { height:100%; width:0%; background:rgba(180,210,255,0.55); border-radius:2px; transition:width 0.15s; }
+
+        /* ── HUD BUTTONS ─────────────────────────────────────────────── */
+        .hud-btn {
+            position:absolute; pointer-events:all;
+            width:58px; height:58px; border-radius:50%;
+            border:2px solid rgba(255,255,255,0.22);
+            background:rgba(10,20,14,0.72);
+            backdrop-filter:blur(6px);
+            color:rgba(255,255,255,0.85); font-size:0.7rem;
+            letter-spacing:0.06em; font-weight:600;
+            display:flex; align-items:center; justify-content:center;
+            flex-direction:column; gap:3px;
+            cursor:pointer; transition:background 0.15s, border-color 0.15s;
+            -webkit-tap-highlight-color:transparent;
+        }
+        .hud-btn:active { background:rgba(40,80,50,0.85); border-color:rgba(120,220,140,0.5); }
+        .hud-btn svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+        /* ACT on the bottom edge, LEV on the right edge — same distance from corner */
+        #btn-action { bottom:20px; right:100px; }
+        #btn-menu   { top:20px; right:20px; }
+
+        #lev-wrap {
+            position:absolute; bottom:100px; right:20px;
+            width:66px; height:66px;
+            display:flex; align-items:center; justify-content:center;
+            pointer-events:all;
+        }
+        #lev-ring {
+            position:absolute; top:0; left:0;
+            width:66px; height:66px;
+            pointer-events:none;
+        }
+        #btn-lev {
+            position:relative; width:58px; height:58px;
+            font-size:0.62rem;
+        }
+        #btn-lev.active {
+            background:rgba(20,80,160,0.88);
+            border-color:rgba(80,200,255,0.7);
+            box-shadow:0 0 18px rgba(80,180,255,0.5);
+        }
+        #lev-arc { transition: stroke 0.2s; }
+
+        /* ── OVERLAY PANEL ───────────────────────────────────────────── */
+        #overlay {
+            position:fixed; inset:0; z-index:50;
+            display:none; align-items:center; justify-content:center;
+            background:rgba(0,0,0,0.55); backdrop-filter:blur(4px);
+            pointer-events:all;
+        }
+        #overlay.open { display:flex; }
+        .panel {
+            background:rgba(8,18,12,0.96);
+            border:1px solid rgba(255,255,255,0.12);
+            border-radius:18px; width:min(360px,90vw);
+            max-height:80vh; overflow:hidden;
+            display:flex; flex-direction:column;
+            box-shadow:0 8px 40px rgba(0,0,0,0.6);
+        }
+        .panel-header {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:18px 20px 14px; border-bottom:1px solid rgba(255,255,255,0.08);
+            flex-shrink:0;
+        }
+        .panel-title {
+            font-size:1rem; letter-spacing:0.18em; font-weight:600;
+            color:rgba(180,230,195,0.95); text-transform:uppercase;
+        }
+        .panel-back {
+            background:none; border:none; color:rgba(255,255,255,0.5);
+            font-size:0.78rem; letter-spacing:0.08em; cursor:pointer;
+            padding:4px 8px; border-radius:6px;
+            transition:color 0.15s;
+        }
+        .panel-back:hover { color:rgba(255,255,255,0.9); }
+        .panel-body { padding:12px 0; overflow-y:auto; flex:1; }
+
+        /* Menu items */
+        .menu-item {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:14px 20px; cursor:pointer;
+            color:rgba(255,255,255,0.82); font-size:0.9rem;
+            border-bottom:1px solid rgba(255,255,255,0.05);
+            transition:background 0.12s;
+        }
+        .menu-item:last-child { border-bottom:none; }
+        .menu-item:active, .menu-item:hover { background:rgba(255,255,255,0.06); }
+        .menu-item-label { display:flex; align-items:center; gap:12px; }
+        .menu-icon { width:20px; height:20px; opacity:0.7; flex-shrink:0; }
+        .menu-arrow { opacity:0.35; font-size:1rem; }
+
+        /* Toggle switch */
+        .toggle { position:relative; width:42px; height:24px; flex-shrink:0; }
+        .toggle input { opacity:0; width:0; height:0; }
+        .toggle-track {
+            position:absolute; inset:0; border-radius:12px;
+            background:rgba(255,255,255,0.15); cursor:pointer;
+            transition:background 0.2s;
+        }
+        .toggle input:checked + .toggle-track { background:rgba(80,200,110,0.75); }
+        .toggle-thumb {
+            position:absolute; width:18px; height:18px; border-radius:50%;
+            background:#fff; top:3px; left:3px;
+            transition:transform 0.2s; pointer-events:none;
+        }
+        .toggle input:checked ~ .toggle-thumb { transform:translateX(18px); }
+
+        /* Inventory grid */
+        .inv-grid {
+            display:grid; grid-template-columns:repeat(4,1fr);
+            gap:8px; padding:12px 16px;
+        }
+        .inv-slot {
+            aspect-ratio:1; border-radius:10px;
+            border:1px solid rgba(255,255,255,0.12);
+            background:rgba(255,255,255,0.04);
+            display:flex; align-items:center; justify-content:center;
+            font-size:1.3rem; position:relative; cursor:pointer;
+            transition:border-color 0.15s, background 0.15s;
+        }
+        .inv-slot:hover { background:rgba(255,255,255,0.09); border-color:rgba(180,230,195,0.35); }
+        .inv-slot.empty { opacity:0.3; }
+        .inv-qty {
+            position:absolute; bottom:3px; right:5px;
+            font-size:0.62rem; color:rgba(255,255,255,0.55);
+        }
+
+        /* Log entries */
+        .log-entry {
+            padding:12px 20px; border-bottom:1px solid rgba(255,255,255,0.05);
+            font-size:0.82rem; color:rgba(255,255,255,0.7); line-height:1.5;
+        }
+        .log-entry:last-child { border-bottom:none; }
+        .log-time { font-size:0.7rem; color:rgba(180,230,195,0.5); margin-bottom:2px; }
+
+        /* Empty state */
+        .empty-state {
+            padding:40px 20px; text-align:center;
+            color:rgba(255,255,255,0.25); font-size:0.85rem; letter-spacing:0.05em;
+        }
+    </style>
+</head>
+<body>
+<div id="loading"><div>GENERATING WORLD</div><div id="loading-bar-wrap"><div id="loading-bar"></div></div></div>
+<div id="canvas-container"></div>
+
+<!-- ── GAME UI ─────────────────────────────────────────── -->
+<div id="ui-layer">
+    <div id="joy-left"  class="joystick-base"><div id="knob-left"  class="joystick-knob"></div></div>
+    <div id="joy-right" class="joystick-base"><div id="knob-right" class="joystick-knob"></div></div>
+    <div id="crosshair"></div>
+
+    <!-- Action button (bottom-right) -->
+    <button class="hud-btn" id="btn-action" title="Action">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+        <span>ACT</span>
+    </button>
+
+    <!-- Levitate button with stamina ring (bottom-right, above action) -->
+    <div id="lev-wrap">
+        <svg id="lev-ring" viewBox="0 0 66 66" width="66" height="66">
+            <circle cx="33" cy="33" r="31" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3.5"/>
+            <circle id="lev-arc" cx="33" cy="33" r="31" fill="none"
+                stroke="#4af" stroke-width="3.5" stroke-linecap="round"
+                stroke-dasharray="194.78" stroke-dashoffset="0"
+                transform="rotate(-90 33 33)"/>
+        </svg>
+        <button class="hud-btn" id="btn-lev" title="Levitate">
+            <svg viewBox="0 0 24 24"><path d="M12 2L8 8h3v6H9l3 4 3-4h-2V8h3L12 2z"/></svg>
+            <span>LEV</span>
+        </button>
+    </div>
+
+    <!-- Menu button (top-right) -->
+    <button class="hud-btn" id="btn-menu" title="Menu">
+        <svg viewBox="0 0 24 24"><line x1="3" y1="6"  x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        <span>MENU</span>
+    </button>
+</div>
+
+<!-- ── OVERLAY PANELS ─────────────────────────────────── -->
+<div id="overlay">
+    <!-- Main Menu -->
+    <div class="panel" id="panel-main">
+        <div class="panel-header">
+            <span class="panel-title">Menu</span>
+            <button class="panel-back" id="close-menu">✕ Close</button>
+        </div>
+        <div class="panel-body">
+            <div class="menu-item" data-goto="panel-inventory">
+                <div class="menu-item-label">
+                    <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2M8 7V5a2 2 0 0 0-4 0v2"/></svg>
+                    Inventory
+                </div>
+                <span class="menu-arrow">›</span>
+            </div>
+            <div class="menu-item" data-goto="panel-spells">
+                <div class="menu-item-label">
+                    <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+                    Spells
+                </div>
+                <span class="menu-arrow">›</span>
+            </div>
+            <div class="menu-item" data-goto="panel-log">
+                <div class="menu-item-label">
+                    <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>
+                    Log
+                </div>
+                <span class="menu-arrow">›</span>
+            </div>
+            <div class="menu-item" data-goto="panel-settings">
+                <div class="menu-item-label">
+                    <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    Settings
+                </div>
+                <span class="menu-arrow">›</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="panel" id="panel-settings" style="display:none">
+        <div class="panel-header">
+            <span class="panel-title">Settings</span>
+            <button class="panel-back" data-goto="panel-main">‹ Back</button>
+        </div>
+        <div class="panel-body">
+            <div class="menu-item">
+                <div class="menu-item-label">
+                    <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                    Sound
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" id="toggle-sound" checked>
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                </label>
+            </div>
+            <div class="menu-item">
+                <div class="menu-item-label">
+                    <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 18h.01M8 21h8a2 2 0 0 0 2-2v-1a7 7 0 1 0-12 0v1a2 2 0 0 0 2 2z"/></svg>
+                    Vibration
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" id="toggle-vibration" checked>
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inventory -->
+    <div class="panel" id="panel-inventory" style="display:none">
+        <div class="panel-header">
+            <span class="panel-title">Inventory</span>
+            <button class="panel-back" data-goto="panel-main">‹ Back</button>
+        </div>
+        <div class="panel-body">
+            <div class="inv-grid" id="inv-grid"></div>
+        </div>
+    </div>
+
+    <!-- Log -->
+    <div class="panel" id="panel-log" style="display:none">
+        <div class="panel-header">
+            <span class="panel-title">Log</span>
+            <button class="panel-back" data-goto="panel-main">‹ Back</button>
+        </div>
+        <div class="panel-body" id="log-body"></div>
+    </div>
+
+    <!-- Spells -->
+    <div class="panel" id="panel-spells" style="display:none">
+        <div class="panel-header">
+            <span class="panel-title">Spells</span>
+            <button class="panel-back" data-goto="panel-main">‹ Back</button>
+        </div>
+        <div class="panel-body">
+            <div class="menu-item">
+                <div class="menu-item-label">
+                    <span style="font-size:1.3rem;width:20px;text-align:center">🔥</span>
+                    <div>
+                        <div style="font-size:0.9rem">Fire Bolt</div>
+                        <div style="font-size:0.72rem;color:rgba(255,180,80,0.7);margin-top:2px">Launches a fireball in your view direction</div>
+                    </div>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" id="toggle-firebolt" checked>
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                </label>
+            </div>
+            <div class="menu-item">
+                <div class="menu-item-label">
+                    <span style="font-size:1.3rem;width:20px;text-align:center">🧊</span>
+                    <div>
+                        <div style="font-size:0.9rem">Ice Bolt</div>
+                        <div style="font-size:0.72rem;color:rgba(140,210,255,0.7);margin-top:2px">Launches a shard of ice in your view direction</div>
+                    </div>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" id="toggle-icebolt">
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// GLOBE CONFIGURATION
+// The world is a sphere. GLOBE_R is the base radius.
+// Terrain height adds on top of it.  Player walks on the surface.
+// ─────────────────────────────────────────────────────────────────────────────
+const GLOBE_R    = 4800;
+const TERRAIN_H  = 420;   // slightly taller world overall
+const WATER_H    = 55;    // raised so lakes are more generous
+const SEGS       = 320;
+const PLAYER_EYE = 8.0;
+const PLAYER_SPD = 0.008;
+const SPRINT_SPD = 0.018;
+const COLL_R     = 0.006;
+
+// Returns terrain height in world units.
+// Baseline ~135 keeps globe mostly land. Lakes are wide Gaussian bowls.
+// Mountain peaks soar to 500+ for dramatic vantage points.
+function sphereNoise(nx, ny, nz) {
+    const u = nx * 3.7 + ny * 1.3;
+    const v = nz * 3.7 + ny * 2.1;
+    const w = nx * 2.1 + nz * 1.7;
+
+    // Positive baseline — most of globe stays as land
+    let h = 0.32;
+
+    // Broad continental rolls
+    h += Math.sin(u*4.1)*Math.cos(v*4.1)*0.20;
+    h += Math.sin(u*9.5+1.2)*Math.cos(v*9.5+2.5)*0.09;
+    h += Math.sin(u*22+3.7)*Math.cos(v*22+1.1)*0.04;
+    h += Math.sin(w*5.5+5.1)*Math.cos(u*5.5+6.3)*0.06;
+    h += Math.sin(w*13+2.3)*Math.cos(v*13+4.1)*0.025;
+
+    // Sharp ridge lines — mountain ranges
+    const ridge=Math.abs(Math.sin(u*3.2+v*1.6)*Math.cos(v*3.2-u*1.6));
+    h += ridge*ridge*0.38;
+
+    // Tall landmark peaks — high enough to see a lake far below
+    // Format: [nx, ny, nz, height_multiplier, width]
+    const peaks=[
+        [ 0.58, 0.52, 0.62, 1.20, 0.09],   // dominant peak
+        [-0.68, 0.32,-0.65, 1.05, 0.10],
+        [ 0.12, 0.82,-0.56, 0.95, 0.08],
+        [-0.42,-0.72, 0.55, 0.90, 0.11],
+        [ 0.78,-0.42,-0.46, 0.85, 0.08],
+        [ 0.35, 0.10, 0.93, 0.75, 0.07],   // extra ridge peaks
+        [-0.90, 0.20, 0.38, 0.70, 0.07],
+        [ 0.25,-0.58,-0.77, 0.65, 0.08],
+    ];
+    for(const [px,py,pz,ph,pw] of peaks){
+        const len=Math.sqrt(px*px+py*py+pz*pz);
+        const pnx=px/len,pny=py/len,pnz=pz/len;
+        const d2=(nx-pnx)**2+(ny-pny)**2+(nz-pnz)**2;
+        h+=ph*Math.exp(-d2/(pw*pw));
+    }
+
+    // Narrow river valleys — subtle, don't create islands
+    const rv1=Math.sin(u*2.5+Math.sin(v*2.0)*1.8);
+    if(Math.abs(rv1)<0.08){ const d=(0.08-Math.abs(rv1))/0.08; h-=d*d*0.20; }
+    const rv2=Math.sin(v*2.1+Math.sin(u*1.7)*1.5);
+    if(Math.abs(rv2)<0.06){ const d=(0.06-Math.abs(rv2))/0.06; h-=d*d*0.16; }
+
+    // Lake bowls — wide (lr 0.13-0.18) so they're big bodies of water,
+    // deep enough (ld 0.55-0.70) to dip well below WATER_H.
+    // Each is positioned near a peak so players can look down at the lake.
+    const lakes=[
+        // [nx,  ny,   nz,   depth, width]
+        [ 0.48,-0.40, 0.78, 0.68, 0.16],   // large lake, near first peak
+        [-0.52, 0.18,-0.84, 0.62, 0.14],   // wide lake, near second peak
+        [ 0.70,-0.55,-0.45, 0.65, 0.15],   // mid-size, valley lake
+        [-0.30, 0.78, 0.55, 0.58, 0.13],   // highland lake
+        [ 0.08,-0.90, 0.42, 0.60, 0.14],   // southern basin
+    ];
+    for(const [lx,ly,lz,ld,lr] of lakes){
+        const len=Math.sqrt(lx*lx+ly*ly+lz*lz);
+        const lnx=lx/len,lny=ly/len,lnz=lz/len;
+        const d2=(nx-lnx)**2+(ny-lny)**2+(nz-lnz)**2;
+        h -= ld*Math.exp(-d2/(lr*lr));
+    }
+
+    return h * TERRAIN_H;
+}
+
+function isThickForest(nx,ny,nz){
+    const n=Math.sin(nx*8+1.3)*Math.cos(nz*8+2.7)+Math.sin(nx*18+4.1)*Math.cos(ny*18+0.9)*0.5;
+    return n>0.7;
+}
+
+// Convert sphere surface normal + height to world-space position
+function surfacePos(nx,ny,nz,extra){
+    const r=GLOBE_R+(extra||0);
+    return new THREE.Vector3(nx*r,ny*r,nz*r);
+}
+
+// Biome from height
+function getBiome(h){
+    if(h < WATER_H)       return 'riverbank';
+    if(h < WATER_H + 60)  return 'meadow';
+    if(h < 220)  return 'forest';
+    if(h < 380)  return 'highland';
+    return 'alpine';
+}
+
+// ─── MOON TEXTURE ─────────────────────────────────────────────────────────────
+function createMoonTexture(){
+    const S=1024,c=document.createElement('canvas');c.width=c.height=S;
+    const ctx=c.getContext('2d'),cx=S/2,r=490;
+    ctx.beginPath();ctx.arc(cx,cx,r,0,Math.PI*2);ctx.clip();
+    ctx.fillStyle='#dce4ea';ctx.fill();
+    ctx.filter='blur(28px)';
+    [[360,410,165],[630,385,195],[730,630,155],[430,690,135],[290,530,105]].forEach(([mx,my,mr])=>{
+        ctx.fillStyle='rgba(55,60,68,0.4)';ctx.beginPath();ctx.arc(mx,my,mr,0,Math.PI*2);ctx.fill();
+    });
+    ctx.filter='blur(3px)';
+    for(let i=0;i<350;i++){
+        const bx=Math.random()*S,by=Math.random()*S,br=4+Math.random()*22;
+        ctx.fillStyle=Math.random()>0.4?'rgba(45,50,58,0.28)':'rgba(255,255,255,0.55)';
+        ctx.beginPath();ctx.arc(bx,by,br,0,Math.PI*2);ctx.fill();
+    }
+    ctx.filter='none';
+    const g=ctx.createRadialGradient(cx-220,cx-220,r*0.1,cx,cx,r);
+    g.addColorStop(0,'rgba(255,255,255,0.04)');g.addColorStop(0.92,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,0.8)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cx,r,0,Math.PI*2);ctx.fill();
+    return new THREE.CanvasTexture(c);
+}
+function createCloudTexture(){
+    const S=512,c=document.createElement('canvas');c.width=c.height=S;
+    const ctx=c.getContext('2d');
+    for(let i=0;i<12;i++){
+        const bx=Math.random()*S,by=Math.random()*S,br=60+Math.random()*100;
+        const g=ctx.createRadialGradient(bx,by,0,bx,by,br);
+        g.addColorStop(0,'rgba(230,238,248,0.50)');g.addColorStop(0.5,'rgba(210,225,242,0.20)');g.addColorStop(1,'rgba(200,215,235,0)');
+        ctx.fillStyle=g;ctx.fillRect(0,0,S,S);
+    }
+    return new THREE.CanvasTexture(c);
+}
+
+// ─── SCENE SETUP ──────────────────────────────────────────────────────────────
+const scene=new THREE.Scene();
+// No background colour — we see through to the space skybox
+const camera=new THREE.PerspectiveCamera(72,window.innerWidth/window.innerHeight,2.0,80000);
+camera.rotation.order='YXZ';
+
+// Fog is centred on the player so it always looks like atmospheric haze
+// We'll update fog dynamically each frame instead of a global fog
+// Use a gentle exponential fog
+scene.fog=new THREE.FogExp2(0x060c18, 0.000085);
+// background and fog colour are updated each frame by updateDayNight()
+
+const renderer=new THREE.WebGLRenderer({antialias:false});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.5));
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.1;
+document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+// Lighting — driven by player position relative to sun each frame
+const ambientLight = new THREE.AmbientLight(0xffffff, 0);
+const sunLight     = new THREE.DirectionalLight(0xfff4e0, 0);
+const moonLight    = new THREE.DirectionalLight(0xc8dcff, 0);
+const hemiLight    = new THREE.HemisphereLight(0x7090c0, 0x080f08, 0);
+scene.add(ambientLight, sunLight, moonLight, hemiLight);
+
+// Sun orbits slowly — one full day every 4 real minutes
+let dayTime = 0.18; // start just before dawn
+const DAY_SPEED = 1 / (4 * 60);
+
+// Sun and moon as visible sprites
+const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: (()=>{
+        const S=256, c=document.createElement('canvas'); c.width=c.height=S;
+        const ctx=c.getContext('2d'), cx=S/2;
+        // Glow
+        const g=ctx.createRadialGradient(cx,cx,0,cx,cx,cx);
+        g.addColorStop(0,'rgba(255,255,220,1)');
+        g.addColorStop(0.18,'rgba(255,240,160,0.9)');
+        g.addColorStop(0.45,'rgba(255,200,80,0.3)');
+        g.addColorStop(1,'rgba(255,160,40,0)');
+        ctx.fillStyle=g; ctx.fillRect(0,0,S,S);
+        return new THREE.CanvasTexture(c);
+    })(),
+    fog:false, depthWrite:false, transparent:true
+}));
+sunSprite.scale.set(3200,3200,1);
+scene.add(sunSprite);
+
+function lerpHex(a,b,t){
+    const ca=new THREE.Color(a),cb=new THREE.Color(b),cr=new THREE.Color();
+    cr.r=ca.r+(cb.r-ca.r)*t; cr.g=ca.g+(cb.g-ca.g)*t; cr.b=ca.b+(cb.b-ca.b)*t;
+    return cr;
+}
+
+// Sun direction in world space — unit vector
+const sunDir = new THREE.Vector3();
+
+function updateDayNight(dt) {
+    dayTime = (dayTime + DAY_SPEED * dt) % 1;
+    const angle = dayTime * Math.PI * 2;
+
+    // Sun traces a great circle tilted ~23° off equator
+    sunDir.set(
+        Math.cos(angle),
+        Math.sin(angle * 0.8) * 0.5 + 0.15,
+        Math.sin(angle)
+    ).normalize();
+
+    const SUN_DIST = 28000;
+    sunLight.position.copy(sunDir).multiplyScalar(SUN_DIST);
+    sunSprite.position.copy(sunDir).multiplyScalar(SUN_DIST * 0.92);
+
+    // Moon opposite sun
+    moonLight.position.copy(sunDir).multiplyScalar(-SUN_DIST);
+    moon.position.copy(sunDir).multiplyScalar(-SUN_DIST * 0.88);
+
+    // How much sun is hitting the player's side of the globe
+    // dot=1 → directly under sun (noon), dot=-1 → midnight
+    const dot = playerNormal.dot(sunDir);
+
+    // Smooth horizon transition — sunFactor 0 at night, 1 at noon
+    // Use a soft curve so dawn/dusk are gradual not sudden
+    const sunFactor = Math.max(0, Math.min(1, dot * 1.4 + 0.15));
+    const horizonFactor = Math.max(0, Math.min(1, dot * 3.5 + 0.5)); // sharper at horizon
+
+    // Sky colour: night → twilight → dawn → day
+    let skyCol;
+    if(dot < -0.15){
+        skyCol = new THREE.Color(0x050d1e);  // dark blue — readable horizon at night
+    } else if(dot < 0.05){
+        // Twilight — deep blue-purple band
+        const tw = (dot + 0.15) / 0.20;
+        skyCol = lerpHex(0x01020a, 0x1a0818, tw);
+    } else if(dot < 0.20){
+        // Dawn/dusk — warm orange-rose horizon
+        const dw = (dot - 0.05) / 0.15;
+        skyCol = lerpHex(0x1a0818, 0x3d1a10, dw);
+    } else if(dot < 0.45){
+        // Morning — blue rising
+        const mr = (dot - 0.20) / 0.25;
+        skyCol = lerpHex(0x3d1a10, 0x1a4878, mr);
+    } else {
+        // Full day
+        const fd = Math.min(1,(dot-0.45)/0.35);
+        skyCol = lerpHex(0x1a4878, 0x2860a0, fd);
+    }
+    scene.background = skyCol;
+    scene.fog.color.copy(skyCol).lerp(new THREE.Color(0x8ab8d8), sunFactor * 0.5);
+
+    // Lights
+    sunLight.intensity  = Math.pow(sunFactor, 1.4) * 2.4;
+    // Moonlight — always at least 0.6 so the landscape is always readable
+    moonLight.intensity = Math.max(0, -dot) * 0.8 + 0.6;
+    // Ambient never drops below 0.55 — keeps terrain visible at midnight
+    ambientLight.intensity = 0.55 + sunFactor * 0.9;
+    ambientLight.color.set(0x1a2a40).lerp(new THREE.Color(0x8090b0), sunFactor * 0.7);
+    hemiLight.intensity = 0.35 + sunFactor * 0.5;
+
+    // Sun colour — orange at horizon, white overhead
+    const horiz = Math.max(0, 1 - dot * 3);
+    sunLight.color.setRGB(1, 0.78 + sunFactor * 0.22 - horiz * 0.25, 0.45 + sunFactor * 0.55 - horiz * 0.2);
+
+    // Sun sprite opacity — fade out below horizon
+    sunSprite.material.opacity = Math.max(0, Math.min(1, dot * 6 + 0.5));
+    // Sun size swells at horizon (atmospheric effect)
+    const sunScale = 3200 + horiz * 1200;
+    sunSprite.scale.set(sunScale, sunScale, 1);
+}
+
+// Stars
+const starsGeo=new THREE.BufferGeometry();
+const SC=5000,SA=new Float32Array(SC*3);
+for(let i=0;i<SC*3;i+=3){
+    const r=55000+Math.random()*5000,theta=Math.random()*Math.PI*2,phi=Math.acos(Math.random()*2-1);
+    SA[i]=r*Math.sin(phi)*Math.cos(theta);SA[i+1]=r*Math.cos(phi);SA[i+2]=r*Math.sin(phi)*Math.sin(theta);
+}
+starsGeo.setAttribute('position',new THREE.BufferAttribute(SA,3));
+scene.add(new THREE.Points(starsGeo,new THREE.PointsMaterial({color:0xffffff,size:8,transparent:true,opacity:0.9,fog:false})));
+
+// Moon
+const moon=new THREE.Sprite(new THREE.SpriteMaterial({map:createMoonTexture(),fog:false}));
+moon.scale.set(6000,6000,1); scene.add(moon);
+
+// Cloud shell — single sphere slightly above terrain, BackSide so visible from inside
+// Seamless wrap gives continuous sky coverage with no edges
+const cloudShellR = GLOBE_R + TERRAIN_H + 320;
+const cloudShellGeo = new THREE.SphereGeometry(cloudShellR, 64, 48);
+const cloudShellTex = createCloudTexture();
+cloudShellTex.wrapS = cloudShellTex.wrapT = THREE.RepeatWrapping;
+cloudShellTex.repeat.set(6, 4); // tile across whole sphere
+const cloudShellMat = new THREE.MeshBasicMaterial({
+    map: cloudShellTex, transparent: true, opacity: 0.55,
+    depthWrite: false, side: THREE.BackSide
+});
+const cloudShell = new THREE.Mesh(cloudShellGeo, cloudShellMat);
+scene.add(cloudShell);
+
+// ─── WORLD CONTAINER (rotates with player so "up" is always away from globe) ─
+// We DON'T rotate the globe — the player position is stored as a unit normal on
+// the sphere. The camera is repositioned each frame.
+
+// ─── ASYNC BUILD ──────────────────────────────────────────────────────────────
+const treeNormals=[];  // {nx,ny,nz} unit normals for collision
+let shimmerMesh=null;
+
+function setProgress(p){document.getElementById('loading-bar').style.width=(p*100)+'%';}
+function tick(){return new Promise(r=>setTimeout(r,0));}
+
+async function buildWorld(){
+    setProgress(0.05); await tick();
+
+    // ── GLOBE TERRAIN ──
+    // Use SphereGeometry and displace each vertex outward by terrain height
+    const sGeo=new THREE.SphereGeometry(GLOBE_R,SEGS,SEGS);
+    const pos=sGeo.attributes.position;
+    const vertCount=pos.count;
+    const cols=new Float32Array(vertCount*3);
+    const col=new THREE.Color();
+    const tmp=new THREE.Vector3();
+
+    for(let i=0;i<vertCount;i++){
+        tmp.fromBufferAttribute(pos,i).normalize();
+        const h=sphereNoise(tmp.x,tmp.y,tmp.z);
+        // Clamp terrain at water level so lake beds are flat
+        const dispH = Math.max(h, WATER_H - 2);
+        const newR=GLOBE_R + dispH;
+        pos.setXYZ(i,tmp.x*newR,tmp.y*newR,tmp.z*newR);
+
+        // Vertex colour by biome
+        const biome=getBiome(h);
+        if     (biome==='riverbank') col.setHex(0x1a2a14);
+        else if(biome==='meadow')    col.setHex(0x1c3418);
+        else if(biome==='forest')    col.setHex(0x0f2210);
+        else if(biome==='highland')  col.setHex(0x2c2418);
+        else                         col.setHex(0x343028);
+        cols[i*3]=col.r;cols[i*3+1]=col.g;cols[i*3+2]=col.b;
+
+        if(i%40000===0){setProgress(0.05+0.30*(i/vertCount));await tick();}
+    }
+    sGeo.setAttribute('color',new THREE.BufferAttribute(cols,3));
+    sGeo.computeVertexNormals();
+    // DoubleSide so steep slopes never show a see-through gap
+    const terrMat=new THREE.MeshPhongMaterial({vertexColors:true,flatShading:true,side:THREE.DoubleSide,emissive:new THREE.Color(0x0a1208),emissiveIntensity:1});
+    scene.add(new THREE.Mesh(sGeo,terrMat));
+
+    // Solid inner cap — slightly smaller than GLOBE_R, pure black, blocks any
+    // light leaking through the globe when camera is near the surface
+    const innerGeo=new THREE.SphereGeometry(GLOBE_R-2,64,64);
+    const innerMat=new THREE.MeshBasicMaterial({color:0x000000,side:THREE.BackSide});
+    scene.add(new THREE.Mesh(innerGeo,innerMat));
+    setProgress(0.38); await tick();
+
+    // Water — sphere at exactly WATER_H radius, vertices above terrain sunk inside
+    const waterR = GLOBE_R + WATER_H;
+    const wGeo   = new THREE.SphereGeometry(waterR, SEGS, SEGS);
+    const wPos   = wGeo.attributes.position;
+
+    const wTmp=new THREE.Vector3();
+    for(let i=0;i<wPos.count;i++){
+        wTmp.fromBufferAttribute(wPos,i).normalize();
+        const h=sphereNoise(wTmp.x,wTmp.y,wTmp.z);
+        // Show water only where terrain is genuinely below water level
+        if(h > WATER_H - 1){
+            // Terrain is above water here — sink this vertex below inner cap
+            wPos.setXYZ(i, wTmp.x*(GLOBE_R-20), wTmp.y*(GLOBE_R-20), wTmp.z*(GLOBE_R-20));
+        }
+        // else leave at waterR — lake/river basin
+    }
+    wGeo.computeVertexNormals();
+    const wMat=new THREE.MeshPhongMaterial({
+        color:0x0d2d45, transparent:true, opacity:0.92,
+        emissive:new THREE.Color(0x040e18), shininess:80,
+        side:THREE.FrontSide
+    });
+    scene.add(new THREE.Mesh(wGeo,wMat));
+
+    // Shimmer — same masking, slightly above
+    const smGeo=new THREE.SphereGeometry(waterR+1, SEGS, SEGS);
+    const smPos=smGeo.attributes.position;
+    for(let i=0;i<smPos.count;i++){
+        wTmp.fromBufferAttribute(smPos,i).normalize();
+        const h=sphereNoise(wTmp.x,wTmp.y,wTmp.z);
+        if(h > WATER_H - 1){
+            smPos.setXYZ(i, wTmp.x*(GLOBE_R-22), wTmp.y*(GLOBE_R-22), wTmp.z*(GLOBE_R-22));
+        }
+    }
+    smGeo.computeVertexNormals();
+    const smMat=new THREE.MeshPhongMaterial({color:0x1a5070,transparent:true,opacity:0.28,depthWrite:false,shininess:120});
+    shimmerMesh=new THREE.Mesh(smGeo,smMat); scene.add(shimmerMesh);
+    setProgress(0.44); await tick();
+
+    // ── VEGETATION ──
+    // Sample sphere surface using fibonacci sphere for even distribution
+    // Vary density: thick forest zones get denser sampling
+    const N_NORMAL=8000;   // base tree samples
+    const N_THICK =6000;   // extra samples in thick forest
+    const totalSamples=N_NORMAL+N_THICK;
+
+    let pC=0,bC=0,hC=0,rC=0,gC=0;
+    const vegData=[];
+
+    // Fibonacci sphere sampling for uniform coverage
+    const goldenAngle=Math.PI*(3-Math.sqrt(5));
+    for(let i=0;i<totalSamples;i++){
+        const isThickPass=i>=N_NORMAL;
+        const y=1-((i%N_NORMAL)/N_NORMAL)*2;
+        const r2=Math.sqrt(Math.max(0,1-y*y));
+        const theta2=(i%N_NORMAL)*goldenAngle+(isThickPass?1.57:0);
+        const nx=r2*Math.cos(theta2),ny=y,nz=r2*Math.sin(theta2);
+
+        const h=sphereNoise(nx,ny,nz);
+        if(h<WATER_H+18) continue;
+        const thick=isThickForest(nx,ny,nz);
+        if(isThickPass&&!thick) continue; // thick pass only in dense zones
+
+        const biome=getBiome(h);
+        const r=Math.random();
+        const pineCh=thick?0.75:0.30, broadCh=thick?0.68:0.24, highCh=thick?0.42:0.16;
+        let type=null;
+        if     (biome==='forest'&&r<pineCh&&Math.random()>0.5) type='pine';
+        else if(biome==='forest'&&r<broadCh)  type='broad';
+        else if(biome==='highland'&&r<highCh) type='high';
+        else if((biome==='highland'||biome==='alpine')&&r<0.22) type='rock';
+        else if(biome==='meadow'&&r<0.35)     type='grass';
+        if(!type) continue;
+
+        vegData.push({nx,ny,nz,h,type});
+        if(type==='pine') pC++; else if(type==='broad') bC++;
+        else if(type==='high') hC++; else if(type==='rock') rC++;
+        else if(type==='grass') gC++;
+    }
+    setProgress(0.55); await tick();
+
+    // Geometries
+    const pineTrunkGeo=new THREE.CylinderGeometry(1.0,1.8,26,5);pineTrunkGeo.translate(0,13,0);
+    const pineCone1Geo=new THREE.ConeGeometry(13,36,6);pineCone1Geo.translate(0,34,0);
+    const pineCone2Geo=new THREE.ConeGeometry(9,28,6);pineCone2Geo.translate(0,56,0);
+    const pineCone3Geo=new THREE.ConeGeometry(6,20,6);pineCone3Geo.translate(0,74,0);
+    const barkGeo    =new THREE.CylinderGeometry(1.3,2.0,22,6);barkGeo.translate(0,11,0);
+    const canopyGeo  =new THREE.SphereGeometry(18,5,4);canopyGeo.translate(0,38,0);
+    const canopy2Geo =new THREE.SphereGeometry(13,5,4);canopy2Geo.translate(0,54,0);
+    const htrkGeo    =new THREE.CylinderGeometry(0.8,1.2,16,5);htrkGeo.translate(0,8,0);
+    const hcnGeo     =new THREE.ConeGeometry(8,24,5);hcnGeo.translate(0,26,0);
+    const rockGeo    =new THREE.DodecahedronGeometry(1,0);
+    const grassGeo   =new THREE.ConeGeometry(3,8,4);grassGeo.translate(0,4,0);
+
+    const mP=h=>new THREE.MeshPhongMaterial({color:h,flatShading:true,emissive:new THREE.Color(h).multiplyScalar(0.15)});
+    const pineTM=mP(0x1e130d),pineLM=mP(0x0a1c0e),barkM=mP(0x261a10),cnpM=mP(0x142614);
+    const cnp2M=mP(0x1a3018),htM=mP(0x1c1208),hlM=mP(0x0c1c0c),rkM=mP(0x282218);
+    const grM=new THREE.MeshPhongMaterial({color:0x1a3214,flatShading:true,transparent:true,opacity:0.9,emissive:new THREE.Color(0x050e06)});
+
+    const pineTM_=new THREE.InstancedMesh(pineTrunkGeo,pineTM,pC);
+    const pineC1_=new THREE.InstancedMesh(pineCone1Geo,pineLM,pC);
+    const pineC2_=new THREE.InstancedMesh(pineCone2Geo,pineLM,pC);
+    const pineC3_=new THREE.InstancedMesh(pineCone3Geo,pineLM,pC);
+    const broadT_=new THREE.InstancedMesh(barkGeo,barkM,bC);
+    const broadC_=new THREE.InstancedMesh(canopyGeo,cnpM,bC);
+    const broadC2=new THREE.InstancedMesh(canopy2Geo,cnp2M,bC);
+    const highT_ =new THREE.InstancedMesh(htrkGeo,htM,hC);
+    const highC_ =new THREE.InstancedMesh(hcnGeo,hlM,hC);
+    const rock_  =new THREE.InstancedMesh(rockGeo,rkM,Math.max(1,rC));
+    const grass_ =new THREE.InstancedMesh(grassGeo,grM,Math.max(1,gC));
+
+    // Place each tree: position on sphere surface, oriented along the surface normal
+    // Trees are built with base at Y=0 going upward — position is placed at surface
+    const worldUp=new THREE.Vector3(0,1,0);
+    const dummy=new THREE.Object3D();
+    let pi=0,bi=0,hi=0,ri=0,gi=0;
+
+    for(const v of vegData){
+        const norm=new THREE.Vector3(v.nx,v.ny,v.nz); // already unit
+        const surfR=GLOBE_R+v.h;
+
+        // Step 1: align local Y to sphere normal
+        const q=new THREE.Quaternion().setFromUnitVectors(worldUp,norm);
+
+        // Step 2: random azimuth spin around the surface normal
+        const spin=new THREE.Quaternion().setFromAxisAngle(norm,Math.random()*Math.PI*2);
+
+        dummy.quaternion.copy(spin).multiply(q); // spin THEN align
+        dummy.position.copy(norm).multiplyScalar(surfR);
+        const sc=0.6+Math.random()*0.9;
+        const peakBoost=v.type==='pine'?Math.max(1,1+(v.h-200)/500):1;
+        dummy.scale.set(sc,sc*peakBoost,sc);
+        dummy.updateMatrix();
+
+        if(v.type==='pine'){
+            pineTM_.setMatrixAt(pi,dummy.matrix);pineC1_.setMatrixAt(pi,dummy.matrix);
+            pineC2_.setMatrixAt(pi,dummy.matrix);pineC3_.setMatrixAt(pi,dummy.matrix);pi++;
+        } else if(v.type==='broad'){
+            broadT_.setMatrixAt(bi,dummy.matrix);broadC_.setMatrixAt(bi,dummy.matrix);broadC2.setMatrixAt(bi,dummy.matrix);bi++;
+        } else if(v.type==='high'){
+            highT_.setMatrixAt(hi,dummy.matrix);highC_.setMatrixAt(hi,dummy.matrix);hi++;
+        } else if(v.type==='rock'){
+            const rs=3+Math.random()*10;dummy.scale.set(rs,rs*0.65,rs);dummy.updateMatrix();
+            rock_.setMatrixAt(ri,dummy.matrix);ri++;
+        } else if(v.type==='grass'){
+            dummy.scale.set(sc*0.9,sc,sc*0.9);dummy.updateMatrix();
+            grass_.setMatrixAt(gi,dummy.matrix);gi++;
+        }
+
+        // Store normal for collision
+        if(v.type!=='rock'&&v.type!=='grass') treeNormals.push({nx:v.nx,ny:v.ny,nz:v.nz});
+    }
+
+    scene.add(pineTM_,pineC1_,pineC2_,pineC3_);
+    scene.add(broadT_,broadC_,broadC2);
+    scene.add(highT_,highC_);
+    scene.add(rock_,grass_);
+    setProgress(0.92); await tick();
+
+    // ── FIND SPAWN ──
+    // Walk fibonacci sphere points until we find dry land away from trees
+    const gr=Math.PI*(3-Math.sqrt(5));
+    outer: for(let i=0;i<2000;i++){
+        const y2=1-(i/2000)*2, r2=Math.sqrt(Math.max(0,1-y2*y2));
+        const t2=i*gr;
+        const snx=r2*Math.cos(t2),sny=y2,snz=r2*Math.sin(t2);
+        const sh=sphereNoise(snx,sny,snz);
+        if(sh < WATER_H+60 || sh > 320) continue;
+        // Make sure we're not on top of a tree
+        for(const tn of treeNormals){
+            const dot=snx*tn.nx+sny*tn.ny+snz*tn.nz;
+            if(dot>0.9998) continue outer; // too close to a tree
+        }
+        playerNormal.set(snx,sny,snz).normalize();
+        break;
+    }
+    // yawOnSphere starts at 0
+    updateCameraFromSphere();
+    setProgress(1.0);await tick();
+    document.getElementById('loading').style.display='none';
+    spawnWorldItems();
+    animate();
+}
+
+// ─── PLAYER STATE ─────────────────────────────────────────────────────────────
+// Player is represented as a unit normal on the sphere (their "down" = toward centre)
+// plus a yaw angle around that normal.
+const playerNormal=new THREE.Vector3(0,1,0);  // start at north pole temporarily
+let sphereYaw=0;   // heading on sphere surface (radians)
+let spherePitch=0; // look up/down
+let waterTime=0;
+
+// Compute two orthogonal tangent vectors on sphere surface at playerNormal
+// Persistent east vector — only updated for the real playerNormal
+let persistentEast = new THREE.Vector3(1,0,0);
+
+// Update the persistent frame for the actual player position
+function updatePlayerTangents(){
+    // Gram-Schmidt: remove component parallel to norm
+    const dot = persistentEast.dot(playerNormal);
+    persistentEast.addScaledVector(playerNormal, -dot).normalize();
+    if(persistentEast.lengthSq() < 0.001){
+        const ref = Math.abs(playerNormal.z) < 0.9
+            ? new THREE.Vector3(0,0,1) : new THREE.Vector3(1,0,0);
+        persistentEast.crossVectors(playerNormal, ref).normalize();
+    }
+}
+
+// Pure tangent computation for any normal — does NOT mutate persistentEast
+function tangentsFor(norm){
+    let east = persistentEast.clone();
+    const dot = east.dot(norm);
+    east.addScaledVector(norm, -dot).normalize();
+    if(east.lengthSq() < 0.001){
+        const ref = Math.abs(norm.z) < 0.9
+            ? new THREE.Vector3(0,0,1) : new THREE.Vector3(1,0,0);
+        east.crossVectors(norm, ref).normalize();
+    }
+    const north = new THREE.Vector3().crossVectors(east, norm).normalize();
+    return {east, north};
+}
+
+function getTangents(norm){ return tangentsFor(norm); }
+
+// Sample terrain height at a point offset slightly from a normal
+function sampleH(nx,ny,nz){ return sphereNoise(nx,ny,nz); }
+
+// Get the max terrain height in a neighbourhood — 8 directions + centre
+// Larger sampleR catches more of the face geometry between vertices
+function maxNearbyH(norm, sampleR){
+    const {east,north}=getTangents(norm);
+    let h=sampleH(norm.x,norm.y,norm.z);
+    for(const d of [east, north,
+        new THREE.Vector3().copy(east).negate(),
+        new THREE.Vector3().copy(north).negate()]){
+        const p=new THREE.Vector3().copy(norm).addScaledVector(d,sampleR).normalize();
+        h=Math.max(h,sampleH(p.x,p.y,p.z));
+    }
+    return h;
+}
+
+// Move playerNormal along sphere surface, with slope-limiting so steep
+// terrain is slid along rather than stopped dead or clipped through
+function moveSphere(dFwd, dRight, airborne){
+    const {east,north}=tangentsFor(playerNormal);
+    const headFwd  = new THREE.Vector3().addScaledVector(north,Math.cos(sphereYaw)).addScaledVector(east,Math.sin(sphereYaw));
+    // headRight: perpendicular to headFwd on the surface, pointing screen-right
+    const headRight= new THREE.Vector3().addScaledVector(north,Math.sin(sphereYaw)).addScaledVector(east,-Math.cos(sphereYaw));
+    const curH = sampleH(playerNormal.x, playerNormal.y, playerNormal.z);
+    const MAX_STEP = 40;
+
+    const candidate = playerNormal.clone()
+        .addScaledVector(headFwd,  dFwd)
+        .addScaledVector(headRight,dRight)
+        .normalize();
+
+    // While airborne (levitating/gliding) ignore water and steep terrain — fly over anything
+    if(airborne){
+        playerNormal.copy(candidate); return;
+    }
+
+    const newH = sampleH(candidate.x, candidate.y, candidate.z);
+    if(newH >= WATER_H && newH - curH <= MAX_STEP){
+        playerNormal.copy(candidate); return;
+    }
+    if(dFwd !== 0){
+        const cf = playerNormal.clone().addScaledVector(headFwd, dFwd).normalize();
+        const hf = sampleH(cf.x, cf.y, cf.z);
+        if(hf >= WATER_H && hf - curH <= MAX_STEP){ playerNormal.copy(cf); return; }
+    }
+    if(dRight !== 0){
+        const cr = playerNormal.clone().addScaledVector(headRight, dRight).normalize();
+        const hr = sampleH(cr.x, cr.y, cr.z);
+        if(hr >= WATER_H && hr - curH <= MAX_STEP){ playerNormal.copy(cr); return; }
+    }
+}
+
+let smoothCamR = -1; // -1 = uninitialised, snaps on first frame
+
+// Set camera position and orientation from sphere state
+function updateCameraFromSphere(extraHeight){
+    const h = maxNearbyH(playerNormal, 0.003);
+    const targetR = GLOBE_R + Math.max(h, WATER_H + 4) + PLAYER_EYE + (extraHeight||0);
+    if(smoothCamR < 0){ smoothCamR = targetR; }
+    else if(targetR > smoothCamR){
+        smoothCamR += (targetR - smoothCamR) * 0.85; // very fast up — tracks levitation
+    } else {
+        smoothCamR += (targetR - smoothCamR) * 0.06; // slower down — no sudden drops
+    }
+    camera.position.copy(playerNormal).multiplyScalar(smoothCamR);
+
+    const {east,north}=getTangents(playerNormal);
+    const localFwd = new THREE.Vector3().addScaledVector(north,Math.cos(sphereYaw)).addScaledVector(east,Math.sin(sphereYaw));
+    const localUp  = playerNormal.clone();
+
+    const pitchFwd = new THREE.Vector3()
+        .addScaledVector(localFwd, Math.cos(spherePitch))
+        .addScaledVector(localUp,  Math.sin(spherePitch));
+    const lookTarget = new THREE.Vector3().copy(camera.position).add(pitchFwd);
+
+    camera.up.copy(localUp);
+    camera.lookAt(lookTarget);
+}
+
+// ─── INPUT ────────────────────────────────────────────────────────────────────
+const keys={};
+window.addEventListener('keydown',e=>{keys[e.code]=true;});
+window.addEventListener('keyup',  e=>{keys[e.code]=false;});
+
+const maxJR=40;
+const jL={active:false,id:null,ox:0,oy:0,dx:0,dy:0};
+const jR={active:false,id:null,ox:0,oy:0,dx:0,dy:0};
+let levPointerId = null; // declared here so touchstart can reference it
+const joyLB=document.getElementById('joy-left'),  joyLK=document.getElementById('knob-left');
+const joyRB=document.getElementById('joy-right'), joyRK=document.getElementById('knob-right');
+document.addEventListener('touchstart',e=>{
+    const tgt = e.target;
+    // Allow LEV button to handle its own touch; skip action/menu/overlay
+    if(tgt.closest('#btn-action,#btn-menu,#overlay')) return;
+    // Don't claim LEV button touches as joystick
+    if(tgt.closest('#lev-wrap')) return;
+    e.preventDefault();
+    const hw=window.innerWidth/2;
+    for(const t of e.changedTouches){
+        // Never steal the LEV pointer
+        if(t.identifier === levPointerId) continue;
+        if(t.clientX<hw&&!jL.active){
+            Object.assign(jL,{active:true,id:t.identifier,ox:t.clientX,oy:t.clientY,dx:0,dy:0});
+            joyLB.style.cssText+=`display:block;left:${t.clientX}px;top:${t.clientY}px;`;
+        } else if(t.clientX>=hw&&!jR.active){
+            Object.assign(jR,{active:true,id:t.identifier,ox:t.clientX,oy:t.clientY,dx:0,dy:0});
+            joyRB.style.cssText+=`display:block;left:${t.clientX}px;top:${t.clientY}px;`;
+        }
+    }
+},{passive:false});
+document.addEventListener('touchmove',e=>{
+    e.preventDefault();
+    for(const t of e.changedTouches){
+        const upd=(j,kb)=>{let dx=t.clientX-j.ox,dy=t.clientY-j.oy,d=Math.sqrt(dx*dx+dy*dy);if(d>maxJR){dx=dx/d*maxJR;dy=dy/d*maxJR;}j.dx=dx;j.dy=dy;kb.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;};
+        if(jL.active&&jL.id===t.identifier)upd(jL,joyLK);
+        if(jR.active&&jR.id===t.identifier)upd(jR,joyRK);
+    }
+},{passive:false});
+const endT=e=>{for(const t of e.changedTouches){if(jL.active&&jL.id===t.identifier){jL.active=false;joyLB.style.display='none';jL.dx=jL.dy=0;}if(jR.active&&jR.id===t.identifier){jR.active=false;joyRB.style.display='none';jR.dx=jR.dy=0;}}};
+document.addEventListener('touchend',endT);document.addEventListener('touchcancel',endT);
+window.addEventListener('resize',()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
+
+// ─── LEVITATION STATE ─────────────────────────────────────────────────────────
+const LEV_MAX       = 20.0;    // max stamina seconds
+const LEV_THRUST    = 220;     // upward acceleration while held (units/sec²)
+const LEV_MAX_VEL   = 160;     // terminal rise velocity (units/sec)
+const GRAVITY       = 95;      // downward acceleration when not held (units/sec²)
+const GLIDE_DECAY   = 0.94;    // glide velocity decay
+
+let levStamina   = LEV_MAX;
+let levActive    = false;
+let levHeld      = false;
+let levHeight    = 0;
+let levVelUp     = 0;          // signed vertical velocity: positive = rising
+let gliding      = false;
+let glideVelFwd  = 0;
+let glideVelRight= 0;
+
+const levArc  = document.getElementById('lev-arc');
+const btnLev  = document.getElementById('btn-lev');
+const ARC_LEN = 194.78; // circumference of r=31 circle (2π×31)
+
+function updateLevStaminaUI(){
+    const frac = levStamina / LEV_MAX;
+    levArc.setAttribute('stroke-dashoffset', ARC_LEN * (1 - frac));
+    levArc.setAttribute('stroke', levActive
+        ? `rgba(80,${140+Math.floor(frac*115)},255,${0.6+frac*0.4})`
+        : `rgba(60,${160+Math.floor(frac*95)},255,${0.4+frac*0.5})`);
+}
+
+// Levitation pointer — captured so sliding off button keeps levitation active
+// While held, pointer movement steers look (like backrooms flamethrower)
+let levLastX = 0, levLastY = 0;
+
+btnLev.addEventListener('pointerdown', e=>{
+    e.preventDefault();
+    btnLev.setPointerCapture(e.pointerId); // capture so we get all events even off-button
+    levPointerId = e.pointerId;
+    levLastX = e.clientX;
+    levLastY = e.clientY;
+    levHeld = true;
+    btnLev.classList.add('active');
+},{passive:false});
+
+btnLev.addEventListener('pointermove', e=>{
+    if(e.pointerId !== levPointerId) return;
+    // Delta movement steers look — works whether finger is on button or slid off
+    const dx = e.clientX - levLastX;
+    const dy = e.clientY - levLastY;
+    levLastX = e.clientX;
+    levLastY = e.clientY;
+    sphereYaw   -= dx * 0.004;
+    spherePitch -= dy * 0.004;
+    spherePitch  = Math.max(-Math.PI/2+0.05, Math.min(Math.PI/2-0.05, spherePitch));
+});
+
+btnLev.addEventListener('pointerup', e=>{
+    if(e.pointerId !== levPointerId) return;
+    levHeld = false;
+    levPointerId = null;
+    btnLev.classList.remove('active');
+});
+
+btnLev.addEventListener('pointercancel', e=>{
+    if(e.pointerId !== levPointerId) return;
+    levHeld = false;
+    levPointerId = null;
+    btnLev.classList.remove('active');
+});
+
+btnLev.addEventListener('touchstart', e=>e.stopPropagation(),{passive:false});
+let lastTime=performance.now();
+function animate(){
+    requestAnimationFrame(animate);
+    const now=performance.now(),delta=Math.min((now-lastTime)/1000,0.05);lastTime=now;
+    waterTime+=delta;
+
+    // Look
+    const ls=1.6;
+    if(keys['ArrowLeft'])  sphereYaw+=ls*delta;
+    if(keys['ArrowRight']) sphereYaw-=ls*delta;
+    if(jR.active){
+        sphereYaw  -= (jR.dx/maxJR)*0.055;
+        spherePitch -= (jR.dy/maxJR)*0.055;
+    }
+    spherePitch=Math.max(-Math.PI/2+0.05,Math.min(Math.PI/2-0.05,spherePitch));
+
+    // Input
+    const sprint=keys['ShiftLeft']||keys['ShiftRight'];
+    const spd=(sprint?SPRINT_SPD:PLAYER_SPD)*delta;
+    let dFwd=0,dRight=0;
+    if(keys['KeyW']||keys['Keyw']||keys['ArrowUp'])   dFwd  += spd;
+    if(keys['KeyS']||keys['Keys']||keys['ArrowDown']) dFwd  -= spd;
+    if(keys['KeyA']||keys['Keya']) dRight-=spd;
+    if(keys['KeyD']||keys['Keyd']) dRight+=spd;
+    if(jL.active){dFwd+=(-jL.dy/maxJR)*spd*3.2;dRight+=(jL.dx/maxJR)*spd*3.2;}
+
+    // Update persistent tangent frame once per frame for the real player position
+    updatePlayerTangents();
+
+    // ── LEVITATION ────────────────────────────────────────────────────────
+    const onGround = levHeight <= 0.1 && levVelUp <= 0;
+    const airborne = !onGround;
+
+    if(levHeld && levStamina > 0){
+        levStamina = Math.max(0, levStamina - delta);
+        // Stop levitating the moment stamina empties
+        if(levStamina === 0){
+            levHeld    = false;
+            levPointerId = null;
+            btnLev.classList.remove('active');
+        }
+        levActive  = true;
+        gliding    = false;
+        levVelUp = Math.min(LEV_MAX_VEL, levVelUp + LEV_THRUST * delta);
+    } else {
+        if(levActive && levHeight > 2) gliding = true;
+        levActive  = false;
+        levStamina = Math.min(LEV_MAX, levStamina + delta);
+        // Real gravity pulls down
+        levVelUp -= GRAVITY * delta;
+    }
+
+    // Apply vertical velocity
+    levHeight = Math.max(0, levHeight + levVelUp * delta);
+
+    // Hit the ground
+    if(levHeight <= 0 && levVelUp < 0){
+        levHeight = 0;
+        levVelUp  = 0;
+        gliding   = false;
+        glideVelFwd = glideVelRight = 0;
+    }
+
+    // Horizontal movement
+    if(airborne || levActive){
+        // Steer in air — full speed while levitating, glide steering otherwise
+        if(levActive){
+            if(dFwd!==0||dRight!==0) moveSphere(dFwd*0.8, dRight*0.8, true);
+        } else if(gliding){
+            glideVelFwd   = glideVelFwd*GLIDE_DECAY   + dFwd*1.8;
+            glideVelRight = glideVelRight*GLIDE_DECAY  + dRight*1.8;
+            if(Math.abs(glideVelFwd)>0.0001||Math.abs(glideVelRight)>0.0001)
+                moveSphere(glideVelFwd*delta, glideVelRight*delta, true);
+        }
+    } else {
+        if(dFwd!==0||dRight!==0) moveSphere(dFwd, dRight, false);
+    }
+
+    updateLevStaminaUI();
+    updateCameraFromSphere(levHeight);
+    updateDayNight(delta);
+    if(typeof updateCollectibles==="function") updateCollectibles();
+    if(typeof updateFireballs==="function") updateFireballs(delta);
+    if(typeof updateIceBolts==="function")  updateIceBolts(delta);
+    if(shimmerMesh) shimmerMesh.material.opacity=0.18+Math.sin(waterTime*0.8)*0.06;
+    renderer.render(scene,camera);
+}
+
+// ─── FIREBALL SYSTEM ─────────────────────────────────────────────────────────
+// Canvas-painted fireball sprites — same approach as the backrooms entity sprites
+
+function makeFireballTexture(t) {
+    // t = 0..1 animation phase
+    const S = 128, c = document.createElement('canvas');
+    c.width = c.height = S;
+    const ctx = c.getContext('2d'), cx = S/2, cy = S/2;
+    ctx.clearRect(0,0,S,S);
+
+    // Outer glow — deep orange halo
+    const outerG = ctx.createRadialGradient(cx,cy,0,cx,cy,cx);
+    outerG.addColorStop(0,   'rgba(255,200,60,0.0)');
+    outerG.addColorStop(0.35,'rgba(255,120,10,0.22)');
+    outerG.addColorStop(0.65,'rgba(220,50,0,0.14)');
+    outerG.addColorStop(1,   'rgba(100,10,0,0)');
+    ctx.fillStyle = outerG; ctx.fillRect(0,0,S,S);
+
+    // Flame tendrils — 8 irregular licks radiating outward, animated
+    const TENDRILS = 8;
+    for(let i=0;i<TENDRILS;i++){
+        const baseAngle = (i/TENDRILS)*Math.PI*2 + t*Math.PI*2*0.7;
+        const wobble = Math.sin(t*Math.PI*6 + i*1.3) * 0.35;
+        const angle = baseAngle + wobble;
+        const len = 22 + Math.sin(t*Math.PI*4 + i*2.1)*8;
+        const tipX = cx + Math.cos(angle)*len;
+        const tipY = cy + Math.sin(angle)*len;
+        const cp1x = cx + Math.cos(angle+0.5)*len*0.55;
+        const cp1y = cy + Math.sin(angle+0.5)*len*0.55;
+
+        const tg = ctx.createLinearGradient(cx,cy,tipX,tipY);
+        tg.addColorStop(0,   'rgba(255,240,140,0.85)');
+        tg.addColorStop(0.3, 'rgba(255,140,20,0.75)');
+        tg.addColorStop(0.7, 'rgba(220,40,0,0.40)');
+        tg.addColorStop(1,   'rgba(180,20,0,0)');
+
+        ctx.beginPath();
+        ctx.moveTo(cx,cy);
+        ctx.quadraticCurveTo(cp1x,cp1y,tipX,tipY);
+        ctx.strokeStyle = tg;
+        ctx.lineWidth = 4 + Math.sin(t*Math.PI*5+i)*2;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+    }
+
+    // Inner fire body — multi-layer radial blobs that shift with phase
+    const offX = Math.sin(t*Math.PI*3)*4, offY = Math.cos(t*Math.PI*4)*4;
+    const fireG = ctx.createRadialGradient(cx+offX,cy+offY,0,cx,cy,28);
+    fireG.addColorStop(0,   'rgba(255,255,200,1)');
+    fireG.addColorStop(0.18,'rgba(255,230,80,0.97)');
+    fireG.addColorStop(0.38,'rgba(255,140,20,0.92)');
+    fireG.addColorStop(0.60,'rgba(220,50,0,0.80)');
+    fireG.addColorStop(0.80,'rgba(160,20,0,0.50)');
+    fireG.addColorStop(1,   'rgba(80,0,0,0)');
+    ctx.beginPath(); ctx.arc(cx,cy,28,0,Math.PI*2);
+    ctx.fillStyle = fireG; ctx.fill();
+
+    // Hot white core
+    const coreG = ctx.createRadialGradient(cx,cy,0,cx,cy,10);
+    coreG.addColorStop(0,'rgba(255,255,255,1)');
+    coreG.addColorStop(0.5,'rgba(255,255,200,0.8)');
+    coreG.addColorStop(1,'rgba(255,200,80,0)');
+    ctx.beginPath(); ctx.arc(cx,cy,10,0,Math.PI*2);
+    ctx.fillStyle = coreG; ctx.fill();
+
+    // Embers — small bright flecks
+    for(let e=0;e<12;e++){
+        const ea = t*Math.PI*8 + e*(Math.PI*2/12);
+        const er = 18+Math.sin(t*Math.PI*7+e*1.7)*10;
+        const ex = cx+Math.cos(ea)*er, ey = cy+Math.sin(ea)*er;
+        ctx.beginPath(); ctx.arc(ex,ey,1+Math.random()*1.5,0,Math.PI*2);
+        ctx.fillStyle=`rgba(255,${180+Math.floor(Math.random()*75)},0,${0.5+Math.random()*0.5})`;
+        ctx.fill();
+    }
+
+    return new THREE.CanvasTexture(c);
+}
+
+// Pre-bake 8 animation frames
+const FIREBALL_FRAMES = 8;
+const fireballTextures = Array.from({length:FIREBALL_FRAMES},(_,i)=>makeFireballTexture(i/FIREBALL_FRAMES));
+
+const fireballs = [];
+const FIREBALL_SPEED = 200;
+const FIREBALL_LIFE  = 5.0;
+let fireballAnimTime = 0;
+
+function shootFireball() {
+    const mat = new THREE.SpriteMaterial({
+        map: fireballTextures[0], transparent: true,
+        depthWrite: false, fog: false
+    });
+    const sprite = new THREE.Sprite(mat);
+    sprite.scale.set(28, 28, 1);
+
+    const dir = new THREE.Vector3();
+    camera.getWorldDirection(dir);
+    sprite.position.copy(camera.position).addScaledVector(dir, 22);
+    scene.add(sprite);
+
+    fireballs.push({
+        sprite, mat,
+        vel: dir.clone().multiplyScalar(FIREBALL_SPEED),
+        life: FIREBALL_LIFE,
+        frame: 0
+    });
+    addLog('🔥 Fire Bolt cast!');
+    if(navigator.vibrate && document.getElementById('toggle-vibration')?.checked)
+        navigator.vibrate([18,8,18]);
+}
+
+function updateFireballs(dt) {
+    fireballAnimTime += dt;
+    const globalFrame = Math.floor(fireballAnimTime * 18) % FIREBALL_FRAMES;
+
+    for(let i = fireballs.length-1; i >= 0; i--){
+        const fb = fireballs[i];
+        fb.life -= dt;
+
+        // Move
+        fb.sprite.position.addScaledVector(fb.vel, dt);
+
+        // Arc toward globe (gravity)
+        const toCenter = fb.sprite.position.clone().negate().normalize();
+        fb.vel.addScaledVector(toCenter, 80 * dt);
+
+        // Animate frame — each fireball slightly offset so they don't sync
+        fb.mat.map = fireballTextures[(globalFrame + i*2) % FIREBALL_FRAMES];
+        fb.mat.needsUpdate = true;
+
+        // Scale pulses slightly
+        const pulse = 1 + Math.sin(fireballAnimTime * 18 + i) * 0.12;
+        fb.sprite.scale.setScalar(28 * pulse);
+
+        // Fade out last 0.6s
+        fb.mat.opacity = Math.min(1, fb.life / 0.6);
+
+        // Hit terrain?
+        const pos = fb.sprite.position;
+        const norm = pos.clone().normalize();
+        const terrH = sphereNoise(norm.x, norm.y, norm.z);
+        if(fb.life <= 0 || pos.length() < GLOBE_R + terrH + 4){
+            scene.remove(fb.sprite);
+            fireballs.splice(i,1);
+        }
+    }
+}
+
+// ─── ICE BOLT SYSTEM ──────────────────────────────────────────────────────────
+function makeIceBoltTexture(t){
+    const S=128, c=document.createElement('canvas');
+    c.width=c.height=S;
+    const ctx=c.getContext('2d'), cx=S/2, cy=S/2;
+    ctx.clearRect(0,0,S,S);
+
+    // Outer frost halo
+    const outerG=ctx.createRadialGradient(cx,cy,0,cx,cy,cx);
+    outerG.addColorStop(0,  'rgba(180,240,255,0.0)');
+    outerG.addColorStop(0.4,'rgba(100,200,255,0.18)');
+    outerG.addColorStop(0.7,'rgba(40,120,220,0.12)');
+    outerG.addColorStop(1,  'rgba(0,40,120,0)');
+    ctx.fillStyle=outerG; ctx.fillRect(0,0,S,S);
+
+    // Ice crystal spikes — 6 symmetrical arms + 6 minor
+    for(let i=0;i<12;i++){
+        const angle=(i/12)*Math.PI*2 + t*Math.PI*0.3;
+        const isMajor=i%2===0;
+        const len=isMajor?32+Math.sin(t*Math.PI*4+i)*5:16+Math.sin(t*Math.PI*6+i)*3;
+        const tipX=cx+Math.cos(angle)*len, tipY=cy+Math.sin(angle)*len;
+        const mid=0.55;
+        const mx=cx+Math.cos(angle)*len*mid, my=cy+Math.sin(angle)*len*mid;
+
+        const sg=ctx.createLinearGradient(cx,cy,tipX,tipY);
+        sg.addColorStop(0,  'rgba(220,248,255,0.9)');
+        sg.addColorStop(0.4,'rgba(130,210,255,0.75)');
+        sg.addColorStop(0.75,'rgba(60,140,240,0.4)');
+        sg.addColorStop(1,  'rgba(20,80,200,0)');
+
+        ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(tipX,tipY);
+        ctx.strokeStyle=sg;
+        ctx.lineWidth=isMajor?3.5+Math.sin(t*Math.PI*5+i):1.8;
+        ctx.lineCap='round'; ctx.stroke();
+
+        // Cross barbs on major spikes
+        if(isMajor){
+            const bLen=len*0.28, bAngle=angle+Math.PI/2;
+            ctx.beginPath();
+            ctx.moveTo(mx-Math.cos(bAngle)*bLen, my-Math.sin(bAngle)*bLen);
+            ctx.lineTo(mx+Math.cos(bAngle)*bLen, my+Math.sin(bAngle)*bLen);
+            ctx.strokeStyle='rgba(160,230,255,0.55)';
+            ctx.lineWidth=1.5; ctx.stroke();
+        }
+    }
+
+    // Inner ice core — cold blue-white
+    const offX=Math.sin(t*Math.PI*2)*3, offY=Math.cos(t*Math.PI*3)*3;
+    const coreG=ctx.createRadialGradient(cx+offX,cy+offY,0,cx,cy,22);
+    coreG.addColorStop(0,  'rgba(255,255,255,1)');
+    coreG.addColorStop(0.2,'rgba(220,248,255,0.98)');
+    coreG.addColorStop(0.5,'rgba(120,210,255,0.88)');
+    coreG.addColorStop(0.8,'rgba(40,130,240,0.55)');
+    coreG.addColorStop(1,  'rgba(0,60,180,0)');
+    ctx.beginPath(); ctx.arc(cx,cy,22,0,Math.PI*2);
+    ctx.fillStyle=coreG; ctx.fill();
+
+    // Bright centre
+    const centreG=ctx.createRadialGradient(cx,cy,0,cx,cy,8);
+    centreG.addColorStop(0,'rgba(255,255,255,1)');
+    centreG.addColorStop(1,'rgba(200,240,255,0)');
+    ctx.beginPath(); ctx.arc(cx,cy,8,0,Math.PI*2);
+    ctx.fillStyle=centreG; ctx.fill();
+
+    // Floating ice chips
+    for(let i=0;i<10;i++){
+        const a=t*Math.PI*6+i*(Math.PI*2/10);
+        const r=20+Math.sin(t*Math.PI*8+i*1.9)*6;
+        const px=cx+Math.cos(a)*r, py=cy+Math.sin(a)*r;
+        ctx.save(); ctx.translate(px,py); ctx.rotate(a+t*Math.PI*4);
+        ctx.fillStyle=`rgba(180,235,255,${0.4+Math.random()*0.4})`;
+        ctx.fillRect(-2,-2,4,4);
+        ctx.restore();
+    }
+    return new THREE.CanvasTexture(c);
+}
+
+const ICE_FRAMES=8;
+const iceBoltTextures=Array.from({length:ICE_FRAMES},(_,i)=>makeIceBoltTexture(i/ICE_FRAMES));
+const iceBolts=[];
+const ICE_SPEED=180, ICE_LIFE=5.0;
+let iceBoltAnimTime=0;
+
+function shootIceBolt(){
+    const mat=new THREE.SpriteMaterial({map:iceBoltTextures[0],transparent:true,depthWrite:false,fog:false});
+    const sprite=new THREE.Sprite(mat);
+    sprite.scale.set(26,26,1);
+    const dir=new THREE.Vector3();
+    camera.getWorldDirection(dir);
+    sprite.position.copy(camera.position).addScaledVector(dir,22);
+    scene.add(sprite);
+    iceBolts.push({sprite,mat,vel:dir.clone().multiplyScalar(ICE_SPEED),life:ICE_LIFE});
+    addLog('🧊 Ice Bolt cast!');
+    if(navigator.vibrate&&document.getElementById('toggle-vibration')?.checked) navigator.vibrate([10,5,30]);
+}
+
+function updateIceBolts(dt){
+    iceBoltAnimTime+=dt;
+    const gf=Math.floor(iceBoltAnimTime*16)%ICE_FRAMES;
+    for(let i=iceBolts.length-1;i>=0;i--){
+        const ib=iceBolts[i];
+        ib.life-=dt;
+        ib.sprite.position.addScaledVector(ib.vel,dt);
+        // Gentle gravity
+        const toC=ib.sprite.position.clone().negate().normalize();
+        ib.vel.addScaledVector(toC,50*dt);
+        // Animate + slow rotation
+        ib.mat.map=iceBoltTextures[(gf+i*3)%ICE_FRAMES]; ib.mat.needsUpdate=true;
+        const pulse=1+Math.sin(iceBoltAnimTime*12+i)*0.08;
+        ib.sprite.scale.setScalar(26*pulse);
+        ib.mat.opacity=Math.min(1,ib.life/0.5);
+        // Terrain hit
+        const pos=ib.sprite.position, norm=pos.clone().normalize();
+        const terrH=sphereNoise(norm.x,norm.y,norm.z);
+        if(ib.life<=0||pos.length()<GLOBE_R+terrH+4){
+            scene.remove(ib.sprite); iceBolts.splice(i,1);
+        }
+    }
+}
+const overlay   = document.getElementById('overlay');
+const panels    = document.querySelectorAll('.panel');
+let menuOpen    = false;
+
+// Inventory — Map of es → {vocab, qty} so duplicates stack
+const inventoryMap = new Map();
+
+// ─── SPANISH VOCABULARY CATALOGUE ─────────────────────────────────────────
+const VOCAB = [
+    // ── MEADOW ──────────────────────────────────────────────────────────────
+    {emoji:'🌸',es:'la flor',        en:'the flower',        biome:'meadow',   color:0xff88cc},
+    {emoji:'🌼',es:'la margarita',   en:'the daisy',         biome:'meadow',   color:0xffee66},
+    {emoji:'🌻',es:'el girasol',     en:'the sunflower',     biome:'meadow',   color:0xffcc00},
+    {emoji:'🌺',es:'la amapola',     en:'the poppy',         biome:'meadow',   color:0xff4444},
+    {emoji:'🌷',es:'el tulipán',     en:'the tulip',         biome:'meadow',   color:0xff66aa},
+    {emoji:'🌿',es:'la hierba',      en:'the grass',         biome:'meadow',   color:0x44cc66},
+    {emoji:'🍀',es:'el trébol',      en:'the clover',        biome:'meadow',   color:0x33bb55},
+    {emoji:'🌱',es:'el brote',       en:'the sprout',        biome:'meadow',   color:0x66dd44},
+    {emoji:'🦋',es:'la mariposa',    en:'the butterfly',     biome:'meadow',   color:0xffcc00},
+    {emoji:'🐝',es:'la abeja',       en:'the bee',           biome:'meadow',   color:0xffbb00},
+    {emoji:'🐞',es:'la mariquita',   en:'the ladybug',       biome:'meadow',   color:0xff3333},
+    {emoji:'🐜',es:'la hormiga',     en:'the ant',           biome:'meadow',   color:0x885533},
+    {emoji:'🦗',es:'el grillo',      en:'the cricket',       biome:'meadow',   color:0x667744},
+    {emoji:'🌾',es:'el trigo',       en:'the wheat',         biome:'meadow',   color:0xddbb44},
+    {emoji:'🐇',es:'el conejo',      en:'the rabbit',        biome:'meadow',   color:0xddccbb},
+    {emoji:'🦊',es:'el zorro',       en:'the fox',           biome:'meadow',   color:0xdd7733},
+    {emoji:'🐿️',es:'la ardilla',    en:'the squirrel',      biome:'meadow',   color:0xaa7744},
+    {emoji:'☀️',es:'el sol',         en:'the sun',           biome:'meadow',   color:0xffdd44},
+    {emoji:'🌈',es:'el arcoíris',    en:'the rainbow',       biome:'meadow',   color:0xff88ff},
+    {emoji:'🌬️',es:'la brisa',      en:'the breeze',        biome:'meadow',   color:0xccddff},
+    // ── FOREST ──────────────────────────────────────────────────────────────
+    {emoji:'🌲',es:'el árbol',       en:'the tree',          biome:'forest',   color:0x226622},
+    {emoji:'🌳',es:'el roble',       en:'the oak',           biome:'forest',   color:0x335522},
+    {emoji:'🌴',es:'la palma',       en:'the palm tree',     biome:'forest',   color:0x44aa33},
+    {emoji:'🍃',es:'la hoja',        en:'the leaf',          biome:'forest',   color:0x55aa33},
+    {emoji:'🍂',es:'la hoja seca',   en:'the dry leaf',      biome:'forest',   color:0xcc7733},
+    {emoji:'🍁',es:'el arce',        en:'the maple leaf',    biome:'forest',   color:0xff6622},
+    {emoji:'🍄',es:'el hongo',       en:'the mushroom',      biome:'forest',   color:0xcc6644},
+    {emoji:'🪵',es:'la madera',      en:'the wood',          biome:'forest',   color:0x886633},
+    {emoji:'🌰',es:'la bellota',     en:'the acorn',         biome:'forest',   color:0xaa7722},
+    {emoji:'🐛',es:'el gusano',      en:'the worm',          biome:'forest',   color:0x997755},
+    {emoji:'🦎',es:'el lagarto',     en:'the lizard',        biome:'forest',   color:0x558833},
+    {emoji:'🐍',es:'la serpiente',   en:'the snake',         biome:'forest',   color:0x446633},
+    {emoji:'🦉',es:'el búho',        en:'the owl',           biome:'forest',   color:0xaa9966},
+    {emoji:'🦜',es:'el pájaro',      en:'the bird',          biome:'forest',   color:0x44aacc},
+    {emoji:'🐦',es:'el gorrión',     en:'the sparrow',       biome:'forest',   color:0x887766},
+    {emoji:'🦌',es:'el ciervo',      en:'the deer',          biome:'forest',   color:0xcc9966},
+    {emoji:'🐻',es:'el oso',         en:'the bear',          biome:'forest',   color:0x886644},
+    {emoji:'🕸️',es:'la telaraña',   en:'the spiderweb',     biome:'forest',   color:0xdddddd},
+    {emoji:'🌿',es:'el helecho',     en:'the fern',          biome:'forest',   color:0x338844},
+    {emoji:'🔥',es:'el fuego',       en:'the fire',          biome:'forest',   color:0xff6622},
+    // ── HIGHLAND ────────────────────────────────────────────────────────────
+    {emoji:'🪨',es:'la roca',        en:'the rock',          biome:'highland', color:0x666655},
+    {emoji:'🗿',es:'el peñasco',     en:'the boulder',       biome:'highland', color:0x555544},
+    {emoji:'❄️',es:'el hielo',       en:'the ice',           biome:'highland', color:0xaaddff},
+    {emoji:'🌨️',es:'la nieve',      en:'the snow',          biome:'highland', color:0xddeeff},
+    {emoji:'⛰️',es:'la montaña',    en:'the mountain',      biome:'highland', color:0x887766},
+    {emoji:'🏔️',es:'el pico',       en:'the peak',          biome:'highland', color:0x999988},
+    {emoji:'🦅',es:'el águila',      en:'the eagle',         biome:'highland', color:0xaa8844},
+    {emoji:'🐺',es:'el lobo',        en:'the wolf',          biome:'highland', color:0x888899},
+    {emoji:'🦁',es:'el león',        en:'the lion',          biome:'highland', color:0xddaa55},
+    {emoji:'🐘',es:'el elefante',    en:'the elephant',      biome:'highland', color:0x999988},
+    {emoji:'🦙',es:'la llama',       en:'the llama',         biome:'highland', color:0xddccaa},
+    {emoji:'🦔',es:'el erizo',       en:'the hedgehog',      biome:'highland', color:0x997755},
+    {emoji:'💨',es:'el viento',      en:'the wind',          biome:'highland', color:0xbbccdd},
+    {emoji:'🌍',es:'la tierra',      en:'the earth',         biome:'highland', color:0x4466aa},
+    {emoji:'💎',es:'el cristal',     en:'the crystal',       biome:'highland', color:0xaaddff},
+    {emoji:'🌡️',es:'el frío',       en:'the cold',          biome:'highland', color:0xaaccff},
+    {emoji:'🦗',es:'el escarabajo',  en:'the beetle',        biome:'highland', color:0x445533},
+    {emoji:'🌾',es:'el musgo',       en:'the moss',          biome:'highland', color:0x445533},
+    {emoji:'🦔',es:'la madriguera',  en:'the burrow',        biome:'highland', color:0x886644},
+    {emoji:'🌫️',es:'la niebla',     en:'the fog',           biome:'highland', color:0xccddee},
+    // ── RIVERBANK ───────────────────────────────────────────────────────────
+    {emoji:'💧',es:'el agua',        en:'the water',         biome:'riverbank',color:0x4488ff},
+    {emoji:'🌊',es:'la ola',         en:'the wave',          biome:'riverbank',color:0x3377cc},
+    {emoji:'🏞️',es:'el río',        en:'the river',         biome:'riverbank',color:0x2266bb},
+    {emoji:'🐸',es:'la rana',        en:'the frog',          biome:'riverbank',color:0x55aa44},
+    {emoji:'🐟',es:'el pez',         en:'the fish',          biome:'riverbank',color:0x5599ff},
+    {emoji:'🐠',es:'el pez de colores',en:'the colorful fish',biome:'riverbank',color:0xff8833},
+    {emoji:'🦆',es:'el pato',        en:'the duck',          biome:'riverbank',color:0x558844},
+    {emoji:'🦢',es:'el cisne',       en:'the swan',          biome:'riverbank',color:0xeeeedd},
+    {emoji:'🦩',es:'el flamenco',    en:'the flamingo',      biome:'riverbank',color:0xff99bb},
+    {emoji:'🐊',es:'el caimán',      en:'the alligator',     biome:'riverbank',color:0x336633},
+    {emoji:'🐢',es:'la tortuga',     en:'the turtle',        biome:'riverbank',color:0x447733},
+    {emoji:'🦭',es:'la foca',        en:'the seal',          biome:'riverbank',color:0x888899},
+    {emoji:'🪸',es:'las algas',      en:'the algae',         biome:'riverbank',color:0x33aa66},
+    {emoji:'🌿',es:'el junco',       en:'the reed',          biome:'riverbank',color:0x448833},
+    {emoji:'🦟',es:'el mosquito',    en:'the mosquito',      biome:'riverbank',color:0x667755},
+    {emoji:'🌫️',es:'el vapor',      en:'the steam',         biome:'riverbank',color:0xaabbcc},
+    {emoji:'🪷',es:'el loto',        en:'the lotus',         biome:'riverbank',color:0xffaacc},
+    {emoji:'🐙',es:'el pulpo',       en:'the octopus',       biome:'riverbank',color:0xcc6688},
+    {emoji:'🦐',es:'el camarón',     en:'the shrimp',        biome:'riverbank',color:0xff8866},
+    {emoji:'🦀',es:'el cangrejo',    en:'the crab',          biome:'riverbank',color:0xff5533},
+    // ── ALPINE ──────────────────────────────────────────────────────────────
+    {emoji:'⭐',es:'la estrella',    en:'the star',          biome:'alpine',   color:0xffffaa},
+    {emoji:'🌙',es:'la luna',        en:'the moon',          biome:'alpine',   color:0xddeeff},
+    {emoji:'☁️',es:'la nube',        en:'the cloud',         biome:'alpine',   color:0xeeeeff},
+    {emoji:'🌬️',es:'el viento fuerte',en:'the strong wind', biome:'alpine',   color:0xccddff},
+    {emoji:'🌩️',es:'la tormenta',   en:'the storm',         biome:'alpine',   color:0x6677aa},
+    {emoji:'⚡',es:'el rayo',        en:'the lightning',     biome:'alpine',   color:0xffff44},
+    {emoji:'🌌',es:'la galaxia',     en:'the galaxy',        biome:'alpine',   color:0x334488},
+    {emoji:'🌠',es:'la estrella fugaz',en:'the shooting star',biome:'alpine',  color:0xffeeaa},
+    {emoji:'🔭',es:'el telescopio',  en:'the telescope',     biome:'alpine',   color:0x445566},
+    {emoji:'🦋',es:'la polilla',     en:'the moth',          biome:'alpine',   color:0xbbbbcc},
+    {emoji:'🦇',es:'el murciélago',  en:'the bat',           biome:'alpine',   color:0x554466},
+    {emoji:'🌑',es:'la oscuridad',   en:'the darkness',      biome:'alpine',   color:0x334455},
+    {emoji:'❄️',es:'el copo de nieve',en:'the snowflake',    biome:'alpine',   color:0xcceeFF},
+    {emoji:'🏔️',es:'el glaciar',    en:'the glacier',       biome:'alpine',   color:0xaaccee},
+    {emoji:'🦁',es:'el puma',        en:'the puma',          biome:'alpine',   color:0xcc9955},
+    {emoji:'🐧',es:'el pingüino',    en:'the penguin',       biome:'alpine',   color:0x334455},
+    {emoji:'🦬',es:'el bisonte',     en:'the bison',         biome:'alpine',   color:0x775544},
+    {emoji:'🌿',es:'el liquen',      en:'the lichen',        biome:'alpine',   color:0x778855},
+    {emoji:'🪨',es:'el mineral',     en:'the mineral',       biome:'alpine',   color:0x887766},
+    {emoji:'💫',es:'el destello',    en:'the glimmer',       biome:'alpine',   color:0xffffcc},
+];
+
+const COLLECT_RADIUS = 0.006; // ~29 world units — must be close to collect
+const worldItems = [];
+
+function makeItemSprite(vocab){
+    const S=128, c=document.createElement('canvas');
+    c.width=c.height=S; const ctx=c.getContext('2d'), cx=S/2;
+    const col=vocab.color, r=(col>>16)&0xff, gv=(col>>8)&0xff, b=col&0xff;
+    // Soft glow from centre outward — bright behind emoji, fades to transparent
+    const g=ctx.createRadialGradient(cx,cx,0,cx,cx,cx);
+    g.addColorStop(0,   `rgba(${r},${gv},${b},0.9)`);
+    g.addColorStop(0.35,`rgba(${r},${gv},${b},0.65)`);
+    g.addColorStop(0.65,`rgba(${r},${gv},${b},0.25)`);
+    g.addColorStop(1,   `rgba(${r},${gv},${b},0)`);
+    ctx.fillStyle=g; ctx.fillRect(0,0,S,S);
+    // Emoji on top — large and clear
+    ctx.font='58px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(vocab.emoji,cx,cx+2);
+    return new THREE.CanvasTexture(c);
+}
+
+function makeLabelSprite(vocab){
+    const c=document.createElement('canvas'); c.width=260; c.height=68;
+    const ctx=c.getContext('2d');
+    ctx.fillStyle='rgba(0,0,0,0.65)';
+    ctx.beginPath(); ctx.roundRect(4,4,252,60,16); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='bold 22px sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(vocab.es,130,24);
+    ctx.fillStyle='rgba(180,230,195,0.85)'; ctx.font='15px sans-serif';
+    ctx.fillText(vocab.en,130,47);
+    return new THREE.CanvasTexture(c);
+}
+
+function spawnWorldItems(){
+    const ga=Math.PI*(3-Math.sqrt(5));
+    let placed=0;
+    for(let i=0;i<6000&&placed<80;i++){
+        const y=1-(i/6000)*2, r2=Math.sqrt(Math.max(0,1-y*y));
+        const theta=i*ga;
+        const nx=r2*Math.cos(theta),ny=y,nz=r2*Math.sin(theta);
+        const h=sphereNoise(nx,ny,nz);
+        if(h<WATER_H+10) continue;
+        const biome=getBiome(h);
+        const pool=VOCAB.filter(v=>v.biome===biome);
+        if(!pool.length) continue;
+        // Use a hash of position to pick consistently varied vocab
+        const idx=Math.floor(Math.abs(Math.sin(nx*127.1+nz*311.7)*43758.5)%pool.length);
+        const vocab=pool[idx];
+        const surfR=GLOBE_R+h+6;
+        const norm=new THREE.Vector3(nx,ny,nz);
+        const pos=norm.clone().multiplyScalar(surfR);
+        const mat=new THREE.SpriteMaterial({map:makeItemSprite(vocab),transparent:true,depthWrite:false,fog:false});
+        const sprite=new THREE.Sprite(mat);
+        sprite.position.copy(pos); sprite.scale.set(22,22,1);
+        scene.add(sprite);
+        const lmat=new THREE.SpriteMaterial({map:makeLabelSprite(vocab),transparent:true,depthWrite:false,fog:false,opacity:0});
+        const label=new THREE.Sprite(lmat);
+        label.position.copy(norm).multiplyScalar(surfR+32); label.scale.set(65,17,1);
+        scene.add(label);
+        worldItems.push({sprite,label,vocab,normal:norm,collected:false,baseR:surfR});
+        placed++;
+    }
+}
+
+const promptEl=document.createElement('div');
+promptEl.style.cssText='position:fixed;bottom:calc(50% + 30px);left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);color:#fff;padding:8px 20px;border-radius:20px;font-size:0.85rem;letter-spacing:0.05em;pointer-events:none;z-index:20;display:none;border:1px solid rgba(180,230,195,0.4);white-space:nowrap;';
+document.body.appendChild(promptEl);
+let nearestItem=null;
+
+function updateCollectibles(){
+    const t=performance.now()*0.001;
+    let closest=null, closestAng=Infinity;
+    for(const item of worldItems){
+        if(item.collected) continue;
+        const dot=Math.min(1,playerNormal.dot(item.normal));
+        const ang=Math.acos(dot);
+        // Bob
+        const bob=Math.sin(t*1.6+item.normal.x*8)*4;
+        item.sprite.position.copy(item.normal).multiplyScalar(item.baseR+bob);
+        item.label.position.copy(item.normal).multiplyScalar(item.baseR+bob+34);
+        // Fade label in when close
+        const fadeStart=COLLECT_RADIUS*3, fadeEnd=COLLECT_RADIUS*0.8;
+        item.label.material.opacity=Math.max(0,Math.min(1,(fadeStart-ang)/(fadeStart-fadeEnd)));
+        if(ang<COLLECT_RADIUS*1.5&&ang<closestAng){closest=item;closestAng=ang;}
+    }
+    nearestItem=closest;
+    if(closest){
+        promptEl.style.display='block';
+        promptEl.textContent=`ACT · recoger ${closest.vocab.es} (${closest.vocab.en})`;
+    } else { promptEl.style.display='none'; }
+}
+
+function tryCollect(){
+    if(!nearestItem) return false;
+    const vocab = nearestItem.vocab;
+    if(inventoryMap.has(vocab.es)){
+        inventoryMap.get(vocab.es).qty++;
+    } else {
+        if(inventoryMap.size >= 20){ addLog('¡Inventario lleno! — Inventory full'); return true; }
+        inventoryMap.set(vocab.es, {vocab, qty:1});
+    }
+    nearestItem.collected=true;
+    scene.remove(nearestItem.sprite);
+    scene.remove(nearestItem.label);
+    promptEl.style.display='none';
+    const entry = inventoryMap.get(vocab.es);
+    addLog(`✅ Recogiste "${vocab.es}" — ${vocab.en}${entry.qty>1?' (×'+entry.qty+')':''}`);
+    nearestItem=null;
+    if(navigator.vibrate) navigator.vibrate(25);
+    return true;
+}
+
+const logEntries = [];
+function addLog(msg){
+    const t = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    logEntries.unshift({time:t, msg});
+    if(document.getElementById('log-body')) renderLog();
+}
+
+function renderInventory(){
+    const grid = document.getElementById('inv-grid');
+    if(!grid) return;
+    grid.innerHTML = '';
+    if(inventoryMap.size === 0){
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:rgba(255,255,255,0.25);font-size:0.8rem;padding:24px 0">Explore to find items</div>';
+        return;
+    }
+    for(const [es, entry] of inventoryMap){
+        const slot = document.createElement('div');
+        slot.className = 'inv-slot';
+        slot.innerHTML = `${entry.vocab.emoji}<span class="inv-qty" style="font-size:0.5rem;bottom:2px;right:2px;left:2px;text-align:center;white-space:nowrap;overflow:hidden;line-height:1.1">${es}${entry.qty>1?'<br>×'+entry.qty:''}</span>`;
+        slot.title = `${es} — ${entry.vocab.en}${entry.qty>1?' (×'+entry.qty+')':''}`;
+        grid.appendChild(slot);
+    }
+    // Fill remaining visual slots to keep grid tidy
+    const remaining = Math.max(0, 12 - inventoryMap.size);
+    for(let i=0;i<remaining;i++){
+        const slot=document.createElement('div');
+        slot.className='inv-slot empty'; slot.innerHTML='·';
+        grid.appendChild(slot);
+    }
+}
+
+function renderLog(){
+    const body = document.getElementById('log-body');
+    if(!body) return;
+    body.innerHTML = logEntries.length
+        ? logEntries.map(e=>`<div class="log-entry"><div class="log-time">${e.time}</div>${e.msg}</div>`).join('')
+        : '<div class="empty-state">No entries yet.</div>';
+}
+
+function showPanel(id){
+    panels.forEach(p=>{ p.style.display = p.id===id ? 'flex' : 'none'; });
+    if(id==='panel-inventory') renderInventory();
+    if(id==='panel-log') renderLog();
+}
+
+function openMenu(){
+    menuOpen = true;
+    overlay.classList.add('open');
+    showPanel('panel-main');
+}
+
+function closeMenu(){
+    menuOpen = false;
+    overlay.classList.remove('open');
+    jL.active=false; joyLB.style.display='none'; jL.dx=jL.dy=0;
+    jR.active=false; joyRB.style.display='none'; jR.dx=jR.dy=0;
+}
+
+// Wire buttons — use both click and touchend so mobile works
+function wireBtn(id, fn){
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.addEventListener('click', fn);
+    el.addEventListener('touchend', e=>{ e.preventDefault(); e.stopPropagation(); fn(); },{passive:false});
+}
+
+wireBtn('btn-menu', openMenu);
+wireBtn('close-menu', closeMenu);
+wireBtn('btn-action', ()=>{
+    if(tryCollect()) return;
+    const fireOn = document.getElementById('toggle-firebolt')?.checked;
+    const iceOn  = document.getElementById('toggle-icebolt')?.checked;
+    if(fireOn && iceOn){
+        if(window._lastSpell==='fire'){ shootIceBolt(); window._lastSpell='ice'; }
+        else { shootFireball(); window._lastSpell='fire'; }
+    } else if(fireOn){ shootFireball(); window._lastSpell='fire'; }
+    else if(iceOn)  { shootIceBolt();  window._lastSpell='ice';  }
+    else { addLog('No hay nada cerca. (Nothing nearby)'); }
+});
+
+overlay.addEventListener('click', e=>{ if(e.target===overlay) closeMenu(); });
+
+document.querySelectorAll('[data-goto]').forEach(el=>{
+    el.addEventListener('click', ()=> showPanel(el.dataset.goto));
+    el.addEventListener('touchend', e=>{ e.preventDefault(); showPanel(el.dataset.goto); },{passive:false});
+});
+
+document.getElementById('toggle-sound')?.addEventListener('change', function(){
+    addLog(this.checked ? 'Sound enabled.' : 'Sound disabled.');
+});
+document.getElementById('toggle-vibration')?.addEventListener('change', function(){
+    if(this.checked && navigator.vibrate) navigator.vibrate(20);
+    addLog(this.checked ? 'Vibration enabled.' : 'Vibration disabled.');
+});
+document.getElementById('toggle-firebolt')?.addEventListener('change', function(){
+    if(this.checked) document.getElementById('toggle-icebolt').checked = false;
+    addLog(this.checked ? '🔥 Fire Bolt equipped.' : 'Fire Bolt unequipped.');
+});
+document.getElementById('toggle-icebolt')?.addEventListener('change', function(){
+    if(this.checked) document.getElementById('toggle-firebolt').checked = false;
+    addLog(this.checked ? '🧊 Ice Bolt equipped.' : 'Ice Bolt unequipped.');
+});
+
+window.addEventListener('keydown', e=>{
+    if(e.code==='Escape' && menuOpen){ closeMenu(); return; }
+    if(e.code==='KeyM' && !menuOpen){ openMenu(); return; }
+    if(e.code==='KeyE' || e.code==='Space'){ document.getElementById('btn-action').click(); }
+});
+
+addLog('Landed on Green Planet. Begin exploring.');
+
+buildWorld();
+</script>
+</body>
+</html>
