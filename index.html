@@ -2807,7 +2807,11 @@ function updateCollectibles(dt){
         const bob=Math.sin(t*1.6+item.normal.x*8)*4;
         const itemR=item.baseR+bob;
         item.sprite.position.copy(item.normal).multiplyScalar(itemR);
-        item.label.position.copy(item.normal).multiplyScalar(itemR+34);
+        // Labels are lazy-created only when the player is close enough.
+        // Never dereference a label before it exists (important on iPhone).
+        if(item.label){
+            item.label.position.copy(item.normal).multiplyScalar(itemR+34);
+        }
 
         // Prevent collection while hundreds of feet above/below the sprite.
         const verticalGap=Math.abs(playerR-itemR);
@@ -2864,7 +2868,7 @@ function tryCollect(){
     const entry = inventoryMap.get(vocab.es);
     addLog(`✅ Recogiste "${vocab.es}" — ${vocab.en}${entry.qty>1?' (×'+entry.qty+')':''}`);
     nearestItem=null;
-    if(navigator.vibrate) navigator.vibrate(25);
+    if(navigator.vibrate && document.getElementById('toggle-vibration')?.checked) navigator.vibrate(25);
     return true;
 }
 
@@ -2958,7 +2962,13 @@ document.querySelectorAll('[data-goto]').forEach(el=>{
 });
 
 document.getElementById('toggle-sound')?.addEventListener('change', function(){
-    addLog(this.checked ? 'Sound enabled.' : 'Sound disabled.');
+    if(this.checked){
+        startLoungeMusic();
+        addLog('Sound enabled.');
+    } else {
+        stopLoungeMusic();
+        addLog('Sound disabled.');
+    }
 });
 document.getElementById('toggle-vibration')?.addEventListener('change', function(){
     if(this.checked && navigator.vibrate) navigator.vibrate(20);
@@ -2983,6 +2993,106 @@ window.addEventListener('keydown', e=>{
 
 addLog('Landed on Vocabulario Español. Begin exploring.');
 
+// ─── LIGHTWEIGHT LOUNGE PIANO MUSIC ───────────────────────────────────────
+// Procedural audio: no external file, no synchronous generation, and no
+// large buffers. It starts from the user's COMENZAR gesture for iOS Safari.
+let musicCtx = null;
+let musicTimer = null;
+let musicNextTime = 0;
+let musicStep = 0;
+let musicMaster = null;
+
+const LOUNGE_NOTES = [
+    130.81, 146.83, 164.81, 174.61, 196.00, 220.00, 246.94, 261.63
+]; // C3 D3 E3 F3 G3 A3 B3 C4
+const LOUNGE_BASS = [130.81, 110.00, 98.00, 87.31];
+const LOUNGE_MELODY = [
+    261.63, null, 293.66, 329.63, null, 293.66,
+    246.94, null, 220.00, 246.94, 261.63, null,
+    196.00, 220.00, null, 246.94, null, 261.63,
+    293.66, null, 246.94, 220.00, null, 196.00
+];
+
+function pianoTone(freq, when, duration, velocity){
+    if(!musicCtx || !musicMaster) return;
+    try{
+        const osc = musicCtx.createOscillator();
+        const gain = musicCtx.createGain();
+        const filter = musicCtx.createBiquadFilter();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, when);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(2100, when);
+        filter.Q.setValueAtTime(0.7, when);
+        gain.gain.setValueAtTime(0.0001, when);
+        gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, velocity), when+0.012);
+        gain.gain.exponentialRampToValueAtTime(Math.max(0.00015, velocity*0.42), when+0.18);
+        gain.gain.exponentialRampToValueAtTime(0.0001, when+duration);
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(musicMaster);
+        osc.start(when);
+        osc.stop(when+duration+0.03);
+    }catch(e){}
+}
+
+function scheduleLoungeMusic(){
+    if(!musicCtx || musicCtx.state === 'closed') return;
+    const now = musicCtx.currentTime;
+    while(musicNextTime < now + 0.25){
+        const step = musicStep % 24;
+        const beat = 0.58;
+        const t = musicNextTime;
+        // Lower-octave warm chord/bass foundation.
+        if(step % 6 === 0) pianoTone(LOUNGE_BASS[(step/6)|0] || 130.81, t, 1.15, 0.045);
+        // Gentle chord tones, deliberately not every step.
+        if(step % 3 !== 1){
+            const chord = [LOUNGE_NOTES[0], LOUNGE_NOTES[2], LOUNGE_NOTES[4]][(step/3|0)%3];
+            pianoTone(chord, t + 0.015, 0.82, 0.026);
+        }
+        // Varied little melody: rests and off-beat entrances create the lounge feel.
+        const note = LOUNGE_MELODY[step];
+        if(note){
+            const offset = (step % 4 === 2) ? 0.08 : ((step % 7 === 0) ? 0.03 : 0);
+            pianoTone(note, t + offset, (step % 5 === 0) ? 0.48 : 0.34, 0.032);
+        }
+        musicNextTime += beat;
+        musicStep++;
+    }
+    musicTimer = setTimeout(scheduleLoungeMusic, 90);
+}
+
+function prepareLoungeMusic(){
+    if(musicCtx || !window.AudioContext && !window.webkitAudioContext) return;
+    try{
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        musicCtx = new Ctx();
+        musicMaster = musicCtx.createGain();
+        musicMaster.gain.value = 0.22;
+        musicMaster.connect(musicCtx.destination);
+    }catch(e){ musicCtx=null; musicMaster=null; }
+}
+
+function startLoungeMusic(){
+    try{
+        prepareLoungeMusic();
+        if(!musicCtx) return;
+        const resume = musicCtx.resume ? musicCtx.resume() : Promise.resolve();
+        Promise.resolve(resume).then(()=>{
+            if(!musicCtx || musicCtx.state === 'closed') return;
+            if(!musicTimer){
+                musicNextTime = musicCtx.currentTime + 0.05;
+                scheduleLoungeMusic();
+            }
+        }).catch(()=>{});
+    }catch(e){}
+}
+
+function stopLoungeMusic(){
+    if(musicTimer){ clearTimeout(musicTimer); musicTimer=null; }
+    if(musicCtx){ try{ musicCtx.suspend(); }catch(e){} }
+}
+
 // Start screen: generate the world only after the player presses PLAY.
 let gameStarted = false;
 const startScreen = document.getElementById('start-screen');
@@ -2995,7 +3105,21 @@ async function startGame(){
     startScreen.style.display = 'none';
     const loading = document.getElementById('loading');
     loading.style.display = 'flex';
-    await buildWorld();
+    // Start audio from the same user gesture, but do not wait for it.
+    // This keeps iPhone Safari happy without delaying world generation.
+    startLoungeMusic();
+    try {
+        await buildWorld();
+    } catch(err) {
+        // Keep failures from leaving the player with a blank screen.
+        console.error('Vocabulario Español startup error:', err);
+        gameStarted = false;
+        startPlay.disabled = false;
+        startPlay.textContent = 'COMENZAR';
+        startScreen.style.display = 'flex';
+        loading.style.display = 'none';
+        alert('No se pudo cargar el juego. Please reload the page and try again.');
+    }
 }
 
 // Start button works with mouse, touch, or keyboard.
