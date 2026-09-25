@@ -164,7 +164,7 @@
             transition:color 0.15s;
         }
         .panel-back:hover { color:rgba(255,255,255,0.9); }
-        .panel-body { padding:12px 0; overflow-y:auto; flex:1; }
+        .panel-body { padding:12px 0; overflow-y:auto; overflow-x:hidden; flex:1; min-height:0; -webkit-overflow-scrolling:touch; scrollbar-width:thin; }
 
         /* Menu items */
         .menu-item {
@@ -197,6 +197,7 @@
         .toggle input:checked ~ .toggle-thumb { transform:translateX(18px); }
 
         /* Inventory grid */
+        .inventory-body { overscroll-behavior:contain; }
         .inv-grid {
             display:grid; grid-template-columns:repeat(3,1fr);
             gap:8px; padding:10px 14px 14px;
@@ -388,7 +389,7 @@
             <span class="panel-title">Inventory</span>
             <button class="panel-back" data-goto="panel-main">‹ Back</button>
         </div>
-        <div class="panel-body">
+        <div class="panel-body inventory-body">
             <div id="inv-count" style="text-align:center;margin:2px 0 14px;color:rgba(180,230,195,0.9);font-size:0.95rem;letter-spacing:0.04em"></div>
             <div class="inv-grid" id="inv-grid"></div>
         </div>
