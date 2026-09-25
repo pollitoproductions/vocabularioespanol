@@ -255,7 +255,7 @@
     </style>
 </head>
 <body>
-<div id="loading"><div>GENERATING WORLD</div><div id="loading-bar-wrap"><div id="loading-bar"></div></div></div>
+<div id="loading"><div>Cargando/Loading</div><div id="loading-bar-wrap"><div id="loading-bar"></div></div></div>
 
 <div id="start-screen">
     <div class="start-card">
@@ -2797,7 +2797,7 @@ function updateCollectibles(){
     nearestItem=closest;
     if(closest){
         promptEl.style.display='block';
-        promptEl.textContent=`ACT · recoger ${closest.vocab.es} (${closest.vocab.en})`;
+        promptEl.textContent=`recoger (collect/pick up) · ${closest.vocab.es} (${closest.vocab.en})`;
     } else {
         promptEl.style.display='none';
     }
