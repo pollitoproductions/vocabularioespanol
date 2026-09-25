@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vocabulario Espanol</title>
+    <title>Vocabulario Español</title>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body { overflow:hidden; background:#02040a; touch-action:none; font-family:'Segoe UI',sans-serif; user-select:none; -webkit-user-select:none; }
@@ -15,7 +15,7 @@
         #crosshair::before,#crosshair::after { content:''; position:absolute; background:rgba(255,255,255,0.28); }
         #crosshair::before { width:1px; height:100%; left:50%; transform:translateX(-50%); }
         #crosshair::after  { width:100%; height:1px; top:50%; transform:translateY(-50%); }
-        #loading { position:fixed; inset:0; background:#02040a; display:flex; align-items:center; justify-content:center; z-index:100; color:rgba(255,255,255,0.65); font-size:1rem; letter-spacing:0.25em; flex-direction:column; gap:18px; }
+        #loading { position:fixed; inset:0; background:#02040a; display:none; align-items:center; justify-content:center; z-index:100; color:rgba(255,255,255,0.65); font-size:1rem; letter-spacing:0.25em; flex-direction:column; gap:18px; }
         #loading-bar-wrap { width:220px; height:3px; background:rgba(255,255,255,0.1); border-radius:2px; }
         #loading-bar { height:100%; width:0%; background:rgba(180,210,255,0.55); border-radius:2px; transition:width 0.15s; }
 
@@ -36,7 +36,7 @@
         .hud-btn:active { background:rgba(40,80,50,0.85); border-color:rgba(120,220,140,0.5); }
         .hud-btn svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
         /* ACT on the bottom edge, LEV on the right edge — same distance from corner */
-        #btn-action { bottom:20px; right:100px; }
+        #btn-action { bottom:34px; right:110px; width:68px; height:68px; font-size:0.72rem; }
         #btn-menu   { top:20px; right:20px; }
 
         #lev-wrap {
@@ -60,6 +60,58 @@
             box-shadow:0 0 18px rgba(80,180,255,0.5);
         }
         #lev-arc { transition: stroke 0.2s; }
+
+        /* ── START SCREEN ────────────────────────────────────────────── */
+        #start-screen {
+            position:fixed; inset:0; z-index:200;
+            display:flex; align-items:center; justify-content:center;
+            background:radial-gradient(circle at 50% 38%, rgba(30,75,45,0.34), rgba(2,4,10,0.98) 68%);
+            color:#fff; pointer-events:all;
+            text-align:center; padding:24px;
+        }
+        .start-card {
+            width:min(560px,92vw); padding:38px 34px 28px;
+            border:1px solid rgba(180,230,195,0.18);
+            border-radius:24px; background:rgba(6,15,10,0.82);
+            box-shadow:0 18px 70px rgba(0,0,0,0.65);
+            backdrop-filter:blur(10px);
+        }
+        .start-title {
+            font-size:clamp(2rem,6vw,3.5rem); font-weight:800;
+            letter-spacing:0.06em; color:rgba(210,245,220,0.98);
+            margin-bottom:8px;
+        }
+        .start-subtitle {
+            color:rgba(255,255,255,0.58); font-size:0.92rem;
+            letter-spacing:0.18em; text-transform:uppercase; margin-bottom:28px;
+        }
+        .start-play {
+            display:block; margin:0 auto 26px; width:min(260px,80%);
+            padding:15px 28px; border-radius:12px; border:1px solid rgba(180,230,195,0.35);
+            background:rgba(50,110,65,0.78); color:white; font-size:1rem;
+            font-weight:800; letter-spacing:0.16em; cursor:pointer;
+            box-shadow:0 8px 24px rgba(0,0,0,0.28);
+        }
+        .start-play:hover { background:rgba(65,135,80,0.9); }
+        .start-play:active { transform:translateY(1px); }
+        .controls-title {
+            font-size:0.78rem; letter-spacing:0.18em; text-transform:uppercase;
+            color:rgba(180,230,195,0.9); margin-bottom:12px;
+        }
+        .keyboard-controls {
+            display:grid; grid-template-columns:repeat(2,1fr); gap:8px 14px;
+            text-align:left; margin:0 auto 24px; max-width:430px;
+        }
+        .key-row { color:rgba(255,255,255,0.72); font-size:0.82rem; line-height:1.35; }
+        .key {
+            display:inline-block; min-width:42px; padding:4px 7px; margin-right:5px;
+            text-align:center; border:1px solid rgba(255,255,255,0.18);
+            border-bottom-width:2px; border-radius:6px;
+            background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.92);
+            font-size:0.7rem; font-weight:700;
+        }
+        .start-note { color:rgba(255,255,255,0.42); font-size:0.75rem; line-height:1.5; margin-bottom:22px; }
+        .copyright { color:rgba(255,255,255,0.3); font-size:0.68rem; letter-spacing:0.05em; }
 
         /* ── OVERLAY PANEL ───────────────────────────────────────────── */
         #overlay {
@@ -184,6 +236,26 @@
 </head>
 <body>
 <div id="loading"><div>GENERATING WORLD</div><div id="loading-bar-wrap"><div id="loading-bar"></div></div></div>
+
+<div id="start-screen">
+    <div class="start-card">
+        <div class="start-title">Vocabulario Español</div>
+        <div class="start-subtitle">Explore · Collect · Learn</div>
+        <button id="start-play" class="start-play">COMENZAR</button>
+        <div class="controls-title">Keyboard Controls</div>
+        <div class="keyboard-controls">
+            <div class="key-row"><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> Move</div>
+            <div class="key-row"><span class="key">↑</span><span class="key">↓</span><span class="key">←</span><span class="key">→</span> Look</div>
+            <div class="key-row"><span class="key">SPACE</span> Action / Collect</div>
+            <div class="key-row"><span class="key">E</span> Action / Collect</div>
+            <div class="key-row"><span class="key">SHIFT</span> Sprint</div>
+            <div class="key-row"><span class="key">M</span> Menu</div>
+        </div>
+        <div class="start-note">Touch controls are available on phones and tablets.</div>
+        <div class="copyright">Copyright © All Rights Reserved — Brant Fuller 2026</div>
+    </div>
+</div>
+
 <div id="canvas-container"></div>
 
 <!-- ── GAME UI ─────────────────────────────────────────── -->
@@ -193,9 +265,9 @@
     <div id="crosshair"></div>
 
     <!-- Action button (bottom-right) -->
-    <button class="hud-btn" id="btn-action" title="Action">
+    <button class="hud-btn" id="btn-action" title="Acción">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
-        <span>ACT</span>
+        <span>ACCIÓN</span>
     </button>
 
     <!-- Levitate button with stamina ring (bottom-right, above action) -->
@@ -1035,7 +1107,10 @@ function updateCameraFromSphere(extraHeight){
 
 // ─── INPUT ────────────────────────────────────────────────────────────────────
 const keys={};
-window.addEventListener('keydown',e=>{keys[e.code]=true;});
+window.addEventListener('keydown',e=>{
+    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
+    keys[e.code]=true;
+});
 window.addEventListener('keyup',  e=>{keys[e.code]=false;});
 
 const maxJR=40;
@@ -1155,6 +1230,8 @@ function animate(){
     const ls=1.6;
     if(keys['ArrowLeft'])  sphereYaw+=ls*delta;
     if(keys['ArrowRight']) sphereYaw-=ls*delta;
+    if(keys['ArrowUp'])    spherePitch += ls*delta;
+    if(keys['ArrowDown'])  spherePitch -= ls*delta;
     if(jR.active){
         sphereYaw  -= (jR.dx/maxJR)*0.055;
         spherePitch -= (jR.dy/maxJR)*0.055;
@@ -1165,8 +1242,8 @@ function animate(){
     const sprint=keys['ShiftLeft']||keys['ShiftRight'];
     const spd=(sprint?SPRINT_SPD:PLAYER_SPD)*delta;
     let dFwd=0,dRight=0;
-    if(keys['KeyW']||keys['Keyw']||keys['ArrowUp'])   dFwd  += spd;
-    if(keys['KeyS']||keys['Keys']||keys['ArrowDown']) dFwd  -= spd;
+    if(keys['KeyW']||keys['Keyw'])   dFwd  += spd;
+    if(keys['KeyS']||keys['Keys']) dFwd  -= spd;
     if(keys['KeyA']||keys['Keya']) dRight-=spd;
     if(keys['KeyD']||keys['Keyd']) dRight+=spd;
     if(jL.active){dFwd+=(-jL.dy/maxJR)*spd*3.2;dRight+=(jL.dx/maxJR)*spd*3.2;}
@@ -2444,9 +2521,22 @@ window.addEventListener('keydown', e=>{
     if(e.code==='KeyE' || e.code==='Space'){ document.getElementById('btn-action').click(); }
 });
 
-addLog('Landed on Green Planet. Begin exploring.');
+addLog('Landed on Vocabulario Español. Begin exploring.');
 
-buildWorld();
+// Start screen: generate the world only after the player presses PLAY.
+let gameStarted = false;
+const startScreen = document.getElementById('start-screen');
+const startPlay = document.getElementById('start-play');
+startPlay.addEventListener('click', async ()=>{
+    if(gameStarted) return;
+    gameStarted = true;
+    startPlay.disabled = true;
+    startPlay.textContent = 'CARGANDO...';
+    startScreen.style.display = 'none';
+    const loading = document.getElementById('loading');
+    loading.style.display = 'flex';
+    await buildWorld();
+});
 </script>
 </body>
 </html>
