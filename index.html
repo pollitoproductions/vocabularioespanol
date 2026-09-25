@@ -247,7 +247,7 @@
             <div class="key-row"><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> Move</div>
             <div class="key-row"><span class="key">↑</span><span class="key">↓</span><span class="key">←</span><span class="key">→</span> Look</div>
             <div class="key-row"><span class="key">SPACE</span> Action / Collect</div>
-            <div class="key-row"><span class="key">E</span> Action / Collect</div>
+            <div class="key-row"><span class="key">L</span> Levitate</div>
             <div class="key-row"><span class="key">SHIFT</span> Sprint</div>
             <div class="key-row"><span class="key">M</span> Menu</div>
         </div>
@@ -1111,7 +1111,7 @@ window.addEventListener('keydown',e=>{
     if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
     keys[e.code]=true;
 });
-window.addEventListener('keyup',  e=>{keys[e.code]=false;});
+window.addEventListener('keyup',  e=>{keys[e.code]=false; if(e.code==='KeyL'){ levHeld=false; document.getElementById('btn-lev')?.classList.remove('active'); }});
 
 const maxJR=40;
 const jL={active:false,id:null,ox:0,oy:0,dx:0,dy:0};
@@ -2516,9 +2516,11 @@ document.getElementById('toggle-icebolt')?.addEventListener('change', function()
 });
 
 window.addEventListener('keydown', e=>{
+    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
     if(e.code==='Escape' && menuOpen){ closeMenu(); return; }
     if(e.code==='KeyM' && !menuOpen){ openMenu(); return; }
-    if(e.code==='KeyE' || e.code==='Space'){ document.getElementById('btn-action').click(); }
+    if(e.code==='Space'){ e.preventDefault(); document.getElementById('btn-action').click(); }
+    if(e.code==='KeyL'){ e.preventDefault(); levHeld = true; btnLev.classList.add('active'); }
 });
 
 addLog('Landed on Vocabulario Español. Begin exploring.');
