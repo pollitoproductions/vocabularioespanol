@@ -70,7 +70,7 @@
             text-align:center; padding:24px;
         }
         .start-card {
-            width:min(560px,92vw); padding:38px 34px 28px;
+            width:min(560px,92vw); max-height:calc(100dvh - 24px); overflow-y:auto; box-sizing:border-box; padding:clamp(20px,5vh,38px) clamp(18px,5vw,34px) clamp(18px,4vh,28px);
             border:1px solid rgba(180,230,195,0.18);
             border-radius:24px; background:rgba(6,15,10,0.82);
             box-shadow:0 18px 70px rgba(0,0,0,0.65);
@@ -110,8 +110,27 @@
             background:rgba(255,255,255,0.07); color:rgba(255,255,255,0.92);
             font-size:0.7rem; font-weight:700;
         }
-        .start-note { color:rgba(255,255,255,0.42); font-size:0.75rem; line-height:1.5; margin-bottom:22px; }
         .copyright { color:rgba(255,255,255,0.3); font-size:0.68rem; letter-spacing:0.05em; }
+
+        @media (max-width:600px) {
+            #start-screen { padding:12px; align-items:center; }
+            .start-card { width:min(94vw,560px); max-height:calc(100dvh - 20px); border-radius:18px; }
+            .start-title { font-size:clamp(1.7rem,9vw,2.6rem); }
+            .start-subtitle { font-size:0.75rem; margin-bottom:18px; }
+            .start-play { margin-bottom:20px; padding:13px 24px; }
+            .keyboard-controls { grid-template-columns:1fr; gap:6px; margin-bottom:18px; }
+            .key-row { font-size:0.78rem; }
+        }
+        @media (max-height:600px) {
+            #start-screen { padding:8px; }
+            .start-card { max-height:calc(100dvh - 12px); padding-top:14px; padding-bottom:14px; }
+            .start-title { font-size:clamp(1.5rem,7vh,2.5rem); margin-bottom:4px; }
+            .start-subtitle { margin-bottom:12px; }
+            .start-play { margin-bottom:12px; padding:10px 22px; }
+            .controls-title { margin-bottom:8px; }
+            .keyboard-controls { gap:4px 10px; margin-bottom:10px; }
+            .copyright { font-size:0.62rem; }
+        }
 
         /* ── OVERLAY PANEL ───────────────────────────────────────────── */
         #overlay {
@@ -1115,39 +1134,52 @@ window.addEventListener('keyup',  e=>{keys[e.code]=false; if(e.code==='Enter'){ 
 const maxJR=40;
 const jL={active:false,id:null,ox:0,oy:0,dx:0,dy:0};
 const jR={active:false,id:null,ox:0,oy:0,dx:0,dy:0};
-let levPointerId = null; // declared here so touchstart can reference it
 const joyLB=document.getElementById('joy-left'),  joyLK=document.getElementById('knob-left');
 const joyRB=document.getElementById('joy-right'), joyRK=document.getElementById('knob-right');
-document.addEventListener('touchstart',e=>{
-    const tgt = e.target;
-    // Allow LEV button to handle its own touch; skip action/menu/overlay
-    if(tgt.closest('#btn-action,#btn-menu,#overlay')) return;
-    // Don't claim LEV button touches as joystick
-    if(tgt.closest('#lev-wrap')) return;
+
+// Touch controls use pointer events so they remain reliable on phones/tablets.
+function resetJoystick(j,base,knob){
+    j.active=false; j.id=null; j.dx=0; j.dy=0;
+    base.style.display='none';
+    knob.style.transform='translate(-50%,-50%)';
+}
+function beginJoystick(e){
+    if(e.pointerType !== 'touch') return;
+    const tgt=e.target;
+    if(tgt.closest('#btn-action,#btn-menu,#lev-wrap,#overlay,#start-screen')) return;
     e.preventDefault();
     const hw=window.innerWidth/2;
-    for(const t of e.changedTouches){
-        // Never steal the LEV pointer
-        if(t.identifier === levPointerId) continue;
-        if(t.clientX<hw&&!jL.active){
-            Object.assign(jL,{active:true,id:t.identifier,ox:t.clientX,oy:t.clientY,dx:0,dy:0});
-            joyLB.style.cssText+=`display:block;left:${t.clientX}px;top:${t.clientY}px;`;
-        } else if(t.clientX>=hw&&!jR.active){
-            Object.assign(jR,{active:true,id:t.identifier,ox:t.clientX,oy:t.clientY,dx:0,dy:0});
-            joyRB.style.cssText+=`display:block;left:${t.clientX}px;top:${t.clientY}px;`;
-        }
-    }
-},{passive:false});
-document.addEventListener('touchmove',e=>{
-    e.preventDefault();
-    for(const t of e.changedTouches){
-        const upd=(j,kb)=>{let dx=t.clientX-j.ox,dy=t.clientY-j.oy,d=Math.sqrt(dx*dx+dy*dy);if(d>maxJR){dx=dx/d*maxJR;dy=dy/d*maxJR;}j.dx=dx;j.dy=dy;kb.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;};
-        if(jL.active&&jL.id===t.identifier)upd(jL,joyLK);
-        if(jR.active&&jR.id===t.identifier)upd(jR,joyRK);
-    }
-},{passive:false});
-const endT=e=>{for(const t of e.changedTouches){if(jL.active&&jL.id===t.identifier){jL.active=false;joyLB.style.display='none';jL.dx=jL.dy=0;}if(jR.active&&jR.id===t.identifier){jR.active=false;joyRB.style.display='none';jR.dx=jR.dy=0;}}};
-document.addEventListener('touchend',endT);document.addEventListener('touchcancel',endT);
+    const j=e.clientX<hw ? jL : jR;
+    const base=e.clientX<hw ? joyLB : joyRB;
+    if(j.active) return;
+    Object.assign(j,{active:true,id:e.pointerId,ox:e.clientX,oy:e.clientY,dx:0,dy:0});
+    base.style.display='block';
+    base.style.left=e.clientX+'px';
+    base.style.top=e.clientY+'px';
+    try{ base.setPointerCapture(e.pointerId); }catch(_){ }
+}
+function moveJoystick(e){
+    if(e.pointerType !== 'touch') return;
+    const update=(j,knob)=>{
+        if(!j.active || j.id!==e.pointerId) return false;
+        let dx=e.clientX-j.ox, dy=e.clientY-j.oy;
+        const d=Math.hypot(dx,dy);
+        if(d>maxJR){ dx=dx/d*maxJR; dy=dy/d*maxJR; }
+        j.dx=dx; j.dy=dy;
+        knob.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
+        return true;
+    };
+    if(update(jL,joyLK) || update(jR,joyRK)) e.preventDefault();
+}
+function endJoystick(e){
+    if(jL.active && jL.id===e.pointerId) resetJoystick(jL,joyLB,joyLK);
+    if(jR.active && jR.id===e.pointerId) resetJoystick(jR,joyRB,joyRK);
+}
+document.addEventListener('pointerdown',beginJoystick,{passive:false});
+document.addEventListener('pointermove',moveJoystick,{passive:false});
+document.addEventListener('pointerup',endJoystick,{passive:false});
+document.addEventListener('pointercancel',endJoystick,{passive:false});
+
 window.addEventListener('resize',()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
 
 // ─── LEVITATION STATE ─────────────────────────────────────────────────────────
