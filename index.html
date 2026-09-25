@@ -35,12 +35,33 @@
         }
         .hud-btn:active { background:rgba(40,80,50,0.85); border-color:rgba(120,220,140,0.5); }
         .hud-btn svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
-        /* ACT on the bottom edge, LEV on the right edge — same distance from corner */
+        /* Three matching controls form a clean corner cluster. */
         #btn-action { bottom:34px; right:110px; width:68px; height:68px; font-size:0.72rem; }
         #btn-menu   { top:20px; right:20px; }
 
+        /* CORRER is on the outside/bottom-right, close to the corner. */
+        #sprint-wrap {
+            position:absolute; bottom:53px; right:32px;
+            width:66px; height:66px;
+            display:flex; align-items:center; justify-content:center;
+            pointer-events:all;
+        }
+        #sprint-ring {
+            position:absolute; top:0; left:0; width:66px; height:66px;
+            pointer-events:none;
+        }
+        #btn-sprint {
+            position:relative; width:58px; height:58px;
+            font-size:0.68rem;
+        }
+        #btn-sprint.active {
+            background:rgba(35,110,55,0.9);
+            border-color:rgba(120,235,140,0.75);
+            box-shadow:0 0 15px rgba(80,210,110,0.42);
+        }
+
         #lev-wrap {
-            position:absolute; bottom:100px; right:20px;
+            position:absolute; bottom:131px; right:32px;
             width:66px; height:66px;
             display:flex; align-items:center; justify-content:center;
             pointer-events:all;
@@ -268,8 +289,7 @@
             <div class="key-row"><span class="key">↑</span><span class="key">↓</span><span class="key">←</span><span class="key">→</span> Look</div>
             <div class="key-row"><span class="key">SPACE</span> Action / Collect</div>
             <div class="key-row"><span class="key">ENTER</span> Levitate</div>
-            <div class="key-row"><span class="key">SHIFT</span> Sprint</div>
-            <div class="key-row"><span class="key">M</span> Menu</div>
+            <div class="key-row"><span class="key">0</span> Sprint</div>
         </div>
         <div class="copyright">Copyright © All Rights Reserved — Brant Fuller 2026</div>
     </div>
@@ -288,6 +308,21 @@
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
         <span>ACCIÓN</span>
     </button>
+
+    <!-- Sprint button with its own stamina pool -->
+    <div id="sprint-wrap">
+        <svg id="sprint-ring" viewBox="0 0 66 66" width="66" height="66">
+            <circle cx="33" cy="33" r="31" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3.5"/>
+            <circle id="sprint-arc" cx="33" cy="33" r="31" fill="none"
+                stroke="rgba(80,220,120,0.85)" stroke-width="3.5" stroke-linecap="round"
+                stroke-dasharray="194.78" stroke-dashoffset="0"
+                transform="rotate(-90 33 33)"/>
+        </svg>
+        <button class="hud-btn" id="btn-sprint" title="Sprint">
+            <svg viewBox="0 0 24 24"><path d="M13 2l-2 7h5l-7 13 2-9H6L13 2z"/></svg>
+            <span>CORRER</span>
+        </button>
+    </div>
 
     <!-- Levitate button with stamina ring (bottom-right, above action) -->
     <div id="lev-wrap">
@@ -1130,7 +1165,18 @@ window.addEventListener('keydown',e=>{
     if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
     keys[e.code]=true;
 });
-window.addEventListener('keyup',  e=>{keys[e.code]=false; if(e.code==='Enter'){ levHeld=false; document.getElementById('btn-lev')?.classList.remove('active'); }});
+window.addEventListener('keyup',  e=>{
+    keys[e.code]=false;
+    if(e.code==='Enter'){
+        levHeld=false;
+        document.getElementById('btn-lev')?.classList.remove('active');
+    }
+    if(e.code==='Digit0'){
+        sprintHeld=false;
+        sprintExhausted=false;
+        document.getElementById('btn-sprint')?.classList.remove('active');
+    }
+});
 
 const maxJR=40;
 const jL={active:false,id:null,ox:0,oy:0,dx:0,dy:0};
@@ -1147,7 +1193,7 @@ function resetJoystick(j,base,knob){
 function beginJoystick(e){
     if(e.pointerType !== 'touch') return;
     const tgt=e.target;
-    if(tgt.closest('#btn-action,#btn-menu,#lev-wrap,#overlay,#start-screen')) return;
+    if(tgt.closest('#btn-action,#btn-menu,#lev-wrap,#sprint-wrap,#overlay,#start-screen')) return;
     e.preventDefault();
     const hw=window.innerWidth/2;
     const j=e.clientX<hw ? jL : jR;
@@ -1184,13 +1230,15 @@ document.addEventListener('pointercancel',endJoystick,{passive:false});
 window.addEventListener('resize',()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
 
 // ─── LEVITATION STATE ─────────────────────────────────────────────────────────
-const LEV_MAX       = 20.0;    // max stamina seconds
+const LEV_MAX       = 20.0;    // levitation stamina seconds
+const SPRINT_MAX     = 20.0;    // running stamina seconds
 const LEV_THRUST    = 220;     // upward acceleration while held (units/sec²)
 const LEV_MAX_VEL   = 160;     // terminal rise velocity (units/sec)
 const GRAVITY       = 95;      // downward acceleration when not held (units/sec²)
 const GLIDE_DECAY_RATE = 3.7; // glide velocity decay rate (per second)
 
 let levStamina   = LEV_MAX;
+let sprintStamina = SPRINT_MAX;
 let levActive    = false;
 let levHeld      = false;
 let levHeight    = 0;
@@ -1199,17 +1247,70 @@ let gliding      = false;
 let glideVelFwd  = 0;
 let glideVelRight= 0;
 
-const levArc  = document.getElementById('lev-arc');
+let sprintHeld = false;
+let sprintExhausted = false;
+let sprintPointerId = null;
+let sprintLastX = 0, sprintLastY = 0;
+
+const levArc    = document.getElementById('lev-arc');
+const sprintArc = document.getElementById('sprint-arc');
+const btnSprint = document.getElementById('btn-sprint');
 const btnLev  = document.getElementById('btn-lev');
 const ARC_LEN = 194.78; // circumference of r=31 circle (2π×31)
 
 function updateLevStaminaUI(){
-    const frac = levStamina / LEV_MAX;
-    levArc.setAttribute('stroke-dashoffset', ARC_LEN * (1 - frac));
+    const levFrac = Math.max(0, Math.min(1, levStamina / LEV_MAX));
+    levArc.setAttribute('stroke-dashoffset', ARC_LEN * (1 - levFrac));
     levArc.setAttribute('stroke', levActive
-        ? `rgba(80,${140+Math.floor(frac*115)},255,${0.6+frac*0.4})`
-        : `rgba(60,${160+Math.floor(frac*95)},255,${0.4+frac*0.5})`);
+        ? `rgba(80,${140+Math.floor(levFrac*115)},255,${0.6+levFrac*0.4})`
+        : `rgba(60,${160+Math.floor(levFrac*95)},255,${0.4+levFrac*0.5})`);
+    if(sprintArc){
+        const sprintFrac = Math.max(0, Math.min(1, sprintStamina / SPRINT_MAX));
+        const sprintLen = 2 * Math.PI * 31;
+        sprintArc.setAttribute('stroke-dashoffset', sprintLen * (1 - sprintFrac));
+        sprintArc.setAttribute('stroke', sprintHeld
+            ? `rgba(${120+Math.floor(sprintFrac*100)},${220+Math.floor(sprintFrac*35)},${120+Math.floor(sprintFrac*80)},${0.65+sprintFrac*0.35})`
+            : `rgba(80,${170+Math.floor(sprintFrac*55)},110,${0.4+sprintFrac*0.5})`);
+    }
 }
+
+
+// Sprint pointer — captured so sliding off the button keeps sprinting active.
+// Finger movement while held also steers the camera, just like LEV.
+btnSprint.addEventListener('pointerdown', e=>{
+    e.preventDefault();
+    // LEV and SPRINT have separate stamina pools and can never be active together.
+    if(levHeld || levActive || keys['Digit0'] || sprintStamina <= 0) return;
+    sprintExhausted = false;
+    btnSprint.setPointerCapture(e.pointerId);
+    sprintPointerId = e.pointerId;
+    sprintLastX = e.clientX;
+    sprintLastY = e.clientY;
+    sprintHeld = true;
+    btnSprint.classList.add('active');
+},{passive:false});
+
+btnSprint.addEventListener('pointermove', e=>{
+    if(e.pointerId !== sprintPointerId) return;
+    const dx = e.clientX - sprintLastX;
+    const dy = e.clientY - sprintLastY;
+    sprintLastX = e.clientX;
+    sprintLastY = e.clientY;
+    sphereYaw   -= dx * 0.004;
+    spherePitch -= dy * 0.004;
+    spherePitch = Math.max(-Math.PI/2+0.05, Math.min(Math.PI/2-0.05, spherePitch));
+});
+
+function endSprintPointer(e){
+    if(e.pointerId !== sprintPointerId) return;
+    sprintHeld = false;
+    if(sprintExhausted) sprintExhausted = false;
+    sprintPointerId = null;
+    btnSprint.classList.remove('active');
+}
+btnSprint.addEventListener('pointerup', endSprintPointer);
+btnSprint.addEventListener('pointercancel', endSprintPointer);
+btnSprint.addEventListener('touchstart', e=>e.stopPropagation(),{passive:false});
 
 // Levitation pointer — captured so sliding off button keeps levitation active
 // While held, pointer movement steers look (like backrooms flamethrower)
@@ -1253,8 +1354,52 @@ btnLev.addEventListener('pointercancel', e=>{
 
 btnLev.addEventListener('touchstart', e=>e.stopPropagation(),{passive:false});
 let lastTime=performance.now();
+let gamePaused=false;
+
+// Pause the simulation and audio whenever the page/app is no longer visible.
+// This covers browser tabs, switching windows, iOS/Android backgrounding,
+// and the app being suspended by the operating system.
+let soundEnabled = document.getElementById('toggle-sound')?.checked !== false;
+function setGamePaused(paused){
+    gamePaused=!!paused;
+    if(gamePaused){
+        // Release held controls so returning from another app cannot cause
+        // the player to keep moving or levitating.
+        for(const k in keys) keys[k]=false;
+        jL.active=false; jR.active=false;
+        levHeld=false;
+        levPointerId=null;
+        sprintHeld=false;
+        sprintExhausted=false;
+        sprintPointerId=null;
+        btnSprint?.classList.remove('active');
+        if(typeof btnLev!=='undefined' && btnLev) btnLev.classList.remove('active');
+        stopLoungeMusic();
+    }else{
+        // Never allow a background gap to become a giant physics step.
+        lastTime=performance.now();
+        if(gameStarted && soundEnabled) startLoungeMusic();
+    }
+}
+
+document.addEventListener('visibilitychange',()=>{
+    setGamePaused(document.hidden);
+});
+window.addEventListener('blur',()=>setGamePaused(true));
+window.addEventListener('focus',()=>{
+    if(!document.hidden) setGamePaused(false);
+});
+window.addEventListener('pagehide',()=>setGamePaused(true));
+window.addEventListener('pageshow',()=>{
+    if(!document.hidden) setGamePaused(false);
+});
+
 function animate(){
     requestAnimationFrame(animate);
+    if(gamePaused){
+        lastTime=performance.now();
+        return;
+    }
     const now=performance.now();
     let delta=(now-lastTime)/1000;
     lastTime=now;
@@ -1275,8 +1420,14 @@ function animate(){
     }
     spherePitch=Math.max(-Math.PI/2+0.05,Math.min(Math.PI/2-0.05,spherePitch));
 
-    // Input
-    const sprint=keys['ShiftLeft']||keys['ShiftRight'];
+    // Input — SHIFT/CORRER has its own stamina pool.
+    // SPRINT and LEV cannot run at the same time.
+    // Calculate ground state BEFORE using it for sprint input.
+    const onGround = levHeight <= 0.1 && levVelUp <= 0;
+    const airborne = !onGround;
+    const sprintKeyHeld = keys['Digit0'];
+    const sprintInput = !levHeld && !levActive && onGround && (sprintKeyHeld || sprintHeld) && sprintStamina > 0 && !sprintExhausted;
+    const sprint = sprintInput;
     const spd=(sprint?SPRINT_SPD:PLAYER_SPD)*delta;
     let dFwd=0,dRight=0;
     if(keys['KeyW']||keys['Keyw'])   dFwd  += spd;
@@ -1289,25 +1440,45 @@ function animate(){
     updatePlayerTangents();
 
     // ── LEVITATION ────────────────────────────────────────────────────────
-    const onGround = levHeight <= 0.1 && levVelUp <= 0;
-    const airborne = !onGround;
 
-    if(levHeld && levStamina > 0){
+    // Separate stamina pools: LEV and SPRINT recharge independently,
+    // but the two abilities can never be active at the same time.
+    if(levHeld && !sprintInput && levStamina > 0){
         levStamina = Math.max(0, levStamina - delta);
-        // Stop levitating the moment stamina empties
         if(levStamina === 0){
-            levHeld    = false;
+            levHeld = false;
             levPointerId = null;
             btnLev.classList.remove('active');
         }
-        levActive  = true;
-        gliding    = false;
+        levActive = true;
+        sprintHeld = false;
+        btnSprint.classList.remove('active');
+        gliding = false;
         levVelUp = Math.min(LEV_MAX_VEL, levVelUp + LEV_THRUST * delta);
     } else {
+        levActive = false;
+        // CORRER has its own stamina pool. Drain it whenever sprint is active,
+        // even if the player is holding CORRER without moving, just like LEV.
+        if(sprintInput){
+            sprintStamina = Math.max(0, sprintStamina - delta);
+        } else {
+            sprintStamina = Math.min(SPRINT_MAX, sprintStamina + delta);
+        }
+        if(!levHeld){
+            levStamina = Math.min(LEV_MAX, levStamina + delta);
+        }
+        if(sprintStamina <= 0){
+            // Empty sprint stamina immediately ends sprinting and prevents
+            // it from restarting until the 0 key/button is released.
+            sprintStamina = 0;
+            sprintExhausted = true;
+            sprintHeld = false;
+            sprintPointerId = null;
+            btnSprint.classList.remove('active');
+        }
         if(levActive && levHeight > 2) gliding = true;
-        levActive  = false;
-        levStamina = Math.min(LEV_MAX, levStamina + delta);
-        // Real gravity pulls down
+        if(levHeight > 0) gliding = true;
+        // Real gravity pulls down when LEV is not active.
         levVelUp -= GRAVITY * delta;
     }
 
@@ -2962,8 +3133,9 @@ document.querySelectorAll('[data-goto]').forEach(el=>{
 });
 
 document.getElementById('toggle-sound')?.addEventListener('change', function(){
-    if(this.checked){
-        startLoungeMusic();
+    soundEnabled = !!this.checked;
+    if(soundEnabled){
+        if(gameStarted && !gamePaused) startLoungeMusic();
         addLog('Sound enabled.');
     } else {
         stopLoungeMusic();
@@ -2988,7 +3160,20 @@ window.addEventListener('keydown', e=>{
     if(e.code==='Escape' && menuOpen){ closeMenu(); return; }
     if(e.code==='KeyM' && !menuOpen){ openMenu(); return; }
     if(e.code==='Space'){ e.preventDefault(); document.getElementById('btn-action').click(); }
-    if(e.code==='Enter'){ e.preventDefault(); levHeld = true; btnLev.classList.add('active'); }
+    if(e.code==='Digit0'){
+        e.preventDefault();
+        if(!(levHeld || levActive) && !sprintExhausted && sprintStamina > 0){
+            sprintHeld = true;
+            btnSprint.classList.add('active');
+        }
+    }
+    if(e.code==='Enter'){
+        e.preventDefault();
+        if(!keys['Digit0'] && !sprintHeld){
+            levHeld = true;
+            btnLev.classList.add('active');
+        }
+    }
 });
 
 addLog('Landed on Vocabulario Español. Begin exploring.');
@@ -3105,9 +3290,9 @@ async function startGame(){
     startScreen.style.display = 'none';
     const loading = document.getElementById('loading');
     loading.style.display = 'flex';
-    // Start audio from the same user gesture, but do not wait for it.
+    // Start audio from the same user gesture only when Sound is enabled.
     // This keeps iPhone Safari happy without delaying world generation.
-    startLoungeMusic();
+    if(soundEnabled) startLoungeMusic();
     try {
         await buildWorld();
     } catch(err) {
