@@ -1188,7 +1188,7 @@ const LEV_MAX       = 20.0;    // max stamina seconds
 const LEV_THRUST    = 220;     // upward acceleration while held (units/sec²)
 const LEV_MAX_VEL   = 160;     // terminal rise velocity (units/sec)
 const GRAVITY       = 95;      // downward acceleration when not held (units/sec²)
-const GLIDE_DECAY   = 0.94;    // glide velocity decay
+const GLIDE_DECAY_RATE = 3.7; // glide velocity decay rate (per second)
 
 let levStamina   = LEV_MAX;
 let levActive    = false;
@@ -1255,7 +1255,12 @@ btnLev.addEventListener('touchstart', e=>e.stopPropagation(),{passive:false});
 let lastTime=performance.now();
 function animate(){
     requestAnimationFrame(animate);
-    const now=performance.now(),delta=Math.min((now-lastTime)/1000,0.05);lastTime=now;
+    const now=performance.now();
+    let delta=(now-lastTime)/1000;
+    lastTime=now;
+    if(!Number.isFinite(delta) || delta<0) delta=0;
+    delta=Math.min(delta,0.05); // cap catch-up after a stalled/background frame
+
     waterTime+=delta;
 
     // Look
@@ -1265,8 +1270,8 @@ function animate(){
     if(keys['ArrowUp'])    spherePitch += ls*delta;
     if(keys['ArrowDown'])  spherePitch -= ls*delta;
     if(jR.active){
-        sphereYaw  -= (jR.dx/maxJR)*0.055;
-        spherePitch -= (jR.dy/maxJR)*0.055;
+        sphereYaw  -= (jR.dx/maxJR)*3.3*delta;
+        spherePitch -= (jR.dy/maxJR)*3.3*delta;
     }
     spherePitch=Math.max(-Math.PI/2+0.05,Math.min(Math.PI/2-0.05,spherePitch));
 
@@ -1323,8 +1328,9 @@ function animate(){
         if(levActive){
             if(dFwd!==0||dRight!==0) moveSphere(dFwd*0.8, dRight*0.8, true);
         } else if(gliding){
-            glideVelFwd   = glideVelFwd*GLIDE_DECAY   + dFwd*1.8;
-            glideVelRight = glideVelRight*GLIDE_DECAY  + dRight*1.8;
+            const glideDecay = Math.exp(-GLIDE_DECAY_RATE*delta);
+            glideVelFwd   = glideVelFwd*glideDecay   + dFwd*1.8;
+            glideVelRight = glideVelRight*glideDecay  + dRight*1.8;
             if(Math.abs(glideVelFwd)>0.0001||Math.abs(glideVelRight)>0.0001)
                 moveSphere(glideVelFwd*delta, glideVelRight*delta, true);
         }
@@ -1335,7 +1341,7 @@ function animate(){
     updateLevStaminaUI();
     updateCameraFromSphere(levHeight);
     updateDayNight(delta);
-    if(typeof updateCollectibles==="function") updateCollectibles();
+    if(typeof updateCollectibles==="function") updateCollectibles(delta);
     if(typeof updateFireballs==="function") updateFireballs(delta);
     if(typeof updateIceBolts==="function")  updateIceBolts(delta);
     if(shimmerMesh) shimmerMesh.material.opacity=0.18+Math.sin(waterTime*0.8)*0.06;
@@ -2629,23 +2635,45 @@ const worldItems = [];
 const itemTextureCache = new Map();
 const labelTextureCache = new Map();
 
+// iOS Safari can choose a text-only serif font for emoji when canvas is asked
+// to use a generic font. Explicit emoji-capable fonts make the canvas texture
+// render consistently on iPhone/iPad, Android, and Windows.
+const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+
 function makeItemSprite(vocab){
-    const cacheKey = vocab.es + '|' + vocab.en;
+    // The sprite only contains the emoji + glow, so cache by those visual
+    // properties instead of the vocabulary word. This dramatically reduces
+    // texture memory when many words share an emoji.
+    const cacheKey = vocab.emoji + '|' + vocab.color;
     if(itemTextureCache.has(cacheKey)) return itemTextureCache.get(cacheKey);
-    const S=128, c=document.createElement('canvas');
-    c.width=c.height=S; const ctx=c.getContext('2d'), cx=S/2;
+
+    // Smaller texture = substantially less GPU memory on iPhone while still
+    // looking sharp at the sprite's world-space size.
+    const S=64, c=document.createElement('canvas');
+    c.width=c.height=S;
+    const ctx=c.getContext('2d');
+    const cx=S/2;
     const col=vocab.color, r=(col>>16)&0xff, gv=(col>>8)&0xff, b=col&0xff;
-    // Soft glow from centre outward — bright behind emoji, fades to transparent
+
     const g=ctx.createRadialGradient(cx,cx,0,cx,cx,cx);
     g.addColorStop(0,   `rgba(${r},${gv},${b},0.9)`);
     g.addColorStop(0.35,`rgba(${r},${gv},${b},0.65)`);
     g.addColorStop(0.65,`rgba(${r},${gv},${b},0.25)`);
     g.addColorStop(1,   `rgba(${r},${gv},${b},0)`);
-    ctx.fillStyle=g; ctx.fillRect(0,0,S,S);
-    // Emoji on top — large and clear
-    ctx.font='58px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(vocab.emoji,cx,cx+2);
+    ctx.fillStyle=g;
+    ctx.fillRect(0,0,S,S);
+
+    // Explicitly request the platform emoji fonts. Apple Color Emoji is the
+    // important part for iOS; the others preserve Android/Windows support.
+    ctx.font=`30px ${EMOJI_FONT}`;
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillStyle='#fff';
+    ctx.fillText(vocab.emoji,cx,cx+1);
+
     const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.needsUpdate = true;
     itemTextureCache.set(cacheKey, tex);
     return tex;
 }
@@ -2653,16 +2681,20 @@ function makeItemSprite(vocab){
 function makeLabelSprite(vocab){
     const cacheKey = vocab.es + '|' + vocab.en;
     if(labelTextureCache.has(cacheKey)) return labelTextureCache.get(cacheKey);
-    const c=document.createElement('canvas'); c.width=260; c.height=68;
+    // Labels are created lazily only when a player gets close enough to need
+    // one. That avoids allocating ~1000 additional canvas textures on iPhone.
+    const c=document.createElement('canvas'); c.width=192; c.height=52;
     const ctx=c.getContext('2d');
     ctx.fillStyle='rgba(0,0,0,0.65)';
-    ctx.beginPath(); ctx.roundRect(4,4,252,60,16); ctx.fill();
-    ctx.fillStyle='#fff'; ctx.font='bold 22px sans-serif';
+    ctx.beginPath(); ctx.roundRect(3,3,186,46,12); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='bold 17px sans-serif';
     ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(vocab.es,130,24);
-    ctx.fillStyle='rgba(180,230,195,0.85)'; ctx.font='15px sans-serif';
-    ctx.fillText(vocab.en,130,47);
+    ctx.fillText(vocab.es,96,20);
+    ctx.fillStyle='rgba(180,230,195,0.85)'; ctx.font='12px sans-serif';
+    ctx.fillText(vocab.en,96,38);
     const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.needsUpdate = true;
     labelTextureCache.set(cacheKey, tex);
     return tex;
 }
@@ -2720,12 +2752,9 @@ function spawnWorldItems(){
         sprite.scale.set(22,22,1);
         scene.add(sprite);
 
-        const label=new THREE.Sprite(new THREE.SpriteMaterial({map:makeLabelSprite(vocab),transparent:true,depthWrite:false,fog:false,opacity:0}));
-        label.position.copy(norm).multiplyScalar(surfR+32);
-        label.scale.set(65,17,1);
-        scene.add(label);
-
-        worldItems.push({sprite,label,vocab,normal:norm,collected:false,baseR:surfR});
+        // Labels are lazy-created by updateCollectibles() only when the player
+        // is close enough to read them. This saves a large amount of iPhone GPU memory.
+        worldItems.push({sprite,label:null,vocab,normal:norm,collected:false,baseR:surfR});
         accepted.push({nx:cand.nx,ny:cand.ny,nz:cand.nz});
         placedByBiome[biome]++;
         return true;
@@ -2762,8 +2791,11 @@ promptEl.style.cssText='position:fixed;bottom:calc(50% + 30px);left:50%;transfor
 document.body.appendChild(promptEl);
 let nearestItem=null;
 
-function updateCollectibles(){
-    const t=performance.now()*0.001;
+let collectibleTime = 0;
+function updateCollectibles(dt){
+    // Advance animation using elapsed time, not rendered-frame count.
+    collectibleTime += dt;
+    const t=collectibleTime;
     let closest=null, closestAng=Infinity;
     const playerR = camera.position.length();
     const surfaceRadius = COLLECT_RADIUS * GLOBE_R;
@@ -2786,7 +2818,21 @@ function updateCollectibles(){
         // Label only becomes visible when physically near the sprite.
         const fadeDistance=surfaceRadius*2.2;
         const fade=Math.max(0,Math.min(1,1-(totalGap/fadeDistance)));
-        item.label.material.opacity = verticalGap<=COLLECT_HEIGHT*1.6 ? fade : 0;
+        const shouldShowLabel = verticalGap<=COLLECT_HEIGHT*1.6 && fade>0;
+
+        if(shouldShowLabel){
+            if(!item.label){
+                item.label=new THREE.Sprite(new THREE.SpriteMaterial({
+                    map:makeLabelSprite(item.vocab),transparent:true,depthWrite:false,fog:false,opacity:0
+                }));
+                item.label.scale.set(48,13,1);
+                scene.add(item.label);
+            }
+            item.label.position.copy(item.normal).multiplyScalar(itemR+34);
+            item.label.material.opacity=fade;
+        } else if(item.label){
+            item.label.material.opacity=0;
+        }
 
         if(closeEnough && ang<closestAng){
             closest=item;
