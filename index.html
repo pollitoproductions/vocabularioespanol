@@ -2560,7 +2560,7 @@ addLog('Landed on Vocabulario Español. Begin exploring.');
 let gameStarted = false;
 const startScreen = document.getElementById('start-screen');
 const startPlay = document.getElementById('start-play');
-startPlay.addEventListener('click', async ()=>{
+async function startGame(){
     if(gameStarted) return;
     gameStarted = true;
     startPlay.disabled = true;
@@ -2569,6 +2569,19 @@ startPlay.addEventListener('click', async ()=>{
     const loading = document.getElementById('loading');
     loading.style.display = 'flex';
     await buildWorld();
+}
+
+// Start button works with mouse, touch, or keyboard.
+startPlay.addEventListener('click', startGame);
+startPlay.addEventListener('pointerup', e=>{
+    if(e.pointerType === 'touch'){ e.preventDefault(); startGame(); }
+},{passive:false});
+
+startPlay.addEventListener('keydown', e=>{
+    if(e.code === 'Enter' || e.code === 'Space'){
+        e.preventDefault();
+        startGame();
+    }
 });
 </script>
 </body>
