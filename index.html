@@ -37,7 +37,7 @@
         .hud-btn svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
         /* Three matching controls form a clean corner cluster. */
         #btn-action { bottom:34px; right:110px; width:68px; height:68px; font-size:0.72rem; }
-        #btn-menu   { top:20px; right:20px; }
+        #btn-menu   { top:34px; right:34px; }
 
         /* CORRER is on the outside/bottom-right, close to the corner. */
         #sprint-wrap {
@@ -2800,6 +2800,9 @@ const VOCAB = [
 
 const COLLECT_RADIUS = 0.006; // ~29 world units along the planet surface
 const COLLECT_HEIGHT = 20;     // must also be physically close vertically
+const ITEM_FLOAT = 18;         // keep emoji visibly above the terrain surface
+const LABEL_FLOAT = 38;        // sign floats above the emoji without requiring a steep look-up
+const LABEL_SHOW_DISTANCE = 150; // show vocabulary sign well before collection range
 const WORLD_ITEM_COUNT = 1000;  // distributed around the whole planet
 const WORLD_ITEM_SAMPLES = 50000;
 const worldItems = [];
@@ -2915,7 +2918,7 @@ function spawnWorldItems(){
     function placeCandidate(cand,biome,index){
         const vocab=VOCAB[index % VOCAB.length];
         const placementH=biome==='riverbank' ? Math.max(cand.h,WATER_H+2) : cand.h;
-        const surfR=GLOBE_R+placementH+6;
+        const surfR=GLOBE_R+placementH+ITEM_FLOAT;
         const norm=new THREE.Vector3(cand.nx,cand.ny,cand.nz);
 
         const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:makeItemSprite(vocab),transparent:true,depthWrite:false,fog:false}));
@@ -2975,13 +2978,13 @@ function updateCollectibles(dt){
         if(item.collected) continue;
         const dot=Math.min(1,playerNormal.dot(item.normal));
         const ang=Math.acos(dot);
-        const bob=Math.sin(t*1.6+item.normal.x*8)*4;
+        const bob=Math.sin(t*1.6+item.normal.x*8)*2.5;
         const itemR=item.baseR+bob;
         item.sprite.position.copy(item.normal).multiplyScalar(itemR);
         // Labels are lazy-created only when the player is close enough.
         // Never dereference a label before it exists (important on iPhone).
         if(item.label){
-            item.label.position.copy(item.normal).multiplyScalar(itemR+34);
+            item.label.position.copy(item.normal).multiplyScalar(itemR+LABEL_FLOAT);
         }
 
         // Prevent collection while hundreds of feet above/below the sprite.
@@ -2991,19 +2994,19 @@ function updateCollectibles(dt){
         const closeEnough=verticalGap<=COLLECT_HEIGHT && ang<=COLLECT_RADIUS*1.5;
 
         // Label only becomes visible when physically near the sprite.
-        const fadeDistance=surfaceRadius*2.2;
-        const fade=Math.max(0,Math.min(1,1-(totalGap/fadeDistance)));
-        const shouldShowLabel = verticalGap<=COLLECT_HEIGHT*1.6 && fade>0;
+        const fadeDistance=LABEL_SHOW_DISTANCE;
+        const fade=Math.max(0,Math.min(1,1-(surfaceGap/fadeDistance)));
+        const shouldShowLabel = surfaceGap<=LABEL_SHOW_DISTANCE;
 
         if(shouldShowLabel){
             if(!item.label){
                 item.label=new THREE.Sprite(new THREE.SpriteMaterial({
                     map:makeLabelSprite(item.vocab),transparent:true,depthWrite:false,fog:false,opacity:0
                 }));
-                item.label.scale.set(48,13,1);
+                item.label.scale.set(54,14.5,1);
                 scene.add(item.label);
             }
-            item.label.position.copy(item.normal).multiplyScalar(itemR+34);
+            item.label.position.copy(item.normal).multiplyScalar(itemR+LABEL_FLOAT);
             item.label.material.opacity=fade;
         } else if(item.label){
             item.label.material.opacity=0;
