@@ -496,8 +496,8 @@ const GLOBE_R    = 4800;
 const TERRAIN_H  = 420;   // slightly taller world overall
 const WATER_H    = 55;    // raised so lakes are more generous
 const SEGS       = 320;
-const PLAYER_EYE = 8.0;
-const PLAYER_SPD = 0.008;
+const PLAYER_EYE = 11.0;
+const PLAYER_SPD = 0.010;
 const SPRINT_SPD = 0.018;
 const COLL_R     = 0.006;
 
@@ -514,14 +514,14 @@ function sphereNoise(nx, ny, nz) {
 
     // Broad continental rolls
     h += Math.sin(u*4.1)*Math.cos(v*4.1)*0.20;
-    h += Math.sin(u*9.5+1.2)*Math.cos(v*9.5+2.5)*0.09;
-    h += Math.sin(u*22+3.7)*Math.cos(v*22+1.1)*0.04;
+    h += Math.sin(u*7.2+1.2)*Math.cos(v*7.2+2.5)*0.055;
+    h += Math.sin(u*14+3.7)*Math.cos(v*14+1.1)*0.018;
     h += Math.sin(w*5.5+5.1)*Math.cos(u*5.5+6.3)*0.06;
-    h += Math.sin(w*13+2.3)*Math.cos(v*13+4.1)*0.025;
+    h += Math.sin(w*8+2.3)*Math.cos(v*8+4.1)*0.012;
 
     // Sharp ridge lines — mountain ranges
     const ridge=Math.abs(Math.sin(u*3.2+v*1.6)*Math.cos(v*3.2-u*1.6));
-    h += ridge*ridge*0.38;
+    h += ridge*ridge*0.22;
 
     // Tall landmark peaks — high enough to see a lake far below
     // Format: [nx, ny, nz, height_multiplier, width]
@@ -544,9 +544,9 @@ function sphereNoise(nx, ny, nz) {
 
     // Narrow river valleys — subtle, don't create islands
     const rv1=Math.sin(u*2.5+Math.sin(v*2.0)*1.8);
-    if(Math.abs(rv1)<0.08){ const d=(0.08-Math.abs(rv1))/0.08; h-=d*d*0.20; }
+    if(Math.abs(rv1)<0.055){ const d=(0.055-Math.abs(rv1))/0.055; h-=d*d*0.075; }
     const rv2=Math.sin(v*2.1+Math.sin(u*1.7)*1.5);
-    if(Math.abs(rv2)<0.06){ const d=(0.06-Math.abs(rv2))/0.06; h-=d*d*0.16; }
+    if(Math.abs(rv2)<0.045){ const d=(0.045-Math.abs(rv2))/0.045; h-=d*d*0.060; }
 
     // Lake bowls — wide (lr 0.13-0.18) so they're big bodies of water,
     // deep enough (ld 0.55-0.70) to dip well below WATER_H.
@@ -826,7 +826,7 @@ async function buildWorld(){
     sGeo.setAttribute('color',new THREE.BufferAttribute(cols,3));
     sGeo.computeVertexNormals();
     // DoubleSide so steep slopes never show a see-through gap
-    const terrMat=new THREE.MeshPhongMaterial({vertexColors:true,flatShading:true,side:THREE.DoubleSide,emissive:new THREE.Color(0x0a1208),emissiveIntensity:1});
+    const terrMat=new THREE.MeshPhongMaterial({vertexColors:true,flatShading:false,side:THREE.DoubleSide,emissive:new THREE.Color(0x0a1208),emissiveIntensity:1});
     scene.add(new THREE.Mesh(sGeo,terrMat));
 
     // Solid inner cap — slightly smaller than GLOBE_R, pure black, blocks any
@@ -1126,18 +1126,21 @@ function moveSphere(dFwd, dRight, airborne){
     }
 
     const newH = sampleH(candidate.x, candidate.y, candidate.z);
-    if(newH >= WATER_H && newH - curH <= MAX_STEP){
+    // Water is visual only: never turn a shallow lake/stream into an invisible
+    // collision wall. The softened terrain normally keeps the remaining slope
+    // changes gentle enough to traverse naturally.
+    if(newH - curH <= MAX_STEP){
         playerNormal.copy(candidate); return;
     }
     if(dFwd !== 0){
         const cf = playerNormal.clone().addScaledVector(headFwd, dFwd).normalize();
         const hf = sampleH(cf.x, cf.y, cf.z);
-        if(hf >= WATER_H && hf - curH <= MAX_STEP){ playerNormal.copy(cf); return; }
+        if(hf - curH <= MAX_STEP){ playerNormal.copy(cf); return; }
     }
     if(dRight !== 0){
         const cr = playerNormal.clone().addScaledVector(headRight, dRight).normalize();
         const hr = sampleH(cr.x, cr.y, cr.z);
-        if(hr >= WATER_H && hr - curH <= MAX_STEP){ playerNormal.copy(cr); return; }
+        if(hr - curH <= MAX_STEP){ playerNormal.copy(cr); return; }
     }
 }
 
@@ -2814,10 +2817,10 @@ const VOCAB = [
     {emoji:'👀',es:'ver',en:'to see',color:0x66aaff},
 ];
 
-const COLLECT_RADIUS = 0.006; // ~29 world units along the planet surface
-const COLLECT_HEIGHT = 20;     // must also be physically close vertically
-const ITEM_FLOAT = 18;         // keep emoji visibly above the terrain surface
-const LABEL_FLOAT = 38;        // sign floats above the emoji without requiring a steep look-up
+const COLLECT_RADIUS = 0.009; // ~43 world units along the planet surface
+const COLLECT_HEIGHT = 30;     // forgiving vertical pickup range
+const ITEM_FLOAT = 11;         // float just above the actual local terrain surface
+const LABEL_FLOAT = 42;        // sign floats above the emoji without requiring a steep look-up
 const LABEL_SHOW_DISTANCE = 240; // begin showing vocabulary sign 200+ world units away
 const WORLD_ITEM_COUNT = 1000;  // distributed around the whole planet
 const WORLD_ITEM_SAMPLES = 50000;
@@ -2894,6 +2897,7 @@ function spawnWorldItems(){
     const TARGETS={meadow:200,forest:200,highland:200,riverbank:200,alpine:200};
     const placedByBiome={meadow:0,forest:0,highland:0,riverbank:0,alpine:0};
     const MIN_ITEM_SURFACE_GAP=360;
+    const ITEM_DRY_MARGIN=14;
     const MIN_ITEM_ANG=MIN_ITEM_SURFACE_GAP/GLOBE_R;
     const candidatesByBiome={meadow:[],forest:[],highland:[],riverbank:[],alpine:[]};
 
@@ -2904,7 +2908,7 @@ function spawnWorldItems(){
         const theta=i*ga+0.731;
         const nx=r2*Math.cos(theta),ny=y,nz=r2*Math.sin(theta);
         const h=sphereNoise(nx,ny,nz);
-        if(h < WATER_H+4) continue;
+        if(h < WATER_H+ITEM_DRY_MARGIN) continue;
         const biome=(h < WATER_H+18) ? 'riverbank' : getBiome(h);
         candidatesByBiome[biome].push({nx,ny,nz,h});
     }
@@ -2933,9 +2937,11 @@ function spawnWorldItems(){
 
     function placeCandidate(cand,biome,index){
         const vocab=VOCAB[index % VOCAB.length];
-        const placementH=biome==='riverbank' ? Math.max(cand.h,WATER_H+2) : cand.h;
-        const surfR=GLOBE_R+placementH+ITEM_FLOAT;
         const norm=new THREE.Vector3(cand.nx,cand.ny,cand.nz);
+        const localSurfaceH=sampleH(norm.x,norm.y,norm.z);
+        if(localSurfaceH < WATER_H+ITEM_DRY_MARGIN) return false;
+        const placementH=localSurfaceH;
+        const surfR=GLOBE_R+placementH+ITEM_FLOAT;
 
         const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:makeItemSprite(vocab),transparent:true,depthWrite:false,fog:false}));
         sprite.position.copy(norm).multiplyScalar(surfR);
@@ -2994,7 +3000,7 @@ function updateCollectibles(dt){
         if(item.collected) continue;
         const dot=Math.min(1,playerNormal.dot(item.normal));
         const ang=Math.acos(dot);
-        const bob=Math.sin(t*1.6+item.normal.x*8)*2.5;
+        const bob=1.5 + Math.sin(t*1.6+item.normal.x*8)*1.0;
         const itemR=item.baseR+bob;
         item.sprite.position.copy(item.normal).multiplyScalar(itemR);
         // Labels are lazy-created only when the player is close enough.
@@ -3007,7 +3013,7 @@ function updateCollectibles(dt){
         const verticalGap=Math.abs(playerR-itemR);
         const surfaceGap=ang*GLOBE_R;
         const totalGap=Math.sqrt(surfaceGap*surfaceGap+verticalGap*verticalGap);
-        const closeEnough=verticalGap<=COLLECT_HEIGHT && ang<=COLLECT_RADIUS*1.5;
+        const closeEnough=verticalGap<=COLLECT_HEIGHT && ang<=COLLECT_RADIUS;
 
         // Label only becomes visible when physically near the sprite.
         const fadeDistance=LABEL_SHOW_DISTANCE;
