@@ -498,7 +498,7 @@ const WATER_H    = 55;    // raised so lakes are more generous
 const SEGS       = 320;
 const PLAYER_EYE = 11.0;
 const PLAYER_SPD = 0.018;
-const SPRINT_SPD = 0.018;
+const SPRINT_SPD = 0.045;
 const COLL_R     = 0.006;
 
 // Returns terrain height in world units.
@@ -534,6 +534,13 @@ function sphereNoise(nx, ny, nz) {
         [ 0.35, 0.10, 0.93, 0.75, 0.07],   // extra ridge peaks
         [-0.90, 0.20, 0.38, 0.70, 0.07],
         [ 0.25,-0.58,-0.77, 0.65, 0.08],
+        [-0.18, 0.58, 0.80, 0.62, 0.085],
+        [ 0.86, 0.18, 0.34, 0.58, 0.075],
+        [-0.72,-0.38,-0.58, 0.56, 0.085],
+        [ 0.48, 0.72,-0.30, 0.52, 0.070],
+        [-0.10,-0.86,-0.48, 0.48, 0.075],
+        [ 0.64,-0.08, 0.76, 0.46, 0.070],
+        [-0.88, 0.42, 0.18, 0.44, 0.065],
     ];
     for(const [px,py,pz,ph,pw] of peaks){
         const len=Math.sqrt(px*px+py*py+pz*pz);
@@ -558,6 +565,10 @@ function sphereNoise(nx, ny, nz) {
         [ 0.70,-0.55,-0.45, 0.65, 0.15],   // mid-size, valley lake
         [-0.30, 0.78, 0.55, 0.58, 0.13],   // highland lake
         [ 0.08,-0.90, 0.42, 0.60, 0.14],   // southern basin
+        [-0.76,-0.08, 0.62, 0.48, 0.12],
+        [ 0.32, 0.66,-0.68, 0.46, 0.115],
+        [-0.18,-0.64,-0.74, 0.44, 0.12],
+        [ 0.82, 0.44,-0.20, 0.40, 0.11],
     ];
     for(const [lx,ly,lz,ld,lr] of lakes){
         const len=Math.sqrt(lx*lx+ly*ly+lz*lz);
