@@ -37,17 +37,17 @@
         .hud-btn svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
         /* Three matching controls form a clean corner cluster. */
         #btn-action { bottom:34px; right:110px; width:68px; height:68px; font-size:0.72rem; }
-        #btn-menu   { top:34px; right:34px; }
+        #btn-menu   { top:42%; right:34px; transform:translateY(-50%); }
 
         /* CORRER is on the outside/bottom-right, close to the corner. */
         #sprint-wrap {
             position:absolute; bottom:53px; right:32px;
-            width:66px; height:66px;
+            width:58px; height:58px;
             display:flex; align-items:center; justify-content:center;
             pointer-events:all;
         }
         #sprint-ring {
-            position:absolute; top:0; left:0; width:66px; height:66px;
+            position:absolute; top:-4px; left:-4px; width:66px; height:66px;
             pointer-events:none;
         }
         #btn-sprint {
@@ -62,12 +62,12 @@
 
         #lev-wrap {
             position:absolute; bottom:131px; right:32px;
-            width:66px; height:66px;
+            width:58px; height:58px;
             display:flex; align-items:center; justify-content:center;
             pointer-events:all;
         }
         #lev-ring {
-            position:absolute; top:0; left:0;
+            position:absolute; top:-4px; left:-4px;
             width:66px; height:66px;
             pointer-events:none;
         }
@@ -282,14 +282,14 @@
     <div class="start-card">
         <div class="start-title">Vocabulario Español</div>
         <div class="start-subtitle">Explore · Collect · Learn</div>
-        <button id="start-play" class="start-play">COMENZAR</button>
+        <button id="start-play" class="start-play">COMENZAR / START</button>
         <div class="controls-title">Keyboard Controls</div>
         <div class="keyboard-controls">
             <div class="key-row"><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> Move</div>
             <div class="key-row"><span class="key">↑</span><span class="key">↓</span><span class="key">←</span><span class="key">→</span> Look</div>
-            <div class="key-row"><span class="key">SPACE</span> Action / Collect</div>
-            <div class="key-row"><span class="key">ENTER</span> Levitate</div>
-            <div class="key-row"><span class="key">0</span> Sprint</div>
+            <div class="key-row"><span class="key">SPACE</span> Acción / Action / Collect</div>
+            <div class="key-row"><span class="key">ENTER</span> Levitar / Levitate</div>
+            <div class="key-row"><span class="key">F</span> Correr / Sprint</div>
         </div>
         <div class="copyright">Copyright © All Rights Reserved — Brant Fuller 2026</div>
     </div>
@@ -318,7 +318,7 @@
                 stroke-dasharray="194.78" stroke-dashoffset="0"
                 transform="rotate(-90 33 33)"/>
         </svg>
-        <button class="hud-btn" id="btn-sprint" title="Sprint">
+        <button class="hud-btn" id="btn-sprint" title="Correr / Sprint">
             <svg viewBox="0 0 24 24"><path d="M13 2l-2 7h5l-7 13 2-9H6L13 2z"/></svg>
             <span>CORRER</span>
         </button>
@@ -333,9 +333,9 @@
                 stroke-dasharray="194.78" stroke-dashoffset="0"
                 transform="rotate(-90 33 33)"/>
         </svg>
-        <button class="hud-btn" id="btn-lev" title="Levitate">
+        <button class="hud-btn" id="btn-lev" title="Levitar / Levitate">
             <svg viewBox="0 0 24 24"><path d="M12 2L8 8h3v6H9l3 4 3-4h-2V8h3L12 2z"/></svg>
-            <span>LEV</span>
+            <span>LEVITAR</span>
         </button>
     </div>
 
@@ -403,6 +403,13 @@
                     <div class="toggle-track"></div>
                     <div class="toggle-thumb"></div>
                 </label>
+            </div>
+            <div class="menu-item" style="align-items:center;gap:12px;">
+                <div class="menu-item-label">
+                    <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15 9a4 4 0 0 1 0 6"/></svg>
+                    Volume <span id="volume-value" style="font-size:.72rem;opacity:.65;margin-left:4px;">5/10</span>
+                </div>
+                <input id="volume-slider" type="range" min="0" max="10" step="1" value="5" aria-label="Volume" style="width:120px;accent-color:#8bd3ff;">
             </div>
             <div class="menu-item">
                 <div class="menu-item-label">
@@ -996,13 +1003,15 @@ async function buildWorld(){
     let spawnFound=false;
 
     outer: for(let i=0;i<5000;i++){
-        const y2=1-(i/5000)*2, r2=Math.sqrt(Math.max(0,1-y2*y2));
-        const t2=i*gr+1.23;
-        const snx=r2*Math.cos(t2),sny=y2,snz=r2*Math.sin(t2);
+        // Randomized each game so the player does not repeatedly see the same
+        // opening area and vocabulary.
+        const u=Math.random()*2-1;
+        const phi=Math.random()*Math.PI*2;
+        const r2=Math.sqrt(Math.max(0,1-u*u));
+        const snx=r2*Math.cos(phi),sny=u,snz=r2*Math.sin(phi);
         const sh=sphereNoise(snx,sny,snz);
         if(sh < WATER_H+60 || sh > 320) continue;
 
-        // Reject anything near ANY tree trunk/canopy zone.
         for(const tn of treeNormals){
             const dot=snx*tn.nx+sny*tn.ny+snz*tn.nz;
             if(dot>SPAWN_TREE_DOT) continue outer;
@@ -1019,7 +1028,7 @@ async function buildWorld(){
         outerFallback: for(let i=0;i<1000;i++){
             const y2=0.15-((i%1000)/1000)*0.30;
             const r2=Math.sqrt(Math.max(0,1-y2*y2));
-            const t2=i*gr*1.37;
+            const t2=Math.random()*Math.PI*2;
             const snx=r2*Math.cos(t2),sny=y2,snz=r2*Math.sin(t2);
             const sh=sphereNoise(snx,sny,snz);
             if(sh < WATER_H+60 || sh > 320) continue;
@@ -1171,7 +1180,7 @@ window.addEventListener('keyup',  e=>{
         levHeld=false;
         document.getElementById('btn-lev')?.classList.remove('active');
     }
-    if(e.code==='Digit0'){
+    if(e.code==='KeyF'){
         sprintHeld=false;
         sprintExhausted=false;
         document.getElementById('btn-sprint')?.classList.remove('active');
@@ -1280,7 +1289,7 @@ function updateLevStaminaUI(){
 btnSprint.addEventListener('pointerdown', e=>{
     e.preventDefault();
     // LEV and SPRINT have separate stamina pools and can never be active together.
-    if(levHeld || levActive || keys['Digit0'] || sprintStamina <= 0) return;
+    if(levHeld || levActive || keys['KeyF'] || sprintStamina <= 0) return;
     sprintExhausted = false;
     btnSprint.setPointerCapture(e.pointerId);
     sprintPointerId = e.pointerId;
@@ -1360,6 +1369,13 @@ let gamePaused=false;
 // This covers browser tabs, switching windows, iOS/Android backgrounding,
 // and the app being suspended by the operating system.
 let soundEnabled = document.getElementById('toggle-sound')?.checked !== false;
+let soundVolume = Number(localStorage.getItem('vocabSoundVolume') ?? '5');
+if(!Number.isFinite(soundVolume)) soundVolume = 5;
+soundVolume = Math.max(0, Math.min(10, Math.round(soundVolume)));
+const volumeSlider = document.getElementById('volume-slider');
+const volumeValue = document.getElementById('volume-value');
+if(volumeSlider) volumeSlider.value = String(soundVolume);
+if(volumeValue) volumeValue.textContent = `${soundVolume}/10`;
 function setGamePaused(paused){
     gamePaused=!!paused;
     if(gamePaused){
@@ -1420,12 +1436,12 @@ function animate(){
     }
     spherePitch=Math.max(-Math.PI/2+0.05,Math.min(Math.PI/2-0.05,spherePitch));
 
-    // Input — SHIFT/CORRER has its own stamina pool.
+    // Input — F/CORRER has its own stamina pool.
     // SPRINT and LEV cannot run at the same time.
     // Calculate ground state BEFORE using it for sprint input.
     const onGround = levHeight <= 0.1 && levVelUp <= 0;
     const airborne = !onGround;
-    const sprintKeyHeld = keys['Digit0'];
+    const sprintKeyHeld = keys['KeyF'];
     const sprintInput = !levHeld && !levActive && onGround && (sprintKeyHeld || sprintHeld) && sprintStamina > 0 && !sprintExhausted;
     const sprint = sprintInput;
     const spd=(sprint?SPRINT_SPD:PLAYER_SPD)*delta;
@@ -1469,7 +1485,7 @@ function animate(){
         }
         if(sprintStamina <= 0){
             // Empty sprint stamina immediately ends sprinting and prevents
-            // it from restarting until the 0 key/button is released.
+            // it from restarting until the F key/button is released.
             sprintStamina = 0;
             sprintExhausted = true;
             sprintHeld = false;
@@ -1852,7 +1868,7 @@ const VOCAB = [
     {emoji:'🐦',es:'el ave',en:'the bird',color:0x66aaff},
     {emoji:'✈️',es:'el avión',en:'the airplane',color:0x66aaff},
     {emoji:'🔵',es:'el azul',en:'blue',color:0x66aaff},
-    {emoji:'💃',es:'el bailarín',en:'dancer',color:0x66aaff},
+    {emoji:'🕺',es:'el bailarín',en:'dancer',color:0x66aaff},
     {emoji:'🩰',es:'el bailarín de ballet',en:'ballet dancer',color:0x66aaff},
     {emoji:'🏀',es:'el baloncesto',en:'basketball',color:0x66aaff},
     {emoji:'🏦',es:'el banco',en:'the bank',color:0x66aaff},
@@ -1861,8 +1877,8 @@ const VOCAB = [
     {emoji:'☕',es:'el barista',en:'barista',color:0x66aaff},
     {emoji:'🏘️',es:'el barrio',en:'the neighborhood',color:0x66aaff},
     {emoji:'🟤',es:'el barro',en:'the mud',color:0x66aaff},
-    {emoji:'🏀',es:'el basquetbolista',en:'basketball player',color:0x66aaff},
-    {emoji:'🥁',es:'el baterista',en:'drummer',color:0x66aaff},
+    {emoji:'🏀🧑',es:'el basquetbolista',en:'basketball player',color:0x66aaff},
+    {emoji:'🥁🧑',es:'el baterista',en:'drummer',color:0x66aaff},
     {emoji:'🚽',es:'el baño',en:'the bathroom',color:0x66aaff},
     {emoji:'👶',es:'el bebé',en:'the baby',color:0x66aaff},
     {emoji:'😘',es:'el beso',en:'the kiss',color:0x66aaff},
@@ -1875,9 +1891,9 @@ const VOCAB = [
     {emoji:'👛',es:'el bolso',en:'the purse',color:0x66aaff},
     {emoji:'🖊️',es:'el bolígrafo',en:'the pen',color:0x66aaff},
     {emoji:'👨\\u200d🚒',es:'el bombero',en:'firefighter',color:0x66aaff},
-    {emoji:'🚒',es:'el bombero voluntario',en:'volunteer firefighter',color:0x66aaff},
+    {emoji:'👨‍🚒',es:'el bombero voluntario',en:'volunteer firefighter',color:0x66aaff},
     {emoji:'🌳',es:'el bosque',en:'the forest',color:0x66aaff},
-    {emoji:'🥊',es:'el boxeador',en:'boxer',color:0x66aaff},
+    {emoji:'🥊🧑',es:'el boxeador',en:'boxer',color:0x66aaff},
     {emoji:'🥊',es:'el boxeo',en:'boxing',color:0x66aaff},
     {emoji:'✨',es:'el brillo',en:'the sparkle',color:0x66aaff},
     {emoji:'🌱',es:'el brote',en:'the sprout',color:0x66aaff},
@@ -1890,11 +1906,11 @@ const VOCAB = [
     {emoji:'💇',es:'el cabello',en:'the hair',color:0x66aaff},
     {emoji:'🌵',es:'el cactus',en:'the cactus',color:0x66aaff},
     {emoji:'🐊',es:'el caimán',en:'the alligator',color:0x66aaff},
-    {emoji:'💵',es:'el cajero',en:'cashier',color:0x66aaff},
+    {emoji:'🧑‍💼',es:'el cajero',en:'cashier',color:0x66aaff},
     {emoji:'🧦',es:'el calcetín',en:'the sock',color:0x66aaff},
     {emoji:'📅',es:'el calendario',en:'the calendar',color:0x66aaff},
     {emoji:'🔥',es:'el calor',en:'the heat',color:0x66aaff},
-    {emoji:'🍽️',es:'el camarero',en:'waiter',color:0x66aaff},
+    {emoji:'🧑‍🍽️',es:'el camarero',en:'waiter',color:0x66aaff},
     {emoji:'🦐',es:'el camarón',en:'the shrimp',color:0x66aaff},
     {emoji:'🥾',es:'el camino',en:'the mountain path',color:0x66aaff},
     {emoji:'🍠',es:'el camote',en:'the sweet potato',color:0x66aaff},
@@ -1903,14 +1919,14 @@ const VOCAB = [
     {emoji:'⛺',es:'el campista',en:'camper',color:0x66aaff},
     {emoji:'🏞️',es:'el campo',en:'the field',color:0x66aaff},
     {emoji:'🦀',es:'el cangrejo',en:'the crab',color:0x66aaff},
-    {emoji:'🎤',es:'el cantante',en:'singer',color:0x66aaff},
+    {emoji:'🎤🧑',es:'el cantante',en:'singer',color:0x66aaff},
     {emoji:'🧑\\u200d✈️',es:'el capitán',en:'captain',color:0x66aaff},
     {emoji:'🚢',es:'el capitán de barco',en:'ship captain',color:0x66aaff},
     {emoji:'🏆',es:'el capitán del equipo',en:'team captain',color:0x66aaff},
     {emoji:'🐌',es:'el caracol',en:'the snail',color:0x66aaff},
     {emoji:'😍',es:'el cariño',en:'the affection',color:0x66aaff},
     {emoji:'🥩',es:'el carnicero',en:'butcher',color:0x66aaff},
-    {emoji:'🪚',es:'el carpintero',en:'carpenter',color:0x66aaff},
+    {emoji:'👨‍🔧',es:'el carpintero',en:'carpenter',color:0x66aaff},
     {emoji:'🛒',es:'el carrito',en:'the cart',color:0x66aaff},
     {emoji:'📬',es:'el cartero',en:'mail carrier',color:0x66aaff},
     {emoji:'🦫',es:'el castor',en:'the beaver',color:0x66aaff},
@@ -1925,9 +1941,9 @@ const VOCAB = [
     {emoji:'🚴',es:'el ciclismo',en:'cycling',color:0x66aaff},
     {emoji:'🚴',es:'el ciclista',en:'cyclist',color:0x66aaff},
     {emoji:'☁️',es:'el cielo',en:'the sky',color:0x66aaff},
-    {emoji:'🔬',es:'el científico',en:'scientist',color:0x66aaff},
-    {emoji:'📊',es:'el científico de datos',en:'data scientist',color:0x66aaff},
-    {emoji:'🛰️',es:'el científico espacial',en:'space scientist',color:0x66aaff},
+    {emoji:'🧑‍🔬',es:'el científico',en:'scientist',color:0x66aaff},
+    {emoji:'🧑‍💻',es:'el científico de datos',en:'data scientist',color:0x66aaff},
+    {emoji:'🧑‍🚀',es:'el científico espacial',en:'space scientist',color:0x66aaff},
     {emoji:'🦌',es:'el ciervo',en:'the deer',color:0x66aaff},
     {emoji:'🎥',es:'el cineasta',en:'filmmaker',color:0x66aaff},
     {emoji:'🏥',es:'el cirujano',en:'surgeon',color:0x66aaff},
@@ -1948,9 +1964,9 @@ const VOCAB = [
     {emoji:'📚',es:'el compañero de clase',en:'classmate',color:0x66aaff},
     {emoji:'🤝',es:'el compañero de equipo',en:'teammate',color:0x66aaff},
     {emoji:'💼',es:'el compañero de trabajo',en:'coworker',color:0x66aaff},
-    {emoji:'🚗',es:'el conductor',en:'driver',color:0x66aaff},
-    {emoji:'🚌',es:'el conductor de autobús',en:'bus driver',color:0x66aaff},
-    {emoji:'🚆',es:'el conductor de tren',en:'train driver',color:0x66aaff},
+    {emoji:'🧑‍✈️',es:'el conductor',en:'driver',color:0x66aaff},
+    {emoji:'🧑‍✈️',es:'el conductor de autobús',en:'bus driver',color:0x66aaff},
+    {emoji:'🧑‍✈️',es:'el conductor de tren',en:'train driver',color:0x66aaff},
     {emoji:'🐇',es:'el conejo',en:'the rabbit',color:0x66aaff},
     {emoji:'🧹',es:'el conserje',en:'janitor / concierge',color:0x66aaff},
     {emoji:'🧮',es:'el contador',en:'accountant',color:0x66aaff},
@@ -1972,8 +1988,8 @@ const VOCAB = [
     {emoji:'🔴',es:'el círculo',en:'the circle',color:0x66aaff},
     {emoji:'🎲',es:'el dado',en:'the die',color:0x66aaff},
     {emoji:'🐬',es:'el delfín',en:'the dolphin',color:0x66aaff},
-    {emoji:'🦷',es:'el dentista',en:'dentist',color:0x66aaff},
-    {emoji:'🦷',es:'el dentista infantil',en:'pediatric dentist',color:0x66aaff},
+    {emoji:'🧑‍⚕️',es:'el dentista',en:'dentist',color:0x66aaff},
+    {emoji:'🧑‍⚕️',es:'el dentista infantil',en:'pediatric dentist',color:0x66aaff},
     {emoji:'💻',es:'el desarrollador',en:'developer',color:0x66aaff},
     {emoji:'🍳',es:'el desayuno',en:'breakfast',color:0x66aaff},
     {emoji:'🔓',es:'el desbloqueo',en:'the unlock',color:0x66aaff},
@@ -1992,27 +2008,27 @@ const VOCAB = [
     {emoji:'🖥️',es:'el diseñador gráfico',en:'graphic designer',color:0x66aaff},
     {emoji:'🌐',es:'el diseñador web',en:'web designer',color:0x66aaff},
     {emoji:'🎧',es:'el DJ',en:'DJ',color:0x66aaff},
-    {emoji:'🩺',es:'el doctor',en:'doctor',color:0x66aaff},
+    {emoji:'👨‍⚕️',es:'el doctor',en:'doctor',color:0x66aaff},
     {emoji:'🔑',es:'el dueño',en:'owner',color:0x66aaff},
     {emoji:'🏠',es:'el dueño de casa',en:'homeowner',color:0x66aaff},
     {emoji:'🍬',es:'el dulce',en:'the candy',color:0x66aaff},
     {emoji:'🌞',es:'el día',en:'the day',color:0x66aaff},
     {emoji:'🏛️',es:'el edificio',en:'the building',color:0x66aaff},
     {emoji:'📝',es:'el editor',en:'editor',color:0x66aaff},
-    {emoji:'⚡',es:'el electricista',en:'electrician',color:0x66aaff},
+    {emoji:'👨‍🔧',es:'el electricista',en:'electrician',color:0x66aaff},
     {emoji:'🐘',es:'el elefante',en:'the elephant',color:0x66aaff},
     {emoji:'💼',es:'el empleado',en:'employee',color:0x66aaff},
     {emoji:'🔌',es:'el enchufe',en:'the plug',color:0x66aaff},
     {emoji:'⚔️',es:'el enemigo',en:'enemy',color:0x66aaff},
-    {emoji:'🩺',es:'el enfermero',en:'nurse',color:0x66aaff},
+    {emoji:'👨‍⚕️',es:'el enfermero',en:'nurse',color:0x66aaff},
     {emoji:'🏆',es:'el entrenador',en:'coach',color:0x66aaff},
-    {emoji:'🏋️',es:'el entrenador personal',en:'personal trainer',color:0x66aaff},
+    {emoji:'🏋️‍♂️',es:'el entrenador personal',en:'personal trainer',color:0x66aaff},
     {emoji:'👥',es:'el equipo',en:'team',color:0x66aaff},
     {emoji:'🦔',es:'el erizo',en:'the hedgehog',color:0x66aaff},
     {emoji:'❌',es:'el error',en:'the mistake',color:0x66aaff},
     {emoji:'🧗',es:'el escalador',en:'climber',color:0x66aaff},
     {emoji:'🦗',es:'el escarabajo',en:'the beetle',color:0x66aaff},
-    {emoji:'✍️',es:'el escritor',en:'writer',color:0x66aaff},
+    {emoji:'✍️🧑',es:'el escritor',en:'writer',color:0x66aaff},
     {emoji:'💪',es:'el esfuerzo',en:'effort',color:0xdd8855},
     {emoji:'👀',es:'el espectador',en:'spectator',color:0x66aaff},
     {emoji:'💍',es:'el esposo',en:'husband',color:0x66aaff},
@@ -2020,9 +2036,9 @@ const VOCAB = [
     {emoji:'🎿',es:'el esquí',en:'skiing',color:0x66aaff},
     {emoji:'🏟️',es:'el estadio',en:'the stadium',color:0x66aaff},
     {emoji:'🫧',es:'el estanque',en:'the pond',color:0x66aaff},
-    {emoji:'🎓',es:'el estudiante',en:'student',color:0x66aaff},
-    {emoji:'🎓',es:'el estudiante universitario',en:'college student',color:0x66aaff},
-    {emoji:'🥾',es:'el excursionista',en:'hiker',color:0x66aaff},
+    {emoji:'🧑‍🎓',es:'el estudiante',en:'student',color:0x66aaff},
+    {emoji:'🧑‍🎓',es:'el estudiante universitario',en:'college student',color:0x66aaff},
+    {emoji:'🥾🧑',es:'el excursionista',en:'hiker',color:0x66aaff},
     {emoji:'🧪',es:'el experimento',en:'the experiment',color:0x66aaff},
     {emoji:'🧠',es:'el experto',en:'expert',color:0x66aaff},
     {emoji:'🧭',es:'el explorador',en:'explorer',color:0x66aaff},
@@ -2032,17 +2048,17 @@ const VOCAB = [
     {emoji:'🤔',es:'el filósofo',en:'philosopher',color:0x66aaff},
     {emoji:'🦩',es:'el flamenco',en:'the flamingo',color:0x66aaff},
     {emoji:'💐',es:'el florista',en:'florist',color:0x66aaff},
-    {emoji:'📷',es:'el fotógrafo',en:'photographer',color:0x66aaff},
-    {emoji:'📷',es:'el fotógrafo de bodas',en:'wedding photographer',color:0x66aaff},
+    {emoji:'📷🧑',es:'el fotógrafo',en:'photographer',color:0x66aaff},
+    {emoji:'🧑‍📷',es:'el fotógrafo de bodas',en:'wedding photographer',color:0x66aaff},
     {emoji:'🌡️',es:'el frío',en:'the cold',color:0x66aaff},
     {emoji:'🔥',es:'el fuego',en:'the fire',color:0x66aaff},
-    {emoji:'⚽',es:'el futbolista',en:'soccer player',color:0x66aaff},
+    {emoji:'⚽🧑',es:'el futbolista',en:'soccer player',color:0x66aaff},
     {emoji:'⚛️',es:'el físico',en:'physicist',color:0x66aaff},
     {emoji:'⚽',es:'el fútbol',en:'soccer',color:0x66aaff},
     {emoji:'🏈',es:'el fútbol americano',en:'football',color:0x66aaff},
     {emoji:'🏆',es:'el ganador',en:'winner',color:0x66aaff},
     {emoji:'🐱',es:'el gato',en:'the cat',color:0x66aaff},
-    {emoji:'📋',es:'el gerente',en:'manager',color:0x66aaff},
+    {emoji:'🧑‍💼',es:'el gerente',en:'manager',color:0x66aaff},
     {emoji:'🪨',es:'el geólogo',en:'geologist',color:0x66aaff},
     {emoji:'🌻',es:'el girasol',en:'the sunflower',color:0x66aaff},
     {emoji:'🏔️',es:'el glaciar',en:'the glacier',color:0x66aaff},
@@ -2055,10 +2071,10 @@ const VOCAB = [
     {emoji:'🩶',es:'el gris',en:'gray',color:0x66aaff},
     {emoji:'👥',es:'el grupo',en:'group',color:0x66aaff},
     {emoji:'🧤',es:'el guante',en:'the glove',color:0x66aaff},
-    {emoji:'🛡️',es:'el guardia',en:'guard',color:0x66aaff},
-    {emoji:'🛡️',es:'el guardia de seguridad',en:'security guard',color:0x66aaff},
+    {emoji:'💂',es:'el guardia',en:'guard',color:0x66aaff},
+    {emoji:'💂',es:'el guardia de seguridad',en:'security guard',color:0x66aaff},
     {emoji:'🍲',es:'el guiso',en:'the stew',color:0x66aaff},
-    {emoji:'🎸',es:'el guitarrista',en:'guitarist',color:0x66aaff},
+    {emoji:'🎸🧑',es:'el guitarrista',en:'guitarist',color:0x66aaff},
     {emoji:'🐛',es:'el gusano',en:'the worm',color:0x66aaff},
     {emoji:'🗺️',es:'el guía',en:'guide',color:0x66aaff},
     {emoji:'🦅',es:'el halcón',en:'the falcon',color:0x66aaff},
@@ -2089,9 +2105,9 @@ const VOCAB = [
     {emoji:'👔',es:'el jefe',en:'boss',color:0x66aaff},
     {emoji:'🧑',es:'el joven',en:'young man',color:0x66aaff},
     {emoji:'💎',es:'el joyero',en:'jeweler',color:0x66aaff},
-    {emoji:'⚖️',es:'el juez',en:'judge',color:0x66aaff},
+    {emoji:'🧑‍⚖️',es:'el juez',en:'judge',color:0x66aaff},
     {emoji:'🎮',es:'el jugador',en:'player',color:0x66aaff},
-    {emoji:'🎾',es:'el jugador de tenis',en:'tennis player',color:0x66aaff},
+    {emoji:'🎾🧑',es:'el jugador de tenis',en:'tennis player',color:0x66aaff},
     {emoji:'🧃',es:'el jugo',en:'the juice',color:0x66aaff},
     {emoji:'🌿',es:'el junco',en:'the reed',color:0x66aaff},
     {emoji:'🥝',es:'el kiwi',en:'the kiwi',color:0x66aaff},
@@ -2115,7 +2131,7 @@ const VOCAB = [
     {emoji:'🥭',es:'el mango',en:'the mango',color:0x66aaff},
     {emoji:'🗺️',es:'el mapa',en:'the map',color:0x66aaff},
     {emoji:'🦝',es:'el mapache',en:'the raccoon',color:0x66aaff},
-    {emoji:'💄',es:'el maquillador',en:'makeup artist',color:0x66aaff},
+    {emoji:'💄🧑',es:'el maquillador',en:'makeup artist',color:0x66aaff},
     {emoji:'⚓',es:'el marinero',en:'sailor',color:0x66aaff},
     {emoji:'🤎',es:'el marrón',en:'brown',color:0x66aaff},
     {emoji:'🔨',es:'el martillo',en:'the hammer',color:0x66aaff},
@@ -2166,27 +2182,27 @@ const VOCAB = [
     {emoji:'🛂',es:'el pasaporte',en:'the passport',color:0x66aaff},
     {emoji:'🚶',es:'el paseo',en:'the walk',color:0x66aaff},
     {emoji:'🎂',es:'el pastel',en:'the cake',color:0x66aaff},
-    {emoji:'🛹',es:'el patinador',en:'skater',color:0x66aaff},
+    {emoji:'🧑🛹',es:'el patinador',en:'skater',color:0x66aaff},
     {emoji:'⛸️',es:'el patinaje',en:'skating',color:0x66aaff},
     {emoji:'🦆',es:'el pato',en:'the duck',color:0x66aaff},
     {emoji:'🤡',es:'el payaso',en:'clown',color:0x66aaff},
     {emoji:'💈',es:'el peluquero',en:'barber',color:0x66aaff},
     {emoji:'💭',es:'el pensamiento',en:'the thought',color:0x66aaff},
     {emoji:'😞',es:'el perdedor',en:'loser',color:0x66aaff},
-    {emoji:'📰',es:'el periodista',en:'journalist',color:0x66aaff},
+    {emoji:'📰🧑',es:'el periodista',en:'journalist',color:0x66aaff},
     {emoji:'🌭',es:'el perrito caliente',en:'the hot dog',color:0x66aaff},
     {emoji:'🐶',es:'el perro',en:'the dog',color:0x66aaff},
-    {emoji:'🐟',es:'el pescadero',en:'fishmonger',color:0x66aaff},
+    {emoji:'🧑‍💼🐟',es:'el pescadero',en:'fishmonger',color:0x66aaff},
     {emoji:'🎣',es:'el pescador',en:'fisherman',color:0x66aaff},
     {emoji:'🐟',es:'el pez',en:'the fish',color:0x66aaff},
     {emoji:'🐠',es:'el pez de colores',en:'the colorful fish',color:0x66aaff},
     {emoji:'🐠',es:'el pez tropical',en:'the tropical fish',color:0x66aaff},
     {emoji:'🗿',es:'el peñasco',en:'the boulder',color:0x66aaff},
-    {emoji:'🎹',es:'el pianista',en:'pianist',color:0x66aaff},
+    {emoji:'🎹🧑',es:'el pianista',en:'pianist',color:0x66aaff},
     {emoji:'🎹',es:'el piano',en:'the piano',color:0x66aaff},
     {emoji:'🏔️',es:'el pico',en:'the peak',color:0x66aaff},
-    {emoji:'✈️',es:'el piloto',en:'pilot',color:0x66aaff},
-    {emoji:'✈️',es:'el piloto de avión',en:'airplane pilot',color:0x66aaff},
+    {emoji:'🧑‍✈️',es:'el piloto',en:'pilot',color:0x66aaff},
+    {emoji:'🧑‍✈️',es:'el piloto de avión',en:'airplane pilot',color:0x66aaff},
     {emoji:'📌',es:'el pin',en:'the pin',color:0x66aaff},
     {emoji:'🐧',es:'el pingüino',en:'the penguin',color:0x66aaff},
     {emoji:'🌲',es:'el pino',en:'the pine',color:0x66aaff},
@@ -2194,7 +2210,7 @@ const VOCAB = [
     {emoji:'🖌️',es:'el pintor de casas',en:'house painter',color:0x66aaff},
     {emoji:'🪐',es:'el planeta',en:'the planet',color:0x66aaff},
     {emoji:'🍽️',es:'el plato',en:'the plate',color:0x66aaff},
-    {emoji:'🔧',es:'el plomero',en:'plumber',color:0x66aaff},
+    {emoji:'👨‍🔧',es:'el plomero',en:'plumber',color:0x66aaff},
     {emoji:'🍌',es:'el plátano',en:'the banana',color:0x66aaff},
     {emoji:'📜',es:'el poeta',en:'poet',color:0x66aaff},
     {emoji:'👮',es:'el policía',en:'the police officer',color:0x66aaff},
@@ -2206,9 +2222,9 @@ const VOCAB = [
     {emoji:'🥨',es:'el pretzel',en:'the pretzel',color:0x66aaff},
     {emoji:'🌱',es:'el principiante',en:'beginner',color:0x66aaff},
     {emoji:'🎬',es:'el productor',en:'producer',color:0x66aaff},
-    {emoji:'👨\\u200d🏫',es:'el profesor',en:'teacher',color:0x66aaff},
-    {emoji:'🇪🇸',es:'el profesor de español',en:'Spanish teacher',color:0x66aaff},
-    {emoji:'🎵',es:'el profesor de música',en:'music teacher',color:0x66aaff},
+    {emoji:'👨‍🏫',es:'el profesor',en:'teacher',color:0x66aaff},
+    {emoji:'👨‍🏫🇪🇸',es:'el profesor de español',en:'Spanish teacher',color:0x66aaff},
+    {emoji:'👨‍🏫🎵',es:'el profesor de música',en:'music teacher',color:0x66aaff},
     {emoji:'👨‍💻',es:'el programador',en:'the programmer',color:0x66aaff},
     {emoji:'🤴',es:'el príncipe',en:'prince',color:0x66aaff},
     {emoji:'🧠',es:'el psicólogo',en:'psychologist',color:0x66aaff},
@@ -2230,7 +2246,7 @@ const VOCAB = [
     {emoji:'⌚',es:'el reloj',en:'the watch',color:0x66aaff},
     {emoji:'⏰',es:'el reloj despertador',en:'the alarm clock',color:0x66aaff},
     {emoji:'⌚',es:'el relojero',en:'watchmaker',color:0x66aaff},
-    {emoji:'📦',es:'el repartidor',en:'delivery person',color:0x66aaff},
+    {emoji:'🧑‍💼📦',es:'el repartidor',en:'delivery person',color:0x66aaff},
     {emoji:'🌟',es:'el resplandor',en:'the glow',color:0x66aaff},
     {emoji:'🍽️',es:'el restaurante',en:'the restaurant',color:0x66aaff},
     {emoji:'👑',es:'el rey',en:'king',color:0x66aaff},
@@ -2270,7 +2286,7 @@ const VOCAB = [
     {emoji:'📱',es:'el teléfono',en:'the phone',color:0x66aaff},
     {emoji:'🍴',es:'el tenedor',en:'the fork',color:0x66aaff},
     {emoji:'🎾',es:'el tenis',en:'tennis',color:0x66aaff},
-    {emoji:'🎾',es:'el tenista',en:'tennis player',color:0x66aaff},
+    {emoji:'🎾🧑',es:'el tenista',en:'tennis player',color:0x66aaff},
     {emoji:'💬',es:'el terapeuta',en:'therapist',color:0x66aaff},
     {emoji:'🦈',es:'el tiburón',en:'the shark',color:0x66aaff},
     {emoji:'🕰️',es:'el tiempo',en:'time',color:0x66aaff},
@@ -2300,16 +2316,16 @@ const VOCAB = [
     {emoji:'🥤',es:'el vaso',en:'the glass',color:0x66aaff},
     {emoji:'🏠',es:'el vecino',en:'neighbor',color:0x66aaff},
     {emoji:'⛵',es:'el velero',en:'the sailboat',color:0x66aaff},
-    {emoji:'🛍️',es:'el vendedor',en:'salesperson',color:0x66aaff},
+    {emoji:'🧑‍💼🛍️',es:'el vendedor',en:'salesperson',color:0x66aaff},
     {emoji:'🎟️',es:'el vendedor de boletos',en:'ticket seller',color:0x66aaff},
     {emoji:'🟢',es:'el verde',en:'green',color:0x66aaff},
     {emoji:'👗',es:'el vestido',en:'the dress',color:0x66aaff},
-    {emoji:'🐾',es:'el veterinario',en:'veterinarian',color:0x66aaff},
+    {emoji:'👨‍⚕️🐾',es:'el veterinario',en:'veterinarian',color:0x66aaff},
     {emoji:'🎮',es:'el videojuego',en:'the video game',color:0x66aaff},
     {emoji:'💨',es:'el viento',en:'the wind',color:0x66aaff},
     {emoji:'🌬️',es:'el viento fuerte',en:'the strong wind',color:0x66aaff},
     {emoji:'🦹',es:'el villano',en:'villain',color:0x66aaff},
-    {emoji:'🎻',es:'el violinista',en:'violinist',color:0x66aaff},
+    {emoji:'🎻🧑',es:'el violinista',en:'violinist',color:0x66aaff},
     {emoji:'🎻',es:'el violín',en:'the violin',color:0x66aaff},
     {emoji:'🚶',es:'el visitante',en:'visitor',color:0x66aaff},
     {emoji:'🏐',es:'el voleibol',en:'volleyball',color:0x66aaff},
@@ -2362,9 +2378,9 @@ const VOCAB = [
     {emoji:'🏦',es:'la banquera',en:'banker',color:0x66aaff},
     {emoji:'🧔',es:'la barba',en:'the beard',color:0x66aaff},
     {emoji:'☕',es:'la barista',en:'barista',color:0x66aaff},
-    {emoji:'🏀',es:'la basquetbolista',en:'basketball player',color:0x66aaff},
+    {emoji:'🏀👩',es:'la basquetbolista',en:'basketball player',color:0x66aaff},
     {emoji:'🗑️',es:'la basura',en:'the trash',color:0x66aaff},
-    {emoji:'🥁',es:'la baterista',en:'drummer',color:0x66aaff},
+    {emoji:'🥁👩',es:'la baterista',en:'drummer',color:0x66aaff},
     {emoji:'🔋',es:'la batería',en:'the battery',color:0x66aaff},
     {emoji:'🫐',es:'la baya',en:'the berry',color:0x66aaff},
     {emoji:'🛁',es:'la bañera',en:'the bathtub',color:0x66aaff},
@@ -2374,10 +2390,10 @@ const VOCAB = [
     {emoji:'🧬',es:'la bióloga',en:'biologist',color:0x66aaff},
     {emoji:'👄',es:'la boca',en:'the mouth',color:0x66aaff},
     {emoji:'👩‍🚒',es:'la bombera',en:'the firefighter',color:0x66aaff},
-    {emoji:'🚒',es:'la bombera voluntaria',en:'volunteer firefighter',color:0x66aaff},
+    {emoji:'👩‍🚒',es:'la bombera voluntaria',en:'volunteer firefighter',color:0x66aaff},
     {emoji:'💡',es:'la bombilla',en:'the light bulb',color:0x66aaff},
     {emoji:'🧴',es:'la botella',en:'the bottle',color:0x66aaff},
-    {emoji:'🥊',es:'la boxeadora',en:'boxer',color:0x66aaff},
+    {emoji:'🥊👩',es:'la boxeadora',en:'boxer',color:0x66aaff},
     {emoji:'🌬️',es:'la brisa',en:'the breeze',color:0x66aaff},
     {emoji:'🧭',es:'la brújula',en:'the compass',color:0x66aaff},
     {emoji:'🧣',es:'la bufanda',en:'the scarf',color:0x66aaff},
@@ -2387,21 +2403,21 @@ const VOCAB = [
     {emoji:'☕',es:'la cafetería',en:'the café',color:0x66aaff},
     {emoji:'📦',es:'la caja',en:'the box',color:0x66aaff},
     {emoji:'🧰',es:'la caja de herramientas',en:'the toolbox',color:0x66aaff},
-    {emoji:'💵',es:'la cajera',en:'cashier',color:0x66aaff},
+    {emoji:'👩‍💼',es:'la cajera',en:'cashier',color:0x66aaff},
     {emoji:'🛏️',es:'la cama',en:'the bed',color:0x66aaff},
-    {emoji:'🍽️',es:'la camarera',en:'waitress',color:0x66aaff},
+    {emoji:'🧑‍🍽️',es:'la camarera',en:'waitress',color:0x66aaff},
     {emoji:'👕',es:'la camisa',en:'the shirt',color:0x66aaff},
     {emoji:'🔔',es:'la campana',en:'the bell',color:0x66aaff},
     {emoji:'🏆',es:'la campeona',en:'champion',color:0x66aaff},
     {emoji:'⛺',es:'la campista',en:'camper',color:0x66aaff},
-    {emoji:'🎤',es:'la cantante',en:'singer',color:0x66aaff},
+    {emoji:'🎤👩',es:'la cantante',en:'singer',color:0x66aaff},
     {emoji:'🧑\\u200d✈️',es:'la capitana',en:'captain',color:0x66aaff},
     {emoji:'🚢',es:'la capitana de barco',en:'ship captain',color:0x66aaff},
     {emoji:'🏆',es:'la capitana del equipo',en:'team captain',color:0x66aaff},
     {emoji:'🥩',es:'la carne',en:'the meat',color:0x66aaff},
     {emoji:'🥩',es:'la carnicera',en:'butcher',color:0x66aaff},
     {emoji:'🐟',es:'la carpa',en:'the carp',color:0x66aaff},
-    {emoji:'🪚',es:'la carpintera',en:'carpenter',color:0x66aaff},
+    {emoji:'👩‍🔧',es:'la carpintera',en:'carpenter',color:0x66aaff},
     {emoji:'🏃',es:'la carrera',en:'the race',color:0x66aaff},
     {emoji:'🛣️',es:'la carretera',en:'the road',color:0x66aaff},
     {emoji:'🃏',es:'la carta',en:'the card',color:0x66aaff},
@@ -2415,10 +2431,10 @@ const VOCAB = [
     {emoji:'🔒',es:'la cerradura',en:'the lock',color:0x66aaff},
     {emoji:'🧺',es:'la cesta',en:'the basket',color:0x66aaff},
     {emoji:'🧥',es:'la chaqueta',en:'the jacket',color:0x66aaff},
-    {emoji:'🚴',es:'la ciclista',en:'cyclist',color:0x66aaff},
-    {emoji:'🔬',es:'la científica',en:'scientist',color:0x66aaff},
-    {emoji:'📊',es:'la científica de datos',en:'data scientist',color:0x66aaff},
-    {emoji:'🛰️',es:'la científica espacial',en:'space scientist',color:0x66aaff},
+    {emoji:'🚴‍♀️',es:'la ciclista',en:'cyclist',color:0x66aaff},
+    {emoji:'👩‍🔬',es:'la científica',en:'scientist',color:0x66aaff},
+    {emoji:'👩‍💻',es:'la científica de datos',en:'data scientist',color:0x66aaff},
+    {emoji:'👩‍🚀',es:'la científica espacial',en:'space scientist',color:0x66aaff},
     {emoji:'🏔️',es:'la cima',en:'the summit',color:0x66aaff},
     {emoji:'🎥',es:'la cineasta',en:'filmmaker',color:0x66aaff},
     {emoji:'🏥',es:'la cirujana',en:'surgeon',color:0x66aaff},
@@ -2437,17 +2453,17 @@ const VOCAB = [
     {emoji:'💻',es:'la computadora',en:'the computer',color:0x66aaff},
     {emoji:'🏘️',es:'la comunidad',en:'community',color:0x66aaff},
     {emoji:'🐚',es:'la concha',en:'the shell',color:0x66aaff},
-    {emoji:'🚗',es:'la conductora',en:'driver',color:0x66aaff},
-    {emoji:'🚌',es:'la conductora de autobús',en:'bus driver',color:0x66aaff},
-    {emoji:'🚆',es:'la conductora de tren',en:'train driver',color:0x66aaff},
+    {emoji:'👩‍✈️',es:'la conductora',en:'driver',color:0x66aaff},
+    {emoji:'👩‍✈️',es:'la conductora de autobús',en:'bus driver',color:0x66aaff},
+    {emoji:'👩‍✈️',es:'la conductora de tren',en:'train driver',color:0x66aaff},
     {emoji:'🤝',es:'la confianza',en:'trust/confidence',color:0x88aaff},
     {emoji:'🧹',es:'la conserje',en:'janitor / concierge',color:0x66aaff},
     {emoji:'✨',es:'la constelación',en:'the constellation',color:0x66aaff},
     {emoji:'🧮',es:'la contadora',en:'accountant',color:0x66aaff},
     {emoji:'🛬',es:'la controladora aérea',en:'air traffic controller',color:0x66aaff},
     {emoji:'💬',es:'la conversación',en:'the conversation',color:0x66aaff},
-    {emoji:'🏃',es:'la corredora',en:'runner',color:0x66aaff},
-    {emoji:'🏃',es:'la corredora de maratón',en:'marathon runner',color:0x66aaff},
+    {emoji:'🏃‍♀️',es:'la corredora',en:'runner',color:0x66aaff},
+    {emoji:'🏃‍♀️',es:'la corredora de maratón',en:'marathon runner',color:0x66aaff},
     {emoji:'🌊',es:'la corriente',en:'the current',color:0x66aaff},
     {emoji:'🟫',es:'la corteza',en:'the bark',color:0x66aaff},
     {emoji:'🔄',es:'la costumbre',en:'custom/habit',color:0xaa88cc},
@@ -2458,8 +2474,8 @@ const VOCAB = [
     {emoji:'🩹',es:'la curita',en:'the bandage',color:0x66aaff},
     {emoji:'📷',es:'la cámara',en:'the camera',color:0x66aaff},
     {emoji:'☑️',es:'la decisión',en:'decision',color:0x88aaff},
-    {emoji:'🦷',es:'la dentista',en:'dentist',color:0x66aaff},
-    {emoji:'🦷',es:'la dentista infantil',en:'pediatric dentist',color:0x66aaff},
+    {emoji:'👩‍⚕️',es:'la dentista',en:'dentist',color:0x66aaff},
+    {emoji:'👩‍⚕️',es:'la dentista infantil',en:'pediatric dentist',color:0x66aaff},
     {emoji:'💻',es:'la desarrolladora',en:'developer',color:0x66aaff},
     {emoji:'👋',es:'la despedida',en:'the farewell',color:0x66aaff},
     {emoji:'🕵️',es:'la detective',en:'detective',color:0x66aaff},
@@ -2476,18 +2492,18 @@ const VOCAB = [
     {emoji:'🔑',es:'la dueña',en:'owner',color:0x66aaff},
     {emoji:'🏠',es:'la dueña de casa',en:'homeowner',color:0x66aaff},
     {emoji:'📝',es:'la editora',en:'editor',color:0x66aaff},
-    {emoji:'⚡',es:'la electricista',en:'electrician',color:0x66aaff},
+    {emoji:'👩‍🔧',es:'la electricista',en:'electrician',color:0x66aaff},
     {emoji:'💼',es:'la empleada',en:'employee',color:0x66aaff},
     {emoji:'⚔️',es:'la enemiga',en:'enemy',color:0x66aaff},
     {emoji:'🤒',es:'la enfermedad',en:'the illness',color:0x66aaff},
     {emoji:'👩‍⚕️',es:'la enfermera',en:'the nurse',color:0x66aaff},
     {emoji:'🥗',es:'la ensalada',en:'the salad',color:0x66aaff},
     {emoji:'🏆',es:'la entrenadora',en:'coach',color:0x66aaff},
-    {emoji:'🏋️',es:'la entrenadora personal',en:'personal trainer',color:0x66aaff},
-    {emoji:'🧗',es:'la escaladora',en:'climber',color:0x66aaff},
+    {emoji:'🏋️‍♀️',es:'la entrenadora personal',en:'personal trainer',color:0x66aaff},
+    {emoji:'🧗‍♀️',es:'la escaladora',en:'climber',color:0x66aaff},
     {emoji:'❄️',es:'la escarcha',en:'the frost',color:0x66aaff},
     {emoji:'🧹',es:'la escoba',en:'the broom',color:0x66aaff},
-    {emoji:'✍️',es:'la escritora',en:'writer',color:0x66aaff},
+    {emoji:'✍️👩',es:'la escritora',en:'writer',color:0x66aaff},
     {emoji:'🏫',es:'la escuela',en:'the school',color:0x66aaff},
     {emoji:'👀',es:'la espectadora',en:'spectator',color:0x66aaff},
     {emoji:'⏳',es:'la espera',en:'the wait',color:0x66aaff},
@@ -2497,9 +2513,9 @@ const VOCAB = [
     {emoji:'⭐',es:'la estrella',en:'the star',color:0x66aaff},
     {emoji:'🌠',es:'la estrella fugaz',en:'the shooting star',color:0x66aaff},
     {emoji:'👩‍🎓',es:'la estudiante',en:'the student',color:0x66aaff},
-    {emoji:'🎓',es:'la estudiante universitaria',en:'college student',color:0x66aaff},
+    {emoji:'👩‍🎓',es:'la estudiante universitaria',en:'college student',color:0x66aaff},
     {emoji:'🏷️',es:'la etiqueta',en:'the label',color:0x66aaff},
-    {emoji:'🥾',es:'la excursionista',en:'hiker',color:0x66aaff},
+    {emoji:'🥾👩',es:'la excursionista',en:'hiker',color:0x66aaff},
     {emoji:'📚',es:'la experiencia',en:'experience',color:0x8899bb},
     {emoji:'🧠',es:'la experta',en:'expert',color:0x66aaff},
     {emoji:'🧭',es:'la exploradora',en:'explorer',color:0x66aaff},
@@ -2514,11 +2530,11 @@ const VOCAB = [
     {emoji:'💐',es:'la florista',en:'florist',color:0x66aaff},
     {emoji:'🦭',es:'la foca',en:'the seal',color:0x66aaff},
     {emoji:'🔥',es:'la fogata',en:'the campfire',color:0x66aaff},
-    {emoji:'📷',es:'la fotógrafa',en:'photographer',color:0x66aaff},
-    {emoji:'📷',es:'la fotógrafa de bodas',en:'wedding photographer',color:0x66aaff},
+    {emoji:'📷👩',es:'la fotógrafa',en:'photographer',color:0x66aaff},
+    {emoji:'👩‍📷',es:'la fotógrafa de bodas',en:'wedding photographer',color:0x66aaff},
     {emoji:'🍓',es:'la fresa',en:'the strawberry',color:0x66aaff},
     {emoji:'💪',es:'la fuerza',en:'the strength',color:0x66aaff},
-    {emoji:'⚽',es:'la futbolista',en:'soccer player',color:0x66aaff},
+    {emoji:'⚽👩',es:'la futbolista',en:'soccer player',color:0x66aaff},
     {emoji:'⚛️',es:'la física',en:'physicist',color:0x66aaff},
     {emoji:'🌌',es:'la galaxia',en:'the galaxy',color:0x66aaff},
     {emoji:'🍪',es:'la galleta',en:'the cookie',color:0x66aaff},
@@ -2526,16 +2542,16 @@ const VOCAB = [
     {emoji:'🏆',es:'la ganadora',en:'winner',color:0x66aaff},
     {emoji:'⛽',es:'la gasolina',en:'the gasoline',color:0x66aaff},
     {emoji:'🧑\\u200d🤝\\u200d🧑',es:'la gente',en:'people',color:0x66aaff},
-    {emoji:'📋',es:'la gerente',en:'manager',color:0x66aaff},
+    {emoji:'👩‍💼',es:'la gerente',en:'manager',color:0x66aaff},
     {emoji:'🪨',es:'la geóloga',en:'geologist',color:0x66aaff},
     {emoji:'🧢',es:'la gorra',en:'the cap',color:0x66aaff},
     {emoji:'🎓',es:'la graduada',en:'graduate',color:0x66aaff},
     {emoji:'👩‍🌾',es:'la granjera',en:'the farmer',color:0x66aaff},
-    {emoji:'🛡️',es:'la guardia',en:'guard',color:0x66aaff},
-    {emoji:'🛡️',es:'la guardia de seguridad',en:'security guard',color:0x66aaff},
+    {emoji:'💂‍♀️',es:'la guardia',en:'guard',color:0x66aaff},
+    {emoji:'💂‍♀️',es:'la guardia de seguridad',en:'security guard',color:0x66aaff},
     {emoji:'🦊',es:'la guarida',en:'the den',color:0x66aaff},
     {emoji:'🎸',es:'la guitarra',en:'the guitar',color:0x66aaff},
-    {emoji:'🎸',es:'la guitarrista',en:'guitarist',color:0x66aaff},
+    {emoji:'🎸👩',es:'la guitarrista',en:'guitarist',color:0x66aaff},
     {emoji:'🗺️',es:'la guía',en:'guide',color:0x66aaff},
     {emoji:'🍔',es:'la hamburguesa',en:'the hamburger',color:0x66aaff},
     {emoji:'❄️',es:'la helada',en:'the freeze',color:0x66aaff},
@@ -2561,9 +2577,9 @@ const VOCAB = [
     {emoji:'👔',es:'la jefa',en:'boss',color:0x66aaff},
     {emoji:'🧑',es:'la joven',en:'young woman',color:0x66aaff},
     {emoji:'💎',es:'la joyera',en:'jeweler',color:0x66aaff},
-    {emoji:'⚖️',es:'la jueza',en:'judge',color:0x66aaff},
+    {emoji:'👩‍⚖️',es:'la jueza',en:'judge',color:0x66aaff},
     {emoji:'🎮',es:'la jugadora',en:'player',color:0x66aaff},
-    {emoji:'🎾',es:'la jugadora de tenis',en:'tennis player',color:0x66aaff},
+    {emoji:'🎾👩',es:'la jugadora de tenis',en:'tennis player',color:0x66aaff},
     {emoji:'💜',es:'la lavanda',en:'the lavender',color:0x66aaff},
     {emoji:'🥛',es:'la leche',en:'the milk',color:0x66aaff},
     {emoji:'🥬',es:'la lechuga',en:'the lettuce',color:0x66aaff},
@@ -2587,7 +2603,7 @@ const VOCAB = [
     {emoji:'🧳',es:'la maleta',en:'the suitcase',color:0x66aaff},
     {emoji:'🌱',es:'la maleza',en:'the weed',color:0x66aaff},
     {emoji:'🍎',es:'la manzana',en:'the apple',color:0x66aaff},
-    {emoji:'💄',es:'la maquilladora',en:'makeup artist',color:0x66aaff},
+    {emoji:'💄👩',es:'la maquilladora',en:'makeup artist',color:0x66aaff},
     {emoji:'🌼',es:'la margarita',en:'the daisy',color:0x66aaff},
     {emoji:'⚓',es:'la marinera',en:'sailor',color:0x66aaff},
     {emoji:'🦋',es:'la mariposa',en:'the butterfly',color:0x66aaff},
@@ -2618,7 +2634,7 @@ const VOCAB = [
     {emoji:'🎵',es:'la música',en:'the music',color:0x66aaff},
     {emoji:'🎺',es:'la música callejera',en:'street musician',color:0x66aaff},
     {emoji:'🎷',es:'la música de jazz',en:'jazz musician',color:0x66aaff},
-    {emoji:'🏊',es:'la nadadora',en:'swimmer',color:0x66aaff},
+    {emoji:'🏊‍♀️',es:'la nadadora',en:'swimmer',color:0x66aaff},
     {emoji:'🏊',es:'la nadadora olímpica',en:'Olympic swimmer',color:0x66aaff},
     {emoji:'🍊',es:'la naranja',en:'the orange',color:0x66aaff},
     {emoji:'👃',es:'la nariz',en:'the nose',color:0x66aaff},
@@ -2655,7 +2671,7 @@ const VOCAB = [
     {emoji:'🧳',es:'la pasajera',en:'passenger',color:0x66aaff},
     {emoji:'❤️‍🔥',es:'la pasión',en:'the passion',color:0x66aaff},
     {emoji:'🍝',es:'la pasta',en:'the pasta',color:0x66aaff},
-    {emoji:'🛹',es:'la patinadora',en:'skater',color:0x66aaff},
+    {emoji:'👩🛹',es:'la patinadora',en:'skater',color:0x66aaff},
     {emoji:'🛹',es:'la patineta',en:'the skateboard',color:0x66aaff},
     {emoji:'🤡',es:'la payasa',en:'clown',color:0x66aaff},
     {emoji:'☮️',es:'la paz',en:'peace',color:0x66aaff},
@@ -2664,14 +2680,14 @@ const VOCAB = [
     {emoji:'⛰️',es:'la pendiente',en:'the slope',color:0x66aaff},
     {emoji:'🍐',es:'la pera',en:'the pear',color:0x66aaff},
     {emoji:'😞',es:'la perdedora',en:'loser',color:0x66aaff},
-    {emoji:'📰',es:'la periodista',en:'journalist',color:0x66aaff},
+    {emoji:'📰👩',es:'la periodista',en:'journalist',color:0x66aaff},
     {emoji:'🧑',es:'la persona',en:'the person',color:0x66aaff},
-    {emoji:'🐟',es:'la pescadera',en:'fishmonger',color:0x66aaff},
+    {emoji:'👩‍💼🐟',es:'la pescadera',en:'fishmonger',color:0x66aaff},
     {emoji:'🎣',es:'la pescadora',en:'fisher',color:0x66aaff},
-    {emoji:'🎹',es:'la pianista',en:'pianist',color:0x66aaff},
+    {emoji:'🎹👩',es:'la pianista',en:'pianist',color:0x66aaff},
     {emoji:'🪨',es:'la piedra',en:'the stone',color:0x66aaff},
-    {emoji:'✈️',es:'la piloto',en:'pilot',color:0x66aaff},
-    {emoji:'✈️',es:'la piloto de avión',en:'airplane pilot',color:0x66aaff},
+    {emoji:'👩‍✈️',es:'la piloto',en:'pilot',color:0x66aaff},
+    {emoji:'👩‍✈️',es:'la piloto de avión',en:'airplane pilot',color:0x66aaff},
     {emoji:'🖼️',es:'la pintora',en:'painter',color:0x66aaff},
     {emoji:'🖌️',es:'la pintora de casas',en:'house painter',color:0x66aaff},
     {emoji:'🍭',es:'la piruleta',en:'the lollipop',color:0x66aaff},
@@ -2680,7 +2696,7 @@ const VOCAB = [
     {emoji:'🌿',es:'la planta',en:'the plant',color:0x66aaff},
     {emoji:'🪴',es:'la planta de interior',en:'the houseplant',color:0x66aaff},
     {emoji:'🏖️',es:'la playa',en:'the beach',color:0x66aaff},
-    {emoji:'🔧',es:'la plomera',en:'plumber',color:0x66aaff},
+    {emoji:'👩‍🔧',es:'la plomera',en:'plumber',color:0x66aaff},
     {emoji:'🪶',es:'la pluma',en:'the feather',color:0x66aaff},
     {emoji:'📜',es:'la poeta',en:'poet',color:0x66aaff},
     {emoji:'👮',es:'la policía',en:'police officer',color:0x66aaff},
@@ -2691,9 +2707,9 @@ const VOCAB = [
     {emoji:'👸',es:'la princesa',en:'princess',color:0x66aaff},
     {emoji:'🌱',es:'la principiante',en:'beginner',color:0x66aaff},
     {emoji:'🎬',es:'la productora',en:'producer',color:0x66aaff},
-    {emoji:'👩\\u200d🏫',es:'la profesora',en:'teacher',color:0x66aaff},
-    {emoji:'🇪🇸',es:'la profesora de español',en:'Spanish teacher',color:0x66aaff},
-    {emoji:'🎵',es:'la profesora de música',en:'music teacher',color:0x66aaff},
+    {emoji:'👩‍🏫',es:'la profesora',en:'teacher',color:0x66aaff},
+    {emoji:'👩‍🏫🇪🇸',es:'la profesora de español',en:'Spanish teacher',color:0x66aaff},
+    {emoji:'👩‍🏫🎵',es:'la profesora de música',en:'music teacher',color:0x66aaff},
     {emoji:'💻',es:'la programadora',en:'programmer',color:0x66aaff},
     {emoji:'🧠',es:'la psicóloga',en:'psychologist',color:0x66aaff},
     {emoji:'🚪',es:'la puerta',en:'the door',color:0x66aaff},
@@ -2707,7 +2723,7 @@ const VOCAB = [
     {emoji:'📐',es:'la regla',en:'the ruler',color:0x66aaff},
     {emoji:'👑',es:'la reina',en:'queen',color:0x66aaff},
     {emoji:'⌚',es:'la relojera',en:'watchmaker',color:0x66aaff},
-    {emoji:'📦',es:'la repartidora',en:'delivery person',color:0x66aaff},
+    {emoji:'👩‍💼📦',es:'la repartidora',en:'delivery person',color:0x66aaff},
     {emoji:'✔️',es:'la respuesta',en:'the answer',color:0x66aaff},
     {emoji:'🌊',es:'la ribera',en:'the riverbank',color:0x66aaff},
     {emoji:'😂',es:'la risa',en:'the laughter',color:0x66aaff},
@@ -2729,7 +2745,7 @@ const VOCAB = [
     {emoji:'😊',es:'la sonrisa',en:'the smile',color:0x66aaff},
     {emoji:'🍜',es:'la sopa',en:'the soup',color:0x66aaff},
     {emoji:'❗',es:'la sorpresa',en:'the surprise',color:0x66aaff},
-    {emoji:'🏄',es:'la surfista',en:'surfer',color:0x66aaff},
+    {emoji:'🏄‍♀️',es:'la surfista',en:'surfer',color:0x66aaff},
     {emoji:'💳',es:'la tarjeta',en:'the card',color:0x66aaff},
     {emoji:'🍰',es:'la tarta',en:'the pie',color:0x66aaff},
     {emoji:'🚕',es:'la taxista',en:'taxi driver',color:0x66aaff},
@@ -2737,7 +2753,7 @@ const VOCAB = [
     {emoji:'🕸️',es:'la telaraña',en:'the spiderweb',color:0x66aaff},
     {emoji:'📺',es:'la televisión',en:'the television',color:0x66aaff},
     {emoji:'🌡️',es:'la temperatura',en:'the temperature',color:0x66aaff},
-    {emoji:'🎾',es:'la tenista',en:'tennis player',color:0x66aaff},
+    {emoji:'🎾👩',es:'la tenista',en:'tennis player',color:0x66aaff},
     {emoji:'💬',es:'la terapeuta',en:'therapist',color:0x66aaff},
     {emoji:'🫖',es:'la tetera',en:'the teapot',color:0x66aaff},
     {emoji:'🏪',es:'la tienda',en:'the store',color:0x66aaff},
@@ -2755,13 +2771,13 @@ const VOCAB = [
     {emoji:'🍇',es:'la uva',en:'the grape',color:0x66aaff},
     {emoji:'🐮',es:'la vaca',en:'the cow',color:0x66aaff},
     {emoji:'🏠',es:'la vecina',en:'neighbor',color:0x66aaff},
-    {emoji:'🛍️',es:'la vendedora',en:'salesperson',color:0x66aaff},
+    {emoji:'👩‍💼🛍️',es:'la vendedora',en:'salesperson',color:0x66aaff},
     {emoji:'🎟️',es:'la vendedora de boletos',en:'ticket seller',color:0x66aaff},
     {emoji:'🪟',es:'la ventana',en:'the window',color:0x66aaff},
     {emoji:'✅',es:'la verdad',en:'truth',color:0x66ccaa},
-    {emoji:'🐾',es:'la veterinaria',en:'veterinarian',color:0x66aaff},
+    {emoji:'👩‍⚕️🐾',es:'la veterinaria',en:'veterinarian',color:0x66aaff},
     {emoji:'🦹\\u200d♀️',es:'la villana',en:'villain',color:0x66aaff},
-    {emoji:'🎻',es:'la violinista',en:'violinist',color:0x66aaff},
+    {emoji:'🎻👩',es:'la violinista',en:'violinist',color:0x66aaff},
     {emoji:'🚶',es:'la visitante',en:'visitor',color:0x66aaff},
     {emoji:'🤝',es:'la voluntaria',en:'volunteer',color:0x66aaff},
     {emoji:'🗣️',es:'la voz',en:'the voice',color:0x66aaff},
@@ -2802,7 +2818,7 @@ const COLLECT_RADIUS = 0.006; // ~29 world units along the planet surface
 const COLLECT_HEIGHT = 20;     // must also be physically close vertically
 const ITEM_FLOAT = 18;         // keep emoji visibly above the terrain surface
 const LABEL_FLOAT = 38;        // sign floats above the emoji without requiring a steep look-up
-const LABEL_SHOW_DISTANCE = 150; // show vocabulary sign well before collection range
+const LABEL_SHOW_DISTANCE = 240; // begin showing vocabulary sign 200+ world units away
 const WORLD_ITEM_COUNT = 1000;  // distributed around the whole planet
 const WORLD_ITEM_SAMPLES = 50000;
 const worldItems = [];
@@ -2900,11 +2916,11 @@ function spawnWorldItems(){
             const j=s%(i+1); [arr[i],arr[j]]=[arr[j],arr[i]];
         }
     }
-    shuffle(candidatesByBiome.meadow,101);
-    shuffle(candidatesByBiome.forest,202);
-    shuffle(candidatesByBiome.highland,303);
-    shuffle(candidatesByBiome.riverbank,404);
-    shuffle(candidatesByBiome.alpine,505);
+    shuffle(candidatesByBiome.meadow, (Math.random()*0xffffffff)>>>0);
+    shuffle(candidatesByBiome.forest, (Math.random()*0xffffffff)>>>0);
+    shuffle(candidatesByBiome.highland, (Math.random()*0xffffffff)>>>0);
+    shuffle(candidatesByBiome.riverbank, (Math.random()*0xffffffff)>>>0);
+    shuffle(candidatesByBiome.alpine, (Math.random()*0xffffffff)>>>0);
 
     const accepted=[];
     const minDot=Math.cos(MIN_ITEM_ANG);
@@ -2949,7 +2965,7 @@ function spawnWorldItems(){
         for(const biome of Object.keys(candidatesByBiome)){
             for(const cand of candidatesByBiome[biome]) all.push({cand,biome});
         }
-        shuffle(all,9090);
+        shuffle(all, (Math.random()*0xffffffff)>>>0);
         for(const entry of all){
             if(accepted.length>=1000) break;
             if(!farEnough(entry.cand.nx,entry.cand.ny,entry.cand.nz)) continue;
@@ -2995,7 +3011,9 @@ function updateCollectibles(dt){
 
         // Label only becomes visible when physically near the sprite.
         const fadeDistance=LABEL_SHOW_DISTANCE;
-        const fade=Math.max(0,Math.min(1,1-(surfaceGap/fadeDistance)));
+        const fullDistance=200;
+        // Fully readable by 200 world units; gently fades only beyond that.
+        const fade=Math.max(0,Math.min(1,(fadeDistance-surfaceGap)/(fadeDistance-fullDistance)));
         const shouldShowLabel = surfaceGap<=LABEL_SHOW_DISTANCE;
 
         if(shouldShowLabel){
@@ -3138,6 +3156,7 @@ document.querySelectorAll('[data-goto]').forEach(el=>{
 document.getElementById('toggle-sound')?.addEventListener('change', function(){
     soundEnabled = !!this.checked;
     if(soundEnabled){
+        updateMusicVolume();
         if(gameStarted && !gamePaused) startLoungeMusic();
         addLog('Sound enabled.');
     } else {
@@ -3145,6 +3164,13 @@ document.getElementById('toggle-sound')?.addEventListener('change', function(){
         addLog('Sound disabled.');
     }
 });
+document.getElementById('volume-slider')?.addEventListener('input', function(){
+    soundVolume = Math.max(0, Math.min(10, Number(this.value) || 0));
+    localStorage.setItem('vocabSoundVolume', String(soundVolume));
+    if(volumeValue) volumeValue.textContent = `${soundVolume}/10`;
+    updateMusicVolume();
+});
+
 document.getElementById('toggle-vibration')?.addEventListener('change', function(){
     if(this.checked && navigator.vibrate) navigator.vibrate(20);
     addLog(this.checked ? 'Vibration enabled.' : 'Vibration disabled.');
@@ -3163,7 +3189,7 @@ window.addEventListener('keydown', e=>{
     if(e.code==='Escape' && menuOpen){ closeMenu(); return; }
     if(e.code==='KeyM' && !menuOpen){ openMenu(); return; }
     if(e.code==='Space'){ e.preventDefault(); document.getElementById('btn-action').click(); }
-    if(e.code==='Digit0'){
+    if(e.code==='KeyF'){
         e.preventDefault();
         if(!(levHeld || levActive) && !sprintExhausted && sprintStamina > 0){
             sprintHeld = true;
@@ -3172,7 +3198,7 @@ window.addEventListener('keydown', e=>{
     }
     if(e.code==='Enter'){
         e.preventDefault();
-        if(!keys['Digit0'] && !sprintHeld){
+        if(!keys['KeyF'] && !sprintHeld){
             levHeld = true;
             btnLev.classList.add('active');
         }
@@ -3250,18 +3276,23 @@ function scheduleLoungeMusic(){
     musicTimer = setTimeout(scheduleLoungeMusic, 90);
 }
 
+function updateMusicVolume(){
+    if(musicMaster) musicMaster.gain.setTargetAtTime(soundVolume / 10, musicCtx.currentTime, 0.04);
+}
+
 function prepareLoungeMusic(){
     if(musicCtx || !window.AudioContext && !window.webkitAudioContext) return;
     try{
         const Ctx = window.AudioContext || window.webkitAudioContext;
         musicCtx = new Ctx();
         musicMaster = musicCtx.createGain();
-        musicMaster.gain.value = 0.22;
+        musicMaster.gain.value = soundVolume / 10;
         musicMaster.connect(musicCtx.destination);
     }catch(e){ musicCtx=null; musicMaster=null; }
 }
 
 function startLoungeMusic(){
+    if(!soundEnabled || soundVolume <= 0) return;
     try{
         prepareLoungeMusic();
         if(!musicCtx) return;
@@ -3303,7 +3334,7 @@ async function startGame(){
         console.error('Vocabulario Español startup error:', err);
         gameStarted = false;
         startPlay.disabled = false;
-        startPlay.textContent = 'COMENZAR';
+        startPlay.textContent = 'COMENZAR / START';
         startScreen.style.display = 'flex';
         loading.style.display = 'none';
         alert('No se pudo cargar el juego. Please reload the page and try again.');
