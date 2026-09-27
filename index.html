@@ -37,7 +37,8 @@
         .hud-btn svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
         /* Three matching controls form a clean corner cluster. */
         #btn-action { bottom:34px; right:110px; width:68px; height:68px; font-size:0.72rem; }
-        #btn-menu   { top:42%; right:34px; transform:translateY(-50%); }
+        #btn-menu   { top:24px; right:24px; }
+        /* MENU is repositioned by layoutHUD() when the available screen space changes. */
 
         /* CORRER is on the outside/bottom-right, close to the corner. */
         #sprint-wrap {
@@ -152,6 +153,17 @@
             .keyboard-controls { gap:4px 10px; margin-bottom:10px; }
             .copyright { font-size:0.62rem; }
         }
+
+        /* ── 100% COMPLETION SCREEN ─────────────────────────────────── */
+        #completion-screen{position:fixed;inset:0;z-index:300;display:none;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 42%,rgba(50,125,75,.42),rgba(2,4,10,.97) 72%);color:#fff;text-align:center;padding:20px;pointer-events:all}
+        #completion-screen.open{display:flex}
+        .completion-card{width:min(560px,92vw);box-sizing:border-box;padding:38px 30px 32px;border:1px solid rgba(180,230,195,.3);border-radius:26px;background:rgba(6,15,10,.92);box-shadow:0 20px 90px rgba(0,0,0,.7);backdrop-filter:blur(12px)}
+        .completion-trophy{font-size:clamp(3.4rem,12vw,6rem);line-height:1;margin-bottom:14px}
+        .completion-title{font-size:clamp(1.8rem,6vw,3rem);font-weight:800;color:rgba(220,250,225,.98);margin-bottom:10px}
+        .completion-count{font-size:1.15rem;color:rgba(180,230,195,.95);letter-spacing:.08em;margin-bottom:16px}
+        .completion-text{font-size:.98rem;line-height:1.6;color:rgba(255,255,255,.7);margin:0 auto 24px;max-width:430px}
+        .completion-button{display:block;margin:0 auto;padding:13px 24px;border-radius:12px;border:1px solid rgba(180,230,195,.3);background:rgba(50,110,65,.8);color:#fff;font-weight:800;letter-spacing:.08em;cursor:pointer}
+        .completion-button:hover{background:rgba(65,135,80,.92)}
 
         /* ── OVERLAY PANEL ───────────────────────────────────────────── */
         #overlay {
@@ -347,6 +359,16 @@
 </div>
 
 <!-- ── OVERLAY PANELS ─────────────────────────────────── -->
+<div id="completion-screen" aria-live="polite">
+    <div class="completion-card">
+        <div class="completion-trophy">🏆🌎</div>
+        <div class="completion-title">¡FELICIDADES! / CONGRATULATIONS!</div>
+        <div class="completion-count">1,000 / 1,000 PALABRAS ENCONTRADAS</div>
+        <p class="completion-text">Has encontrado las 1,000 palabras de Vocabulario Español. ¡Completaste todo el mundo!</p>
+        <button class="completion-button" id="completion-continue">CONTINUAR EXPLORANDO / KEEP EXPLORING</button>
+    </div>
+</div>
+
 <div id="overlay">
     <!-- Main Menu -->
     <div class="panel" id="panel-main">
@@ -1424,6 +1446,49 @@ window.addEventListener('pageshow',()=>{
     if(!document.hidden) setGamePaused(false);
 });
 
+function rectsOverlap(a,b,pad=8){
+    return !(a.right+pad <= b.left || a.left-pad >= b.right || a.bottom+pad <= b.top || a.top-pad >= b.bottom);
+}
+
+function layoutHUD(){
+    const menu=document.getElementById('btn-menu');
+    if(!menu) return;
+    const W=window.innerWidth, H=window.innerHeight;
+    const mw=menu.offsetWidth||58, mh=menu.offsetHeight||58;
+    const controls=['btn-action','lev-wrap','sprint-wrap']
+        .map(id=>document.getElementById(id))
+        .filter(Boolean)
+        .map(el=>el.getBoundingClientRect());
+
+    // Prefer the upper-right corner, but automatically move MENU to another
+    // open zone if a short/landscape screen makes that position crowded.
+    const margin=Math.max(14, Math.min(34, Math.round(Math.min(W,H)*0.045)));
+    const candidates=[
+        {left:W-mw-margin, top:margin},
+        {left:margin, top:margin},
+        {left:W-mw-margin, top:Math.round(H*0.22)},
+        {left:margin, top:Math.round(H*0.22)},
+        {left:W-mw-margin, top:Math.round((H-mh)/2)},
+        {left:margin, top:Math.round((H-mh)/2)},
+        {left:W-mw-margin, top:H-mh-margin},
+        {left:margin, top:H-mh-margin}
+    ];
+
+    let chosen=candidates[candidates.length-1];
+    for(const c of candidates){
+        const test={left:c.left, top:c.top, right:c.left+mw, bottom:c.top+mh};
+        if(test.left<8 || test.top<8 || test.right>W-8 || test.bottom>H-8) continue;
+        if(!controls.some(r=>rectsOverlap(test,r,10))){ chosen=c; break; }
+    }
+    menu.style.left=`${Math.round(chosen.left)}px`;
+    menu.style.top=`${Math.round(chosen.top)}px`;
+    menu.style.right='auto';
+    menu.style.transform='none';
+}
+
+window.addEventListener('resize', layoutHUD);
+window.addEventListener('orientationchange', ()=>setTimeout(layoutHUD,80));
+
 function animate(){
     requestAnimationFrame(animate);
     if(gamePaused){
@@ -1464,7 +1529,7 @@ function animate(){
     if(keys['KeyS']||keys['Keys']) dFwd  -= spd;
     if(keys['KeyA']||keys['Keya']) dRight-=spd;
     if(keys['KeyD']||keys['Keyd']) dRight+=spd;
-    if(jL.active){dFwd+=(-jL.dy/maxJR)*spd*3.2;dRight+=(jL.dx/maxJR)*spd*3.2;}
+    if(jL.active){dFwd+=(-jL.dy/maxJR)*spd;dRight+=(jL.dx/maxJR)*spd;}
 
     // Update persistent tangent frame once per frame for the real player position
     updatePlayerTangents();
@@ -2844,15 +2909,26 @@ const labelTextureCache = new Map();
 // render consistently on iPhone/iPad, Android, and Windows.
 const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
 
+function normalizeEmojiText(value){
+    // Some multi-emoji vocabulary entries were stored with a literal \\u200d
+    // instead of the actual zero-width-joiner. Normalize before drawing.
+    return String(value).replace(/\\u200d/g, '\u200d');
+}
+
+function splitEmojiClusters(value){
+    const text=normalizeEmojiText(value);
+    if(typeof Intl!=='undefined' && Intl.Segmenter){
+        try { return [...new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(text)].map(x=>x.segment); }
+        catch(e){}
+    }
+    return Array.from(text);
+}
+
 function makeItemSprite(vocab){
-    // The sprite only contains the emoji + glow, so cache by those visual
-    // properties instead of the vocabulary word. This dramatically reduces
-    // texture memory when many words share an emoji.
-    const cacheKey = vocab.emoji + '|' + vocab.color;
+    const emojiText=normalizeEmojiText(vocab.emoji);
+    const cacheKey = emojiText + '|' + vocab.color;
     if(itemTextureCache.has(cacheKey)) return itemTextureCache.get(cacheKey);
 
-    // Smaller texture = substantially less GPU memory on iPhone while still
-    // looking sharp at the sprite's world-space size.
     const S=64, c=document.createElement('canvas');
     c.width=c.height=S;
     const ctx=c.getContext('2d');
@@ -2867,13 +2943,16 @@ function makeItemSprite(vocab){
     ctx.fillStyle=g;
     ctx.fillRect(0,0,S,S);
 
-    // Explicitly request the platform emoji fonts. Apple Color Emoji is the
-    // important part for iOS; the others preserve Android/Windows support.
-    ctx.font=`30px ${EMOJI_FONT}`;
+    // Draw emoji grapheme-by-grapheme. This supports both joined emoji such as
+    // 👨‍🍳 and separate combinations such as 🧑🐟 without broken-glyph boxes.
+    ctx.font=`28px ${EMOJI_FONT}`;
     ctx.textAlign='center';
     ctx.textBaseline='middle';
     ctx.fillStyle='#fff';
-    ctx.fillText(vocab.emoji,cx,cx+1);
+    const clusters=splitEmojiClusters(emojiText).slice(0,4);
+    const step=Math.min(30, Math.max(22, 64/(clusters.length||1)));
+    const start=cx-((clusters.length-1)*step)/2;
+    clusters.forEach((cluster,i)=>ctx.fillText(cluster,start+i*step,cx+1));
 
     const tex = new THREE.CanvasTexture(c);
     tex.colorSpace = THREE.SRGBColorSpace;
@@ -2997,6 +3076,15 @@ const promptEl=document.createElement('div');
 promptEl.style.cssText='position:fixed;bottom:calc(50% + 30px);left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);color:#fff;padding:8px 20px;border-radius:20px;font-size:0.85rem;letter-spacing:0.05em;pointer-events:none;z-index:20;display:none;border:1px solid rgba(180,230,195,0.4);white-space:nowrap;';
 document.body.appendChild(promptEl);
 let nearestItem=null;
+let completionShown=false;
+const completionScreen=document.getElementById('completion-screen');
+function showCompletionScreen(){
+    if(completionShown || inventoryMap.size!==VOCAB.length) return;
+    completionShown=true;
+    completionScreen?.classList.add('open');
+    if(navigator.vibrate && document.getElementById('toggle-vibration')?.checked){try{navigator.vibrate([80,60,80,60,180]);}catch(e){}}
+    addLog('🏆 ¡Felicidades! Encontraste las 1,000 palabras.');
+}
 
 let collectibleTime = 0;
 function updateCollectibles(dt){
@@ -3078,6 +3166,7 @@ function tryCollect(){
     addLog(`✅ Recogiste "${vocab.es}" — ${vocab.en}${entry.qty>1?' (×'+entry.qty+')':''}`);
     nearestItem=null;
     if(navigator.vibrate && document.getElementById('toggle-vibration')?.checked) navigator.vibrate(25);
+    if(inventoryMap.size===VOCAB.length) showCompletionScreen();
     return true;
 }
 
@@ -3149,6 +3238,10 @@ function wireBtn(id, fn){
     el.addEventListener('touchend', e=>{ e.preventDefault(); e.stopPropagation(); fn(); },{passive:false});
 }
 
+document.getElementById('completion-continue')?.addEventListener('click', ()=>completionScreen?.classList.remove('open'));
+document.getElementById('completion-continue')?.addEventListener('touchend', e=>{e.preventDefault();e.stopPropagation();completionScreen?.classList.remove('open');},{passive:false});
+
+layoutHUD();
 wireBtn('btn-menu', openMenu);
 wireBtn('close-menu', closeMenu);
 wireBtn('btn-action', ()=>{
