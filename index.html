@@ -37,8 +37,16 @@
         .hud-btn svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
         /* Three matching controls form a clean corner cluster. */
         #btn-action { bottom:34px; right:110px; width:68px; height:68px; font-size:0.72rem; }
-        #btn-menu   { top:24px; right:24px; }
+        #btn-menu   { top:74px; right:24px; }
         /* MENU is repositioned by layoutHUD() when the available screen space changes. */
+
+        /* ── AD BAR ──────────────────────────────────────────────────── */
+        #ad-bar {
+            position:fixed; top:0; left:0; width:100%; height:50px; z-index:500;
+            background:#02040a; display:flex; align-items:center; justify-content:center;
+            overflow:hidden; pointer-events:none;
+        }
+        #ad-bar ins { pointer-events:all; }
 
         /* CORRER is on the outside/bottom-right, close to the corner. */
         #sprint-wrap {
@@ -302,13 +310,15 @@
      crossorigin="anonymous"></script>
 </head>
 <body>
-<!-- Spanish Game -->
-<ins class="adsbygoogle"
-     style="display:block"
-     data-ad-client="ca-pub-7858482153655813"
-     data-ad-slot="2555609557"
-     data-ad-format="auto"
-     data-full-width-responsive="true"></ins>
+<!-- Spanish Game: ad bar pinned above the game, fixed size so it doesn't
+     push the canvas/HUD around (a responsive "auto" ad's height isn't known
+     until it loads, which is what caused the black gap + misplaced menu). -->
+<div id="ad-bar">
+    <ins class="adsbygoogle"
+         style="display:inline-block;width:320px;height:50px"
+         data-ad-client="ca-pub-7858482153655813"
+         data-ad-slot="2555609557"></ins>
+</div>
 <script>
      (adsbygoogle = window.adsbygoogle || []).push({});
 </script>
@@ -1488,9 +1498,10 @@ function layoutHUD(){
     // Prefer the upper-right corner, but automatically move MENU to another
     // open zone if a short/landscape screen makes that position crowded.
     const margin=Math.max(14, Math.min(34, Math.round(Math.min(W,H)*0.045)));
+    const TOP_INSET=54; // clears the fixed 50px ad bar
     const candidates=[
-        {left:W-mw-margin, top:margin},
-        {left:margin, top:margin},
+        {left:W-mw-margin, top:margin+TOP_INSET},
+        {left:margin, top:margin+TOP_INSET},
         {left:W-mw-margin, top:Math.round(H*0.22)},
         {left:margin, top:Math.round(H*0.22)},
         {left:W-mw-margin, top:Math.round((H-mh)/2)},
@@ -1502,7 +1513,7 @@ function layoutHUD(){
     let chosen=candidates[candidates.length-1];
     for(const c of candidates){
         const test={left:c.left, top:c.top, right:c.left+mw, bottom:c.top+mh};
-        if(test.left<8 || test.top<8 || test.right>W-8 || test.bottom>H-8) continue;
+        if(test.left<8 || test.top<8+TOP_INSET || test.right>W-8 || test.bottom>H-8) continue;
         if(!controls.some(r=>rectsOverlap(test,r,10))){ chosen=c; break; }
     }
     menu.style.left=`${Math.round(chosen.left)}px`;
