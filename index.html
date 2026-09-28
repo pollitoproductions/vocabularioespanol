@@ -298,6 +298,29 @@
             color:rgba(255,255,255,0.25); font-size:0.85rem; letter-spacing:0.05em;
         }
 
+        /* ── INVENTORY TOP BAR (stays fixed while the grid scrolls) ─── */
+        .inv-topbar { flex-shrink:0; padding:10px 20px 12px; background:rgba(14,30,20,0.98); border-bottom:1px solid rgba(255,255,255,0.08); text-align:center; }
+        #inv-count { color:rgba(180,230,195,0.9); font-size:0.78rem; letter-spacing:0.04em; }
+        #inv-count b { font-size:1.15rem; color:rgba(220,250,225,1); }
+        #inv-count span { opacity:0.8; }
+        .inv-progress { height:4px; margin-top:8px; border-radius:2px; background:rgba(255,255,255,0.1); overflow:hidden; }
+        #inv-progress-fill { height:100%; width:0%; background:rgba(120,220,140,0.85); border-radius:2px; transition:width 0.3s; }
+
+        /* ── ENLARGED VOCABULARY CARD ───────────────────────────────── */
+        #card-zoom { position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(2,4,10,0.82); backdrop-filter:blur(5px); pointer-events:all; }
+        #card-zoom.open { display:flex; }
+        .zoom-card { position:relative; width:min(320px,88vw); box-sizing:border-box; padding:28px 20px 20px; border-radius:22px; text-align:center; color:#fff;
+            border:1px solid rgba(180,230,195,0.35); background:linear-gradient(160deg,rgba(20,45,30,0.98),rgba(8,18,12,0.98));
+            box-shadow:0 20px 70px rgba(0,0,0,0.7); animation:zoomIn 0.18s ease-out; }
+        @keyframes zoomIn { from { transform:scale(0.85); opacity:0; } to { transform:scale(1); opacity:1; } }
+        .zoom-close { position:absolute; top:8px; right:10px; background:none; border:none; color:rgba(255,255,255,0.55); font-size:1.1rem; cursor:pointer; padding:6px 10px; }
+        .zoom-close:hover { color:#fff; }
+        .zoom-en { font-size:1.25rem; font-weight:700; color:rgba(180,230,195,0.98); margin-bottom:6px; }
+        .zoom-emoji { font-size:clamp(5rem,26vw,7.5rem); line-height:1.15; margin:6px 0 10px; }
+        .zoom-es { font-size:1.7rem; font-weight:800; color:rgba(230,250,235,1); letter-spacing:0.02em; }
+        .zoom-qty { margin-top:8px; font-size:0.8rem; color:rgba(180,230,195,0.8); min-height:1em; }
+        .zoom-hint { margin-top:16px; font-size:0.62rem; letter-spacing:0.06em; color:rgba(255,255,255,0.3); }
+
         /* ── PRIVACY POLICY MODAL ───────────────────────────────────── */
         .privacy-link { background:none; border:none; color:rgba(180,230,195,0.7); font-size:0.72rem; letter-spacing:0.05em; text-decoration:underline; cursor:pointer; margin-top:8px; padding:6px 10px; }
         .privacy-link:hover { color:rgba(210,245,220,1); }
@@ -506,8 +529,11 @@
             <span class="panel-title">Inventory</span>
             <button class="panel-back" data-goto="panel-main">‹ Back</button>
         </div>
+        <div class="inv-topbar">
+            <div id="inv-count"></div>
+            <div class="inv-progress"><div id="inv-progress-fill"></div></div>
+        </div>
         <div class="panel-body inventory-body">
-            <div id="inv-count" style="text-align:center;margin:2px 0 14px;color:rgba(180,230,195,0.9);font-size:0.95rem;letter-spacing:0.04em"></div>
             <div class="inv-grid" id="inv-grid"></div>
         </div>
     </div>
@@ -557,6 +583,18 @@
                 </label>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Enlarged vocabulary card -->
+<div id="card-zoom" role="dialog" aria-modal="true" aria-label="Vocabulary card">
+    <div class="zoom-card">
+        <button class="zoom-close" id="zoom-close" type="button" aria-label="Close">✕</button>
+        <div class="zoom-en" id="zoom-en"></div>
+        <div class="zoom-emoji" id="zoom-emoji"></div>
+        <div class="zoom-es" id="zoom-es"></div>
+        <div class="zoom-qty" id="zoom-qty"></div>
+        <div class="zoom-hint">Toca fuera para cerrar / Tap outside to close</div>
     </div>
 </div>
 
@@ -1464,10 +1502,11 @@ soundVolume = Math.max(0, Math.min(10, Math.round(soundVolume)));
 
 // Ad state (declared early: setGamePaused reads adPlaying).
 let adPlaying = false;          // true only while an ad is actually on screen
-let menuAdPending = false;
-let adTimeouts = 0;             // ad library never answered (blocked / offline)
+let adRequestPending = false;
+let collectedSinceAd = 0;       // words picked up since the last ad
 let playStartTime = 0;          // set once the world is built
-const MENU_AD_MIN_PLAYTIME = 45000; // no ad in the first 45s of play
+const AD_MIN_PLAYTIME = 45000;  // no ad in the first 45s of play
+const AD_MIN_COLLECTED = 3;     // and only after the player has actually played a bit
 function syncAdSound(){
     try{ adConfig({ sound: soundVolume > 0 ? 'on' : 'off' }); }catch(e){}
 }
@@ -3329,6 +3368,7 @@ function tryCollect(){
     const entry = inventoryMap.get(vocab.es);
     addLog(`✅ Recogiste "${vocab.es}" — ${vocab.en}${entry.qty>1?' (×'+entry.qty+')':''}`);
     nearestItem=null;
+    collectedSinceAd++;
     if(navigator.vibrate && document.getElementById('toggle-vibration')?.checked) navigator.vibrate(25);
     if(inventoryMap.size===VOCAB.length) showCompletionScreen();
     return true;
@@ -3346,7 +3386,9 @@ function renderInventory(){
     if(!grid) return;
     grid.innerHTML = '';
     const countEl = document.getElementById('inv-count');
-    if(countEl) countEl.textContent = `${inventoryMap.size} / ${VOCAB.length} palabras diferentes recogidas`;
+    if(countEl) countEl.innerHTML = `<b>${inventoryMap.size}</b> / ${VOCAB.length} <span>palabras diferentes recogidas</span>`;
+    const fillEl = document.getElementById('inv-progress-fill');
+    if(fillEl) fillEl.style.width = (VOCAB.length ? (inventoryMap.size / VOCAB.length * 100) : 0) + '%';
     if(inventoryMap.size === 0){
         grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:rgba(255,255,255,0.25);font-size:0.8rem;padding:24px 0">Explore to find items</div>';
         return;
@@ -3356,6 +3398,9 @@ function renderInventory(){
         slot.className = 'inv-slot';
         slot.innerHTML = `<div class="inv-en">${entry.vocab.en}</div><div class="inv-emoji">${entry.vocab.emoji}</div><div class="inv-es">${es}${entry.qty>1?` <span class="inv-qty">×${entry.qty}</span>`:''}</div>`;
         slot.title = `${entry.vocab.en} — ${es}${entry.qty>1?' (×'+entry.qty+')':''}`;
+        slot.dataset.es = es;
+        slot.setAttribute('role','button');
+        slot.tabIndex = 0;
         grid.appendChild(slot);
     }
     // Fill remaining visual slots to keep grid tidy
@@ -3376,6 +3421,7 @@ function renderLog(){
 }
 
 function showPanel(id){
+    if(typeof closeCardZoom === 'function') closeCardZoom();
     panels.forEach(p=>{ p.style.display = p.id===id ? 'flex' : 'none'; });
     if(id==='panel-inventory') renderInventory();
     if(id==='panel-log') renderLog();
@@ -3387,51 +3433,45 @@ function openMenu(){
     showPanel('panel-main');
 }
 
-// H5 Games Ad Placement API: the Menu (M key / MENU button) is the game's
-// one natural pause point. Rules this follows:
-//  - only while the game world is on screen (never on start/loading/completion)
-//  - never in the first MENU_AD_MIN_PLAYTIME ms of play
-//  - adBreakDone opens the menu; a timeout fallback opens it anyway if the ad
-//    library never answers (ad blocker, offline), so MENU can never hang.
+// Opening the menu never triggers an ad, so the menu (and its content) is
+// always shown immediately.
 function requestMenuOpen(){
-    if(menuOpen || menuAdPending) return;
-    const worldVisible = gameStarted && playStartTime > 0 &&
-        !(typeof completionScreen !== 'undefined' && completionScreen && completionScreen.classList.contains('open'));
-    const eligible = typeof adBreak === 'function' && adTimeouts < 2 && worldVisible &&
-        (performance.now() - playStartTime) > MENU_AD_MIN_PLAYTIME;
-    if(!eligible){ openMenu(); return; }
+    if(menuOpen) return;
+    openMenu();
+}
 
-    menuAdPending = true;
-    let finished = false, adShown = false;
-    let fallback = null;
-    const finish = () => {
-        if(finished) return;
-        finished = true;
-        clearTimeout(fallback);
-        menuAdPending = false;
-        adPlaying = false;
-        setGamePaused(false);
-        openMenu();
-    };
-    fallback = setTimeout(() => {
-        if(!adShown){ adTimeouts++; finish(); }
-    }, 2500);
+// H5 Games Ad Placement API. The one ad opportunity is when the player closes
+// the menu and returns to the live game: the 3D world, HUD and collectible
+// words are on screen, never a start/loading/empty screen. Requirements:
+//  - the world is built and the completion screen is not showing
+//  - 45s+ of play and 3+ words collected since the last ad
+// Nothing waits on the ad, so a blocked ad script can't break the game.
+function maybeRequestAd(){
+    if(adPlaying || adRequestPending || menuOpen) return;
+    if(typeof adBreak !== 'function') return;
+    if(!gameStarted || playStartTime === 0) return;
+    if(typeof completionScreen !== 'undefined' && completionScreen && completionScreen.classList.contains('open')) return;
+    if(performance.now() - playStartTime < AD_MIN_PLAYTIME) return;
+    if(collectedSinceAd < AD_MIN_COLLECTED) return;
+    adRequestPending = true;
     try{
         adBreak({
-            type: 'pause',
-            name: 'menu_open',
-            beforeAd: () => { adShown = true; clearTimeout(fallback); adPlaying = true; setGamePaused(true); },
+            type: 'next',
+            name: 'menu_resume',
+            beforeAd: () => { adPlaying = true; collectedSinceAd = 0; setGamePaused(true); },
             afterAd: () => { adPlaying = false; },
-            adBreakDone: finish
+            adBreakDone: () => { adRequestPending = false; adPlaying = false; setGamePaused(false); }
         });
-    }catch(e){ finish(); }
+    }catch(e){ adRequestPending = false; adPlaying = false; }
 }
 
 function closeMenu(){
     menuOpen = false;
+    if(typeof closeCardZoom === 'function') closeCardZoom();
     overlay.classList.remove('open');
     jL.active=false; joyLB.style.display='none'; jL.dx=jL.dy=0;
     jR.active=false; joyRB.style.display='none'; jR.dx=jR.dy=0;
+    setTimeout(maybeRequestAd, 400);
 }
 
 // Wire buttons — use both click and touchend so mobile works
@@ -3491,6 +3531,7 @@ document.getElementById('toggle-icebolt')?.addEventListener('change', function()
 
 window.addEventListener('keydown', e=>{
     if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
+    if(e.code==='Escape' && cardZoomEl && cardZoomEl.classList.contains('open')){ closeCardZoom(); return; }
     if(e.code==='Escape' && menuOpen){ closeMenu(); return; }
     if(e.code==='KeyM' && !menuOpen){ requestMenuOpen(); return; }
     if(e.code==='Space'){ e.preventDefault(); document.getElementById('btn-action').click(); }
@@ -3616,6 +3657,34 @@ function stopLoungeMusic(){
     if(musicTimer){ clearTimeout(musicTimer); musicTimer=null; }
     if(musicCtx){ try{ musicCtx.suspend(); }catch(e){} }
 }
+
+// Enlarged vocabulary card: click/tap any collected card in the inventory.
+const cardZoomEl = document.getElementById('card-zoom');
+function closeCardZoom(){ if(cardZoomEl) cardZoomEl.classList.remove('open'); }
+function openCardZoom(es){
+    const entry = inventoryMap.get(es);
+    if(!entry || !cardZoomEl) return;
+    document.getElementById('zoom-en').textContent = entry.vocab.en;
+    document.getElementById('zoom-emoji').textContent = entry.vocab.emoji;
+    document.getElementById('zoom-es').textContent = es;
+    document.getElementById('zoom-qty').textContent = entry.qty > 1 ? `×${entry.qty} recogidos / collected` : '';
+    cardZoomEl.classList.add('open');
+}
+(function(){
+    const grid = document.getElementById('inv-grid');
+    grid.addEventListener('click', e=>{
+        const slot = e.target.closest('.inv-slot[data-es]');
+        if(slot) openCardZoom(slot.dataset.es);
+    });
+    grid.addEventListener('keydown', e=>{
+        if(e.code==='Enter' || e.code==='Space'){
+            const slot = e.target.closest('.inv-slot[data-es]');
+            if(slot){ e.preventDefault(); e.stopPropagation(); openCardZoom(slot.dataset.es); }
+        }
+    });
+    cardZoomEl.addEventListener('click', e=>{ if(e.target===cardZoomEl) closeCardZoom(); });
+    document.getElementById('zoom-close').addEventListener('click', closeCardZoom);
+})();
 
 // Privacy policy modal
 (function(){
