@@ -40,19 +40,6 @@
         #btn-menu   { top:24px; right:24px; }
         /* MENU is repositioned by layoutHUD() when the available screen space changes. */
 
-        /* ── AD BAR ──────────────────────────────────────────────────── */
-        /* Stays in the layout (so Google can request/fill the slot) but is fully
-           invisible and untouchable until an ad actually loads; the script near
-           <body> adds .filled when Google reports data-ad-status="filled". */
-        #ad-bar {
-            position:fixed; top:0; left:0; width:100%; height:50px; z-index:500;
-            background:#02040a; display:flex; align-items:center; justify-content:center;
-            overflow:hidden; pointer-events:none; opacity:0;
-        }
-        #ad-bar.filled { opacity:1; }
-        #ad-bar ins { pointer-events:none; }
-        #ad-bar.filled ins { pointer-events:all; }
-
         /* CORRER is on the outside/bottom-right, close to the corner. */
         #sprint-wrap {
             position:absolute; bottom:53px; right:32px;
@@ -313,37 +300,12 @@
     </style>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7858482153655813"
      crossorigin="anonymous"></script>
+    <script>
+        window.adsbygoogle = window.adsbygoogle || [];
+        var adBreak = adConfig = function(o) { adsbygoogle.push(o); };
+    </script>
 </head>
 <body>
-<!-- Spanish Game: ad bar pinned above the game, fixed size so it doesn't
-     push the canvas/HUD around (a responsive "auto" ad's height isn't known
-     until it loads, which is what caused the black gap + misplaced menu). -->
-<div id="ad-bar">
-    <ins class="adsbygoogle"
-         style="display:inline-block;width:320px;height:50px"
-         data-ad-client="ca-pub-7858482153655813"
-         data-ad-slot="2555609557"></ins>
-</div>
-<script>
-     (adsbygoogle = window.adsbygoogle || []).push({});
-</script>
-<script>
-// Show the ad bar (and move the MENU button below it) only when Google
-// reports the slot as filled; otherwise the game stays fully edge-to-edge.
-(function(){
-    const bar=document.getElementById('ad-bar');
-    const ins=bar && bar.querySelector('ins.adsbygoogle');
-    if(!ins) return;
-    window.AD_TOP_INSET=0;
-    function sync(){
-        const filled=ins.getAttribute('data-ad-status')==='filled';
-        bar.classList.toggle('filled', filled);
-        window.AD_TOP_INSET=filled?54:0;
-        if(typeof layoutHUD==='function') layoutHUD();
-    }
-    new MutationObserver(sync).observe(ins,{attributes:true,attributeFilter:['data-ad-status']});
-})();
-</script>
 <div id="loading"><div>Cargando/Loading</div><div id="loading-bar-wrap"><div id="loading-bar"></div></div></div>
 
 <div id="start-screen">
@@ -1520,10 +1482,9 @@ function layoutHUD(){
     // Prefer the upper-right corner, but automatically move MENU to another
     // open zone if a short/landscape screen makes that position crowded.
     const margin=Math.max(14, Math.min(34, Math.round(Math.min(W,H)*0.045)));
-    const TOP_INSET=window.AD_TOP_INSET||0; // 54 only while a filled ad bar is showing
     const candidates=[
-        {left:W-mw-margin, top:margin+TOP_INSET},
-        {left:margin, top:margin+TOP_INSET},
+        {left:W-mw-margin, top:margin},
+        {left:margin, top:margin},
         {left:W-mw-margin, top:Math.round(H*0.22)},
         {left:margin, top:Math.round(H*0.22)},
         {left:W-mw-margin, top:Math.round((H-mh)/2)},
@@ -1535,7 +1496,7 @@ function layoutHUD(){
     let chosen=candidates[candidates.length-1];
     for(const c of candidates){
         const test={left:c.left, top:c.top, right:c.left+mw, bottom:c.top+mh};
-        if(test.left<8 || test.top<8+TOP_INSET || test.right>W-8 || test.bottom>H-8) continue;
+        if(test.left<8 || test.top<8 || test.right>W-8 || test.bottom>H-8) continue;
         if(!controls.some(r=>rectsOverlap(test,r,10))){ chosen=c; break; }
     }
     menu.style.left=`${Math.round(chosen.left)}px`;
@@ -3381,6 +3342,28 @@ function openMenu(){
     showPanel('panel-main');
 }
 
+// H5 Games Ad Placement API: the Menu (M key / MENU button) is the game's
+// one natural pause point, so that's the only place an ad opportunity is
+// requested. adBreakDone always fires last — whether or not Google actually
+// had an ad to show — so the menu is guaranteed to open either way, with no
+// extra wait when there's no ad.
+let menuAdPending = false;
+function requestMenuOpen(){
+    if(menuOpen || menuAdPending) return;
+    if(typeof adBreak !== 'function'){ openMenu(); return; }
+    menuAdPending = true;
+    adBreak({
+        type: 'pause',
+        name: 'menu_open',
+        beforeAd: () => setGamePaused(true),
+        adBreakDone: () => {
+            menuAdPending = false;
+            setGamePaused(false);
+            openMenu();
+        }
+    });
+}
+
 function closeMenu(){
     menuOpen = false;
     overlay.classList.remove('open');
@@ -3400,7 +3383,7 @@ document.getElementById('completion-continue')?.addEventListener('click', ()=>co
 document.getElementById('completion-continue')?.addEventListener('touchend', e=>{e.preventDefault();e.stopPropagation();completionScreen?.classList.remove('open');},{passive:false});
 
 layoutHUD();
-wireBtn('btn-menu', openMenu);
+wireBtn('btn-menu', requestMenuOpen);
 wireBtn('close-menu', closeMenu);
 wireBtn('save-game', saveGame);
 wireBtn('btn-action', ()=>{
@@ -3445,7 +3428,7 @@ document.getElementById('toggle-icebolt')?.addEventListener('change', function()
 window.addEventListener('keydown', e=>{
     if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
     if(e.code==='Escape' && menuOpen){ closeMenu(); return; }
-    if(e.code==='KeyM' && !menuOpen){ openMenu(); return; }
+    if(e.code==='KeyM' && !menuOpen){ requestMenuOpen(); return; }
     if(e.code==='Space'){ e.preventDefault(); document.getElementById('btn-action').click(); }
     if(e.code==='KeyF'){
         e.preventDefault();
