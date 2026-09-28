@@ -297,12 +297,28 @@
             padding:40px 20px; text-align:center;
             color:rgba(255,255,255,0.25); font-size:0.85rem; letter-spacing:0.05em;
         }
+
+        /* ── PRIVACY POLICY MODAL ───────────────────────────────────── */
+        .privacy-link { background:none; border:none; color:rgba(180,230,195,0.7); font-size:0.72rem; letter-spacing:0.05em; text-decoration:underline; cursor:pointer; margin-top:8px; padding:6px 10px; }
+        .privacy-link:hover { color:rgba(210,245,220,1); }
+        #privacy-screen { position:fixed; inset:0; z-index:250; display:none; align-items:center; justify-content:center; padding:14px; background:rgba(2,4,10,0.92); color:#fff; pointer-events:all; }
+        #privacy-screen.open { display:flex; }
+        .privacy-card { width:min(560px,94vw); max-height:calc(100dvh - 28px); overflow-y:auto; touch-action:pan-y; -webkit-overflow-scrolling:touch; padding:26px 24px; border:1px solid rgba(180,230,195,0.25); border-radius:18px; background:rgba(6,15,10,0.96); text-align:left; user-select:text; -webkit-user-select:text; }
+        .privacy-card h2 { font-size:1.4rem; color:rgba(210,245,220,0.98); margin-bottom:12px; }
+        .privacy-card h3 { font-size:0.8rem; letter-spacing:0.12em; text-transform:uppercase; color:rgba(180,230,195,0.9); margin:16px 0 6px; }
+        .privacy-card p { font-size:0.85rem; line-height:1.5; color:rgba(255,255,255,0.75); margin-bottom:8px; }
+        .privacy-card a { color:rgba(150,205,255,0.95); }
+        .privacy-card .start-play { display:block; width:100%; margin-top:20px; }
     </style>
+    <!-- H5 Games Ads. data-adbreak-test="on" serves test ads only: REMOVE IT before going live. -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7858482153655813"
-     crossorigin="anonymous"></script>
+     crossorigin="anonymous"
+     data-ad-frequency-hint="120s"
+     data-adbreak-test="on"></script>
     <script>
         window.adsbygoogle = window.adsbygoogle || [];
         var adBreak = adConfig = function(o) { adsbygoogle.push(o); };
+        adConfig({ preloadAdBreaks: 'on', sound: 'on' });
     </script>
 </head>
 <body>
@@ -327,6 +343,24 @@
             <div class="key-row touch-help">📱 Touch screens: use the <b>left side</b> to move and the <b>right side</b> to look.</div>
         </div>
         <div class="copyright">Copyright © All Rights Reserved — Brant Fuller 2026</div>
+        <button id="privacy-open" class="privacy-link" type="button">Privacy Policy</button>
+    </div>
+</div>
+
+<div id="privacy-screen" role="dialog" aria-modal="true" aria-label="Privacy Policy">
+    <div class="privacy-card">
+        <h2>Privacy Policy</h2>
+        <p><b>Vocabulario Español</b> is a free browser game for learning Spanish vocabulary.</p>
+        <h3>Information we collect</h3>
+        <p>We do not ask for your name, email, or account. Your progress and settings (such as sound volume) are saved only in your own browser using local storage. This data never leaves your device.</p>
+        <h3>Advertising</h3>
+        <p>This game shows ads served by Google AdSense. Google and its partners may use cookies or similar technologies to serve and measure ads, which may be personalized based on your visits to this and other sites. Ads appear only at pause points, such as when you open the menu.</p>
+        <p>You can manage or opt out of personalized advertising at <a href="https://adssettings.google.com" target="_blank" rel="noopener">adssettings.google.com</a>. See also <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener">how Google uses information from sites that use its services</a>. Visitors in the EEA, UK, and Switzerland may be shown a consent choice before personalized ads are served.</p>
+        <h3>Children</h3>
+        <p>We do not knowingly collect personal information from children.</p>
+        <h3>Changes</h3>
+        <p>This policy may be updated from time to time. Last updated: September 2026.</p>
+        <button id="privacy-close" class="start-play" type="button">CLOSE / CERRAR</button>
     </div>
 </div>
 
@@ -1427,11 +1461,22 @@ let soundEnabled = true;
 let soundVolume = Number(localStorage.getItem('vocabSoundVolume') ?? '5');
 if(!Number.isFinite(soundVolume)) soundVolume = 5;
 soundVolume = Math.max(0, Math.min(10, Math.round(soundVolume)));
+
+// Ad state (declared early: setGamePaused reads adPlaying).
+let adPlaying = false;          // true only while an ad is actually on screen
+let menuAdPending = false;
+let adTimeouts = 0;             // ad library never answered (blocked / offline)
+let playStartTime = 0;          // set once the world is built
+const MENU_AD_MIN_PLAYTIME = 45000; // no ad in the first 45s of play
+function syncAdSound(){
+    try{ adConfig({ sound: soundVolume > 0 ? 'on' : 'off' }); }catch(e){}
+}
 const volumeSlider = document.getElementById('volume-slider');
 const volumeValue = document.getElementById('volume-value');
 if(volumeSlider) volumeSlider.value = String(soundVolume);
 if(volumeValue) volumeValue.textContent = `${soundVolume}/10`;
 function setGamePaused(paused){
+    if(!paused && adPlaying) return; // keep paused (and music off) until the ad ends
     gamePaused=!!paused;
     if(gamePaused){
         // Release held controls so returning from another app cannot cause
@@ -3343,25 +3388,43 @@ function openMenu(){
 }
 
 // H5 Games Ad Placement API: the Menu (M key / MENU button) is the game's
-// one natural pause point, so that's the only place an ad opportunity is
-// requested. adBreakDone always fires last — whether or not Google actually
-// had an ad to show — so the menu is guaranteed to open either way, with no
-// extra wait when there's no ad.
-let menuAdPending = false;
+// one natural pause point. Rules this follows:
+//  - only while the game world is on screen (never on start/loading/completion)
+//  - never in the first MENU_AD_MIN_PLAYTIME ms of play
+//  - adBreakDone opens the menu; a timeout fallback opens it anyway if the ad
+//    library never answers (ad blocker, offline), so MENU can never hang.
 function requestMenuOpen(){
     if(menuOpen || menuAdPending) return;
-    if(typeof adBreak !== 'function'){ openMenu(); return; }
+    const worldVisible = gameStarted && playStartTime > 0 &&
+        !(typeof completionScreen !== 'undefined' && completionScreen && completionScreen.classList.contains('open'));
+    const eligible = typeof adBreak === 'function' && adTimeouts < 2 && worldVisible &&
+        (performance.now() - playStartTime) > MENU_AD_MIN_PLAYTIME;
+    if(!eligible){ openMenu(); return; }
+
     menuAdPending = true;
-    adBreak({
-        type: 'pause',
-        name: 'menu_open',
-        beforeAd: () => setGamePaused(true),
-        adBreakDone: () => {
-            menuAdPending = false;
-            setGamePaused(false);
-            openMenu();
-        }
-    });
+    let finished = false, adShown = false;
+    let fallback = null;
+    const finish = () => {
+        if(finished) return;
+        finished = true;
+        clearTimeout(fallback);
+        menuAdPending = false;
+        adPlaying = false;
+        setGamePaused(false);
+        openMenu();
+    };
+    fallback = setTimeout(() => {
+        if(!adShown){ adTimeouts++; finish(); }
+    }, 2500);
+    try{
+        adBreak({
+            type: 'pause',
+            name: 'menu_open',
+            beforeAd: () => { adShown = true; clearTimeout(fallback); adPlaying = true; setGamePaused(true); },
+            afterAd: () => { adPlaying = false; },
+            adBreakDone: finish
+        });
+    }catch(e){ finish(); }
 }
 
 function closeMenu(){
@@ -3407,6 +3470,7 @@ document.querySelectorAll('[data-goto]').forEach(el=>{
 
 document.getElementById('volume-slider')?.addEventListener('input', function(){
     soundVolume = Math.max(0, Math.min(10, Number(this.value) || 0));
+    syncAdSound();
     localStorage.setItem('vocabSoundVolume', String(soundVolume));
     if(volumeValue) volumeValue.textContent = `${soundVolume}/10`;
     updateMusicVolume();
@@ -3553,6 +3617,16 @@ function stopLoungeMusic(){
     if(musicCtx){ try{ musicCtx.suspend(); }catch(e){} }
 }
 
+// Privacy policy modal
+(function(){
+    const scr=document.getElementById('privacy-screen');
+    const open=()=>scr.classList.add('open');
+    const close=()=>scr.classList.remove('open');
+    document.getElementById('privacy-open').addEventListener('click',open);
+    document.getElementById('privacy-close').addEventListener('click',close);
+    scr.addEventListener('click',e=>{ if(e.target===scr) close(); });
+})();
+
 // Start screen: generate the world only after the player presses PLAY.
 let gameStarted = false;
 const startScreen = document.getElementById('start-screen');
@@ -3571,6 +3645,8 @@ async function startGame(continueSaved=false){
     if(soundVolume > 0) startLoungeMusic();
     try {
         await buildWorld();
+        playStartTime = performance.now();
+        syncAdSound();
         if(continueSaved){
             const saved=readSavedGame();
             if(saved) restoreSavedGame(saved);
