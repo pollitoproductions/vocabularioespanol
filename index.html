@@ -37,16 +37,21 @@
         .hud-btn svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
         /* Three matching controls form a clean corner cluster. */
         #btn-action { bottom:34px; right:110px; width:68px; height:68px; font-size:0.72rem; }
-        #btn-menu   { top:74px; right:24px; }
+        #btn-menu   { top:24px; right:24px; }
         /* MENU is repositioned by layoutHUD() when the available screen space changes. */
 
         /* ── AD BAR ──────────────────────────────────────────────────── */
+        /* Stays in the layout (so Google can request/fill the slot) but is fully
+           invisible and untouchable until an ad actually loads; the script near
+           <body> adds .filled when Google reports data-ad-status="filled". */
         #ad-bar {
             position:fixed; top:0; left:0; width:100%; height:50px; z-index:500;
             background:#02040a; display:flex; align-items:center; justify-content:center;
-            overflow:hidden; pointer-events:none;
+            overflow:hidden; pointer-events:none; opacity:0;
         }
-        #ad-bar ins { pointer-events:all; }
+        #ad-bar.filled { opacity:1; }
+        #ad-bar ins { pointer-events:none; }
+        #ad-bar.filled ins { pointer-events:all; }
 
         /* CORRER is on the outside/bottom-right, close to the corner. */
         #sprint-wrap {
@@ -321,6 +326,23 @@
 </div>
 <script>
      (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+<script>
+// Show the ad bar (and move the MENU button below it) only when Google
+// reports the slot as filled; otherwise the game stays fully edge-to-edge.
+(function(){
+    const bar=document.getElementById('ad-bar');
+    const ins=bar && bar.querySelector('ins.adsbygoogle');
+    if(!ins) return;
+    window.AD_TOP_INSET=0;
+    function sync(){
+        const filled=ins.getAttribute('data-ad-status')==='filled';
+        bar.classList.toggle('filled', filled);
+        window.AD_TOP_INSET=filled?54:0;
+        if(typeof layoutHUD==='function') layoutHUD();
+    }
+    new MutationObserver(sync).observe(ins,{attributes:true,attributeFilter:['data-ad-status']});
+})();
 </script>
 <div id="loading"><div>Cargando/Loading</div><div id="loading-bar-wrap"><div id="loading-bar"></div></div></div>
 
@@ -1498,7 +1520,7 @@ function layoutHUD(){
     // Prefer the upper-right corner, but automatically move MENU to another
     // open zone if a short/landscape screen makes that position crowded.
     const margin=Math.max(14, Math.min(34, Math.round(Math.min(W,H)*0.045)));
-    const TOP_INSET=54; // clears the fixed 50px ad bar
+    const TOP_INSET=window.AD_TOP_INSET||0; // 54 only while a filled ad bar is showing
     const candidates=[
         {left:W-mw-margin, top:margin+TOP_INSET},
         {left:margin, top:margin+TOP_INSET},
