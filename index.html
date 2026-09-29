@@ -3680,7 +3680,6 @@ async function startGame(continueSaved=false){
     if(soundVolume > 0) startLoungeMusic();
     try {
         await buildWorld();
-        syncAdSound();
         if(continueSaved){
             const saved=readSavedGame();
             if(saved) restoreSavedGame(saved);
