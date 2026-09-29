@@ -92,6 +92,7 @@
             text-align:center; padding:24px;
         }
         .start-card {
+            touch-action:pan-y; -webkit-overflow-scrolling:touch;
             width:min(560px,92vw); max-height:calc(100dvh - 24px); overflow-y:auto; box-sizing:border-box; padding:clamp(20px,5vh,38px) clamp(18px,5vw,34px) clamp(18px,4vh,28px);
             border:1px solid rgba(180,230,195,0.18);
             border-radius:24px; background:rgba(6,15,10,0.82);
@@ -369,6 +370,20 @@
             <div class="key-row"><span class="key">F</span> Correr / Sprint</div>
             <div class="key-row"><span class="key">M</span> Menu</div>
             <div class="key-row touch-help">📱 Touch screens: use the <b>left side</b> to move and the <b>right side</b> to look.</div>
+        </div>
+
+        <section id="about-game" style="text-align:left;margin:0 auto 20px;max-width:460px;color:rgba(255,255,255,0.72);font-size:0.82rem;line-height:1.55;">
+            <h2 style="font-size:0.9rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(180,230,195,0.9);margin:0 0 6px;">About this game</h2>
+            <p style="margin:0 0 12px;">Vocabulario Español is a free 3D exploration game for people learning Spanish. You walk around a round, open world, find floating vocabulary cards, and collect them. Each card shows a picture, the Spanish word, and its English meaning, so you learn by seeing and repeating words in context.</p>
+            <h2 style="font-size:0.9rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(180,230,195,0.9);margin:0 0 6px;">How to play</h2>
+            <p style="margin:0 0 12px;">Move around the world, walk up to a card, and collect it with the action button. Open the menu to review your inventory and tap any collected card to enlarge it. Your progress is saved in your browser, so you can continue later. The game works with a keyboard or a touch screen, and you can adjust the sound in the menu.</p>
+            <h2 style="font-size:0.9rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(180,230,195,0.9);margin:0 0 6px;">Sample words (1000 in the full game)</h2>
+            <ul style="list-style:none;columns:2;column-gap:14px;margin:0 0 12px;padding:0;"><li>⬇️ <b>abajo</b> — down</li><li>2️⃣ <b>dos</b> — two</li><li>🍚 <b>el arroz</b> — the rice</li><li>👨‍🚒 <b>el bombero voluntario</b> — volunteer firefighter</li><li>👨‍🔧 <b>el carpintero</b> — carpenter</li><li>🧑 <b>el compañero</b> — classmate / companion</li><li>🌼 <b>el diente de león</b> — the dandelion</li><li>💍 <b>el esposo</b> — husband</li><li>🌨️ <b>el granizo</b> — the hail</li><li>🎟️ <b>el invitado</b> — guest</li><li>🗺️ <b>el mapa</b> — the map</li><li>⚫ <b>el negro</b> — black</li><li>🐟 <b>el pez</b> — the fish</li><li>🌉 <b>el puente</b> — the bridge</li><li>🧵 <b>el sastre</b> — tailor</li><li>🍅 <b>el tomate</b> — the tomato</li><li>🎻🧑 <b>el violinista</b> — violinist</li><li>🇭🇳 <b>Honduras</b> — Honduras</li><li>🥁👩 <b>la baterista</b> — drummer</li><li>🥩 <b>la carne</b> — the meat</li><li>💻 <b>la computadora</b> — the computer</li><li>🔑 <b>la dueña</b> — owner</li><li>😊 <b>la felicidad</b> — happiness</li><li>👧 <b>la hermana</b> — the sister</li><li>🧹 <b>la limpieza</b> — cleaning</li><li>🧑‍🍽️ <b>la mesera del restaurante</b> — waitress</li><li>🏷️ <b>la oferta</b> — the offer</li><li>🎣 <b>la pesca</b> — fishing</li><li>⚗️ <b>la química</b> — chemist</li><li>🚕 <b>la taxista</b> — taxi driver</li><li>🚶 <b>la visitante</b> — visitor</li><li>🇳🇮 <b>Nicaragua</b> — Nicaragua</li></ul>
+            <p style="margin:0 0 4px;">Categories include directions, countries, verbs, and everyday objects. New learners can start with the simple words nearby, and more advanced learners can explore farther for less common vocabulary.</p>
+        </section>
+        <div style="margin:0 auto 22px;max-width:460px;min-height:100px;">
+            <div style="font-size:0.62rem;letter-spacing:0.12em;color:rgba(255,255,255,0.3);margin-bottom:4px;">ADVERTISEMENT</div>
+            <ins class="adsbygoogle" id="start-ad" style="display:block" data-ad-client="ca-pub-7858482153655813" data-ad-slot="2555609557" data-ad-format="auto" data-full-width-responsive="true"></ins>
         </div>
         <div class="copyright">Copyright © All Rights Reserved — Brant Fuller 2026</div>
         <button id="privacy-open" class="privacy-link" type="button">Privacy Policy</button>
@@ -3720,6 +3735,15 @@ continuePlay?.addEventListener('keydown', e=>{
         startGame(true);
     }
 });
+</script>
+<script>
+    (function(){
+        var ins=document.getElementById('start-ad');
+        if(!ins) return;
+        var slot=ins.getAttribute('data-ad-slot')||'';
+        if(!/^\d+$/.test(slot)){ ins.parentNode.style.display='none'; return; }
+        try{ (window.adsbygoogle=window.adsbygoogle||[]).push({}); }catch(e){}
+    })();
 </script>
 </body>
 </html>
