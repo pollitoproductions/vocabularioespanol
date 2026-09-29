@@ -333,14 +333,16 @@
         .privacy-card a { color:rgba(150,205,255,0.95); }
         .privacy-card .start-play { display:block; width:100%; margin-top:20px; }
     </style>
-    <!-- H5 Games Ads -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7858482153655813"
-     crossorigin="anonymous"
-     data-ad-frequency-hint="120s"></script>
+    <!-- Google AdSense Auto ads -->
+    <script async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7858482153655813"
+        crossorigin="anonymous"></script>
     <script>
         window.adsbygoogle = window.adsbygoogle || [];
-        var adBreak = adConfig = function(o) { adsbygoogle.push(o); };
-        adConfig({ preloadAdBreaks: 'on', sound: 'on' });
+        window.adsbygoogle.push({
+            google_ad_client: "ca-pub-7858482153655813",
+            enable_page_level_ads: true
+        });
     </script>
 </head>
 <body>
@@ -350,6 +352,10 @@
     <div class="start-card">
         <div class="start-title">Vocabulario Español</div>
         <div class="start-subtitle">Explore · Collect · Learn</div>
+        <div style="max-width:460px;margin:0 auto 20px;color:rgba(255,255,255,0.62);font-size:0.82rem;line-height:1.5;">
+            Explore a 3D world, collect Spanish vocabulary, and learn common Spanish words as you play.
+            <br><span style="color:rgba(180,230,195,0.72);">Vocabulario Español includes 1,000 words for Spanish learners.</span>
+        </div>
         <div class="start-actions">
             <button id="start-play" class="start-play">COMENZAR / START</button>
             <button id="continue-play" class="continue-play" hidden>CONTINUAR / CONTINUE</button>
@@ -376,7 +382,7 @@
         <h3>Information we collect</h3>
         <p>We do not ask for your name, email, or account. Your progress and settings (such as sound volume) are saved only in your own browser using local storage. This data never leaves your device.</p>
         <h3>Advertising</h3>
-        <p>This game shows ads served by Google AdSense. Google and its partners may use cookies or similar technologies to serve and measure ads, which may be personalized based on your visits to this and other sites. Ads appear only at pause points, such as when you open the menu.</p>
+        <p>This website may show ads served by Google AdSense. Google and its partners may use cookies or similar technologies to serve and measure ads, which may be personalized based on your visits to this and other sites. Ad placement and frequency are controlled by Google AdSense.</p>
         <p>You can manage or opt out of personalized advertising at <a href="https://adssettings.google.com" target="_blank" rel="noopener">adssettings.google.com</a>. See also <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener">how Google uses information from sites that use its services</a>. Visitors in the EEA, UK, and Switzerland may be shown a consent choice before personalized ads are served.</p>
         <h3>Children</h3>
         <p>We do not knowingly collect personal information from children.</p>
@@ -1499,22 +1505,11 @@ let soundVolume = Number(localStorage.getItem('vocabSoundVolume') ?? '5');
 if(!Number.isFinite(soundVolume)) soundVolume = 5;
 soundVolume = Math.max(0, Math.min(10, Math.round(soundVolume)));
 
-// Ad state (declared early: setGamePaused reads adPlaying).
-let adPlaying = false;          // true only while an ad is actually on screen
-let adRequestPending = false;
-let collectedSinceAd = 0;       // words picked up since the last ad
-let playStartTime = 0;          // set once the world is built
-const AD_MIN_PLAYTIME = 45000;  // no ad in the first 45s of play
-const AD_MIN_COLLECTED = 3;     // and only after the player has actually played a bit
-function syncAdSound(){
-    try{ adConfig({ sound: soundVolume > 0 ? 'on' : 'off' }); }catch(e){}
-}
 const volumeSlider = document.getElementById('volume-slider');
 const volumeValue = document.getElementById('volume-value');
 if(volumeSlider) volumeSlider.value = String(soundVolume);
 if(volumeValue) volumeValue.textContent = `${soundVolume}/10`;
 function setGamePaused(paused){
-    if(!paused && adPlaying) return; // keep paused (and music off) until the ad ends
     gamePaused=!!paused;
     if(gamePaused){
         // Release held controls so returning from another app cannot cause
@@ -3367,7 +3362,6 @@ function tryCollect(){
     const entry = inventoryMap.get(vocab.es);
     addLog(`✅ Recogiste "${vocab.es}" — ${vocab.en}${entry.qty>1?' (×'+entry.qty+')':''}`);
     nearestItem=null;
-    collectedSinceAd++;
     if(navigator.vibrate && document.getElementById('toggle-vibration')?.checked) navigator.vibrate(25);
     if(inventoryMap.size===VOCAB.length) showCompletionScreen();
     return true;
@@ -3439,38 +3433,12 @@ function requestMenuOpen(){
     openMenu();
 }
 
-// H5 Games Ad Placement API. The one ad opportunity is when the player closes
-// the menu and returns to the live game: the 3D world, HUD and collectible
-// words are on screen, never a start/loading/empty screen. Requirements:
-//  - the world is built and the completion screen is not showing
-//  - 45s+ of play and 3+ words collected since the last ad
-// Nothing waits on the ad, so a blocked ad script can't break the game.
-function maybeRequestAd(){
-    if(adPlaying || adRequestPending || menuOpen) return;
-    if(typeof adBreak !== 'function') return;
-    if(!gameStarted || playStartTime === 0) return;
-    if(typeof completionScreen !== 'undefined' && completionScreen && completionScreen.classList.contains('open')) return;
-    if(performance.now() - playStartTime < AD_MIN_PLAYTIME) return;
-    if(collectedSinceAd < AD_MIN_COLLECTED) return;
-    adRequestPending = true;
-    try{
-        adBreak({
-            type: 'next',
-            name: 'menu_resume',
-            beforeAd: () => { adPlaying = true; collectedSinceAd = 0; setGamePaused(true); },
-            afterAd: () => { adPlaying = false; },
-            adBreakDone: () => { adRequestPending = false; adPlaying = false; setGamePaused(false); }
-        });
-    }catch(e){ adRequestPending = false; adPlaying = false; }
-}
-
 function closeMenu(){
     menuOpen = false;
     if(typeof closeCardZoom === 'function') closeCardZoom();
     overlay.classList.remove('open');
     jL.active=false; joyLB.style.display='none'; jL.dx=jL.dy=0;
     jR.active=false; joyRB.style.display='none'; jR.dx=jR.dy=0;
-    setTimeout(maybeRequestAd, 400);
 }
 
 // Wire buttons — use both click and touchend so mobile works
@@ -3509,7 +3477,6 @@ document.querySelectorAll('[data-goto]').forEach(el=>{
 
 document.getElementById('volume-slider')?.addEventListener('input', function(){
     soundVolume = Math.max(0, Math.min(10, Number(this.value) || 0));
-    syncAdSound();
     localStorage.setItem('vocabSoundVolume', String(soundVolume));
     if(volumeValue) volumeValue.textContent = `${soundVolume}/10`;
     updateMusicVolume();
@@ -3713,7 +3680,6 @@ async function startGame(continueSaved=false){
     if(soundVolume > 0) startLoungeMusic();
     try {
         await buildWorld();
-        playStartTime = performance.now();
         syncAdSound();
         if(continueSaved){
             const saved=readSavedGame();
