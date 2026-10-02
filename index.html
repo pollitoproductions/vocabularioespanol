@@ -371,10 +371,10 @@
 <div id="loading">
     <div class="story-card">
         <div class="story-title">El Glosario Perdido</div>
-        <p>You are the keeper of a great <b>glosario</b>, a book holding every Spanish word a traveler could need. One windy night, its pages came loose and scattered across a strange, quiet island.</p>
+        <p>You are the keeper of a great <b>glosario</b>, a book holding every Spanish word a traveler could need. One stormy night, its pages came loose and scattered across a strange, quiet planet.</p>
         <p>Each lost page became a glowing <b>vocabulary card</b>, hidden among the trees, shores, and hills. Without them, the glossary stays empty, and the words are forgotten.</p>
-        <p>Explore the island, find every card, and read each word aloud as you collect it. Only when all 1,000 cards are back in your book will the glosario be complete.</p>
-        <div class="story-sub">Cargando / Loading the island&hellip;</div>
+        <p>Explore the planet, find every card, and read each word aloud as you collect it. Only when all 1,000 cards are back in your book will the glosario be complete.</p>
+        <div class="story-sub">Cargando / Loading the planet&hellip;</div>
         <div id="loading-bar-wrap"><div id="loading-bar"></div></div>
         <button id="story-enter" class="start-play" hidden>ENTRAR / ENTER</button>
     </div>
@@ -1215,7 +1215,7 @@ async function buildWorld(){
         const sub=document.querySelector('.story-sub');
         if(!btn || window.__skipStory){res();return;}
         if(wrap) wrap.style.display='none';
-        if(sub) sub.textContent='La isla está lista / The island is ready';
+        if(sub) sub.textContent='El planeta está listo / The planet is ready';
         btn.hidden=false;
         let done=false;
         const go=e=>{ if(e) e.preventDefault(); if(done) return; done=true; res(); };
