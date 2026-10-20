@@ -534,6 +534,7 @@
                 <div class="menu-item-label">
                     <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9.4 9.4 0 0 1 0 13"/></svg>
                     Pronunciación / Pronunciation
+                    <button id="pron-test" type="button" title="Probar / Test" style="background:rgba(255,255,255,0.08);border:1px solid rgba(180,230,195,0.4);border-radius:10px;padding:4px 10px;font-size:0.85rem;cursor:pointer;color:#fff;">🔊 hola</button>
                 </div>
                 <label class="toggle">
                     <input type="checkbox" id="toggle-pronunciation" checked>
@@ -3321,15 +3322,20 @@ if('speechSynthesis' in window){
 }
 function speakWord(text){
     if(!pronEnabled || !text) return;
-    if(!('speechSynthesis' in window)) return;
+    const synth = window.speechSynthesis;
+    if(!synth) return;
     try{
-        speechSynthesis.cancel(); // don't stack up if the player collects fast
+        // Only cancel if something is actually queued: on iOS, cancel()
+        // immediately followed by speak() can drop the new utterance.
+        if(synth.speaking || synth.pending) synth.cancel();
         const u = new SpeechSynthesisUtterance(text);
         if(esVoice){ u.voice = esVoice; u.lang = esVoice.lang; }
         else { u.lang = 'es-MX'; }
         u.rate = 0.85; // slightly slow: clearer for learners
-        u.volume = Math.max(0, Math.min(1, soundVolume/10)); // follows the game's volume
-        speechSynthesis.speak(u);
+        // NOTE: u.volume intentionally NOT set — on iOS Safari, non-1
+        // volumes can silence the utterance entirely. Device buttons
+        // control loudness instead.
+        synth.speak(u);
     }catch(e){ /* speech is a bonus — never break the game */ }
 }
 
@@ -3580,6 +3586,10 @@ document.getElementById('toggle-vibration')?.addEventListener('change', function
 });
 const pronToggle = document.getElementById('toggle-pronunciation');
 if(pronToggle) pronToggle.checked = pronEnabled;
+document.getElementById('pron-test')?.addEventListener('click', e=>{
+    e.preventDefault(); e.stopPropagation();
+    speakWord('hola');
+});
 pronToggle?.addEventListener('change', function(){
     pronEnabled = this.checked;
     localStorage.setItem('vocabPronunciation', this.checked ? '1' : '0');
