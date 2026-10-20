@@ -393,6 +393,8 @@
             <button id="continue-play" class="continue-play" hidden>CONTINUAR / CONTINUE</button>
         </div>
         <nav id="about-game" style="max-width:460px;margin:0 auto 20px;display:flex;flex-direction:column;gap:8px;">
+            <a class="info-link" href="how-to-play.html">How to play</a>
+            <a class="info-link" id="start-settings" href="#" role="button">Settings</a>
             <a class="info-link" href="/">&larr; Home / Inicio</a>
         </nav>
                 <div class="copyright">Copyright © All Rights Reserved — Brant Fuller 2026</div>
@@ -3504,6 +3506,15 @@ document.getElementById('completion-continue')?.addEventListener('touchend', e=>
 layoutHUD();
 wireBtn('btn-menu', requestMenuOpen);
 wireBtn('close-menu', closeMenu);
+// Settings button on the start screen: show the menu's settings panel above the start screen
+(function(){
+    const b=document.getElementById('start-settings');
+    if(!b) return;
+    const open=e=>{ e.preventDefault(); e.stopPropagation(); overlay.style.zIndex=250; menuOpen=true; overlay.classList.add('open'); showPanel('panel-settings'); };
+    b.addEventListener('click',open);
+    const back=document.querySelector('#panel-settings .panel-back');
+    if(back) ['click','touchend'].forEach(ev=>back.addEventListener(ev,e=>{ if(getComputedStyle(startScreen).display!=='none'){ e.preventDefault(); e.stopImmediatePropagation(); closeMenu(); overlay.style.zIndex=''; } },true));
+})();
 wireBtn('save-game', saveGame);
 wireBtn('go-home', ()=>{
     if(!confirm('Volver al inicio? / Return to the home screen?\n\nYour progress will be saved first.')) return;
