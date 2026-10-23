@@ -203,32 +203,61 @@ function sayGate(w,markedKnown){
   const advance=()=>{if(advanced)return;advanced=true;qi++;quizShow()};
   $('#nx').innerHTML='<div class="stat">🎤 Say <b>'+target+'</b> to move on</div><div class="act"><button id="saymic">🎤 Speak</button></div><div class="stat" id="saystatus"></div><div class="stat"><a href="#" id="sayskip">Can’t use the mic? Skip this step</a></div>'+(markedKnown?' <span class="stat">✓ Marked as known — answered with no emoji hint</span>':'');
   const status=$('#saystatus'),mic=$('#saymic'),skip=$('#sayskip');
-  skip.onclick=e=>{e.preventDefault();advance()};
+  skip.onclick=e=>{e.preventDefault();stopping=true;clearTimeout(listenTimer);setListening(false);if(rec){try{rec.abort()}catch(err){}}advance()};
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){status.textContent='This browser can’t listen — use the skip link below to move on.';skip.style.fontWeight='bold';return}
-  let done=false,triedUS=false;
+  let rec=null,attempt=0,stopping=false,listenTimer=null,listening=false,tried=false;
+  if(!document.getElementById('saylisten-style')){const st=document.createElement('style');st.id='saylisten-style';st.textContent='#saymic.listening{background:#c0392b!important;color:#fff!important;animation:saypulse 1s infinite}@keyframes saypulse{50%{opacity:.55}}';document.head.appendChild(st)}
+  const setListening=on=>{listening=on;mic.classList.toggle('listening',on);if(on)mic.textContent='\u25cf Listening\u2026 \u2014 tap to stop';else mic.textContent=tried?'🎤 Try again':'🎤 Speak'};
   mic.onclick=()=>{
-    status.textContent='Listening…';mic.disabled=true;
-    const rec=new SR();
-    const startWith=lang=>{rec.lang=lang;rec.continuous=false;rec.interimResults=false;rec.maxAlternatives=1;try{rec.start()}catch(e){status.textContent='Couldn’t start listening — try again or skip this step.';mic.disabled=false}};
-    rec.onresult=ev=>{
-      if(done)return;done=true;
-      const heard=(ev.results[0]&&ev.results[0][0])?ev.results[0][0].transcript:'';
-      if(sayPass(sayStrict,heard,target)){status.textContent='✓ Heard it — nice work!';advance()}
-      else{status.textContent='Heard: “'+heard+'” — not quite. Try again.';mic.textContent='🎤 Try again';mic.disabled=false}
+    /* tap while listening = stop, so the user is never stuck on Listening… */
+    if(listening){stopping=true;clearTimeout(listenTimer);try{rec.stop()}catch(e){}setListening(false);status.textContent='Stopped \u2014 try again.';return}
+    /* iPhone fix: free the speech audio session first, or iOS may never engage the mic */
+    if(window.speechSynthesis){try{speechSynthesis.cancel()}catch(e){}}
+    if(rec){try{rec.abort()}catch(e){}}
+    attempt++;const my=attempt;stopping=false;tried=true;
+    let done=false,heardAny=false,li=0;
+    const langs=[];['es-MX','es-US',(navigator.language||'en-US')].forEach(l=>{if(l&&langs.indexOf(l)<0)langs.push(l)});
+    status.textContent='Listening…';setListening(true);
+    clearTimeout(listenTimer);
+    listenTimer=setTimeout(()=>{if(my===attempt&&listening){stopping=true;try{rec.stop()}catch(e){}setListening(false);status.textContent='Didn\u2019t catch that \u2014 try again.'}},12000);
+    const nextLang=()=>{
+      if(li<langs.length-1){li++;startWith(langs[li])}
+      else{done=true;mic.disabled=false;setListening(false);status.textContent='This phone’s speech service doesn’t offer Spanish — use the skip link below to move on.';skip.style.fontWeight='bold'}
     };
-    rec.onerror=ev=>{
-      if(done)return;
-      const err=ev.error||'';
-      if(err==='language-not-supported'&&!triedUS){triedUS=true;startWith('es-US');return}
-      done=true;mic.disabled=false;
-      if(err==='not-allowed'||err==='service-not-allowed'){status.textContent='Microphone access was denied — use the skip link below to move on.';skip.style.fontWeight='bold'}
-      else if(err==='no-speech'){status.textContent='Didn’t hear anything — try again.';mic.textContent='🎤 Try again'}
-      else if(err==='network'){status.textContent='Speech service isn’t reachable right now — use the skip link below to move on.';skip.style.fontWeight='bold'}
-      else{status.textContent='Something went wrong listening — try again or skip this step.'}
+    const startWith=lang=>{
+      if(my!==attempt)return;
+      rec=new SR();
+      rec.lang=lang;rec.continuous=true;rec.interimResults=false;rec.maxAlternatives=1;
+      rec.onresult=ev=>{
+        if(my!==attempt||done)return;done=true;heardAny=true;clearTimeout(listenTimer);setListening(false);
+        const heard=(ev.results[0]&&ev.results[0][0])?ev.results[0][0].transcript:'';
+        try{rec.stop()}catch(e){}
+        if(sayPass(sayStrict,heard,target)){status.textContent='✓ Heard it — nice work!';advance()}
+        else{status.textContent='Heard: “'+heard+'” — not quite. Try again.';mic.textContent='🎤 Try again';mic.disabled=false}
+      };
+      rec.onerror=ev=>{
+        if(my!==attempt||done)return;
+        const err=ev.error||'';
+        if(err==='language-not-supported'){nextLang();return}
+        done=true;heardAny=true;mic.disabled=false;clearTimeout(listenTimer);setListening(false);
+        if(err==='not-allowed'||err==='service-not-allowed'){status.textContent='Microphone access was denied — use the skip link below to move on.';skip.style.fontWeight='bold'}
+        else if(err==='no-speech'){status.textContent='Didn’t hear anything — try again.';mic.textContent='🎤 Try again'}
+        else if(err==='network'){status.textContent='Speech service isn’t reachable right now — use the skip link below to move on.';skip.style.fontWeight='bold'}
+        else{status.textContent='Something went wrong listening — try again or skip this step.'}
+      };
+      rec.onend=()=>{
+        if(stopping||my!==attempt||done)return;
+        clearTimeout(listenTimer);
+        /* iOS Safari often ends recognition silently with no result and no error: retry the next language */
+        if(!heardAny&&li<langs.length-1){li++;startWith(langs[li]);return}
+        setListening(false);
+        if(!heardAny){status.textContent='Didn’t catch that — try again.';mic.textContent='🎤 Try again';mic.disabled=false;return}
+        mic.disabled=false;
+      };
+      try{rec.start()}catch(e){clearTimeout(listenTimer);setListening(false);status.textContent='Couldn’t start listening — try again or skip this step.';mic.disabled=false}
     };
-    rec.onend=()=>{if(!done){mic.disabled=false}};
-    startWith('es-MX');
+    startWith(langs[0]);
   };
 }
 
