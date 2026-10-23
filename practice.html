@@ -68,7 +68,8 @@ body.no-emoji .card .em{display:none}
 <h1>Practice the words</h1>
 <p class="lead">Flashcards, a quiz and an el/la trainer built from the same 1,000 words as the games. Free, no sign-up.</p>
 <div class="tabs" role="tablist"><button data-m="flash" aria-selected="true">Flashcards</button><button data-m="quiz" aria-selected="false">Quiz</button><button data-m="el" aria-selected="false">El or la?</button><button data-m="known" aria-selected="false">Known words</button></div>
-<div class="opt" style="margin:6px 0 2px"><label><input type="checkbox" id="pron" checked> 🔊 Pronunciación — hear each word read aloud</label><label style="margin-left:14px"><input type="checkbox" id="emoj" checked> 🙂 Emoji — show the picture hint</label></div>
+<div class="opt" style="margin:6px 0 2px"><label><input type="checkbox" id="pron" checked> 🔊 Pronunciación — hear each word read aloud</label><label style="margin-left:14px"><input type="checkbox" id="emoj" checked> 🙂 Emoji — show the picture hint<label style="margin-left:14px"><input type="checkbox" id="sayadv"> 🎤 Say it to advance — pronounce the word to move on</label><span id="saystrictwrap" style="display:none">How correct: <label><input type="radio" name="saystrict" value="gentle"> Gentle</label><label><input type="radio" name="saystrict" value="standard"> Standard</label><label><input type="radio" name="saystrict" value="strict"> Strict</label></span></div>
+<div id="saynote" class="stat" style="display:none;margin-top:0">🎤 Your voice is sent to your browser's speech service to check it — it isn't stored.</div>
 <div id="app"></div>
 <h2>Why practice this way</h2>
 <p>Seeing a word once in the game is a good start, but memory grows through repeated, active recall. That means trying to produce the meaning before you look at it. The flashcards, the quiz and the el/la trainer on this page all work that way. They use the same 1,000 words from Vocabulario Español, so anything you collected in the game can be tested here, and anything you miss here is a good reason to go back and find it again in the world.</p>
@@ -138,6 +139,15 @@ document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>setMode(b.dat
 const pronChk=$('#pron');if(pronChk){pronChk.checked=pronEnabled;pronChk.addEventListener('change',e=>{pronEnabled=e.target.checked;try{localStorage.setItem('vocabPronunciation',pronEnabled?'1':'0')}catch(_){}})}
 const emojChk=$('#emoj');if(emojChk){emojChk.checked=emojiOn;emojChk.addEventListener('change',e=>{emojiOn=e.target.checked;document.body.classList.toggle('no-emoji',!emojiOn);try{localStorage.setItem('vocabEmoji',emojiOn?'1':'0')}catch(_){}})}
 
+/* say it to advance: pronunciation gate in the quiz (opt-in) */
+let sayAdv=false;try{sayAdv=localStorage.getItem('vocabSayToAdvance')==='1'}catch(e){}
+let sayStrict='standard';try{const s=localStorage.getItem('vocabSayStrictness');if(s==='gentle'||s==='standard'||s==='strict')sayStrict=s}catch(e){}
+const sayChk=$('#sayadv');
+function saySyncUI(){const w=$('#saystrictwrap'),n=$('#saynote');if(w)w.style.display=sayAdv?'':'none';if(n)n.style.display=sayAdv?'':'none'}
+if(sayChk){sayChk.checked=sayAdv;sayChk.addEventListener('change',e=>{sayAdv=e.target.checked;try{localStorage.setItem('vocabSayToAdvance',sayAdv?'1':'0')}catch(_){}saySyncUI()})}
+document.querySelectorAll('input[name="saystrict"]').forEach(r=>{r.checked=(r.value===sayStrict);r.addEventListener('change',e=>{if(e.target.checked){sayStrict=e.target.value;try{localStorage.setItem('vocabSayStrictness',sayStrict)}catch(_){}}})});
+saySyncUI();
+
 /* flashcards */
 let deck=[],ix=0,flipped=false,seen=0,got=0;
 function flashSetup(){
@@ -168,6 +178,60 @@ function flashShow(){
   $('#c').onclick=flip;$('#c').onkeydown=e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();flip()}};draw();
 }
 
+
+/* SAY-GATE-MATCH-START: pure pronunciation-matching helpers (no DOM) */
+function sayNorm(s){return (s||'').toLowerCase().trim().replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i').replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/[^a-zñ ]/g,' ').replace(/\s+/g,' ').trim()}
+const SAY_ARTICLES=['el','la','los','las','un','una'];
+function sayStripArticles(phrase){let ws=sayNorm(phrase).split(' ').filter(Boolean);while(ws.length>1&&SAY_ARTICLES.includes(ws[0]))ws.shift();while(ws.length>1&&SAY_ARTICLES.includes(ws[ws.length-1]))ws.pop();return ws.join(' ')}
+function sayLev(a,b){const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let prev=[];for(let j=0;j<=n;j++)prev[j]=j;for(let i=1;i<=m;i++){const cur=[i];for(let j=1;j<=n;j++){cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1))}prev=cur}return prev[n]}
+function sayPass(level,transcript,fullForm){
+  const t=sayNorm(transcript);if(!t)return false;
+  const full=sayNorm(fullForm);if(!full)return false;
+  const bare=sayStripArticles(fullForm);
+  if(level==='strict'){return (' '+t+' ').includes(' '+full+' ')}
+  if(level==='standard'){return (' '+t+' ').includes(' '+bare+' ')}
+  /* gentle: close counts — substring, or any heard word near the target */
+  if(t.includes(bare))return true;
+  return t.split(' ').some(w=>sayLev(w,bare)<=2);
+}
+/* SAY-GATE-MATCH-END */
+
+/* pronunciation gate: replaces the quiz Next button when say-to-advance is on */
+function sayGate(w,markedKnown){
+  const target=w.es;
+  let advanced=false;
+  const advance=()=>{if(advanced)return;advanced=true;qi++;quizShow()};
+  $('#nx').innerHTML='<div class="stat">🎤 Say <b>'+target+'</b> to move on</div><div class="act"><button id="saymic">🎤 Speak</button></div><div class="stat" id="saystatus"></div><div class="stat"><a href="#" id="sayskip">Can’t use the mic? Skip this step</a></div>'+(markedKnown?' <span class="stat">✓ Marked as known — answered with no emoji hint</span>':'');
+  const status=$('#saystatus'),mic=$('#saymic'),skip=$('#sayskip');
+  skip.onclick=e=>{e.preventDefault();advance()};
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){status.textContent='This browser can’t listen — use the skip link below to move on.';skip.style.fontWeight='bold';return}
+  let done=false,triedUS=false;
+  mic.onclick=()=>{
+    status.textContent='Listening…';mic.disabled=true;
+    const rec=new SR();
+    const startWith=lang=>{rec.lang=lang;rec.continuous=false;rec.interimResults=false;rec.maxAlternatives=1;try{rec.start()}catch(e){status.textContent='Couldn’t start listening — try again or skip this step.';mic.disabled=false}};
+    rec.onresult=ev=>{
+      if(done)return;done=true;
+      const heard=(ev.results[0]&&ev.results[0][0])?ev.results[0][0].transcript:'';
+      if(sayPass(sayStrict,heard,target)){status.textContent='✓ Heard it — nice work!';advance()}
+      else{status.textContent='Heard: “'+heard+'” — not quite. Try again.';mic.textContent='🎤 Try again';mic.disabled=false}
+    };
+    rec.onerror=ev=>{
+      if(done)return;
+      const err=ev.error||'';
+      if(err==='language-not-supported'&&!triedUS){triedUS=true;startWith('es-US');return}
+      done=true;mic.disabled=false;
+      if(err==='not-allowed'||err==='service-not-allowed'){status.textContent='Microphone access was denied — use the skip link below to move on.';skip.style.fontWeight='bold'}
+      else if(err==='no-speech'){status.textContent='Didn’t hear anything — try again.';mic.textContent='🎤 Try again'}
+      else if(err==='network'){status.textContent='Speech service isn’t reachable right now — use the skip link below to move on.';skip.style.fontWeight='bold'}
+      else{status.textContent='Something went wrong listening — try again or skip this step.'}
+    };
+    rec.onend=()=>{if(!done){mic.disabled=false}};
+    startWith('es-MX');
+  };
+}
+
 /* quiz */
 let qs=[],qi=0,score=0,qdir='es';
 function quizSetup(){
@@ -190,7 +254,7 @@ function quizShow(){
     [...$('#ch').children].forEach(c=>{c.disabled=true;if(c.textContent===ans)c.classList.add('good')});
     if(x===w){score++;if(!emojiOn&&!known[w.es]){known[w.es]=1;save();markedKnown=true}}else{b.classList.add('bad')}
     speakWord(w.es);
-    $('#nx').innerHTML='<button id="next">'+(qi+1>=qs.length?'See score':'Next')+'</button>'+(markedKnown?' <span class="stat">✓ Marked as known — answered with no emoji hint</span>':'');$('#next').focus();$('#next').onclick=()=>{qi++;quizShow()}};$('#ch').appendChild(b)});
+    if(sayAdv){sayGate(w,markedKnown)}else{$('#nx').innerHTML='<button id="next">'+(qi+1>=qs.length?'See score':'Next')+'</button>'+(markedKnown?' <span class="stat">✓ Marked as known — answered with no emoji hint</span>':'');$('#next').focus();$('#next').onclick=()=>{qi++;quizShow()}}};$('#ch').appendChild(b)});
 }
 
 /* el / la */
