@@ -3545,15 +3545,14 @@ function openSayIt(v){
 sayItDismiss.addEventListener('click',e=>{e.stopPropagation();sayItDismiss.blur();closeSayIt();});
 sayItDismiss.addEventListener('mousedown',e=>e.stopPropagation());
 sayItDismiss.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
-sayItDismiss.addEventListener('touchend',e=>{e.stopPropagation();closeSayIt();},{passive:false});
+
 sayItListen.addEventListener('click',e=>{e.stopPropagation();sayItListen.blur();if(sayItListening){sayItStopping=true;clearTimeout(sayItTimer);try{sayItRec.stop()}catch(err){}sayItSetListening(false);}if(sayItCurrent)speakWord(sayItCurrent.es);});
 sayItListen.addEventListener('mousedown',e=>e.stopPropagation());
 sayItListen.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
-sayItListen.addEventListener('touchend',e=>{e.stopPropagation();if(sayItCurrent)speakWord(sayItCurrent.es);},{passive:false});
 sayItMic.addEventListener('click',e=>{e.stopPropagation();sayItMic.blur();sayItMicListen();});
 sayItMic.addEventListener('mousedown',e=>e.stopPropagation());
 sayItMic.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
-sayItMic.addEventListener('touchend',e=>{e.stopPropagation();sayItMicListen();},{passive:false});
+
 function sayItMicListen(){
     if(sayItListening){sayItStopping=true;clearTimeout(sayItTimer);try{sayItRec.stop()}catch(e){}sayItSetListening(false);sayItStatus.textContent='Stopped \u2014 try again.';return}
     if(!sayItCurrent)return;
