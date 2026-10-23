@@ -3392,6 +3392,7 @@ const completionScreen=document.getElementById('completion-screen');
 function showCompletionScreen(){
     if(completionShown || inventoryMap.size!==VOCAB.length) return;
     completionShown=true;
+    if(typeof closeSayIt==='function') closeSayIt();
     completionScreen?.classList.add('open');
     if(navigator.vibrate && document.getElementById('toggle-vibration')?.checked){try{navigator.vibrate([80,60,80,60,180]);}catch(e){}}
     addLog('🏆 ¡Felicidades! Encontraste las 1,000 palabras.');
@@ -3477,12 +3478,133 @@ function tryCollect(){
     promptEl.style.display='none';
     speakBtn.style.display='none';
     speakWord(vocab.es); // hear the word you just collected
+    if(pronEnabled && SAYIT_SR) openSayIt(vocab);
     const entry = inventoryMap.get(vocab.es);
     addLog(`✅ Recogiste "${vocab.es}" — ${vocab.en}${entry.qty>1?' (×'+entry.qty+')':''}`);
     nearestItem=null;
     if(navigator.vibrate && document.getElementById('toggle-vibration')?.checked) navigator.vibrate(25);
     if(inventoryMap.size===VOCAB.length) showCompletionScreen();
     return true;
+}
+
+/* SAY-GATE-MATCH-START: pure pronunciation-matching helpers (no DOM) */
+function sayNorm(s){return (s||'').toLowerCase().trim().replace(/[\u00e1\u00e0\u00e4]/g,'a').replace(/[\u00e9\u00e8\u00eb]/g,'e').replace(/[\u00ed\u00ec\u00ef]/g,'i').replace(/[\u00f3\u00f2\u00f6]/g,'o').replace(/[\u00fa\u00f9\u00fc]/g,'u').replace(/[^a-z\u00f1 ]/g,' ').replace(/\s+/g,' ').trim()}
+const SAY_ARTICLES=['el','la','los','las','un','una'];
+function sayStripArticles(phrase){let ws=sayNorm(phrase).split(' ').filter(Boolean);while(ws.length>1&&SAY_ARTICLES.includes(ws[0]))ws.shift();while(ws.length>1&&SAY_ARTICLES.includes(ws[ws.length-1]))ws.pop();return ws.join(' ')}
+function sayLev(a,b){const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let prev=[];for(let j=0;j<=n;j++)prev[j]=j;for(let i=1;i<=m;i++){const cur=[i];for(let j=1;j<=n;j++){cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1))}prev=cur}return prev[n]}
+function sayPass(level,transcript,fullForm){
+  const t=sayNorm(transcript);if(!t)return false;
+  const full=sayNorm(fullForm);if(!full)return false;
+  const bare=sayStripArticles(fullForm);
+  if(level==='strict'){return (' '+t+' ').includes(' '+full+' ')}
+  if(level==='standard'){return (' '+t+' ').includes(' '+bare+' ')}
+  /* gentle: close counts — substring, or any heard word near the target */
+  if(t.includes(bare))return true;
+  return t.split(' ').some(w=>sayLev(w,bare)<=2);
+}
+/* SAY-GATE-MATCH-END */
+
+/* SAY-IT OFFER: optional pronounce-and-feedback after collecting a word.
+   Collection is never blocked, changed, or withheld — this is only feedback.
+   Standard only (bare word must come through, article optional). No settings UI. */
+const SAYIT_SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const sayItEl = document.createElement('div');
+sayItEl.style.cssText='position:fixed;left:50%;bottom:calc(50% - 120px);transform:translateX(-50%);background:rgba(20,40,28,0.92);color:#dff5e3;padding:12px 16px;border-radius:18px;font-size:0.9rem;letter-spacing:0.02em;z-index:22;display:none;border:1px solid rgba(180,230,195,0.55);text-align:center;font-family:inherit;pointer-events:auto;max-width:min(92vw,340px);';
+sayItEl.innerHTML='<div id="sayit-word" style="font-weight:bold;line-height:1.3;"></div>'+
+  '<div id="sayit-meaning" style="font-size:0.85rem;color:#fff;line-height:1.3;"></div>'+
+  '<div style="margin:10px 0 6px;"><button id="sayit-listen" type="button" style="min-width:44px;min-height:44px;padding:10px 16px;font-size:1rem;border-radius:22px;border:1px solid rgba(180,230,195,0.55);background:rgba(10,30,18,0.9);color:#dff5e3;cursor:pointer;touch-action:manipulation;font-family:inherit;">\U0001f50a Escuchar</button> <button id="sayit-mic" type="button" style="min-width:44px;min-height:44px;padding:10px 20px;font-size:1rem;border-radius:22px;border:1px solid rgba(180,230,195,0.55);background:rgba(10,30,18,0.9);color:#dff5e3;cursor:pointer;touch-action:manipulation;font-family:inherit;">\U0001f3a4 Say it</button></div>'+
+  '<div id="sayit-status" style="font-size:0.85rem;min-height:1.2em;"></div>'+
+  '<div style="font-size:0.72rem;color:#b7d9c0;margin-top:4px;line-height:1.3;">Your voice is sent to your browser speech service to check it. It is not stored.</div>'+
+  '<div style="margin-top:10px;"><button id="sayit-dismiss" type="button" style="min-width:44px;min-height:44px;padding:8px 18px;font-size:0.9rem;border-radius:18px;border:1px solid rgba(180,230,195,0.35);background:transparent;color:#dff5e3;cursor:pointer;touch-action:manipulation;font-family:inherit;">\u2715 No thanks</button></div>';
+document.body.appendChild(sayItEl);
+['mousedown','touchstart','click'].forEach(ev=>sayItEl.addEventListener(ev,e=>e.stopPropagation(),ev==='touchstart'?{passive:true}:undefined));
+if(!document.getElementById('sayit-listen-style')){const st=document.createElement('style');st.id='sayit-listen-style';st.textContent='#sayit-mic.listening{background:#c0392b!important;color:#fff!important;animation:sayitpulse 1s infinite}@keyframes sayitpulse{50%{opacity:.55}}';document.head.appendChild(st)}
+const sayItMic=sayItEl.querySelector('#sayit-mic');
+const sayItListen=sayItEl.querySelector('#sayit-listen');
+const sayItDismiss=sayItEl.querySelector('#sayit-dismiss');
+const sayItStatus=sayItEl.querySelector('#sayit-status');
+const sayItWord=sayItEl.querySelector('#sayit-word');
+const sayItMeaning=sayItEl.querySelector('#sayit-meaning');
+let sayItRec=null,sayItAttempt=0,sayItStopping=false,sayItTimer=null,sayItListening=false,sayItTried=false,sayItCurrent=null;
+const sayItSetListening=on=>{sayItListening=on;sayItMic.classList.toggle('listening',on);if(on)sayItMic.textContent='\u25cf Listening\u2026 \u2014 tap to stop';else sayItMic.textContent=sayItTried?'\U0001f3a4 Try again':'\U0001f3a4 Say it'};
+function closeSayIt(){
+    sayItAttempt++;
+    sayItStopping=true;clearTimeout(sayItTimer);sayItSetListening(false);
+    if(sayItRec){try{sayItRec.abort()}catch(e){}}
+    sayItEl.style.display='none';sayItCurrent=null;
+}
+function openSayIt(v){
+    closeSayIt(); // one offer at a time; a previous offer is replaced
+    sayItCurrent=v;sayItTried=false;
+    sayItWord.innerHTML='\U0001f3a4 Say \u00ab'+v.es+'\u00bb';
+    sayItMeaning.innerHTML=(v.emoji?v.emoji+' ':'')+v.en;
+    sayItStatus.textContent='';
+    sayItSetListening(false);
+    sayItEl.style.display='block';
+}
+sayItDismiss.addEventListener('click',e=>{e.stopPropagation();sayItDismiss.blur();closeSayIt();});
+sayItDismiss.addEventListener('mousedown',e=>e.stopPropagation());
+sayItDismiss.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
+sayItDismiss.addEventListener('touchend',e=>{e.stopPropagation();closeSayIt();},{passive:false});
+sayItListen.addEventListener('click',e=>{e.stopPropagation();sayItListen.blur();if(sayItListening){sayItStopping=true;clearTimeout(sayItTimer);try{sayItRec.stop()}catch(err){}sayItSetListening(false);}if(sayItCurrent)speakWord(sayItCurrent.es);});
+sayItListen.addEventListener('mousedown',e=>e.stopPropagation());
+sayItListen.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
+sayItListen.addEventListener('touchend',e=>{e.stopPropagation();if(sayItCurrent)speakWord(sayItCurrent.es);},{passive:false});
+sayItMic.addEventListener('click',e=>{e.stopPropagation();sayItMic.blur();sayItMicListen();});
+sayItMic.addEventListener('mousedown',e=>e.stopPropagation());
+sayItMic.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
+sayItMic.addEventListener('touchend',e=>{e.stopPropagation();sayItMicListen();},{passive:false});
+function sayItMicListen(){
+    if(sayItListening){sayItStopping=true;clearTimeout(sayItTimer);try{sayItRec.stop()}catch(e){}sayItSetListening(false);sayItStatus.textContent='Stopped \u2014 try again.';return}
+    if(!sayItCurrent)return;
+    if(window.speechSynthesis){try{speechSynthesis.cancel()}catch(e){}}
+    if(sayItRec){try{sayItRec.abort()}catch(e){}}
+    sayItAttempt++;const my=sayItAttempt;sayItStopping=false;sayItTried=true;
+    let done=false,heardAny=false,li=0;
+    const langs=[];['es-MX','es-US',(navigator.language||'en-US')].forEach(l=>{if(l&&langs.indexOf(l)<0)langs.push(l)});
+    const target=sayItCurrent.es;
+    sayItStatus.textContent='Listening\u2026';sayItSetListening(true);
+    clearTimeout(sayItTimer);
+    sayItTimer=setTimeout(()=>{if(my===sayItAttempt&&sayItListening){sayItStopping=true;try{sayItRec.stop()}catch(e){}sayItSetListening(false);sayItStatus.textContent='Didn\u2019t catch that \u2014 try again.'}},12000);
+    const nextLang=()=>{
+      if(li<langs.length-1){li++;startWith(langs[li])}
+      else{done=true;clearTimeout(sayItTimer);sayItSetListening(false);sayItStatus.textContent='This device does not offer Spanish speech recognition.'}
+    };
+    const startWith=lang=>{
+      if(my!==sayItAttempt)return;
+      sayItRec=new SAYIT_SR();
+      sayItRec.lang=lang;sayItRec.continuous=true;sayItRec.interimResults=false;sayItRec.maxAlternatives=1;
+      sayItRec.onresult=ev=>{
+        if(my!==sayItAttempt||done)return;done=true;heardAny=true;clearTimeout(sayItTimer);sayItSetListening(false);
+        const heard=(ev.results[0]&&ev.results[0][0])?ev.results[0][0].transcript:'';
+        try{sayItRec.stop()}catch(e){}
+        if(sayPass('standard',heard,target)){
+          sayItStatus.textContent='\u2713 \u00a1Bien pronunciado! / Well pronounced!';
+          setTimeout(()=>{if(my===sayItAttempt)closeSayIt();},1500);
+        } else {
+          sayItStatus.textContent='Not quite. Heard: \u00ab'+heard+'\u00bb. The word is \u00ab'+target+'\u00bb. Try again.';
+        }
+      };
+      sayItRec.onerror=ev=>{
+        if(my!==sayItAttempt||done)return;
+        const err=ev.error||'';
+        if(err==='language-not-supported'){nextLang();return}
+        done=true;heardAny=true;clearTimeout(sayItTimer);sayItSetListening(false);
+        if(err==='not-allowed'||err==='service-not-allowed'){sayItStatus.textContent='Microphone access was denied.'}
+        else if(err==='no-speech'){sayItStatus.textContent='Didn\u2019t hear anything \u2014 try again.'}
+        else if(err==='network'){sayItStatus.textContent='Speech service isn\u2019t reachable right now.'}
+        else{sayItStatus.textContent='Something went wrong listening \u2014 try again.'}
+      };
+      sayItRec.onend=()=>{
+        if(sayItStopping||my!==sayItAttempt||done)return;
+        clearTimeout(sayItTimer);
+        if(!heardAny&&li<langs.length-1){li++;startWith(langs[li]);return}
+        sayItSetListening(false);
+        if(!heardAny){sayItStatus.textContent='Didn\u2019t catch that \u2014 try again.';return}
+      };
+      try{sayItRec.start()}catch(e){clearTimeout(sayItTimer);sayItSetListening(false);sayItStatus.textContent='Couldn\u2019t start listening \u2014 try again.'}
+    };
+    startWith(langs[0]);
 }
 
 const logEntries = [];
