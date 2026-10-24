@@ -10,7 +10,328 @@ main{max-width:720px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top,0
 a.back{display:inline-block;padding:9px 16px;border-radius:999px;background:#2f7d57;color:#fff;text-decoration:none;font-weight:700;letter-spacing:.06em;font-size:.85rem;box-shadow:0 2px 0 #1f5c3f}
 h1{font-size:clamp(1.7rem,5vw,2.3rem);color:#1f5c3f;margin:22px 0 8px;line-height:1.2}
 h2{font-size:.95rem;letter-spacing:.14em;text-transform:uppercase;color:#2f7d57;margin:28px 0 8px}
+a{color:#0b64c0}p{margin:0 0 12px;color:#33443a}<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Practice – Flashcards and Quiz – Vocabulario Español</title>
+<meta name="description" content="Free Spanish flashcards, a multiple-choice quiz and an el/la trainer using all 1,000 words from Vocabulario Español.">
+<meta name="google-adsense-account" content="ca-pub-7858482153655813">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7858482153655813" crossorigin="anonymous"></script>
+<style>html{box-sizing:border-box}
+body{margin:0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#fbf8f1 linear-gradient(180deg,#fff1c9 0,#fbf8f1 280px) no-repeat;color:#26362d;line-height:1.7}
+main{max-width:720px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top,0px)) 18px calc(40px + env(safe-area-inset-bottom,0px))}
+a.back{display:inline-block;padding:9px 16px;border-radius:999px;background:#2f7d57;color:#fff;text-decoration:none;font-weight:700;letter-spacing:.06em;font-size:.85rem;box-shadow:0 2px 0 #1f5c3f}
+h1{font-size:clamp(1.7rem,5vw,2.3rem);color:#1f5c3f;margin:22px 0 8px;line-height:1.2}
+h2{font-size:.95rem;letter-spacing:.14em;text-transform:uppercase;color:#2f7d57;margin:28px 0 8px}
 a{color:#0b64c0}p{margin:0 0 12px;color:#33443a}
+i{color:#1f5c3f}
+.keyboard-controls{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 14px;margin:8px 0 16px}
+.key-row{font-size:.9rem;color:#33443a}.touch-help{grid-column:1/-1}
+.key{display:inline-block;min-width:38px;padding:3px 7px;margin-right:5px;text-align:center;border:1px solid #cfc8b6;border-bottom-width:2px;border-radius:6px;background:#fff;color:#26362d;font-size:.72rem;font-weight:700}
+ul.words{list-style:none;columns:2;column-gap:20px;margin:0 0 6px;padding:0}ul.words li{break-inside:avoid;font-size:.9rem}ul.words b{color:#1f5c3f}
+.letters a{display:inline-block;padding:2px 7px;margin:0 2px 4px 0;border:1px solid #d9d2bf;border-radius:6px;background:#fff;color:#1f5c3f;text-decoration:none;font-size:.8rem}
+.ad{margin:28px 0 0;min-height:100px}.adlabel{font-size:.62rem;letter-spacing:.12em;color:#7b8a81;margin-bottom:4px}
+footer{margin-top:34px;padding-top:16px;border-top:1px solid #e3dccb;font-size:.82rem;color:#5b6b62}
+footer a{margin-right:12px;display:inline-block}footer p{margin-top:10px;color:#7b8a81}
+.game{background:#fff;border:1px solid #e6dfcf;border-radius:18px;overflow:hidden;margin:18px 0 26px;box-shadow:0 6px 18px rgba(60,80,60,.10)}
+.game img{display:block;width:100%;height:auto;background:#223}
+.game .body{padding:16px 18px 20px}
+.game h2{font-size:1.3rem;letter-spacing:0;text-transform:none;color:#1f5c3f;margin:0 0 8px}
+.tag{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:999px;background:#e3f3ea;color:#1f5c3f;margin:0 6px 10px 0}
+.tag.warn{background:#fff0d1;color:#7a4b00}
+a.btn{display:inline-block;margin:6px 8px 0 0;padding:12px 22px;border-radius:12px;background:#2f7d57;color:#fff;text-decoration:none;font-weight:700;letter-spacing:.04em;box-shadow:0 3px 0 #1f5c3f}
+a.btn:hover,a.btn:focus-visible{background:#38906a}
+a.btn.alt{background:#fff;color:#1f5c3f;border:2px solid #2f7d57;box-shadow:none;padding:10px 20px}
+.note{background:#fff7dc;border-left:4px solid #f6b93b;padding:10px 14px;border-radius:8px;margin:14px 0}
+.note p{margin:0}
+.lead{font-size:1.08rem;color:#33443a}
+ul.links{list-style:none;margin:0;padding:0}
+ul.links li{padding:11px 0;border-bottom:1px solid #e6dfcf}
+ul.links li:last-child{border-bottom:0}
+ul.links span{display:block;font-size:.88rem;color:#5b6b62}
+@media(max-width:520px){ul.words{columns:1}.keyboard-controls{grid-template-columns:1fr}}</style><style>
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 10px}
+.tabs button,.opt button,.act button{font:inherit;cursor:pointer}
+.tabs button{padding:10px 18px;border-radius:999px;border:2px solid #2f7d57;background:#fff;color:#1f5c3f;font-weight:700}
+.tabs button[aria-selected=true]{background:#2f7d57;color:#fff}
+.opt{background:#fff;border:1px solid #e6dfcf;border-radius:14px;padding:12px 14px;margin:8px 0 14px;font-size:.9rem}
+.opt-row{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.opt-row+.opt-row{margin-top:10px;padding-top:10px;border-top:1px solid #efe9db}
+.opt-head{font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#2f7d57;min-width:64px}
+.opt label{display:flex;gap:6px;align-items:center;color:#33443a}
+.opt select{font:inherit;padding:5px 8px;border-radius:8px;border:1px solid #cfc8b6;background:#fff}
+.card{background:#fff;border:1px solid #e6dfcf;border-radius:18px;box-shadow:0 6px 18px rgba(60,80,60,.10);padding:26px 18px;min-height:210px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;cursor:pointer;user-select:none}
+.card .em{font-size:3rem;line-height:1.1;margin-bottom:6px}
+body.no-emoji .card .em{display:none}
+.card .big{font-size:1.8rem;font-weight:700;color:#1f5c3f}
+.card .hint{font-size:.78rem;color:#7b8a81;margin-top:12px;letter-spacing:.08em;text-transform:uppercase}
+.known-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid #efe9db}
+.act{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
+.act button,.choices button{padding:12px 20px;border-radius:12px;border:0;background:#2f7d57;color:#fff;font-weight:700;box-shadow:0 3px 0 #1f5c3f}
+.act button.alt{background:#fff;color:#1f5c3f;border:2px solid #2f7d57;box-shadow:none;padding:10px 18px}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.choices button{background:#fff;color:#26362d;border:2px solid #d9d2bf;box-shadow:none;font-size:1.02rem;padding:14px 10px}
+.choices button:hover:not(:disabled){border-color:#2f7d57}
+.choices button.good{background:#e3f3ea;border-color:#2f7d57}
+.choices button.bad{background:#fde6e3;border-color:#c0392b}
+.stat{font-size:.9rem;color:#5b6b62;margin:6px 0}
+.bar{height:8px;background:#e6dfcf;border-radius:99px;overflow:hidden;margin:6px 0 12px}.bar i{display:block;height:100%;background:#2f7d57;width:0}
+.result{background:#fff7dc;border-left:4px solid #f6b93b;border-radius:8px;padding:12px 16px;margin:12px 0}
+@media(max-width:520px){.choices{grid-template-columns:1fr}}
+</style></head>
+<body><main>
+<a class="back" href="/">&larr; Back to home</a>
+<h1>Practice the words</h1>
+<p class="lead">Flashcards, a quiz and an el/la trainer built from the same 1,000 words as the games. Free, no sign-up.</p>
+<div class="tabs" role="tablist"><button data-m="quiz" aria-selected="true">Quiz</button><button data-m="flash" aria-selected="false">Flashcards</button><button data-m="el" aria-selected="false">El or la?</button><button data-m="known" aria-selected="false">Known words</button></div>
+<div class="opt"><div class="opt-row"><span class="opt-head">Hear &amp; hints</span><label><input type="checkbox" id="pron" checked> 🔊 Pronunciación — hear each word read aloud</label><label><input type="checkbox" id="emoj" checked> 🙂 Emoji — show the picture hint</label></div><div class="opt-row"><span class="opt-head">Speaking</span><label><input type="checkbox" id="sayadv"> 🎤 Say it to advance — pronounce the word to move on</label><span id="saystrictwrap" style="display:none">How correct: <label><input type="radio" name="saystrict" value="standard"> Standard</label><label><input type="radio" name="saystrict" value="strict"> Strict</label></span></div></div>
+<div id="saynote" class="stat" style="display:none;margin-top:0">🎤 Your voice is sent to your browser's speech service to check it — it isn't stored.</div>
+<div id="app"></div>
+<h2>Why practice this way</h2>
+<p>Seeing a word once in the game is a good start, but memory grows through repeated, active recall. That means trying to produce the meaning before you look at it. The flashcards, the quiz and the el/la trainer on this page all work that way. They use the same 1,000 words from Vocabulario Español, so anything you collected in the game can be tested here, and anything you miss here is a good reason to go back and find it again in the world.</p>
+<h2>How to use the three modes</h2>
+<p><b>Flashcards</b> show the picture and the Spanish word. Say it aloud, think of the meaning, then tap the card to check. Tap I knew it or Not yet to move through the deck; the cards you missed come back around first. Words you know are remembered on this device so tomorrow's session starts where today's finished. You can flip the direction so you see English and have to recall Spanish, which is harder and more useful for speaking. Use the Emoji checkbox above to show or hide the picture hint The Known words tab lists everything you have marked as known, so you can review it or remove a word.</p>
+<p><b>Quiz</b> gives you a word and four choices. The wrong answers are real words from the list, so you have to know the meaning rather than guess by elimination. Quiz yourself in both directions: Spanish to English tests recognition, which is what reading and listening need, while English to Spanish tests recall, which is what speaking and writing need.</p>
+<p><b>El or la?</b> is a short drill on gender. In Spanish every noun is masculine or feminine, and the article is the quickest clue. The only dependable way to learn the gender is to learn the noun together with its article, so this mode shows you a noun without it and asks you to choose. A few words, like el agua or el águila, look like exceptions but follow a sound rule; the guide on el and la explains why.</p>
+<h2>A simple routine</h2>
+<p>Ten minutes a day beats an hour once a week. Try a round of twenty flashcards, then a twenty-question quiz on the same words, and finish by playing the game for a while and listening for the words you just practiced. Keep the cards you miss in rotation until they feel boring, then move on. If you are a teacher or a parent, the printable worksheets on the resources page pair well with this page for work away from the screen, and the guides explain the grammar behind the words. Nothing here needs an account, and your progress never leaves your browser.</p>
+<footer><a href="index.html">Game</a><a href="guides.html">Guides</a><a href="play.html">Play</a><a href="practice.html">Practice</a><a href="practice.html">Practice</a><a href="resources.html">Resources</a><a href="about.html">About</a><a href="how-to-play.html">How to play</a><a href="vocabulary.html">Vocabulary</a><a href="privacy.html">Privacy Policy</a><p>Copyright © All Rights Reserved — Brant Fuller 2026</p></footer>
+</main><script>
+const W=[["⬇️","abajo","down"],["🐝","la abeja","the bee"],["⚖️","la abogada","lawyer"],["⚖️","el abogado","lawyer"],["🤗","abrazar","to hug"],["👵","la abuela","the grandmother"],["👴","el abuelo","the grandfather"],["🪨","el acantilado","the cliff"],["🎭","el actor","actor"],["🎭","la actriz","actress"],["🤝","el acuerdo","the agreement"],["🧑","el adulto","adult"],["🗺️","el agente de viajes","travel agent"],["🗺️","la agente de viajes","travel agent"],["💧","el agua","the water"],["🥑","el aguacate","the avocado"],["🦅","el águila","the eagle"],["🦅","el águila real","the golden eagle"],["♟️","el ajedrez","chess"],["🧄","el ajo","the garlic"],["🏛️","el alcalde","mayor"],["🏛️","la alcaldesa","mayor"],["🫎","el alce","the moose"],["🪸","las algas","the algae"],["🌅","el amanecer","the sunrise"],["🟡","el amarillo","yellow"],["🧑","la amiga","friend"],["🧑","el amigo","friend"],["🤝","la amistad","friendship"],["❤️","el amor","love"],["🧑‍💼","el anfitrión","host"],["💍","el anillo","the ring"],["🌇","el anochecer","the dusk"],["👓","los anteojos","glasses"],["📣","el anuncio","the announcement"],["👏","aplaudir","to applaud"],["🧑‍🔧","el aprendiz","apprentice"],["🧑‍🔧","la aprendiz","apprentice"],["🫐","el arándano","the blueberry"],["🧑‍⚖️","la árbitra","referee"],["⚽","la árbitra de fútbol","soccer referee"],["🧑‍⚖️","el árbitro","referee"],["⚽","el árbitro de fútbol","soccer referee"],["🌲","el árbol","the tree"],["🌾","el arbusto","the bush"],["🍁","el arce","the maple tree"],["🌈","el arcoíris","the rainbow"],["🐿️","la ardilla","the squirrel"],["🇦🇷","Argentina","Argentina"],["📐","la arquitecta","architect"],["📐","el arquitecto","architect"],["⬆️","arriba","up"],["💦","el arroyo","the stream"],["🍚","el arroz","the rice"],["👨‍🎨","el artista","the artist"],["🎨","la artista","artist"],["👨‍🚀","el astronauta","the astronaut"],["🚀","la astronauta","astronaut"],["🌇","el atardecer","the sunset"],["🏃","el atleta","athlete"],["🏃","la atleta","athlete"],["🎧","los audífonos","the headphones"],["🚌","el autobús","the bus"],["⏩","avanzar","to move forward"],["🐦","el ave","the bird"],["✈️","el avión","the airplane"],["🤝","ayudar","to help"],["🔵","el azul","blue"],["🕺","el bailarín","dancer"],["💃","la bailarina","dancer"],["🐳","la ballena","the whale"],["🏀","el baloncesto","basketball"],["🏦","el banco","the bank"],["🚩","la bandera","the flag"],["🏳️","la bandera blanca","the white flag"],["🛁","la bañera","the bathtub"],["🚽","el baño","the bathroom"],["🏦","la banquera","banker"],["🏦","el banquero","banker"],["🧔","la barba","the beard"],["🚢","el barco","the ship"],["☕","el barista","barista"],["☕","la barista","barista"],["🏘️","el barrio","the neighborhood"],["🟤","el barro","the mud"],["🏀🧑","el basquetbolista","basketball player"],["🏀👩","la basquetbolista","basketball player"],["🗑️","la basura","the trash"],["🔋","la batería","the battery"],["🥁🧑","el baterista","drummer"],["🥁👩","la baterista","drummer"],["🫐","la baya","the berry"],["👶","el bebé","the baby"],["🥤","beber","to drink"],["⚾","el béisbol","baseball"],["🌰","la bellota","the acorn"],["😘","besar","to kiss"],["📖","la bibliotecaria","librarian"],["📖","el bibliotecario","librarian"],["🚲","la bicicleta","the bicycle"],["💵","el billete","the bill"],["🧬","la bióloga","biologist"],["🧬","el biólogo","biologist"],["🦬","el bisonte","the bison"],["⚪","el blanco","white"],["👄","la boca","the mouth"],["🎫","el boleto","the ticket"],["🇧🇴","Bolivia","Bolivia"],["👛","el bolso","the purse"],["👩‍🚒","la bombera","the firefighter"],["👩‍🚒","la bombera voluntaria","volunteer firefighter"],["👨‍🚒","el bombero","firefighter"],["👨‍🚒","el bombero voluntario","volunteer firefighter"],["💡","la bombilla","the light bulb"],["🌳","el bosque","the forest"],["🧴","la botella","the bottle"],["🥊👩","boxear","to box"],["🥊","el boxeo","boxing"],["✨","el brillo","the sparkle"],["🌬️","la brisa","the breeze"],["🥦","el brócoli","the broccoli"],["🌱","el brote","the sprout"],["🧭","la brújula","the compass"],["🧣","la bufanda","the scarf"],["🦉","el búho","the owl"],["🌯","el burrito","the burrito"],["🔍","buscar","to search"],["📬","el buzón","the mailbox"],["🐴","el caballo","the horse"],["🏕️","la cabaña","the cabin"],["💇","el cabello","the hair"],["🐐","la cabra","the goat"],["🌵","el cactus","the cactus"],["☕","la cafetería","the café"],["🐊","el caimán","the alligator"],["📦","la caja","the box"],["🧰","la caja de herramientas","the toolbox"],["👩‍💼","la cajera","cashier"],["🧑‍💼","el cajero","cashier"],["🧦","el calcetín","the sock"],["📅","el calendario","the calendar"],["🔥","el calor","the heat"],["🛏️","la cama","the bed"],["📷","la cámara","the camera"],["🦐","el camarón","the shrimp"],["🚶","caminar","to walk"],["🥾","el camino","the mountain path"],["👕","la camisa","the shirt"],["🍠","el camote","the sweet potato"],["🏕️","el campamento","the campsite"],["🔔","la campana","the bell"],["🏆","el campeón","champion"],["🏆","la campeona","champion"],["⛺","el campista","camper"],["⛺","la campista","camper"],["🏞️","el campo","the field"],["🌿","la caña","the reed"],["🧺","la canasta","the basket"],["🦀","el cangrejo","the crab"],["🎤🧑","el cantante","singer"],["🎤👩","la cantante","singer"],["🧑‍✈️","el capitán","captain"],["🧑‍✈️","la capitana","captain"],["🐌","el caracol","the snail"],["😍","el cariño","the affection"],["🥩","la carne","the meat"],["🥩","la carnicera","butcher"],["🥩","el carnicero","butcher"],["🐟","la carpa","the carp"],["👩‍🔧","la carpintera","carpenter"],["👨‍🔧","el carpintero","carpenter"],["🏃","la carrera","the race"],["🛣️","la carretera","the road"],["🛒","el carrito","the cart"],["🚗","el carro","the car"],["🃏","la carta","the card"],["📬","la cartera","mail carrier"],["📬","el cartero","mail carrier"],["🏠","la casa","the house"],["💧","la cascada","the waterfall"],["🦫","el castor","the beaver"],["🧅","la cebolla","the onion"],["🌲","el cedro","the cedar"],["🎉","celebrar","to celebrate"],["🌆","el centro","the center"],["🪥","el cepillo de dientes","the toothbrush"],["🐷","el cerdo","the pig"],["🧠","el cerebro","the brain"],["🍒","la cereza","the cherry"],["🔒","la cerradura","the lock"],["🧥","la chaqueta","the jacket"],["💧","el charco","the puddle"],["🇨🇱","Chile","Chile"],["🌶️","el chile","the pepper"],["🍫","el chocolate","the chocolate"],["🚴","el ciclismo","cycling"],["🚴","el ciclista","cyclist"],["🚴‍♀️","la ciclista","cyclist"],["☁️","el cielo","the sky"],["💯","cien","one hundred"],["👩‍🔬","la científica","scientist"],["🧑‍🔬","el científico","scientist"],["🦌","el ciervo","the deer"],["🏔️","la cima","the summit"],["5️⃣","cinco","five"],["🔴","el círculo","the circle"],["🏥","la cirujana","surgeon"],["🏥","el cirujano","surgeon"],["🦢","el cisne","the swan"],["🏙️","la ciudad","the city"],["🏙️","la ciudadana","citizen"],["🏙️","el ciudadano","citizen"],["🌲","el claro","the clearing"],["🛒","la clienta","customer"],["🛒","el cliente","customer"],["📎","el clip","the paper clip"],["👩‍🍳","la cocinera","cook"],["👩‍🍳","la cocinera de restaurante","restaurant cook"],["👨‍🍳","el cocinero","the cook"],["👨‍🍳","el cocinero de restaurante","restaurant cook"],["🥥","el coco","the coconut"],["🐊","el cocodrilo","the crocodile"],["🚀","el cohete","the rocket"],["⛰️","la colina","the hill"],["🇨🇴","Colombia","Colombia"],["🥊🧑","el combate","the fight"],["🍽️","comer","to eat"],["☄️","el cometa","the comet"],["🍽️","la comida","the food"],["🧑","la compañera","classmate / companion"],["📚","la compañera de clase","classmate"],["🤝","la compañera de equipo","teammate"],["💼","la compañera de trabajo","coworker"],["🧑","el compañero","classmate / companion"],["📚","el compañero de clase","classmate"],["🤝","el compañero de equipo","teammate"],["💼","el compañero de trabajo","coworker"],["💻","la computadora","the computer"],["🏘️","la comunidad","community"],["🐚","la concha","the shell"],["🧑‍✈️","el conductor","driver"],["👩‍✈️","la conductora","driver"],["🐇","el conejo","the rabbit"],["🤝","la confianza","trust/confidence"],["🧹","el conserje","janitor / concierge"],["🧹","la conserje","janitor / concierge"],["✨","la constelación","the constellation"],["🧮","el contador","accountant"],["🧮","la contadora","accountant"],["💬","conversar","to have a conversation"],["❄️","el copo de nieve","the snowflake"],["❤️","el corazón","the heart"],["💔","el corazón roto","the broken heart"],["🏃","correr","to run"],["🏃‍♀️","correr una carrera","to run a race"],["🏃","correr una maratón","to run a marathon"],["🌊","la corriente","the current"],["🟫","la corteza","the bark"],["🇨🇷","Costa Rica","Costa Rica"],["🔄","la costumbre","custom/habit"],["🪡","la costurera","seamstress"],["🪡","el costurero","the sewing basket"],["💭","creer","to believe"],["🌅","el crepúsculo","the twilight"],["📓","el cuaderno","the notebook"],["⬛","el cuadrado","the square"],["4️⃣","cuatro","four"],["🇨🇺","Cuba","Cuba"],["🥄","la cuchara","the spoon"],["🔪","el cuchillo","the knife"],["🕳️","la cueva","the cave"],["🗻","la cumbre","the mountain summit"],["🎂","el cumpleaños","the birthday"],["🩹","la curita","the bandage"],["🎲","el dado","the die"],["🎁","dar","to give"],["🔄","de nuevo","again"],["☑️","decidir","to decide"],["💬","decir","to say"],["🖐️","dejar","to leave / to let"],["🐬","el delfín","the dolphin"],["🧑‍⚕️","el dentista","dentist"],["👩‍⚕️","la dentista","dentist"],["🧑‍⚕️","el dentista infantil","pediatric dentist"],["👩‍⚕️","la dentista infantil","pediatric dentist"],["➡️","derecha","right"],["💻","desarrollar","to develop"],["💻","el desarrollo","development"],["🍳","el desayuno","breakfast"],["🔓","desbloquear","to unlock"],["🪨","el desfiladero","the gorge"],["👋","despedirse","to say goodbye"],["💫","el destello","the glimmer"],["🪛","el destornillador","the screwdriver"],["🕵️","el detective","detective"],["🕵️","la detective","detective"],["🌞","el día","the day"],["💎","el diamante","the diamond"],["🦷","el diente","the tooth"],["🌼","el diente de león","the dandelion"],["🔟","diez","ten"],["💰","el dinero","the money"],["🎬","el director","director"],["🎬","el director de cine","film director"],["🏫","el director de escuela","school principal"],["🎬","la directora","director"],["🎬","la directora de cine","film director"],["🏫","la directora de escuela","school principal"],["🖌️","diseñar","to design"],["🖥️","diseñar gráficos","to design graphics"],["🌐","diseñar sitios web","to design websites"],["🖌️","el diseño","design"],["🖥️","el diseño gráfico","graphic design"],["🌐","el diseño web","web design"],["🎧","el DJ","DJ"],["🎧","la DJ","DJ"],["👨‍⚕️","el doctor","doctor"],["🩺","la doctora","doctor"],["🍩","la dona","the doughnut"],["😴","dormir","to sleep"],["2️⃣","dos","two"],["🚿","la ducha","the shower"],["❓","la duda","the doubt"],["🔑","la dueña","owner"],["🏠","la dueña de casa","homemaker"],["🔑","el dueño","owner"],["🍬","el dulce","the candy"],["🍑","el durazno","the peach"],["🇪🇨","Ecuador","Ecuador"],["🏛️","el edificio","the building"],["📝","el editor","editor"],["📝","la editora","editor"],["👨‍🔧","el electricista","electrician"],["👩‍🔧","la electricista","electrician"],["🐘","el elefante","the elephant"],["💼","la empleada","employee"],["💼","el empleado","employee"],["🔌","el enchufe","the plug"],["🔎","encontrar","to find"],["⚔️","la enemiga","enemy"],["⚔️","el enemigo","enemy"],["🤒","la enfermedad","the illness"],["👩‍⚕️","la enfermera","the nurse"],["👨‍⚕️","el enfermero","nurse"],["🥗","la ensalada","the salad"],["🏆","el entrenamiento","training"],["🏋️‍♀️","el entrenamiento personal","personal training"],["🏆","entrenar","to train"],["🏋️‍♂️","entrenar personalmente","to train personally"],["👥","el equipo","team"],["🦔","el erizo","the hedgehog"],["❌","el error","the mistake"],["🧗‍♀️","la escalada","climbing"],["🧗","escalar","to climb"],["🦗","el escarabajo","the beetle"],["❄️","la escarcha","the frost"],["🧹","la escoba","the broom"],["✍️","escribir","to write"],["✍️🧑","el escritor","writer"],["✍️👩","la escritora","writer"],["👂","escuchar","to listen"],["🏫","la escuela","the school"],["💪","el esfuerzo","effort"],["🇪🇸","España","Spain"],["👀","el espectador","spectator"],["👀","la espectadora","spectator"],["⏳","la espera","the wait"],["🧽","la esponja","the sponge"],["💍","la esposa","wife"],["💍","el esposo","husband"],["🎿","el esquí","skiing"],["⛷️","esquiar","to ski"],["⛷️","esquiar en la nieve","to ski in the snow"],["🏟️","el estadio","the stadium"],["🇺🇸","los Estados Unidos","the United States"],["🫧","el estanque","the pond"],["📍","estar","to be"],["⭐","la estrella","the star"],["🌠","la estrella fugaz","the shooting star"],["🧑‍🎓","el estudiante","student"],["👩‍🎓","la estudiante","the student"],["👩‍🎓","la estudiante universitaria","college student"],["🧑‍🎓","el estudiante universitario","college student"],["🏷️","la etiqueta","the label"],["🥾🧑","el excursionista","hiker"],["🥾👩","la excursionista","hiker"],["✅","el éxito","the success"],["📚","la experiencia","experience"],["🧪","el experimento","the experiment"],["🧠","la experta","expert"],["🧠","el experto","expert"],["🧭","la exploración","exploration"],["🧭","explorar","to explore"],["❓","la extraña","stranger"],["🌎","la extranjera","foreigner"],["🌎","el extranjero","foreigner"],["❓","el extraño","stranger"],["👨‍👩‍👧‍👦","la familia","the family"],["📣","la fanática","fan"],["📣","el fanático","fan"],["😊","la felicidad","happiness"],["🤔","la filósofa","philosopher"],["🤔","el filósofo","philosopher"],["⚛️","la física","physics"],["⚛️","el físico","physicist"],["🦩","el flamenco","the flamingo"],["🌸","la flor","the flower"],["🌺","la flor tropical","the tropical flower"],["💐","el florista","florist"],["💐","la florista","florist"],["🦭","la foca","the seal"],["🔥","la fogata","the campfire"],["📷👩","la fotógrafa","photographer"],["👩‍📷","la fotógrafa de bodas","wedding photographer"],["📷🧑","el fotógrafo","photographer"],["🧑‍📷","el fotógrafo de bodas","wedding photographer"],["🍓","la fresa","the strawberry"],["🌡️","el frío","the cold"],["🔥","el fuego","the fire"],["💪","la fuerza","the strength"],["⚽","el fútbol","soccer"],["🏈","el fútbol americano","American football"],["⚽🧑","el futbolista","soccer player"],["⚽👩","la futbolista","soccer player"],["🌌","la galaxia","the galaxy"],["🍪","la galleta","the cookie"],["🐔","la gallina","the hen"],["🏆","ganar","to win"],["⛽","la gasolina","the gasoline"],["🐱","el gato","the cat"],["🧑‍🤝‍🧑","la gente","people"],["🪨","la geóloga","geologist"],["🪨","el geólogo","geologist"],["🧑‍💼","el gerente","manager"],["👩‍💼","la gerente","manager"],["🌻","el girasol","the sunflower"],["🏔️","el glaciar","the glacier"],["🎈","el globo","the balloon"],["🧢","la gorra","the cap"],["🐦","el gorrión","the sparrow"],["🎓","la graduada","graduate"],["🎓","el graduado","graduate"],["🌨️","el granizo","the hail"],["👩‍🌾","la granjera","the farmer"],["👨‍🌾","el granjero","farmer"],["🦗","el grillo","the cricket"],["🩶","el gris","gray"],["👥","el grupo","group"],["🧤","el guante","the glove"],["💂","el guardia","guard"],["💂‍♀️","la guardia","guard"],["💂","el guardia de seguridad","security guard"],["💂‍♀️","la guardia de seguridad","security guard"],["🦊","la guarida","the den"],["🇬🇹","Guatemala","Guatemala"],["🗺️","el guía","guide"],["🗺️","la guía","guide"],["🇬🇶","Guinea Ecuatorial","Equatorial Guinea"],["🍲","el guiso","the stew"],["🎸","la guitarra","the guitar"],["🎸🧑","el guitarrista","guitarist"],["🎸👩","la guitarrista","guitarist"],["🐛","el gusano","the worm"],["❤️","gustar","to like"],["🗣️","hablar","to speak"],["🛠️","hacer","to do / to make"],["🦅","el halcón","the falcon"],["🍔","la hamburguesa","the hamburger"],["🐹","el hámster","the hamster"],["❄️","la helada","the freeze"],["🍦","el helado","the ice cream"],["🌿","el helecho","the fern"],["👧","la hermana","the sister"],["👦","el hermano","the brother"],["🦸","el héroe","hero"],["🦸‍♀️","la heroína","heroine"],["❄️","el hielo","the ice"],["🌿","la hierba","the grass"],["👧","la hija","the daughter"],["👶","el hijo","the son"],["📜","el historiador","historian"],["📜","la historiadora","historian"],["🏡","el hogar","the home"],["🍃","la hoja","the leaf"],["🍂","la hoja seca","the dry leaf"],["👨","el hombre","the man"],["🇭🇳","Honduras","Honduras"],["🍄","el hongo","the mushroom"],["🐜","la hormiga","the ant"],["🏥","el hospital","the hospital"],["🏨","el hotel","the hotel"],["🥚","el huevo","the egg"],["💡","la idea","the idea"],["🪪","la identificación","the identification"],["⛪","la iglesia","the church"],["✏️","el ilustrador","illustrator"],["✏️","la ilustradora","illustrator"],["🖨️","la impresora","the printer"],["🧑‍💻","la ingeniera","engineer"],["🧑‍💻","el ingeniero","engineer"],["🌐","Internet","the Internet"],["🗣️","el intérprete","interpreter"],["🗣️","la intérprete","interpreter"],["💡","el inventor","inventor"],["💡","la inventora","inventor"],["🔎","la investigación","research"],["🔎","investigar","to research"],["🎟️","la invitada","guest"],["🎟️","el invitado","guest"],["🚶","ir","to go"],["⬅️","izquierda","left"],["🐗","el jabalí","the wild boar"],["🧼","el jabón","the soap"],["🏡","el jardín","the garden"],["🌱","la jardinera","gardener"],["🌱","el jardinero","gardener"],["👔","la jefa","boss"],["👔","el jefe","boss"],["🦒","la jirafa","the giraffe"],["🧑","el joven","young man"],["🧑","la joven","young woman"],["💎","la joyera","jeweler"],["💎","el joyero","jeweler"],["🎮","el juego","the game"],["🧑‍⚖️","el juez","judge"],["👩‍⚖️","la jueza","judge"],["▶️","jugar","to play"],["🎾🧑","jugar al tenis","to play tennis"],["🎮","jugar videojuegos","to play video games"],["🧃","el jugo","the juice"],["🌿","el junco","the reed"],["🥝","el kiwi","the kiwi"],["🐨","el koala","the koala"],["🦎","el lagarto","the lizard"],["🌊","el lago","the lake"],["🖊️","el lapicero","the pen"],["✏️","el lápiz","the pencil"],["💜","la lavanda","the lavender"],["🥛","la leche","the milk"],["🥬","la lechuga","the lettuce"],["📖","leer","to read"],["👅","la lengua","the tongue"],["😎","los lentes","the glasses"],["🦁","el león","the lion"],["🪷","la libélula","the dragonfly"],["🕊️","la libertad","freedom"],["📚","la librera","bookseller"],["📚","el librero","bookseller"],["📖","el libro","the book"],["📚","los libros","the books"],["⭐","el líder","leader"],["⭐","la líder","leader"],["🍋","el limón","the lemon"],["🧹","limpiar","to clean"],["🧹","la limpieza","cleaning"],["🔦","la linterna","the flashlight"],["🌿","el liquen","the lichen"],["🦙","la llama","the llama"],["📞","la llamada","the call"],["📞","llamar","to call"],["🔑","la llave","the key"],["🏁","llegar","to arrive"],["🎒","llevar","to carry / to wear"],["🌧️","la lluvia","the rain"],["🐺","el lobo","the wolf"],["🪷","el loto","the lotus"],["📍","el lugar","the place"],["🌙","la luna","the moon"],["☀️","la luz","the light"],["🪵","la madera","the wood"],["👩","la madre","the mother"],["🦔","la madriguera","the burrow"],["👨‍🏫","el maestro","the teacher"],["🪄","la maga","magician"],["🪄","el mago","magician"],["🌽","el maíz","the corn"],["🧳","la maleta","the suitcase"],["💼","el maletín","the briefcase"],["🌱","la maleza","the weed"],["🥭","el mango","the mango"],["🍎","la manzana","the apple"],["🗺️","el mapa","the map"],["🦝","el mapache","the raccoon"],["💄👩","el maquillaje","makeup"],["💄🧑","maquillar","to apply makeup"],["🏃‍♀️","la maratón","the marathon"],["🌼","la margarita","the daisy"],["⚓","la marinera","sailor"],["⚓","el marinero","sailor"],["🦋","la mariposa","the butterfly"],["🐞","la mariquita","the ladybug"],["🐿️","la marmota","the marmot"],["🤎","el marrón","brown"],["🔨","el martillo","the hammer"],["➕","más","plus"],["➗","la matemática","mathematician"],["➗","el matemático","mathematician"],["💍","el matrimonio","the marriage"],["🔧","la mecánica","mechanic"],["👨‍🔧","el mecánico","the mechanic"],["🥇","la medalla","the medal"],["💊","la medicina","the medicine"],["👨‍⚕️","el médico","the doctor"],["📏","la medida","the measurement"],["➖","menos","minus"],["✉️","el mensaje","the message"],["📦","la mensajera","messenger"],["📦","el mensajero","messenger"],["🌿","la menta","the mint"],["🧑‍🏫","el mentor","mentor"],["🧑‍🏫","la mentora","mentor"],["🍽️","la mesera","server"],["🧑‍🍽️","la mesera del restaurante","waitress"],["🧑‍🍽️","el mesero","waiter"],["🏁","la meta","the finish line"],["☄️","el meteorito","the meteorite"],["🚇","el metro","the subway"],["🇲🇽","México","Mexico"],["🕌","la mezquita","the mosque"],["🎤","el micrófono","the microphone"],["🔬","el microscopio","the microscope"],["🍯","la miel","the honey"],["🪨","el mineral","the mineral"],["🎒","la mochila","the backpack"],["📸","el modelo","model"],["📸","la modelo","model"],["🪙","la moneda","the coin"],["🐵","el mono","the monkey"],["⛰️","la montaña","the mountain"],["🎢","la montaña rusa","the roller coaster"],["🚴","montar en bicicleta","to ride a bicycle"],["🫐","la mora","the blackberry"],["🟣","el morado","purple"],["🪰","la mosca","the fly"],["🦟","el mosquito","the mosquito"],["🛵","la moto","the motorcycle"],["👩","la mujer","the woman"],["👥","la multitud","crowd"],["🌎","el mundo","the world"],["🦇","el murciélago","the bat"],["🌾","el musgo","the moss"],["🎵","la música","the music"],["🎺","la música callejera","street music"],["🎵","el músico","musician"],["🎺","el músico callejero","street musician"],["🎷","el músico de jazz","jazz musician"],["🏊","nadar","to swim"],["🏊","nadar en los Juegos Olímpicos","to swim in the Olympic Games"],["🏊","nadar en una piscina","to swim in a pool"],["🟠","el naranja","orange"],["🍊","la naranja","the orange"],["👃","la nariz","the nose"],["🏊‍♀️","la natación","swimming"],["🏊","la natación olímpica","Olympic swimming"],["🙏","necesitar","to need"],["⚫","el negro","black"],["🌸","el nenúfar","the water lily"],["❄️","la nevada","the snowfall"],["🇳🇮","Nicaragua","Nicaragua"],["🪺","el nido","the nest"],["🌫️","la niebla","the fog"],["👧","la nieta","granddaughter"],["👦","el nieto","grandson"],["🌨️","la nieve","the snow"],["👧","la niña","the girl"],["👦","el niño","the boy"],["🌙","la noche","the night"],["📝","la nota","the note"],["❤️","la novia","girlfriend"],["❤️","el novio","boyfriend"],["☁️","la nube","the cloud"],["9️⃣","nueve","nine"],["🌰","la nuez","the walnut"],["🦦","la nutria","the otter"],["🎯","el objetivo","the target"],["8️⃣","ocho","eight"],["🏷️","la oferta","the offer"],["👀","los ojos","the eyes"],["🌊","la ola","the wave"],["🌟","la oportunidad","opportunity"],["🙏","la oración","the prayer"],["👂","la oreja","the ear"],["🏖️","la orilla","the shore"],["🌊","la orilla del río","the riverbank"],["🐛","la oruga","the caterpillar"],["🌑","la oscuridad","the darkness"],["🐻","el oso","the bear"],["🍂","el otoño","fall"],["🐑","la oveja","the sheep"],["🧘","la paciencia","patience"],["👨","el padre","the father"],["🌳","el paisajista","landscaper"],["🌳","la paisajista","landscaper"],["🦜","el pájaro","the bird"],["🍭","la paleta","the lollipop"],["🌴","la palma","the palm tree"],["🌴","la palmera","the palm"],["🍿","las palomitas","the popcorn"],["🍞","el pan","the bread"],["🥖","la panadera","baker"],["🥖","el panadero","baker"],["🇵🇦","Panamá","Panama"],["🐼","el panda","the panda"],["🧁","el panquecito","the cupcake"],["👖","los pantalones","the pants"],["🥔","la papa","the potato"],["🧻","el papel higiénico","the toilet paper"],["🇵🇾","Paraguay","Paraguay"],["🚑","la paramédica","paramedic"],["🚑","el paramédico","paramedic"],["💑","la pareja","the couple"],["🎾👩","el partido de tenis","the tennis match"],["🧳","la pasajera","passenger"],["🧳","el pasajero","passenger"],["🛂","el pasaporte","the passport"],["➡️","pasar","to pass / to happen"],["❤️‍🔥","la pasión","the passion"],["🍝","la pasta","the pasta"],["🎂","el pastel","the cake"],["🎂","el pastel de cumpleaños","the birthday cake"],["⛸️","el patinaje","skating"],["🧑🛹","patinar","to skate"],["👩🛹","patinar en patineta","to skateboard"],["🛹","la patineta","the skateboard"],["🦆","el pato","the duck"],["⏸️","pausar","to pause"],["🤡","la payasa","clown"],["🤡","el payaso","clown"],["☮️","la paz","peace"],["🎬","la película","the movie"],["💇","la peluquera","hairstylist"],["💈","el peluquero","hairstylist"],["⛰️","la pendiente","the slope"],["💭","el pensamiento","the thought"],["🧠","pensar","to think"],["🍐","la pera","the pear"],["😞","perder","to lose"],["😞","la pérdida","the loss"],["📰🧑","el periodista","journalist"],["📰👩","la periodista","journalist"],["🌭","el perrito caliente","the hot dog"],["🐶","el perro","the dog"],["🧑","la persona","the person"],["🇵🇪","Perú","Peru"],["🎣","la pesca","fishing"],["🎣","el pescador","fisherman"],["🎣","la pescadora","fisherwoman"],["🎣","pescar","to fish"],["🌸","el pétalo","the petal"],["🐟","el pez","the fish"],["🐠","el pez de colores","the colorful fish"],["🐠","el pez tropical","the tropical fish"],["🎹🧑","el pianista","pianist"],["🎹👩","la pianista","pianist"],["🎹","el piano","the piano"],["🏔️","el pico","the peak"],["🪨","la piedra","the stone"],["🧑‍✈️","el piloto","pilot"],["👩‍✈️","la piloto","pilot"],["🧑‍✈️","el piloto de avión","airplane pilot"],["👩‍✈️","la piloto de avión","airplane pilot"],["📌","el pin","the pin"],["🍍","la piña","the pineapple"],["🐧","el pingüino","the penguin"],["🌲","el pino","the pine"],["🖼️","el pintor","painter"],["🖌️","el pintor de casas","house painter"],["🖼️","la pintora","painter"],["🖌️","la pintora de casas","house painter"],["🍕","la pizza","the pizza"],["🪐","el planeta","the planet"],["🌿","la planta","the plant"],["🪴","la planta de interior","the houseplant"],["🍌","el plátano","the banana"],["🍽️","el plato","the plate"],["🏖️","la playa","the beach"],["👩‍🔧","la plomera","plumber"],["👨‍🔧","el plomero","plumber"],["🪶","la pluma","the feather"],["💪","poder","to be able to"],["📜","el poeta","poet"],["📜","la poeta","poet"],["👮","el policía","the police officer"],["👮","la policía","police officer"],["🦋","la polilla","the moth"],["🍗","el pollo","the chicken"],["📦","poner","to put"],["🌱","el prado","the meadow"],["💵","el precio","the price"],["🤔","la pregunta","the question"],["🎙️","la presentación","presentation"],["🎙️","presentar","to present"],["🏛️","la presidenta","president"],["🏛️","el presidente","president"],["🥨","el pretzel","the pretzel"],["👸","la princesa","princess"],["🤴","el príncipe","prince"],["🌱","el principiante","beginner"],["🌱","la principiante","beginner"],["🎬","el productor","producer"],["🎬","la productora","producer"],["👨‍🏫","el profesor","teacher"],["👨‍🏫🇪🇸","el profesor de español","Spanish teacher"],["👨‍🏫🎵","el profesor de música","music teacher"],["👩‍🏫","la profesora","teacher"],["👩‍🏫🇪🇸","la profesora de español","Spanish teacher"],["👩‍🏫🎵","la profesora de música","music teacher"],["💻","la programación","programming"],["👨‍💻","programar","to program"],["🧠","la psicóloga","psychologist"],["🧠","el psicólogo","psychologist"],["👏","el público","audience"],["🌉","el puente","the bridge"],["🚪","la puerta","the door"],["🇵🇷","Puerto Rico","Puerto Rico"],["👍","el pulgar","the thumb"],["🐙","el pulpo","the octopus"],["🦁","el puma","the puma"],["❤️","querer","to want"],["🧀","el queso","the cheese"],["⚗️","la química","chemist"],["⚗️","el químico","chemist"],["😡","la rabia","the anger"],["🌿","la raíz","the root"],["🐸","la rana","the frog"],["🖱️","el ratón","the mouse"],["⚡","el rayo","the lightning"],["🧠","la razón","reason"],["🛎️","el recepcionista","receptionist"],["🛎️","la recepcionista","receptionist"],["🏨","el recepcionista de hotel","hotel receptionist"],["🏨","la recepcionista de hotel","hotel receptionist"],["🏕️","el refugio","the shelter"],["🎁","el regalo","the gift"],["📐","la regla","the ruler"],["👑","la reina","queen"],["⌚","el reloj","the watch"],["⏰","el reloj despertador","the alarm clock"],["🧑‍💼📦","repartir","to deliver"],["👩‍💼📦","el reparto","delivery"],["🇩🇴","República Dominicana","Dominican Republic"],["🌟","el resplandor","the glow"],["✔️","la respuesta","the answer"],["🍽️","el restaurante","the restaurant"],["⏪","retroceder","to rewind"],["👑","el rey","king"],["🏞️","el río","the river"],["😂","la risa","the laughter"],["🥊","el rival","rival"],["🥊","la rival","rival"],["🌳","el roble","the oak"],["🪨","la roca","the rock"],["🔴","el rojo","red"],["🧩","el rompecabezas","the puzzle"],["👕","la ropa","the clothes"],["🩷","el rosa","pink"],["🌹","la rosa","the rose"],["🎡","la rueda de la fortuna","the Ferris wheel"],["💡","saber","to know"],["🧂","la sal","the salt"],["🚪","la salida","the exit"],["🚪","salir","to leave / to go out"],["🐟","el salmón","the salmon"],["🦗","el saltamontes","the grasshopper"],["👋","saludar","to greet"],["🇸🇻","El Salvador","El Salvador"],["🍉","la sandía","the watermelon"],["🥪","el sándwich","the sandwich"],["🧵","el sastre","tailor"],["🛰️","el satélite","the satellite"],["🌳","el sauce","the willow"],["📝","la secretaria","secretary"],["📝","el secretario","secretary"],["6️⃣","seis","six"],["🚦","el semáforo","the traffic light"],["🌱","la semilla","the seed"],["📶","la señal","the signal"],["🥾","el sendero","the trail"],["🧔","el señor","man / sir"],["👩","la señora","woman / Mrs."],["🧑","ser","to be"],["🐍","la serpiente","the snake"],["7️⃣","siete","seven"],["🔇","el silencio","the silence"],["🪑","la silla","the chair"],["🛋️","el sofá","the sofa"],["☀️","el sol","the sun"],["🪖","el soldado","soldier"],["🪖","la soldado","soldier"],["🔊","el sonido","the sound"],["😊","la sonrisa","the smile"],["🍜","la sopa","the soup"],["❗","la sorpresa","the surprise"],["🏄","el surfista","surfer"],["🏄‍♀️","la surfista","surfer"],["🌮","el taco","the taco"],["🌷","el tallo","the stem"],["🥁","el tambor","the drum"],["💳","la tarjeta","the card"],["🚕","el taxi","the taxi"],["🚕","el taxista","taxi driver"],["🚕","la taxista","taxi driver"],["☕","la taza","the cup"],["🧋","el té de burbujas","bubble tea"],["⌨️","el teclado","the keyboard"],["🛠️","la técnica","technician"],["🛠️","el técnico","technician"],["🕸️","la telaraña","the spiderweb"],["📱","el teléfono","the phone"],["🔭","el telescopio","the telescope"],["📺","la televisión","the television"],["🌡️","la temperatura","the temperature"],["🍴","el tenedor","the fork"],["🤲","tener","to have"],["🎾","el tenis","tennis"],["🎾🧑","el tenista","tennis player"],["🎾👩","la tenista","tennis player"],["💬","el terapeuta","therapist"],["💬","la terapeuta","therapist"],["🫖","la tetera","the teapot"],["🦈","el tiburón","the shark"],["🕰️","el tiempo","time"],["🏪","la tienda","the store"],["🏬","la tienda departamental","the department store"],["🌍","la tierra","the earth"],["🌍","la Tierra","the Earth"],["🐯","el tigre","the tiger"],["✂️","las tijeras","the scissors"],["🥓","el tocino","the bacon"],["🍅","el tomate","the tomato"],["🌩️","la tormenta","the storm"],["🌪️","el tornado","the tornado"],["🐢","la tortuga","the turtle"],["👷","trabajar","to work"],["🧑‍🔧","trabajar con herramientas","to work with tools"],["💻","el trabajo","work"],["🌐","el traductor","translator"],["🌐","la traductora","translator"],["🚎","el tranvía","the streetcar / tram"],["🍀","el trébol","the clover"],["🚆","el tren","the train"],["3️⃣","tres","three"],["🔺","el triángulo","the triangle"],["🌾","el trigo","the wheat"],["🛷","el trineo","the sled"],["😢","la tristeza","the sadness"],["🏆","el trofeo","the trophy"],["🎺","la trompeta","the trumpet"],["🪵","el tronco","the log"],["🐟","la trucha","the trout"],["🌷","el tulipán","the tulip"],["🧳","el turista","tourist"],["🧳","la turista","tourist"],["🦄","el unicornio","the unicorn"],["🌌","el universo","the universe"],["1️⃣","uno","one"],["🇺🇾","Uruguay","Uruguay"],["🍇","la uva","the grape"],["🐮","la vaca","the cow"],["🏞️","el valle","the valley"],["🌫️","el vapor","the steam"],["🥤","el vaso","the glass"],["🏠","la vecina","neighbor"],["🏠","el vecino","neighbor"],["⛵","el velero","the sailboat"],["🧑‍💼🛍️","vender","to sell"],["🎟️","vender boletos","to sell tickets"],["🇻🇪","Venezuela","Venezuela"],["👋","venir","to come"],["👩‍💼🛍️","la venta","the sale"],["🎟️","la venta de boletos","ticket sales"],["🪟","la ventana","the window"],["👀","ver","to see"],["✅","la verdad","truth"],["🟢","el verde","green"],["👗","el vestido","the dress"],["👩‍⚕️🐾","la veterinaria","veterinarian"],["👨‍⚕️🐾","el veterinario","veterinarian"],["🏆","la victoria","victory"],["🎮","el videojuego","the video game"],["🪟","el vidrio","the glass"],["💨","el viento","the wind"],["🌬️","el viento fuerte","the strong wind"],["👿","la villana","villain"],["👿","el villano","villain"],["🎻","el violín","the violin"],["🎻🧑","el violinista","violinist"],["🎻👩","la violinista","violinist"],["🚶","el visitante","visitor"],["🚶","la visitante","visitor"],["🏠","vivir","to live"],["🏐","el voleibol","volleyball"],["🤝","la voluntaria","volunteer"],["🤝","el voluntario","volunteer"],["🗣️","la voz","the voice"],["🥕","la zanahoria","the carrot"],["👞","la zapatera","shoemaker"],["👞","el zapatero","shoemaker"],["👟","el zapato","the shoe"],["🦊","el zorro","the fox"]].map(a=>({em:a[0],es:a[1],en:a[2]}));
+const $=s=>document.querySelector(s);
+const KEY='vocabPracticeKnown';
+let known={};try{known=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(known))}catch(e){}}
+
+/* pronunciation: read Spanish words aloud (Web Speech API) */
+let pronEnabled=true;try{pronEnabled=localStorage.getItem('vocabPronunciation')!=='0'}catch(e){}
+/* emoji hint: hide the picture clue so students recall, not recognize */
+let emojiOn=false;try{emojiOn=localStorage.getItem('vocabEmoji')==='1'}catch(e){}
+if(!emojiOn)document.body.classList.add('no-emoji');
+let esVoice=null;
+function pickSpanishVoice(){if(!('speechSynthesis' in window))return;try{const vs=speechSynthesis.getVoices().filter(v=>/^es([-_]|$)/i.test(v.lang||''));esVoice=vs.find(v=>/es[-_]MX/i.test(v.lang))||vs.find(v=>/es[-_]US/i.test(v.lang))||vs[0]||null}catch(e){esVoice=null}}
+if('speechSynthesis' in window){pickSpanishVoice();if(typeof speechSynthesis.addEventListener==='function')speechSynthesis.addEventListener('voiceschanged',pickSpanishVoice);else speechSynthesis.onvoiceschanged=pickSpanishVoice}
+function speakWord(text){
+  if(!pronEnabled||!text)return;const synth=window.speechSynthesis;if(!synth)return;
+  try{
+    if(synth.speaking||synth.pending)synth.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    if(esVoice){u.voice=esVoice;u.lang=esVoice.lang}else{u.lang='es-MX'}
+    u.rate=0.85;
+    synth.speak(u);
+  }catch(e){}
+}
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const isNoun=w=>/^(el|la|los|las) /.test(w.es);
+const art=w=>w.es.split(' ')[0];
+const bare=w=>w.es.replace(/^(el|la|los|las) /,'');
+/* Gender-ambiguous nouns: same word, same meaning, both articles. Comparing
+   English glosses ignoring a leading "the" (student vs the student) so that
+   near-identical glosses count as the same meaning too. */
+const normEn=s=>s.toLowerCase().replace(/^the /,'');
+const AMBIG_GENDER=new Set();
+{const byKey=new Map();
+ for(const w of W){const m=w.es.match(/^(el|la) (.+)/);if(!m)continue;const k=m[2]+'\u0000'+normEn(w.en);let a=byKey.get(k);if(!a){a=new Set();byKey.set(k,a);}a.add(m[1]);}
+ for(const [k,a] of byKey){if(a.has('el')&&a.has('la'))AMBIG_GENDER.add(k.split('\u0000')[0]);}}
+const letters=[...new Set(W.map(w=>bare(w).charAt(0).toUpperCase()))].sort();
+let mode='flash';
+const el=$('#app');
+const sorted=W.slice().sort((x,y)=>bare(x).localeCompare(bare(y),'es'));
+const SETS=[];for(let i=0;i<sorted.length;i+=100){const s=sorted.slice(i,i+100);SETS.push({label:'Set '+(SETS.length+1)+': '+bare(s[0])+' to '+bare(s[s.length-1]),words:new Set(s)})}
+function pool(){
+  const f=$('#fl')?$('#fl').value:'';const s=$('#set')?$('#set').value:'';
+  if(s&&s[0]==='r'){return shuffle(W.filter(w=>!f||bare(w).charAt(0).toUpperCase()===f)).slice(0,+s.slice(1))}
+  return W.filter(w=>(!f||bare(w).charAt(0).toUpperCase()===f)&&(!s||SETS[+s].words.has(w)));
+}
+el.addEventListener('change',e=>{if(e.target.id==='set'&&e.target.value[0]==='r'){const n=$('#n');if(n)n.value='9999'}});
+function opts(extra,head,hideCount){
+  return '<div class="opt"><div class="opt-row"><span class="opt-head">Words</span><label>Word set <select id="set"><option value="">All 1,000 words</option><optgroup label="Random mix (new words every round)">'+[900,800,700,600,500,400,300,200,100].map(n=>'<option value="r'+n+'">Random '+n+'</option>').join('')+'</optgroup><optgroup label="Fixed sets (alphabetical)">'+SETS.map((s,i)=>'<option value="'+i+'">'+s.label+'</option>').join('')+'</optgroup></select></label>'+
+  (hideCount?'':'<label>Cards per round <select id="n"><option>10</option><option selected>20</option><option>30</option><option>50</option><option>75</option><option>100</option><option>150</option><option>200</option><option>300</option><option>500</option><option value="9999">All in the set / mix</option></select></label>')+'</div>'+
+  (extra?'<div class="opt-row">'+(head?'<span class="opt-head">'+head+'</span>':'')+extra+'</div>':'')+'</div>';
+}
+function setMode(m){mode=m;document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.m===m));
+  if(m==='flash')flashSetup();else if(m==='quiz')quizSetup();else if(m==='el')elSetup();else knownSetup();}
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+const pronChk=$('#pron');if(pronChk){pronChk.checked=pronEnabled;pronChk.addEventListener('change',e=>{pronEnabled=e.target.checked;try{localStorage.setItem('vocabPronunciation',pronEnabled?'1':'0')}catch(_){}})}
+let emojiSeenThisQuestion=false,quizAwaitingAnswer=false;
+const emojChk=$('#emoj');if(emojChk){emojChk.checked=emojiOn;emojChk.addEventListener('change',e=>{emojiOn=e.target.checked;if(quizAwaitingAnswer&&emojiOn)emojiSeenThisQuestion=true;document.body.classList.toggle('no-emoji',!emojiOn);try{localStorage.setItem('vocabEmoji',emojiOn?'1':'0')}catch(_){}})}
+
+/* say it to advance: pronunciation gate in the quiz (opt-in) */
+let sayAdv=false;try{sayAdv=localStorage.getItem('vocabSayToAdvance')==='1'}catch(e){}
+let sayStrict='standard';try{const s=localStorage.getItem('vocabSayStrictness');if(s==='standard'||s==='strict')sayStrict=s}catch(e){}
+const sayChk=$('#sayadv');
+function saySyncUI(){const w=$('#saystrictwrap'),n=$('#saynote');if(w)w.style.display=sayAdv?'':'none';if(n)n.style.display=sayAdv?'':'none'}
+if(sayChk){sayChk.checked=sayAdv;sayChk.addEventListener('change',e=>{sayAdv=e.target.checked;try{localStorage.setItem('vocabSayToAdvance',sayAdv?'1':'0')}catch(_){}saySyncUI()})}
+document.querySelectorAll('input[name="saystrict"]').forEach(r=>{r.checked=(r.value===sayStrict);r.addEventListener('change',e=>{if(e.target.checked){sayStrict=e.target.value;try{localStorage.setItem('vocabSayStrictness',sayStrict)}catch(_){}}})});
+saySyncUI();
+
+/* flashcards */
+let deck=[],ix=0,flipped=false,seen=0,got=0;
+function flashSetup(){
+  el.innerHTML=opts('<label>Show <select id="dir"><option value="es">Spanish first</option><option value="en">English first</option></select></label><label><input type="checkbox" id="unk"> Only cards I have not marked known</label>','Flashcards')+
+  '<div class="act"><button id="go">Start</button></div><p class="stat">Marked known so far: <b>'+Object.keys(known).length+'</b> of '+W.length+'. <a href="#" id="rst">Reset</a></p>';
+  $('#go').onclick=flashStart;
+  $('#rst').onclick=e=>{e.preventDefault();known={};save();flashSetup()};
+}
+function flashStart(){
+  let p=pool();if($('#unk').checked)p=p.filter(w=>!known[w.es]);
+  if(!p.length){el.insertAdjacentHTML('beforeend','<div class="result">No cards match. Try another letter or clear the filter.</div>');return}
+  deck=shuffle(p).slice(0,+$('#n').value);ix=0;seen=0;got=0;dirv=$('#dir').value;flashShow();
+}
+let dirv='es';
+function flashShow(){
+  if(ix>=deck.length){
+    el.innerHTML='<div class="result"><b>Round finished.</b> You knew '+got+' of '+seen+' cards.</div><div class="act"><button id="again">New round</button>'+(deck.some(w=>w.miss)?'<button class="alt" id="miss">Practice the ones I missed</button>':'')+'</div>';
+    $('#again').onclick=flashSetup;const m=$('#miss');if(m)m.onclick=()=>{deck=deck.filter(w=>w.miss);deck.forEach(w=>w.miss=false);ix=0;seen=0;got=0;flashShow()};return}
+  flipped=false;const w=deck[ix];
+  el.innerHTML='<p class="stat">Card '+(ix+1)+' of '+deck.length+'</p><div class="bar"><i style="width:'+(ix/deck.length*100)+'%"></i></div><div class="card" id="c" tabindex="0" role="button" aria-label="Flip card"></div><div class="act" id="ac"></div>';
+  const draw=()=>{const front=dirv==='es'?w.es:w.en,back=dirv==='es'?w.en:w.es;
+    $('#c').innerHTML=(flipped?'':'<div class="em">'+w.em+'</div>')+(flipped?'<div class="em">'+w.em+'</div>':'')+'<div class="big">'+(flipped?back:front)+'</div><div class="hint">'+(flipped?(dirv==='es'?'English':'Español'):'Tap to flip')+'</div>';
+    $('#ac').innerHTML=flipped?'<button id="k">I knew it</button><button class="alt" id="m">Not yet</button>'+(pronEnabled?'<button class="alt" id="spk">🔊 Escuchar</button>':''):'<button class="alt" id="f">Flip</button>'+(pronEnabled?'<button class="alt" id="spk">🔊 Escuchar</button>':'');
+    const sp=$('#spk');if(sp)sp.onclick=()=>speakWord(w.es);
+    if(flipped){$('#k').onclick=()=>{got++;seen++;ix++;flashShow()};$('#m').onclick=()=>{delete known[w.es];save();w.miss=true;seen++;ix++;flashShow()}}
+    else $('#f').onclick=flip};
+  const flip=()=>{flipped=!flipped;draw()};
+  $('#c').onclick=flip;$('#c').onkeydown=e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();flip()}};draw();
+}
+
+
+/* SAY-GATE-MATCH-START: pure pronunciation-matching helpers (no DOM) */
+function sayNorm(s){return (s||'').toLowerCase().trim().replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i').replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/[^a-zñ ]/g,' ').replace(/\s+/g,' ').trim()}
+const SAY_ARTICLES=['el','la','los','las','un','una'];
+function sayStripArticles(phrase){let ws=sayNorm(phrase).split(' ').filter(Boolean);while(ws.length>1&&SAY_ARTICLES.includes(ws[0]))ws.shift();while(ws.length>1&&SAY_ARTICLES.includes(ws[ws.length-1]))ws.pop();return ws.join(' ')}
+function sayPass(level,transcript,fullForm){
+  const t=sayNorm(transcript);if(!t)return false;
+  const full=sayNorm(fullForm);if(!full)return false;
+  const bare=sayStripArticles(fullForm);
+  if(level==='strict'){return (' '+t+' ').includes(' '+full+' ')}
+  if(level==='standard'){return (' '+t+' ').includes(' '+bare+' ')}
+  return false;
+}
+/* SAY-GATE-MATCH-END */
+
+/* pronunciation gate: replaces the quiz Next button when say-to-advance is on */
+function sayGate(w,eligible){
+  const target=w.es;
+  let advanced=false;
+  const advance=()=>{if(advanced)return;advanced=true;qi++;quizShow()};
+  $('#nx').innerHTML='<div class="stat">🎤 Say <b>'+target+'</b> to move on</div><div class="act"><button id="saymic">🎤 Speak</button></div><div class="stat" id="saystatus"></div><div class="stat"><a href="#" id="sayskip">Can’t use the mic? Skip this step</a></div>';
+  const status=$('#saystatus'),mic=$('#saymic'),skip=$('#sayskip');
+  skip.onclick=e=>{e.preventDefault();stopping=true;clearTimeout(listenTimer);setListening(false);if(rec){try{rec.abort()}catch(err){}}advance()};
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){status.textContent='This browser can’t listen — use the skip link below to move on.';skip.style.fontWeight='bold';return}
+  let rec=null,attempt=0,stopping=false,listenTimer=null,listening=false,tried=false;
+  if(!document.getElementById('saylisten-style')){const st=document.createElement('style');st.id='saylisten-style';st.textContent='#saymic.listening{background:#c0392b!important;color:#fff!important;animation:saypulse 1s infinite}@keyframes saypulse{50%{opacity:.55}}';document.head.appendChild(st)}
+  const setListening=on=>{listening=on;mic.classList.toggle('listening',on);if(on)mic.textContent='\u25cf Listening\u2026 \u2014 tap to stop';else mic.textContent=tried?'🎤 Try again':'🎤 Speak'};
+  mic.onclick=()=>{
+    /* tap while listening = stop, so the user is never stuck on Listening… */
+    if(listening){stopping=true;clearTimeout(listenTimer);try{rec.stop()}catch(e){}setListening(false);status.textContent='Stopped \u2014 try again.';return}
+    /* iPhone fix: free the speech audio session first, or iOS may never engage the mic */
+    if(window.speechSynthesis){try{speechSynthesis.cancel()}catch(e){}}
+    if(rec){try{rec.abort()}catch(e){}}
+    attempt++;const my=attempt;stopping=false;tried=true;
+    let done=false,heardAny=false,li=0;
+    const langs=[];['es-MX','es-US',(navigator.language||'en-US')].forEach(l=>{if(l&&langs.indexOf(l)<0)langs.push(l)});
+    status.textContent='Listening…';setListening(true);
+    clearTimeout(listenTimer);
+    listenTimer=setTimeout(()=>{if(my===attempt&&listening){stopping=true;try{rec.stop()}catch(e){}setListening(false);status.textContent='Didn\u2019t catch that \u2014 try again.'}},12000);
+    const nextLang=()=>{
+      if(li<langs.length-1){li++;startWith(langs[li])}
+      else{done=true;mic.disabled=false;setListening(false);status.textContent='This phone’s speech service doesn’t offer Spanish — use the skip link below to move on.';skip.style.fontWeight='bold'}
+    };
+    const startWith=lang=>{
+      if(my!==attempt)return;
+      rec=new SR();
+      rec.lang=lang;rec.continuous=true;rec.interimResults=false;rec.maxAlternatives=1;
+      rec.onresult=ev=>{
+        if(my!==attempt||done)return;done=true;heardAny=true;clearTimeout(listenTimer);setListening(false);
+        const heard=(ev.results[0]&&ev.results[0][0])?ev.results[0][0].transcript:'';
+        try{rec.stop()}catch(e){}
+        if(sayPass(sayStrict,heard,target)){status.textContent='✓ Heard it — nice work!';if(eligible&&!known[w.es]){known[w.es]=1;save();$('#nx').insertAdjacentHTML('beforeend',' <span class="stat">✓ Marked as known — answered with no emoji hint</span>')}advance()}
+        else{status.textContent='Heard: “'+heard+'” — not quite. Try again.';mic.textContent='🎤 Try again';mic.disabled=false}
+      };
+      rec.onerror=ev=>{
+        if(my!==attempt||done)return;
+        const err=ev.error||'';
+        if(err==='language-not-supported'){nextLang();return}
+        done=true;heardAny=true;mic.disabled=false;clearTimeout(listenTimer);setListening(false);
+        if(err==='not-allowed'||err==='service-not-allowed'){status.textContent='Microphone access was denied — use the skip link below to move on.';skip.style.fontWeight='bold'}
+        else if(err==='no-speech'){status.textContent='Didn’t hear anything — try again.';mic.textContent='🎤 Try again'}
+        else if(err==='network'){status.textContent='Speech service isn’t reachable right now — use the skip link below to move on.';skip.style.fontWeight='bold'}
+        else{status.textContent='Something went wrong listening — try again or skip this step.'}
+      };
+      rec.onend=()=>{
+        if(stopping||my!==attempt||done)return;
+        clearTimeout(listenTimer);
+        /* iOS Safari often ends recognition silently with no result and no error: retry the next language */
+        if(!heardAny&&li<langs.length-1){li++;startWith(langs[li]);return}
+        setListening(false);
+        if(!heardAny){status.textContent='Didn’t catch that — try again.';mic.textContent='🎤 Try again';mic.disabled=false;return}
+        mic.disabled=false;
+      };
+      try{rec.start()}catch(e){clearTimeout(listenTimer);setListening(false);status.textContent='Couldn’t start listening — try again or skip this step.';mic.disabled=false}
+    };
+    startWith(langs[0]);
+  };
+}
+
+/* quiz */
+let qs=[],qi=0,score=0,qdir='es';
+function quizSetup(){
+  el.innerHTML=opts('<label>Question <select id="dir"><option value="es">Spanish → English</option><option value="en">English → Spanish</option></select></label>','Quiz',true)+'<div class="act"><button id="go">Start quiz</button></div>';
+  $('#go').onclick=()=>{qdir=$('#dir').value;let p=pool();
+    if(qdir==='en'){const c={};W.forEach(w=>c[w.en]=(c[w.en]||0)+1);p=p.filter(w=>c[w.en]===1)}
+    if(p.length<4){el.insertAdjacentHTML('beforeend','<div class="result">Not enough words in this set. Try another set.</div>');return}
+    qs=shuffle(p).slice(0,20);qi=0;score=0;quizShow()};
+}
+function quizShow(){
+  if(qi>=qs.length){const pct=Math.round(score/qs.length*100);
+    el.innerHTML='<div class="result"><b>Score: '+score+' / '+qs.length+' ('+pct+'%)</b><br>'+(pct>=90?'Excellent. Try the other direction.':pct>=70?'Good work. Run it again to lock it in.':'Keep going. Flashcards are a good way to review first.')+'</div><div class="act"><button id="again">New quiz</button></div>';$('#again').onclick=quizSetup;return}
+  const w=qs[qi],ans=qdir==='es'?w.en:w.es,key=qdir==='es'?'en':'es';
+  const wrong=[];for(const x of shuffle(W)){if(x[key]!==w[key]&&!wrong.some(y=>y[key]===x[key])&&(qdir==='en'||x.en!==w.en)){
+      if(qdir==='en'&&isNoun(w)!==isNoun(x))continue;wrong.push(x);if(wrong.length===3)break}}
+  const ch=shuffle([w].concat(wrong));
+  emojiSeenThisQuestion=emojiOn;quizAwaitingAnswer=true;
+  el.innerHTML='<p class="stat">Question '+(qi+1)+' of '+qs.length+' · Score '+score+'</p><div class="bar"><i style="width:'+(qi/qs.length*100)+'%"></i></div><div class="card" style="cursor:default"><div class="em">'+w.em+'</div><div class="big">'+(qdir==='es'?w.es:w.en)+'</div></div><div class="choices" id="ch"></div><div class="act" id="nx"></div>';
+  if(qdir==='es'&&pronEnabled){$('#nx').innerHTML='<button class="alt" id="spkq">🔊 Escuchar</button>';$('#spkq').onclick=()=>speakWord(w.es)}
+  ch.forEach(x=>{const b=document.createElement('button');b.textContent=x[key];b.onclick=()=>{quizAwaitingAnswer=false;
+    [...$('#ch').children].forEach(c=>{c.disabled=true;if(c.textContent===ans)c.classList.add('good')});
+    const eligible=(x===w)&&!emojiSeenThisQuestion;let markedKnown=false;
+    if(x===w)score++;else b.classList.add('bad');
+    if(eligible&&!known[w.es]&&!sayAdv){known[w.es]=1;save();markedKnown=true}
+    speakWord(w.es);
+    if(sayAdv){sayGate(w,eligible)}else{$('#nx').innerHTML='<button id="next">'+(qi+1>=qs.length?'See score':'Next')+'</button>'+(markedKnown?' <span class="stat">✓ Marked as known — answered with no emoji hint</span>':'');$('#next').focus();$('#next').onclick=()=>{qi++;quizShow()}}};$('#ch').appendChild(b)});
+}
+
+/* el / la */
+let es=[],ei=0,esc=0;
+function elSetup(){
+  el.innerHTML=opts('','')+'<p class="stat">Singular nouns only (el or la). Pick the right article.</p><div class="act"><button id="go">Start</button></div>';
+  $('#go').onclick=()=>{const p=pool().filter(w=>/^(el|la) /.test(w.es)&&!AMBIG_GENDER.has(bare(w)));
+    if(!p.length){el.insertAdjacentHTML('beforeend','<div class="result">No nouns in this set. Try another set.</div>');return}
+    es=shuffle(p).slice(0,+$('#n').value);ei=0;esc=0;elShow()};
+}
+function elShow(){
+  if(ei>=es.length){el.innerHTML='<div class="result"><b>Score: '+esc+' / '+es.length+'</b></div><div class="act"><button id="again">Play again</button></div>';$('#again').onclick=elSetup;return}
+  const w=es[ei];
+  el.innerHTML='<p class="stat">Word '+(ei+1)+' of '+es.length+' · Score '+esc+'</p><div class="bar"><i style="width:'+(ei/es.length*100)+'%"></i></div><div class="card" style="cursor:default"><div class="em">'+w.em+'</div><div class="big">… '+bare(w)+'</div><div class="hint">'+w.en+'</div></div><div class="choices" id="ch"></div><div class="act" id="nx"></div>';
+  ['el','la'].forEach(a=>{const b=document.createElement('button');b.textContent=a;b.onclick=()=>{
+    [...$('#ch').children].forEach(c=>{c.disabled=true;if(c.textContent===art(w))c.classList.add('good')});
+    if(a===art(w))esc++;else b.classList.add('bad');
+    speakWord(w.es);
+    $('#nx').innerHTML='<button id="next">'+(ei+1>=es.length?'See score':'Next')+'</button>';$('#next').focus();$('#next').onclick=()=>{ei++;elShow()}};$('#ch').appendChild(b)});
+}
+/* known words list */
+function knownSetup(){
+  const have=new Set(),list=[];
+  for(const w of W){if(known[w.es]&&!have.has(w.es)){have.add(w.es);list.push(w)}}
+  if(!list.length){el.innerHTML='<div class="result"><b>How words get marked as known:</b> only the Quiz can mark a word known. Answer correctly with the Emoji hint off for the whole question — and, if Say it to advance is on, pronounce the word correctly too. Skipping never counts, and flashcards never mark words known.</div>';return}
+  el.innerHTML='<div class="result"><b>How words get marked as known:</b> only the Quiz can mark a word known. Answer correctly with the Emoji hint off for the whole question — and, if Say it to advance is on, pronounce the word correctly too. Skipping never counts, and flashcards never mark words known.</div><p class="stat">You know '+list.length+' of '+W.length+' words.</p><div class="act"><button id="rev">Review these</button><button class="alt" id="clr">Clear all</button></div><div id="klist">'+list.map((w,i)=>'<div class="known-row"><span>'+w.em+' <b>'+w.es+'</b> \u2014 '+w.en+'</span><button class="alt" data-i="'+i+'">\u2715</button></div>').join('')+'</div>';
+  el.querySelectorAll('#klist button').forEach(b=>{b.onclick=()=>{delete known[list[+b.dataset.i].es];save();knownSetup()}});
+  $('#rev').onclick=()=>{deck=shuffle(list.slice());ix=0;seen=0;got=0;flashShow()};
+  $('#clr').onclick=()=>{known={};save();knownSetup()};
+}
+setMode('quiz');
+</script></body></html>
 i{color:#1f5c3f}
 .keyboard-controls{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 14px;margin:8px 0 16px}
 .key-row{font-size:.9rem;color:#33443a}.touch-help{grid-column:1/-1}
