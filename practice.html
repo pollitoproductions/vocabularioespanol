@@ -41,7 +41,10 @@ ul.links span{display:block;font-size:.88rem;color:#5b6b62}
 .tabs button,.opt button,.act button{font:inherit;cursor:pointer}
 .tabs button{padding:10px 18px;border-radius:999px;border:2px solid #2f7d57;background:#fff;color:#1f5c3f;font-weight:700}
 .tabs button[aria-selected=true]{background:#2f7d57;color:#fff}
-.opt{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:8px 0 14px;font-size:.9rem}
+.opt{background:#fff;border:1px solid #e6dfcf;border-radius:14px;padding:12px 14px;margin:8px 0 14px;font-size:.9rem}
+.opt-row{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.opt-row+.opt-row{margin-top:10px;padding-top:10px;border-top:1px solid #efe9db}
+.opt-head{font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#2f7d57;min-width:64px}
 .opt label{display:flex;gap:6px;align-items:center;color:#33443a}
 .opt select{font:inherit;padding:5px 8px;border-radius:8px;border:1px solid #cfc8b6;background:#fff}
 .card{background:#fff;border:1px solid #e6dfcf;border-radius:18px;box-shadow:0 6px 18px rgba(60,80,60,.10);padding:26px 18px;min-height:210px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;cursor:pointer;user-select:none}
@@ -67,14 +70,14 @@ body.no-emoji .card .em{display:none}
 <a class="back" href="/">&larr; Back to home</a>
 <h1>Practice the words</h1>
 <p class="lead">Flashcards, a quiz and an el/la trainer built from the same 1,000 words as the games. Free, no sign-up.</p>
-<div class="tabs" role="tablist"><button data-m="flash" aria-selected="true">Flashcards</button><button data-m="quiz" aria-selected="false">Quiz</button><button data-m="el" aria-selected="false">El or la?</button><button data-m="known" aria-selected="false">Known words</button></div>
-<div class="opt" style="margin:6px 0 2px"><label><input type="checkbox" id="pron" checked> 🔊 Pronunciación — hear each word read aloud</label><label style="margin-left:14px"><input type="checkbox" id="emoj" checked> 🙂 Emoji — show the picture hint<label style="margin-left:14px"><input type="checkbox" id="sayadv"> 🎤 Say it to advance — pronounce the word to move on</label><span id="saystrictwrap" style="display:none">How correct: <label><input type="radio" name="saystrict" value="gentle"> Gentle</label><label><input type="radio" name="saystrict" value="standard"> Standard</label><label><input type="radio" name="saystrict" value="strict"> Strict</label></span></div>
+<div class="tabs" role="tablist"><button data-m="quiz" aria-selected="true">Quiz</button><button data-m="flash" aria-selected="false">Flashcards</button><button data-m="el" aria-selected="false">El or la?</button><button data-m="known" aria-selected="false">Known words</button></div>
+<div class="opt"><div class="opt-row"><span class="opt-head">Hear &amp; hints</span><label><input type="checkbox" id="pron" checked> 🔊 Pronunciación — hear each word read aloud</label><label><input type="checkbox" id="emoj" checked> 🙂 Emoji — show the picture hint</label></div><div class="opt-row"><span class="opt-head">Speaking</span><label><input type="checkbox" id="sayadv"> 🎤 Say it to advance — pronounce the word to move on</label><span id="saystrictwrap" style="display:none">How correct: <label><input type="radio" name="saystrict" value="gentle"> Gentle</label><label><input type="radio" name="saystrict" value="standard"> Standard</label><label><input type="radio" name="saystrict" value="strict"> Strict</label></span></div></div>
 <div id="saynote" class="stat" style="display:none;margin-top:0">🎤 Your voice is sent to your browser's speech service to check it — it isn't stored.</div>
 <div id="app"></div>
 <h2>Why practice this way</h2>
 <p>Seeing a word once in the game is a good start, but memory grows through repeated, active recall. That means trying to produce the meaning before you look at it. The flashcards, the quiz and the el/la trainer on this page all work that way. They use the same 1,000 words from Vocabulario Español, so anything you collected in the game can be tested here, and anything you miss here is a good reason to go back and find it again in the world.</p>
 <h2>How to use the three modes</h2>
-<p><b>Flashcards</b> show the picture and the Spanish word. Say it aloud, think of the meaning, then tap the card to check. Mark the ones you knew and the ones you did not; the cards you missed come back around first, and the cards you know are remembered on this device so tomorrow's session starts where today's finished. You can flip the direction so you see English and have to recall Spanish, which is harder and more useful for speaking. Uncheck Emoji above to hide the picture hint; in the quiz, a right answer with the emoji off marks the word as known. The Known words tab lists everything you have marked as known, so you can review it or remove a word.</p>
+<p><b>Flashcards</b> show the picture and the Spanish word. Say it aloud, think of the meaning, then tap the card to check. Mark the ones you knew and the ones you did not; the cards you missed come back around first, and the cards you know are remembered on this device so tomorrow's session starts where today's finished. You can flip the direction so you see English and have to recall Spanish, which is harder and more useful for speaking. Uncheck Emoji above to hide the picture hint; in the quiz, a right answer with the emoji off for the whole question — and the word pronounced right, when Say it to advance is on — marks the word as known. The Known words tab lists everything you have marked as known, so you can review it or remove a word.</p>
 <p><b>Quiz</b> gives you a word and four choices. The wrong answers are real words from the list, so you have to know the meaning rather than guess by elimination. Quiz yourself in both directions: Spanish to English tests recognition, which is what reading and listening need, while English to Spanish tests recall, which is what speaking and writing need.</p>
 <p><b>El or la?</b> is a short drill on gender. In Spanish every noun is masculine or feminine, and the article is the quickest clue. The only dependable way to learn the gender is to learn the noun together with its article, so this mode shows you a noun without it and asks you to choose. A few words, like el agua or el águila, look like exceptions but follow a sound rule; the guide on el and la explains why.</p>
 <h2>A simple routine</h2>
@@ -128,16 +131,18 @@ function pool(){
   return W.filter(w=>(!f||bare(w).charAt(0).toUpperCase()===f)&&(!s||SETS[+s].words.has(w)));
 }
 el.addEventListener('change',e=>{if(e.target.id==='set'&&e.target.value[0]==='r'){const n=$('#n');if(n)n.value='9999'}});
-function opts(extra){
-  return '<div class="opt"><label>Word set <select id="set"><option value="">All 1,000 words</option><optgroup label="Random mix (new words every round)">'+[100,200,300,400,500,600,700,800,900].map(n=>'<option value="r'+n+'">Random '+n+'</option>').join('')+'</optgroup><optgroup label="Fixed sets (alphabetical)">'+SETS.map((s,i)=>'<option value="'+i+'">'+s.label+'</option>').join('')+'</optgroup></select></label>'+
+function opts(extra,head){
+  return '<div class="opt"><div class="opt-row"><span class="opt-head">Words</span><label>Word set <select id="set"><option value="">All 1,000 words</option><optgroup label="Random mix (new words every round)">'+[100,200,300,400,500,600,700,800,900].map(n=>'<option value="r'+n+'">Random '+n+'</option>').join('')+'</optgroup><optgroup label="Fixed sets (alphabetical)">'+SETS.map((s,i)=>'<option value="'+i+'">'+s.label+'</option>').join('')+'</optgroup></select></label>'+
   '<label>Letter <select id="fl"><option value="">All</option>'+letters.map(l=>'<option>'+l+'</option>').join('')+'</select></label>'+
-  '<label>Cards per round <select id="n"><option>10</option><option selected>20</option><option>30</option><option>50</option><option>75</option><option>100</option><option>150</option><option>200</option><option>300</option><option>500</option><option value="9999">All in the set / mix</option></select></label>'+extra+'</div>';
+  '<label>Cards per round <select id="n"><option>10</option><option selected>20</option><option>30</option><option>50</option><option>75</option><option>100</option><option>150</option><option>200</option><option>300</option><option>500</option><option value="9999">All in the set / mix</option></select></label></div>'+
+  (extra?'<div class="opt-row">'+(head?'<span class="opt-head">'+head+'</span>':'')+extra+'</div>':'')+'</div>';
 }
 function setMode(m){mode=m;document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.m===m));
   if(m==='flash')flashSetup();else if(m==='quiz')quizSetup();else if(m==='el')elSetup();else knownSetup();}
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
 const pronChk=$('#pron');if(pronChk){pronChk.checked=pronEnabled;pronChk.addEventListener('change',e=>{pronEnabled=e.target.checked;try{localStorage.setItem('vocabPronunciation',pronEnabled?'1':'0')}catch(_){}})}
-const emojChk=$('#emoj');if(emojChk){emojChk.checked=emojiOn;emojChk.addEventListener('change',e=>{emojiOn=e.target.checked;document.body.classList.toggle('no-emoji',!emojiOn);try{localStorage.setItem('vocabEmoji',emojiOn?'1':'0')}catch(_){}})}
+let emojiSeenThisQuestion=false,quizAwaitingAnswer=false;
+const emojChk=$('#emoj');if(emojChk){emojChk.checked=emojiOn;emojChk.addEventListener('change',e=>{emojiOn=e.target.checked;if(quizAwaitingAnswer&&emojiOn)emojiSeenThisQuestion=true;document.body.classList.toggle('no-emoji',!emojiOn);try{localStorage.setItem('vocabEmoji',emojiOn?'1':'0')}catch(_){}})}
 
 /* say it to advance: pronunciation gate in the quiz (opt-in) */
 let sayAdv=false;try{sayAdv=localStorage.getItem('vocabSayToAdvance')==='1'}catch(e){}
@@ -151,7 +156,7 @@ saySyncUI();
 /* flashcards */
 let deck=[],ix=0,flipped=false,seen=0,got=0;
 function flashSetup(){
-  el.innerHTML=opts('<label>Show <select id="dir"><option value="es">Spanish first</option><option value="en">English first</option></select></label><label><input type="checkbox" id="unk"> Only cards I have not marked known</label>')+
+  el.innerHTML=opts('<label>Show <select id="dir"><option value="es">Spanish first</option><option value="en">English first</option></select></label><label><input type="checkbox" id="unk"> Only cards I have not marked known</label>','Flashcards')+
   '<div class="act"><button id="go">Start</button></div><p class="stat">Marked known so far: <b>'+Object.keys(known).length+'</b> of '+W.length+'. <a href="#" id="rst">Reset</a></p>';
   $('#go').onclick=flashStart;
   $('#rst').onclick=e=>{e.preventDefault();known={};save();flashSetup()};
@@ -197,11 +202,11 @@ function sayPass(level,transcript,fullForm){
 /* SAY-GATE-MATCH-END */
 
 /* pronunciation gate: replaces the quiz Next button when say-to-advance is on */
-function sayGate(w,markedKnown){
+function sayGate(w,eligible){
   const target=w.es;
   let advanced=false;
   const advance=()=>{if(advanced)return;advanced=true;qi++;quizShow()};
-  $('#nx').innerHTML='<div class="stat">🎤 Say <b>'+target+'</b> to move on</div><div class="act"><button id="saymic">🎤 Speak</button></div><div class="stat" id="saystatus"></div><div class="stat"><a href="#" id="sayskip">Can’t use the mic? Skip this step</a></div>'+(markedKnown?' <span class="stat">✓ Marked as known — answered with no emoji hint</span>':'');
+  $('#nx').innerHTML='<div class="stat">🎤 Say <b>'+target+'</b> to move on</div><div class="act"><button id="saymic">🎤 Speak</button></div><div class="stat" id="saystatus"></div><div class="stat"><a href="#" id="sayskip">Can’t use the mic? Skip this step</a></div>';
   const status=$('#saystatus'),mic=$('#saymic'),skip=$('#sayskip');
   skip.onclick=e=>{e.preventDefault();stopping=true;clearTimeout(listenTimer);setListening(false);if(rec){try{rec.abort()}catch(err){}}advance()};
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -233,7 +238,7 @@ function sayGate(w,markedKnown){
         if(my!==attempt||done)return;done=true;heardAny=true;clearTimeout(listenTimer);setListening(false);
         const heard=(ev.results[0]&&ev.results[0][0])?ev.results[0][0].transcript:'';
         try{rec.stop()}catch(e){}
-        if(sayPass(sayStrict,heard,target)){status.textContent='✓ Heard it — nice work!';advance()}
+        if(sayPass(sayStrict,heard,target)){status.textContent='✓ Heard it — nice work!';if(eligible&&!known[w.es]){known[w.es]=1;save();$('#nx').insertAdjacentHTML('beforeend',' <span class="stat">✓ Marked as known — answered with no emoji hint</span>')}advance()}
         else{status.textContent='Heard: “'+heard+'” — not quite. Try again.';mic.textContent='🎤 Try again';mic.disabled=false}
       };
       rec.onerror=ev=>{
@@ -264,7 +269,7 @@ function sayGate(w,markedKnown){
 /* quiz */
 let qs=[],qi=0,score=0,qdir='es';
 function quizSetup(){
-  el.innerHTML=opts('<label>Question <select id="dir"><option value="es">Spanish → English</option><option value="en">English → Spanish</option></select></label>')+'<div class="act"><button id="go">Start quiz</button></div>';
+  el.innerHTML=opts('<label>Question <select id="dir"><option value="es">Spanish → English</option><option value="en">English → Spanish</option></select></label>','Quiz')+'<div class="act"><button id="go">Start quiz</button></div>';
   $('#go').onclick=()=>{qdir=$('#dir').value;let p=pool();
     if(qdir==='en'){const c={};W.forEach(w=>c[w.en]=(c[w.en]||0)+1);p=p.filter(w=>c[w.en]===1)}
     if(p.length<4){el.insertAdjacentHTML('beforeend','<div class="result">Not enough words with that letter. Try All.</div>');return}
@@ -277,19 +282,22 @@ function quizShow(){
   const wrong=[];for(const x of shuffle(W)){if(x[key]!==w[key]&&!wrong.some(y=>y[key]===x[key])&&(qdir==='en'||x.en!==w.en)){
       if(qdir==='en'&&isNoun(w)!==isNoun(x))continue;wrong.push(x);if(wrong.length===3)break}}
   const ch=shuffle([w].concat(wrong));
+  emojiSeenThisQuestion=emojiOn;quizAwaitingAnswer=true;
   el.innerHTML='<p class="stat">Question '+(qi+1)+' of '+qs.length+' · Score '+score+'</p><div class="bar"><i style="width:'+(qi/qs.length*100)+'%"></i></div><div class="card" style="cursor:default"><div class="em">'+w.em+'</div><div class="big">'+(qdir==='es'?w.es:w.en)+'</div></div><div class="choices" id="ch"></div><div class="act" id="nx"></div>';
   if(qdir==='es'&&pronEnabled){$('#nx').innerHTML='<button class="alt" id="spkq">🔊 Escuchar</button>';$('#spkq').onclick=()=>speakWord(w.es)}
-  ch.forEach(x=>{const b=document.createElement('button');b.textContent=x[key];b.onclick=()=>{let markedKnown=false;
+  ch.forEach(x=>{const b=document.createElement('button');b.textContent=x[key];b.onclick=()=>{quizAwaitingAnswer=false;
     [...$('#ch').children].forEach(c=>{c.disabled=true;if(c.textContent===ans)c.classList.add('good')});
-    if(x===w){score++;if(!emojiOn&&!known[w.es]){known[w.es]=1;save();markedKnown=true}}else{b.classList.add('bad')}
+    const eligible=(x===w)&&!emojiSeenThisQuestion;let markedKnown=false;
+    if(x===w)score++;else b.classList.add('bad');
+    if(eligible&&!known[w.es]&&!sayAdv){known[w.es]=1;save();markedKnown=true}
     speakWord(w.es);
-    if(sayAdv){sayGate(w,markedKnown)}else{$('#nx').innerHTML='<button id="next">'+(qi+1>=qs.length?'See score':'Next')+'</button>'+(markedKnown?' <span class="stat">✓ Marked as known — answered with no emoji hint</span>':'');$('#next').focus();$('#next').onclick=()=>{qi++;quizShow()}}};$('#ch').appendChild(b)});
+    if(sayAdv){sayGate(w,eligible)}else{$('#nx').innerHTML='<button id="next">'+(qi+1>=qs.length?'See score':'Next')+'</button>'+(markedKnown?' <span class="stat">✓ Marked as known — answered with no emoji hint</span>':'');$('#next').focus();$('#next').onclick=()=>{qi++;quizShow()}}};$('#ch').appendChild(b)});
 }
 
 /* el / la */
 let es=[],ei=0,esc=0;
 function elSetup(){
-  el.innerHTML=opts('')+'<p class="stat">Singular nouns only (el or la). Pick the right article.</p><div class="act"><button id="go">Start</button></div>';
+  el.innerHTML=opts('','')+'<p class="stat">Singular nouns only (el or la). Pick the right article.</p><div class="act"><button id="go">Start</button></div>';
   $('#go').onclick=()=>{const p=pool().filter(w=>/^(el|la) /.test(w.es)&&!AMBIG_GENDER.has(bare(w)));
     if(!p.length){el.insertAdjacentHTML('beforeend','<div class="result">No nouns with that letter. Try All.</div>');return}
     es=shuffle(p).slice(0,+$('#n').value);ei=0;esc=0;elShow()};
@@ -308,11 +316,11 @@ function elShow(){
 function knownSetup(){
   const have=new Set(),list=[];
   for(const w of W){if(known[w.es]&&!have.has(w.es)){have.add(w.es);list.push(w)}}
-  if(!list.length){el.innerHTML='<div class="result">No words marked known yet. Mark words with \u201cI knew it\u201d on flashcards, or answer quiz questions right with the emoji off.</div>';return}
+  if(!list.length){el.innerHTML='<div class="result">No words marked known yet. Mark words with \u201cI knew it\u201d on flashcards, or answer quiz questions right with the emoji off the whole question.</div>';return}
   el.innerHTML='<p class="stat">You know '+list.length+' of '+W.length+' words.</p><div class="act"><button id="rev">Review these</button><button class="alt" id="clr">Clear all</button></div><div id="klist">'+list.map((w,i)=>'<div class="known-row"><span>'+w.em+' <b>'+w.es+'</b> \u2014 '+w.en+'</span><button class="alt" data-i="'+i+'">\u2715</button></div>').join('')+'</div>';
   el.querySelectorAll('#klist button').forEach(b=>{b.onclick=()=>{delete known[list[+b.dataset.i].es];save();knownSetup()}});
   $('#rev').onclick=()=>{deck=shuffle(list.slice());ix=0;seen=0;got=0;flashShow()};
   $('#clr').onclick=()=>{known={};save();knownSetup()};
 }
-setMode('flash');
+setMode('quiz');
 </script></body></html>
