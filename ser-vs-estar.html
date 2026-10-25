@@ -39,6 +39,90 @@ ul.links span{display:block;font-size:.88rem;color:#5b6b62}
 @media(max-width:520px){ul.words{columns:1}.keyboard-controls{grid-template-columns:1fr}}</style></head>
 <body><main>
 <a class="back" href="/">&larr; Back to home</a>
+<style>
+.tool{background:#fff;border:1px solid #e6dfcf;border-radius:18px;padding:18px;box-shadow:0 6px 18px rgba(60,80,60,.10);margin:18px 0 26px}
+.tool h2{font-size:1.3rem;letter-spacing:0;text-transform:none;color:#1f5c3f;margin:0 0 8px}
+.tool button.btn{display:inline-block;margin:6px 8px 0 0;padding:12px 22px;border-radius:12px;background:#2f7d57;color:#fff;font-weight:700;letter-spacing:.04em;box-shadow:0 3px 0 #1f5c3f;border:0;cursor:pointer;font:inherit;-webkit-appearance:none;appearance:none}
+.tool button.btn:hover,.tool button.btn:focus-visible{background:#38906a}
+.tool button.btn.alt{background:#fff;color:#1f5c3f;border:2px solid #2f7d57;box-shadow:none;padding:10px 20px;cursor:pointer;font:inherit}
+.tool .qbox{border:2px solid #2f7d57;border-radius:14px;padding:26px 16px;text-align:center;min-height:110px;display:flex;flex-direction:column;justify-content:center}
+.tool .qbox b{font-size:1.55rem;color:#1f5c3f;line-height:1.3}
+.tool .qbox span{font-size:.85rem;color:#5b6b62;margin-top:8px}
+.tool .count{font-size:.85rem;color:#5b6b62;margin:12px 0 4px}
+.tool .ctl{display:flex;gap:10px;margin-top:14px}
+.tool .ctl button{flex:1;padding:12px 8px;text-align:center;margin:0}
+.opts{display:flex;gap:10px;margin:14px 0 4px}
+.opts button{flex:1;padding:14px 8px;font-size:1.25rem;margin:0}
+.trans{font-size:.95rem;color:#5b6b62;margin:8px 0;min-height:1.4em}
+.reveal{display:none;border-top:1px solid #e6dfcf;margin-top:12px;padding-top:12px}
+.reveal.show{display:block}
+.reveal b{color:#1f5c3f;font-size:1.15rem}
+.feedback{min-height:1.4em;font-size:.95rem;margin:6px 0;color:#33443a}
+.feedback.ok{color:#1f5c3f;font-weight:700}
+.feedback.bad{color:#8a3b00}
+</style>
+<div class="tool">
+<h2>Ser vs. estar practice</h2>
+<p>100 sentences, five subjects, one choice: ser or estar. Pick the right form, use the translation help whenever you want it, and hear the full sentence after you answer.</p>
+<div class="qbox"><b id="q-sen"></b><span>Pick ser or estar</span></div>
+<p class="trans" id="trans" style="display:none"></p>
+<div><button class="btn alt" id="btn-trans" type="button">Show translation</button></div>
+<div class="opts" id="opts"></div>
+<p class="feedback" id="feedback"></p>
+<div class="reveal" id="reveal"><b id="reveal-sen"></b><p id="reveal-en"></p><p id="reveal-note"></p><button class="btn alt" id="btn-hear" type="button" style="display:none">🔊 Hear it</button></div>
+<p class="count" id="card-count"></p>
+<div class="ctl"><button class="btn" id="btn-next" type="button">Next card</button> <button class="btn alt" id="btn-shuffle" type="button">Shuffle</button></div>
+<noscript><p>Turn on JavaScript to use the sentence tool.</p></noscript>
+</div>
+<script>
+var Q=[["Yo ___ profesor.", "yo", "ser", "I am a teacher.", "Ser: profession"], ["Yo ___ de Argentina.", "yo", "ser", "I am from Argentina.", "Ser: origin"], ["Yo ___ alto.", "yo", "ser", "I am tall.", "Ser: physical trait"], ["Yo ___ el hermano de Ana.", "yo", "ser", "I am Ana's brother.", "Ser: identity"], ["Yo ___ joven.", "yo", "ser", "I am young.", "Ser: trait"], ["Yo ___ estudiante.", "yo", "ser", "I am a student.", "Ser: identity"], ["Yo ___ de Chile.", "yo", "ser", "I am from Chile.", "Ser: origin"], ["Yo ___ fuerte.", "yo", "ser", "I am strong.", "Ser: trait"], ["Yo ___ médico.", "yo", "ser", "I am a doctor.", "Ser: profession"], ["Yo ___ el dueño del perro.", "yo", "ser", "I am the dog's owner.", "Ser: possession"], ["Yo ___ en casa.", "yo", "estar", "I am at home.", "Estar: location"], ["Yo ___ cansado.", "yo", "estar", "I am tired.", "Estar: condition"], ["Yo ___ feliz.", "yo", "estar", "I am happy.", "Estar: emotion"], ["Yo ___ comiendo pan.", "yo", "estar", "I am eating bread.", "Estar: progressive"], ["Yo ___ enfermo.", "yo", "estar", "I am sick.", "Estar: condition"], ["Yo ___ en la escuela.", "yo", "estar", "I am at school.", "Estar: location"], ["Yo ___ listo para salir.", "yo", "estar", "I am ready to go out.", "Estar: ready"], ["Yo ___ de pie.", "yo", "estar", "I am standing.", "Estar: position"], ["Yo ___ contento con el libro.", "yo", "estar", "I am happy with the book.", "Estar: emotion"], ["Yo ___ en el jardín.", "yo", "estar", "I am in the garden.", "Estar: location"], ["Tú ___ muy simpático.", "tu", "ser", "You are very nice.", "Ser: character trait"], ["Tú ___ de Colombia.", "tu", "ser", "You are from Colombia.", "Ser: origin"], ["Tú ___ estudiante.", "tu", "ser", "You are a student.", "Ser: identity"], ["Tú ___ alto.", "tu", "ser", "You are tall.", "Ser: physical trait"], ["Tú ___ mi hermano.", "tu", "ser", "You are my brother.", "Ser: identity"], ["Tú ___ joven.", "tu", "ser", "You are young.", "Ser: trait"], ["Tú ___ el profesor de Ana.", "tu", "ser", "You are Ana's teacher.", "Ser: profession"], ["Tú ___ amable.", "tu", "ser", "You are kind.", "Ser: character trait"], ["Tú ___ el dueño del gato.", "tu", "ser", "You are the cat's owner.", "Ser: possession"], ["Tú ___ fuerte.", "tu", "ser", "You are strong.", "Ser: trait"], ["Tú ___ en la tienda.", "tu", "estar", "You are at the store.", "Estar: location"], ["Tú ___ enfermo.", "tu", "estar", "You are sick.", "Estar: condition"], ["Tú ___ muy feliz.", "tu", "estar", "You are very happy.", "Estar: emotion"], ["Tú ___ comiendo pizza.", "tu", "estar", "You are eating pizza.", "Estar: progressive"], ["Tú ___ cansado.", "tu", "estar", "You are tired.", "Estar: condition"], ["Tú ___ en casa.", "tu", "estar", "You are at home.", "Estar: location"], ["Tú ___ listo para la escuela.", "tu", "estar", "You are ready for school.", "Estar: ready"], ["Tú ___ triste.", "tu", "estar", "You are sad.", "Estar: emotion"], ["Tú ___ en el hospital.", "tu", "estar", "You are in the hospital.", "Estar: location"], ["Tú ___ nervioso.", "tu", "estar", "You are nervous.", "Estar: emotion"], ["Ella ___ profesora.", "el", "ser", "She is a teacher.", "Ser: profession"], ["Él ___ de Perú.", "el", "ser", "He is from Peru.", "Ser: origin"], ["La casa ___ de madera.", "el", "ser", "The house is made of wood.", "Ser: material"], ["___ la una.", "el", "ser", "It is one o'clock.", "Ser: time"], ["La película ___ a las tres.", "el", "ser", "The movie is at three.", "Ser: event time"], ["Él ___ aburrido; nadie quiere hablar con él.", "el", "ser", "He is boring; nobody wants to talk to him.", "Tricky pair: ser = a boring person"], ["Mi abuela ___ muy buena con los niños.", "el", "ser", "My grandmother is very good with children.", "Tricky pair: ser = a kind person"], ["Él ___ muy listo; todo lo entiende.", "el", "ser", "He is very smart; he understands everything.", "Tricky pair: ser = smart"], ["No me gusta Luis; ___ muy malo con todos.", "el", "ser", "I don't like Luis; he is very mean to everyone.", "Tricky pair: ser = mean"], ["Él ___ rico; tiene tres casas.", "el", "ser", "He is rich; he has three houses.", "Tricky pair: ser = rich"], ["Mi madre ___ en casa.", "el", "estar", "My mother is at home.", "Estar: location"], ["Ella ___ enferma.", "el", "estar", "She is sick.", "Estar: condition"], ["Ella ___ comiendo arroz.", "el", "estar", "She is eating rice.", "Estar: progressive"], ["La puerta ___ cerrada.", "el", "estar", "The door is closed.", "Estar: resulting state"], ["El perro ___ dormido.", "el", "estar", "The dog is asleep.", "Estar: condition"], ["Él ___ aburrido en clase.", "el", "estar", "He is bored in class.", "Tricky pair: estar = bored right now"], ["La sopa ___ muy buena.", "el", "estar", "The soup tastes very good.", "Tricky pair: estar = tastes good"], ["Él ___ listo para salir.", "el", "estar", "He is ready to go out.", "Tricky pair: estar = ready"], ["María no viene a clase porque ___ mala.", "el", "estar", "María isn't coming to class because she is sick.", "Tricky pair: estar = sick"], ["La pizza ___ rica.", "el", "estar", "The pizza tastes good.", "Tricky pair: estar = tastes good"], ["Nosotros ___ estudiantes.", "nos", "ser", "We are students.", "Ser: identity"], ["Nosotros ___ de Argentina.", "nos", "ser", "We are from Argentina.", "Ser: origin"], ["Nosotros ___ altos.", "nos", "ser", "We are tall.", "Ser: physical trait"], ["Nosotros ___ los hermanos de Ana.", "nos", "ser", "We are Ana's siblings.", "Ser: identity"], ["Nosotros ___ jóvenes.", "nos", "ser", "We are young.", "Ser: trait"], ["Nosotros ___ los profesores.", "nos", "ser", "We are the teachers.", "Ser: profession"], ["Nosotros ___ fuertes.", "nos", "ser", "We are strong.", "Ser: trait"], ["Nosotros ___ los dueños del perro.", "nos", "ser", "We are the dog's owners.", "Ser: possession"], ["Nosotros ___ de México.", "nos", "ser", "We are from Mexico.", "Ser: origin"], ["Nosotros ___ amigos.", "nos", "ser", "We are friends.", "Ser: identity"], ["Nosotros ___ en la escuela.", "nos", "estar", "We are at school.", "Estar: location"], ["Nosotros ___ cansados.", "nos", "estar", "We are tired.", "Estar: condition"], ["Nosotros ___ muy felices.", "nos", "estar", "We are very happy.", "Estar: emotion"], ["Nosotros ___ comiendo pizza.", "nos", "estar", "We are eating pizza.", "Estar: progressive"], ["Nosotros ___ en casa.", "nos", "estar", "We are at home.", "Estar: location"], ["Nosotros ___ listos para salir.", "nos", "estar", "We are ready to go out.", "Estar: ready"], ["Nosotros ___ enfermos.", "nos", "estar", "We are sick.", "Estar: condition"], ["Nosotros ___ en el jardín.", "nos", "estar", "We are in the garden.", "Estar: location"], ["Nosotros ___ contentos con el libro.", "nos", "estar", "We are happy with the book.", "Estar: emotion"], ["Nosotros ___ de pie.", "nos", "estar", "We are standing.", "Estar: position"], ["Ellos ___ estudiantes.", "ellos", "ser", "They are students.", "Ser: identity"], ["Ellos ___ de Perú.", "ellos", "ser", "They are from Peru.", "Ser: origin"], ["Mis hermanos ___ altos.", "ellos", "ser", "My brothers are tall.", "Ser: physical trait"], ["Las casas ___ de madera.", "ellos", "ser", "The houses are made of wood.", "Ser: material"], ["___ las tres.", "ellos", "ser", "It is three o'clock.", "Ser: time"], ["Los libros ___ nuevos.", "ellos", "ser", "The books are new.", "Ser: trait"], ["Ellos ___ profesores.", "ellos", "ser", "They are teachers.", "Ser: profession"], ["Ustedes ___ muy amables.", "ellos", "ser", "You are very kind.", "Ser: character trait"], ["Los perros ___ grandes.", "ellos", "ser", "The dogs are big.", "Ser: physical trait"], ["Ellas ___ las hermanas de Luis.", "ellos", "ser", "They are Luis's sisters.", "Ser: identity"], ["Los libros ___ en la escuela.", "ellos", "estar", "The books are at school.", "Estar: location"], ["Ellos ___ enfermos.", "ellos", "estar", "They are sick.", "Estar: condition"], ["Ellas ___ muy felices.", "ellos", "estar", "They are very happy.", "Estar: emotion"], ["Ellos ___ comiendo pan.", "ellos", "estar", "They are eating bread.", "Estar: progressive"], ["Las puertas ___ cerradas.", "ellos", "estar", "The doors are closed.", "Estar: resulting state"], ["Las tiendas ___ abiertas.", "ellos", "estar", "The stores are open.", "Estar: resulting state"], ["Los perros ___ dormidos.", "ellos", "estar", "The dogs are asleep.", "Estar: condition"], ["Ellos ___ listos para salir.", "ellos", "estar", "They are ready to go out.", "Estar: ready"], ["Mis padres ___ en casa.", "ellos", "estar", "My parents are at home.", "Estar: location"], ["Ustedes ___ en el restaurante.", "ellos", "estar", "You are at the restaurant.", "Estar: location"]];
+var PAIRS={"yo":["soy","estoy"],"tu":["eres","estás"],"el":["es","está"],"nos":["somos","estamos"],"ellos":["son","están"]};
+var deck=[],pos=0,answered=false,cur=null,completed="";
+function shuffleDeck(){deck=Q.slice();for(var i=deck.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=deck[i];deck[i]=deck[j];deck[j]=t;}pos=0;}
+function shuffle2(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function $(id){return document.getElementById(id);}
+function show(){
+var q=deck[pos];var pair=PAIRS[q[1]];var correct=q[2]==='ser'?pair[0]:pair[1];
+var opts=shuffle2(pair.slice());completed=q[0].replace('___',correct);
+cur={q:q,opts:opts,ans:opts.indexOf(correct),correct:correct};answered=false;
+$('q-sen').textContent=q[0];
+$('trans').style.display='none';$('trans').textContent='';
+$('btn-trans').style.display='inline-block';
+$('reveal').className='reveal';$('btn-hear').style.display='none';
+$('feedback').textContent='';$('feedback').className='feedback';
+var ob=$('opts');ob.innerHTML='';
+for(var o=0;o<opts.length;o++){var b=document.createElement('button');b.type='button';b.className='btn alt';b.textContent=opts[o];(function(ix){b.addEventListener('click',function(){answer(ix);});})(o);ob.appendChild(b);}
+$('card-count').textContent='Question '+(pos+1)+' of '+deck.length;
+}
+function answer(i){
+if(answered)return;answered=true;var q=cur.q;
+var f=$('feedback');
+if(i===cur.ans){f.textContent='✓ ¡Correcto!';f.className='feedback ok';}else{f.textContent='Not quite — the answer is '+cur.correct+'.';f.className='feedback bad';}
+$('reveal-sen').textContent=completed;
+$('reveal-en').textContent=q[3];
+$('reveal-note').textContent=q[4];
+$('trans').textContent=q[3];$('trans').style.display='block';
+$('btn-trans').style.display='none';
+$('reveal').className='reveal show';$('btn-hear').style.display='inline-block';
+}
+function showTrans(){var q=deck[pos];$('trans').textContent=q[3];$('trans').style.display='block';}
+function hearIt(){
+try{speechSynthesis.cancel();}catch(e){}
+var u=new SpeechSynthesisUtterance(completed);u.lang='es-MX';u.rate=0.85;
+var vs=[];try{vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.toLowerCase().indexOf('es-')===0;});}catch(e){}
+var mx=vs.filter(function(v){return v.lang.toLowerCase().indexOf('es-mx')===0;});
+var us=vs.filter(function(v){return v.lang.toLowerCase().indexOf('es-us')===0;});
+if(mx.length){u.voice=mx[0];}else if(us.length){u.voice=us[0];}else if(vs.length){u.voice=vs[0];}
+speechSynthesis.speak(u);
+}
+function next(){pos++;if(pos>=deck.length){shuffleDeck();}show();}
+$('btn-next').addEventListener('click',next);
+$('btn-shuffle').addEventListener('click',function(){shuffleDeck();show();});
+$('btn-trans').addEventListener('click',showTrans);
+$('btn-hear').addEventListener('click',hearIt);
+shuffleDeck();show();
+
+</script>
 <h1>Ser vs. estar: two ways to say “to be”</h1>
 <p>English has one verb for “to be.” Spanish has two: <i>ser</i> and <i>estar</i>. Choosing between them is one of the first big hurdles for learners, but a few simple ideas cover most situations. The short version is this: <i>ser</i> tells you what something <b>is</b>, and <i>estar</i> tells you how or where something <b>is right now</b>.</p>
 <h2>The present tense forms</h2>
