@@ -3507,6 +3507,9 @@ function sayPass(level,transcript,fullForm){
 /* SAY-IT OFFER: optional pronounce-and-feedback after collecting a word.
    Collection is never blocked, changed, or withheld — this is only feedback.
    Standard only (bare word must come through, article optional). No settings UI. */
+var planetAudio=null;
+function planetAudioEnsure(){try{if(!planetAudio){var AC=window.AudioContext||window.webkitAudioContext;if(!AC){return null;}planetAudio=new AC();}if(planetAudio.state==="suspended"){planetAudio.resume();}return planetAudio;}catch(err){return null;}}
+function planetDing(){var ac=planetAudioEnsure();if(!ac){return;}try{if(ac.resume){ac.resume();}var tm=ac.currentTime;var g=ac.createGain();g.gain.setValueAtTime(0.0001,tm);g.gain.linearRampToValueAtTime(0.5,tm+0.02);g.gain.setValueAtTime(0.5,tm+0.35);g.gain.exponentialRampToValueAtTime(0.0001,tm+1.05);g.connect(ac.destination);var o1=ac.createOscillator();o1.type="sine";o1.frequency.setValueAtTime(880,tm);var o2=ac.createOscillator();o2.type="sine";o2.frequency.setValueAtTime(1318.5,tm+0.15);o1.connect(g);o2.connect(g);o1.start(tm);o2.start(tm+0.15);o1.stop(tm+0.55);o2.stop(tm+1.1);}catch(err){}}
 const SAYIT_SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 const sayItEl = document.createElement('div');
 sayItEl.style.cssText='position:fixed;left:50%;bottom:calc(50% - 120px);transform:translateX(-50%);background:rgba(20,40,28,0.92);color:#dff5e3;padding:12px 16px;border-radius:18px;font-size:0.9rem;letter-spacing:0.02em;z-index:22;display:none;border:1px solid rgba(180,230,195,0.55);text-align:center;font-family:inherit;pointer-events:auto;max-width:min(92vw,340px);';
@@ -3556,6 +3559,7 @@ sayItMic.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
 function sayItMicListen(){
     if(sayItListening){sayItStopping=true;clearTimeout(sayItTimer);try{sayItRec.stop()}catch(e){}sayItSetListening(false);sayItStatus.textContent='Stopped \u2014 try again.';return}
     if(!sayItCurrent)return;
+    planetAudioEnsure();
     if(window.speechSynthesis){try{speechSynthesis.cancel()}catch(e){}}
     if(sayItRec){try{sayItRec.abort()}catch(e){}}
     sayItAttempt++;const my=sayItAttempt;sayItStopping=false;sayItTried=true;
@@ -3578,7 +3582,7 @@ function sayItMicListen(){
         const heard=(ev.results[0]&&ev.results[0][0])?ev.results[0][0].transcript:'';
         try{sayItRec.stop()}catch(e){}
         if(sayPass('standard',heard,target)){
-          sayItStatus.textContent='\u2713 \u00a1Bien pronunciado! / Well pronounced!';
+          sayItStatus.textContent='\u2713 \u00a1Bien pronunciado! / Well pronounced!';planetDing();
           setTimeout(()=>{if(my===sayItAttempt)closeSayIt();},1500);
         } else {
           sayItStatus.textContent='Not quite. Heard: \u00ab'+heard+'\u00bb. The word is \u00ab'+target+'\u00bb. Try again.';

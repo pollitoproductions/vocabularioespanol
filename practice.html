@@ -187,6 +187,9 @@ function flashShow(){
 }
 
 
+var pracAudio=null;
+function pracAudioEnsure(){try{if(!pracAudio){var AC=window.AudioContext||window.webkitAudioContext;if(!AC){return null;}pracAudio=new AC();}if(pracAudio.state==="suspended"){pracAudio.resume();}return pracAudio;}catch(err){return null;}}
+function pracDing(){var ac=pracAudioEnsure();if(!ac){return;}try{if(ac.resume){ac.resume();}var tm=ac.currentTime;var g=ac.createGain();g.gain.setValueAtTime(0.0001,tm);g.gain.linearRampToValueAtTime(0.5,tm+0.02);g.gain.setValueAtTime(0.5,tm+0.35);g.gain.exponentialRampToValueAtTime(0.0001,tm+1.05);g.connect(ac.destination);var o1=ac.createOscillator();o1.type="sine";o1.frequency.setValueAtTime(880,tm);var o2=ac.createOscillator();o2.type="sine";o2.frequency.setValueAtTime(1318.5,tm+0.15);o1.connect(g);o2.connect(g);o1.start(tm);o2.start(tm+0.15);o1.stop(tm+0.55);o2.stop(tm+1.1);}catch(err){}}
 /* SAY-GATE-MATCH-START: pure pronunciation-matching helpers (no DOM) */
 function sayNorm(s){return (s||'').toLowerCase().trim().replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i').replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/[^a-zñ ]/g,' ').replace(/\s+/g,' ').trim()}
 const SAY_ARTICLES=['el','la','los','las','un','una'];
@@ -217,6 +220,7 @@ function sayGate(w,eligible){
   mic.onclick=()=>{
     /* tap while listening = stop, so the user is never stuck on Listening… */
     if(listening){stopping=true;clearTimeout(listenTimer);try{rec.stop()}catch(e){}setListening(false);status.textContent='Stopped \u2014 try again.';return}
+    pracAudioEnsure();
     /* iPhone fix: free the speech audio session first, or iOS may never engage the mic */
     if(window.speechSynthesis){try{speechSynthesis.cancel()}catch(e){}}
     if(rec){try{rec.abort()}catch(e){}}
@@ -238,7 +242,7 @@ function sayGate(w,eligible){
         if(my!==attempt||done)return;done=true;heardAny=true;clearTimeout(listenTimer);setListening(false);
         const heard=(ev.results[0]&&ev.results[0][0])?ev.results[0][0].transcript:'';
         try{rec.stop()}catch(e){}
-        if(sayPass(sayStrict,heard,target)){status.textContent='✓ Heard it — nice work!';if(eligible&&!known[w.es]){known[w.es]=1;save();$('#nx').insertAdjacentHTML('beforeend',' <span class="stat">✓ Marked as known — answered with no emoji hint</span>')}advance()}
+        if(sayPass(sayStrict,heard,target)){status.textContent='✓ Heard it — nice work!';pracDing();if(eligible&&!known[w.es]){known[w.es]=1;save();$('#nx').insertAdjacentHTML('beforeend',' <span class="stat">✓ Marked as known — answered with no emoji hint</span>')}advance()}
         else{status.textContent='Heard: “'+heard+'” — not quite. Try again.';mic.textContent='🎤 Try again';mic.disabled=false}
       };
       rec.onerror=ev=>{
