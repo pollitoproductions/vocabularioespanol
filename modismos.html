@@ -242,14 +242,18 @@ var recog=null,listening=false;
 function setFeedback(msg,cls){var f=document.getElementById('feedback');f.textContent=msg;f.className='feedback'+(cls?' '+cls:'');}
 function stopListen(){if(recog){try{recog.abort();}catch(e){}}listening=false;var b=document.getElementById('btn-say');b.classList.remove('say-listening');b.textContent='🎤 Say it';}
 function hearIt(){stopListen();try{speechSynthesis.cancel();}catch(e){}var u=new SpeechSynthesisUtterance(deck[idx][0]);u.lang='es-MX';u.rate=0.85;var vs=[];try{vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.toLowerCase().indexOf('es-')===0;});}catch(e){}var mx=vs.filter(function(v){return v.lang.toLowerCase().indexOf('es-mx')===0;});var us=vs.filter(function(v){return v.lang.toLowerCase().indexOf('es-us')===0;});if(mx.length){u.voice=mx[0];}else if(us.length){u.voice=us[0];}else if(vs.length){u.voice=vs[0];}speechSynthesis.speak(u);}
+var modAudio=null;
+function modAudioEnsure(){try{if(!modAudio){var AC=window.AudioContext||window.webkitAudioContext;if(!AC){return null;}modAudio=new AC();}if(modAudio.state==="suspended"){modAudio.resume();}return modAudio;}catch(err){return null;}}
+function modDing(){var ac=modAudioEnsure();if(!ac){return;}try{if(ac.resume){ac.resume();}var tm=ac.currentTime;var g=ac.createGain();g.gain.setValueAtTime(0.0001,tm);g.gain.linearRampToValueAtTime(0.5,tm+0.02);g.gain.setValueAtTime(0.5,tm+0.35);g.gain.exponentialRampToValueAtTime(0.0001,tm+1.05);g.connect(ac.destination);var o1=ac.createOscillator();o1.type="sine";o1.frequency.setValueAtTime(880,tm);var o2=ac.createOscillator();o2.type="sine";o2.frequency.setValueAtTime(1318.5,tm+0.15);o1.connect(g);o2.connect(g);o1.start(tm);o2.start(tm+0.15);o1.stop(tm+0.55);o2.stop(tm+1.1);}catch(err){}}
 function sayIt(){
 if(listening){stopListen();return;}
+modAudioEnsure();
 var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 if(!SR){setFeedback("Speech recognition isn't available in this browser.",'bad');return;}
 stopListen();try{speechSynthesis.cancel();}catch(e){}
 var b=document.getElementById('btn-say');var got=false;var timer=null;
 recog=new SR();recog.lang='es-MX';recog.interimResults=false;recog.maxAlternatives=1;
-recog.onresult=function(e){got=true;if(timer){clearTimeout(timer);}var heard=e.results[0][0].transcript;var want=deck[idx][0];if(norm(heard)===norm(want)){setFeedback('✓ ¡Correcto!','ok');}else{setFeedback('Heard: “'+heard+'” — not quite, try again.','bad');}};
+recog.onresult=function(e){got=true;if(timer){clearTimeout(timer);}var heard=e.results[0][0].transcript;var want=deck[idx][0];if(norm(heard)===norm(want)){setFeedback('✓ ¡Correcto!','ok');modDing();}else{setFeedback('Heard: “'+heard+'” — not quite, try again.','bad');}};
 recog.onerror=function(e){if(timer){clearTimeout(timer);}if(e.error==='not-allowed'||e.error==='service-not-allowed'){setFeedback('Microphone access is blocked. Allow the microphone and try again.','bad');}else{setFeedback("Didn't catch that — try again.",'bad');}};
 recog.onend=function(){if(timer){clearTimeout(timer);}if(listening){stopListen();if(!got){setFeedback("Didn't catch that — try again.",'bad');}}};
 listening=true;b.classList.add('say-listening');b.textContent='● Listening… — tap to stop';setFeedback('');
