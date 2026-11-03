@@ -13,7 +13,6 @@
   }
   #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
   #hud {
-    position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); left: calc(12px + env(safe-area-inset-left, 0px)); z-index: 5;
     color: #eaf2ff;
     background: linear-gradient(160deg, rgba(10, 17, 30, 0.78), rgba(10, 17, 30, 0.58));
     border: 1px solid rgba(89, 214, 255, 0.5);
@@ -41,7 +40,6 @@
   /* The hint pill is transient-only: fully gone (not just empty text) when no message is showing. */
   #hint:empty { display: none; }
   #questBox {
-    position: fixed; left: calc(12px + env(safe-area-inset-left, 0px)); z-index: 5;
     color: #eaf2ff;
     background: linear-gradient(160deg, rgba(10, 17, 30, 0.78), rgba(10, 17, 30, 0.58));
     border: 1px solid rgba(89, 214, 255, 0.5);
@@ -64,6 +62,21 @@
   #btn-quest-collapse { flex-shrink: 0; background: rgba(8, 24, 44, 0.75); color: #7fe3ff; border: 1px solid rgba(89, 214, 255, 0.65); border-radius: 10px; font-size: 14px; line-height: 1; padding: 3px 8px; cursor: pointer; }
   #questBox.collapsed #questStep, #questBox.collapsed #questProg, #questBox.collapsed #questRepo, #questBox.collapsed #questCelebrate, #questBox.collapsed #btn-quest-skip { display: none; }
   #questBox.collapsed #questTitle { margin-bottom: 0; }
+  /* Top cluster: the flight HUD box and the quest box share one fixed
+     flex container at the top-left. Portrait stacks them with an 8 px
+     gap (nearly touching); landscape puts them side by side in one row
+     (the quest box no longer goes full-width when it expands). On foot
+     the HUD box is hidden, so the quest box alone sits at the top. */
+  #topBoxes {
+    position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); left: calc(12px + env(safe-area-inset-left, 0px)); right: calc(12px + env(safe-area-inset-right, 0px)); z-index: 5;
+    display: flex; flex-direction: column; gap: 8px; align-items: flex-start;
+    pointer-events: none;
+  }
+  @media (orientation: landscape) {
+    #topBoxes { flex-direction: row; right: calc(68px + env(safe-area-inset-right, 0px)); }
+    #topBoxes #hud { flex: 0 1 auto; min-width: 0; }
+    #topBoxes #questBox { flex: 1 1 0; min-width: 0; }
+  }
   #nogl {
     position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center;
     color: #fff; background: #111; font-size: 18px; text-align: center; padding: 24px;
@@ -344,10 +357,21 @@
 </script>
 </head>
 <body>
+<div id="topBoxes">
 <div id="hud">
   <div id="navLine"><span id="guideArrow">&#8593;</span><span id="guideDist"></span><span id="navSpeed"></span><span id="guideElev"></span></div>
   <div id="wordLine"><span id="wordArrow">&#8593;</span><span id="wordDist"></span></div>
   <div id="beaconWarn">LEAVING BEACON RANGE — TURN BACK — 20 km TO THE LIMIT</div>
+</div>
+<div id="questBox">
+  <div id="questTitle"><span>REBUILD THE REPOSITORIES</span><button id="btn-quest-collapse" type="button" aria-label="Collapse quest box">▾</button></div>
+  <div id="questArrowLine"><span id="questArrow">&#8593;</span><span id="questArrowLabel"></span></div>
+  <div id="questStep"></div>
+  <div id="questProg"></div>
+  <div id="questRepo"></div>
+  <div id="questCelebrate"></div>
+  <button class="ctl2" id="btn-quest-skip" type="button" style="margin-top:8px;font-size:12px;padding:6px 12px;">Skip tutorial</button>
+</div>
 </div>
 <button id="btn-menu" type="button" aria-label="Ship menu">&#9776;</button>
 <div id="menuBackdrop" style="display:none"></div>
@@ -491,15 +515,6 @@
   <button id="btn-fail-title" type="button" style="display:none;">RETURN TO TITLE</button>
 </div>
 <div id="hint"></div>
-<div id="questBox">
-  <div id="questTitle"><span>REBUILD THE REPOSITORIES</span><button id="btn-quest-collapse" type="button" aria-label="Collapse quest box">▾</button></div>
-  <div id="questArrowLine"><span id="questArrow">&#8593;</span><span id="questArrowLabel"></span></div>
-  <div id="questStep"></div>
-  <div id="questProg"></div>
-  <div id="questRepo"></div>
-  <div id="questCelebrate"></div>
-  <button class="ctl2" id="btn-quest-skip" type="button" style="margin-top:8px;font-size:12px;padding:6px 12px;">Skip tutorial</button>
-</div>
 <div id="nogl" hidden>Sorry &mdash; this prototype needs WebGL, and your browser could not provide it. Try a recent desktop or mobile browser.</div>
 <div id="joy"><div id="knob"></div></div>
 <div id="buttons">
@@ -3782,7 +3797,7 @@ function updateQuestUI() {
   lastQuestKey = key;
   if (!questBox) return;
   questBox.style.display = 'block';
-  questBox.style.top = (mode === 'flight') ? 'calc(140px + env(safe-area-inset-top, 0px))' : 'calc(12px + env(safe-area-inset-top, 0px))';
+  /* Placement is the #topBoxes flex container's job now (column in portrait, row in landscape). */
   if (questStep >= 5) {
     questStepEl.textContent = 'Keep recovering words — every spoken word rebuilds the repositories.';
     questProgEl.textContent = '';
