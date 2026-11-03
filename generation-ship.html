@@ -55,7 +55,11 @@
   }
   #questTitle { font-weight: 800; letter-spacing: 0.10em; color: #7fe3ff; font-size: clamp(12px, 2.6vw, 14px); margin-bottom: 2px; }
   #questProg { color: #59d6ff; font-weight: 700; }
-  #questRepo { color: #b9c9e2; }
+  #questRepo { color: #b9c9e2; font-size: clamp(11px, 2.4vw, 13px); }
+  #questCelebrate { color: #ffd166; font-weight: 700; }
+  #questCelebrate:empty { display: none; }
+  #questArrow { display: inline-block; font-size: 20px; line-height: 1; color: #7fe3ff; text-shadow: 0 0 10px rgba(127, 227, 255, 0.8); margin-right: 6px; }
+  #questArrowLine { color: #b9c9e2; }
   #questBox button { pointer-events: auto; }
   #nogl {
     position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center;
@@ -384,7 +388,7 @@
     <div class="mHead">REVIEW TERMINALS</div>
     <div class="mBody">Eight gold review terminals stand around the industrial side &mdash; one on the mezzanine, seven on the main deck, spread evenly around the hull. Walk up and tap Review (or press Enter) to review everything you have already spoken, by tool, with Hear in both languages. Reviewing never changes progress.</div>
     <div class="mHead">QUESTS</div>
-    <div class="mBody">Your quest is to rebuild the lost Spanish repository. The quest box (top left) guides you from your first station visit to your first space collect, then tracks every word you recover. Quests guide; they never block &mdash; skip the tutorial anytime from the quest box.</div>
+    <div class="mBody">Your quest is to rebuild the lost Spanish repositories &mdash; vocabulary, cognates, idioms, verbs, dictation, and ser vs. estar. The quest box (top left) shows what you have collected in each repository, with an arrow pointing to your next tutorial step, and celebrates each repository you finish &mdash; and all of them together. Quests guide; they never block &mdash; skip the tutorial anytime from the quest box.</div>
     <div class="mHead">SAVING</div>
     <div class="mBody">SAVE JOURNEY in this menu saves at once; the game also saves after every collect, every mining yield, and every docking. GO TO HOME SCREEN saves, then returns to the title screen. Resuming restores your haul, your collected items, and your position &mdash; aboard or in flight.</div>
   </div>
@@ -485,10 +489,12 @@
 </div>
 <div id="hint"></div>
 <div id="questBox">
-  <div id="questTitle">REBUILD THE REPOSITORY</div>
+  <div id="questTitle">REBUILD THE REPOSITORIES</div>
   <div id="questStep"></div>
   <div id="questProg"></div>
   <div id="questRepo"></div>
+  <div id="questCelebrate"></div>
+  <div id="questArrowLine"><span id="questArrow">&#8593;</span><span id="questArrowLabel"></span></div>
   <button class="ctl2" id="btn-quest-skip" type="button" style="margin-top:8px;font-size:12px;padding:6px 12px;">Skip tutorial</button>
 </div>
 <div id="nogl" hidden>Sorry &mdash; this prototype needs WebGL, and your browser could not provide it. Try a recent desktop or mobile browser.</div>
@@ -3667,9 +3673,15 @@ function updateProgressUI() {
   try { updateQuestUI(); } catch (e) {}
 }
 
-// Quest tutorial: REBUILD THE REPOSITORY. The title story becomes the
-// playable quest: the player recovers the lost Spanish repository, one
-// spoken word at a time. Quests guide, never block — every step can be
+// Quest tutorial: REBUILD THE REPOSITORIES. The title story becomes
+// the playable quest: the player rebuilds the lost Spanish repositories
+// — vocabulary, cognates, idioms, verbs, dictation, ser vs. estar — one
+// spoken word at a time. The quest box shows what the player has
+// collected in each repository, with a guiding arrow pointing at the
+// current tutorial step's destination, and celebrates each repository
+// finished (and all of them together) with a ding and an announcement;
+// finished repositories are stored in the save (recognized) so each is
+// celebrated once. Quests guide, never block — every step can be
 // ignored, and the tutorial can be skipped from the quest box. Steps
 // advance only forward; each advance dings and saves, so progress
 // survives reloads. The step itself is stored in the save (tutorial:
@@ -3677,6 +3689,8 @@ function updateProgressUI() {
 // has already done (see applySave).
 let questStep = 0;
 let questCollected = false;
+let recognizedRepos = {};
+let celebrateText = '';
 const QUEST_STEPS = [
   'Walk to the Cognates station in the agriculture ring — look for the glowing cyan ring.',
   'At the Cognates station, say 3 cognates in Spanish.',
@@ -3688,6 +3702,10 @@ const questBox = document.getElementById('questBox');
 const questStepEl = document.getElementById('questStep');
 const questProgEl = document.getElementById('questProg');
 const questRepoEl = document.getElementById('questRepo');
+const questCelebrateEl = document.getElementById('questCelebrate');
+const questArrowLineEl = document.getElementById('questArrowLine');
+const questArrowEl = document.getElementById('questArrow');
+const questArrowLabelEl = document.getElementById('questArrowLabel');
 const btnQuestSkip = document.getElementById('btn-quest-skip');
 let lastQuestKey = '';
 function questWordCount() {
@@ -3702,6 +3720,49 @@ function questStepDone(i) {
   if (i === 4) return mode === 'walk';
   return true;
 }
+// The six repositories, in menu PROGRESS order. Counts mirror
+// updateProgressUI exactly, so the quest box never disagrees with
+// the menu. Labels use Brant's words: Verbs is the Conjugation
+// station, Vocabulary is the floating word tiles.
+function questRepos(wc) {
+  return [
+    { id: 'vocabulary', label: 'Vocabulary', es: 'vocabulario', count: wc, total: wordTiles.length },
+    { id: 'cognates', label: 'Cognates', es: 'cognados', count: prog.cognates.size, total: TOOL_COG.length },
+    { id: 'idioms', label: 'Idioms', es: 'modismos', count: prog.idioms.size, total: TOOL_IDIOMS.length },
+    { id: 'verbs', label: 'Verbs', es: 'verbos', count: prog.conjugation.size, total: TOOL_VERBS.length * 5 * 3 },
+    { id: 'dictation', label: 'Dictation', es: 'dictado', count: prog.dictation.size, total: WORDS.length + TOOL_VERBS.length * 5 * 3 + TOOL_IDIOMS.length },
+    { id: 'serestar', label: 'Ser vs. estar', es: 'ser y estar', count: prog.serestar.size, total: TOOL_SER.length },
+  ];
+}
+// Recognition: when a repository's count first reaches its total,
+// mark it (persisted in the save, so it fires once ever), show it
+// in the quest box, ding, and announce it. If that completion
+// finishes ALL of them, the grand recognition replaces the single
+// one. Repositories completed before this build are recognized on
+// first load after the update. Called from updateQuestUI before its
+// render-key check, so it runs on every quest refresh.
+function checkRepoCompletions(wc) {
+  const repos = questRepos(wc);
+  const newly = [];
+  for (const r of repos) {
+    if (r.count >= r.total && !recognizedRepos[r.id]) newly.push(r);
+  }
+  if (!newly.length) return;
+  for (const r of newly) recognizedRepos[r.id] = true;
+  const allDone = repos.every(function (r) { return r.count >= r.total; });
+  if (allDone && !recognizedRepos.ALL) {
+    recognizedRepos.ALL = true;
+    celebrateText = '★ All repositories rebuilt — the language is safe!';
+    try { playDing(); } catch (e) {}
+    try { announcePair('All repositories rebuilt — the language is safe!', '¡Todos los repositorios reconstruidos — el idioma está a salvo!'); } catch (e) {}
+  } else {
+    const r = newly[0];
+    celebrateText = '★ ' + r.label + ' repository rebuilt!';
+    try { playDing(); } catch (e) {}
+    try { announcePair(r.label + ' repository rebuilt!', '¡Repositorio de ' + r.es + ' reconstruido!'); } catch (e) {}
+  }
+  try { saveGame(); } catch (e) {}
+}
 function updateQuestUI() {
   if (titleOpen) { if (questBox) questBox.style.display = 'none'; return; }
   let changed = false;
@@ -3712,14 +3773,15 @@ function updateQuestUI() {
   }
   if (changed) { try { saveGame(); } catch (e) {} }
   const wc = questWordCount();
-  const key = questStep + '|' + prog.cognates.size + '|' + wc + '|' + mode;
+  try { checkRepoCompletions(wc); } catch (e) {}
+  const key = questStep + '|' + wc + '|' + prog.cognates.size + '|' + prog.idioms.size + '|' + prog.conjugation.size + '|' + prog.dictation.size + '|' + prog.serestar.size + '|' + celebrateText + '|' + mode;
   if (key === lastQuestKey) return;
   lastQuestKey = key;
   if (!questBox) return;
   questBox.style.display = 'block';
   questBox.style.top = (mode === 'flight') ? 'calc(140px + env(safe-area-inset-top, 0px))' : 'calc(12px + env(safe-area-inset-top, 0px))';
   if (questStep >= 5) {
-    questStepEl.textContent = 'Keep recovering words — every spoken word rebuilds what was lost.';
+    questStepEl.textContent = 'Keep recovering words — every spoken word rebuilds the repositories.';
     questProgEl.textContent = '';
     if (btnQuestSkip) btnQuestSkip.style.display = 'none';
   } else {
@@ -3727,7 +3789,10 @@ function updateQuestUI() {
     questProgEl.textContent = (questStep === 1) ? ('Cognates spoken: ' + prog.cognates.size + ' / 3') : '';
     if (btnQuestSkip) btnQuestSkip.style.display = '';
   }
-  questRepoEl.textContent = 'Repository: ' + wc + ' / ' + wordTiles.length + ' words';
+  questRepoEl.innerHTML = questRepos(wc).map(function (r) {
+    return (r.count >= r.total ? '✓ ' : '') + r.label + ' ' + r.count + ' / ' + r.total;
+  }).join('<br>');
+  if (questCelebrateEl) questCelebrateEl.textContent = celebrateText;
 }
 if (btnQuestSkip) btnQuestSkip.addEventListener('pointerdown', function (e) {
   e.preventDefault(); e.target.blur();
@@ -3735,6 +3800,55 @@ if (btnQuestSkip) btnQuestSkip.addEventListener('pointerdown', function (e) {
   try { saveGame(); } catch (e) {}
   updateQuestUI();
 });
+// Quest arrow: a rotating arrow at the end of the quest box, pointing
+// at the current tutorial step's destination — guidance only, never
+// steering. Same camera-relative bearing math as the HUD gold arrow
+// (up = straight ahead of where you look). Hidden once you arrive
+// (station/terminal trigger range), when there is nothing to point
+// at, and once the tutorial is done. Runs every frame from the main
+// loop, since the bearing changes as you turn.
+const _questTmp = new THREE.Vector3();
+function questLocalToWorld(angle, z, out) {
+  const x = Math.cos(angle) * RADIUS, y = Math.sin(angle) * RADIUS;
+  const c = Math.cos(cylAngle), s = Math.sin(cylAngle);
+  out.set(x * c - y * s, x * s + y * c, z);
+  return out;
+}
+function updateQuestArrow() {
+  if (!questArrowLineEl || !questArrowEl || !questArrowLabelEl) return;
+  if (titleOpen || questStep >= 5) { questArrowLineEl.style.display = 'none'; return; }
+  let target = null, label = '';
+  const cog = STATIONS.find(function (s) { return s.id === 'cognates'; });
+  if (questStep === 0 || questStep === 1) {
+    if (questStep === 1 && stationNear && stationNear.id === 'cognates') { questArrowLineEl.style.display = 'none'; return; }
+    if (!cog || stationDist2(cog) < STATION_DIST * STATION_DIST) { questArrowLineEl.style.display = 'none'; return; }
+    target = questLocalToWorld(cog.angle, cog.z, _questTmp); label = 'Cognates station';
+  } else if (questStep === 2) {
+    if (explorationDist2() < DEPART_DIST * DEPART_DIST) { questArrowLineEl.style.display = 'none'; return; }
+    let best = null, bestD = Infinity;
+    for (const et of EXPLORATION_TERMINALS) {
+      const w = questLocalToWorld(et.angle, et.z, new THREE.Vector3());
+      const d = camera.position.distanceTo(w);
+      if (d < bestD) { bestD = d; best = w; }
+    }
+    target = best; label = 'Exploration terminal';
+  } else if (questStep === 3) {
+    if (!guideWord) { questArrowLineEl.style.display = 'none'; return; }
+    target = guideWord.base; label = 'Nearest ' + guideTag;
+  } else if (questStep === 4) {
+    const near = nearestPortToShuttle();
+    if (!near.port) { questArrowLineEl.style.display = 'none'; return; }
+    target = near.world; label = 'Nearest port';
+  } else { questArrowLineEl.style.display = 'none'; return; }
+  if (!target) { questArrowLineEl.style.display = 'none'; return; }
+  const toT = target.clone().sub(camera.position);
+  const dist = toT.length();
+  const cvec = toT.applyQuaternion(camera.quaternion.clone().invert());
+  const ang = Math.hypot(cvec.x, cvec.y) < 0.02 * Math.max(1, dist) ? 0 : Math.atan2(-cvec.y, cvec.x) * 180 / Math.PI + 90;
+  questArrowEl.style.transform = 'rotate(' + ang.toFixed(1) + 'deg)';
+  questArrowLabelEl.textContent = label;
+  questArrowLineEl.style.display = '';
+}
 updateHint();
 
 // Mode switching: UNDOCK ONLY via button/F key, and only at the
@@ -6297,6 +6411,7 @@ function animate() {
       else updateFlight(dt);
     }
     if (!crashed && mode === 'walk') { checkStations(); checkTerminal(); checkDepart(); try { updateQuestUI(); } catch (e) {} }
+    if (!crashed) { try { updateQuestArrow(); } catch (e) {} }
     shuttleLight.visible = (mode === 'flight' && !crashed); // the flight light rides only while flying
   }
   // Round 25: auto-walk backstop. Any dock/undock transition clears
@@ -6448,7 +6563,7 @@ function readSave() {
     if (!Array.isArray(s.words) || !Array.isArray(s.mined)) return null;
     const words = s.words.filter(function (i) { return Number.isInteger(i) && i >= 0 && i < wordTiles.length; });
     const mined = s.mined.filter(function (i) { return Number.isInteger(i) && i >= 0 && i < auraAsteroids.length; });
-    return { water: Math.floor(s.water), metal: Math.floor(s.metal), words: words, mined: mined, freeCrashUsed: s.freeCrashUsed === true, progress: (s.progress && typeof s.progress === 'object') ? s.progress : null, pos: validPos(s.pos), tutorial: (Number.isInteger(s.tutorial) ? s.tutorial : null) };
+    return { water: Math.floor(s.water), metal: Math.floor(s.metal), words: words, mined: mined, freeCrashUsed: s.freeCrashUsed === true, progress: (s.progress && typeof s.progress === 'object') ? s.progress : null, pos: validPos(s.pos), tutorial: (Number.isInteger(s.tutorial) ? s.tutorial : null), recognized: (s.recognized && typeof s.recognized === 'object') ? s.recognized : null };
   } catch (e) { return null; }
 }
 function saveGame() {
@@ -6457,7 +6572,7 @@ function saveGame() {
     for (let i = 0; i < wordTiles.length; i++) if (wordTiles[i].collected) words.push(i);
     const mined = [];
     for (let i = 0; i < auraAsteroids.length; i++) if (auraAsteroids[i].mined) mined.push(i);
-    window.localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, water: water, metal: metal, words: words, mined: mined, freeCrashUsed: freeCrashUsed, progress: progToSave(), pos: capturePosition(), tutorial: questStep }));
+    window.localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, water: water, metal: metal, words: words, mined: mined, freeCrashUsed: freeCrashUsed, progress: progToSave(), pos: capturePosition(), tutorial: questStep, recognized: recognizedRepos }));
   } catch (e) {}
 }
 function applySave(s) {
@@ -6486,6 +6601,10 @@ function applySave(s) {
   else if (s.words.length > 0) { questStep = 5; }
   else if (prog.cognates.size >= 3) { questStep = 2; }
   else { questStep = 0; }
+  // Repository recognition restore: a stored set wins; old saves
+  // without one start empty (their completed repositories are
+  // recognized on first load after the update, once each).
+  recognizedRepos = (s.recognized && typeof s.recognized === 'object') ? s.recognized : {};
   try { syncWordDots(); } catch (e) {}
   try { syncQuestionDots(); } catch (e) {}
   updateMenu();
@@ -6493,7 +6612,7 @@ function applySave(s) {
 // Fresh state: haul zeroed, every tile uncollected (sprites restored to the
 // scene, textures re-stream on approach), every mineable asteroid unmined.
 function resetProgress() {
-  water = 0; metal = 0; freeCrashUsed = false; questStep = 0; questCollected = false;
+  water = 0; metal = 0; freeCrashUsed = false; questStep = 0; questCollected = false; recognizedRepos = {}; celebrateText = '';
   for (const k in prog) prog[k].clear();
   for (const w of wordTiles) {
     if (w.live) {
