@@ -53,7 +53,7 @@
     pointer-events: none;
     display: none;
   }
-  #questTitle { font-weight: 800; letter-spacing: 0.10em; color: #7fe3ff; font-size: clamp(12px, 2.6vw, 14px); margin-bottom: 2px; }
+  #questTitle { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 800; letter-spacing: 0.10em; color: #7fe3ff; font-size: clamp(12px, 2.6vw, 14px); margin-bottom: 2px; }
   #questProg { color: #59d6ff; font-weight: 700; }
   #questRepo { color: #b9c9e2; font-size: clamp(11px, 2.4vw, 13px); }
   #questCelebrate { color: #ffd166; font-weight: 700; }
@@ -61,6 +61,9 @@
   #questArrow { display: inline-block; font-size: 20px; line-height: 1; color: #7fe3ff; text-shadow: 0 0 10px rgba(127, 227, 255, 0.8); margin-right: 6px; }
   #questArrowLine { color: #b9c9e2; }
   #questBox button { pointer-events: auto; }
+  #btn-quest-collapse { flex-shrink: 0; background: rgba(8, 24, 44, 0.75); color: #7fe3ff; border: 1px solid rgba(89, 214, 255, 0.65); border-radius: 10px; font-size: 14px; line-height: 1; padding: 3px 8px; cursor: pointer; }
+  #questBox.collapsed #questStep, #questBox.collapsed #questProg, #questBox.collapsed #questRepo, #questBox.collapsed #questCelebrate, #questBox.collapsed #questArrowLine, #questBox.collapsed #btn-quest-skip { display: none; }
+  #questBox.collapsed #questTitle { margin-bottom: 0; }
   #nogl {
     position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center;
     color: #fff; background: #111; font-size: 18px; text-align: center; padding: 24px;
@@ -489,7 +492,7 @@
 </div>
 <div id="hint"></div>
 <div id="questBox">
-  <div id="questTitle">REBUILD THE REPOSITORIES</div>
+  <div id="questTitle"><span>REBUILD THE REPOSITORIES</span><button id="btn-quest-collapse" type="button" aria-label="Collapse quest box">▾</button></div>
   <div id="questStep"></div>
   <div id="questProg"></div>
   <div id="questRepo"></div>
@@ -3816,7 +3819,7 @@ function questLocalToWorld(angle, z, out) {
 }
 function updateQuestArrow() {
   if (!questArrowLineEl || !questArrowEl || !questArrowLabelEl) return;
-  if (titleOpen || questStep >= 5) { questArrowLineEl.style.display = 'none'; return; }
+  if (titleOpen || questStep >= 5 || (questBox && questBox.classList.contains('collapsed'))) { questArrowLineEl.style.display = 'none'; return; }
   let target = null, label = '';
   const cog = STATIONS.find(function (s) { return s.id === 'cognates'; });
   if (questStep === 0 || questStep === 1) {
@@ -3849,6 +3852,26 @@ function updateQuestArrow() {
   questArrowLabelEl.textContent = label;
   questArrowLineEl.style.display = '';
 }
+// Quest box collapse: the title-row button folds the box to its
+// header bar only (about the menu button's 40 px height). The
+// folded state persists in its own localStorage key across
+// sessions; updateQuestUI never touches the class, so the state
+// survives every quest refresh.
+const btnQuestCollapse = document.getElementById('btn-quest-collapse');
+const QUEST_COLLAPSED_KEY = 'generationShipQuestCollapsed_v1';
+function setQuestCollapsed(collapsed, save) {
+  if (!questBox) return;
+  questBox.classList.toggle('collapsed', !!collapsed);
+  if (btnQuestCollapse) btnQuestCollapse.textContent = collapsed ? '▸' : '▾';
+  if (save) { try { window.localStorage.setItem(QUEST_COLLAPSED_KEY, collapsed ? '1' : '0'); } catch (e) {} }
+}
+try {
+  if (window.localStorage.getItem(QUEST_COLLAPSED_KEY) === '1') setQuestCollapsed(true, false);
+} catch (e) {}
+if (btnQuestCollapse) btnQuestCollapse.addEventListener('pointerdown', function (e) {
+  e.preventDefault(); e.target.blur();
+  setQuestCollapsed(!questBox.classList.contains('collapsed'), true);
+});
 updateHint();
 
 // Mode switching: UNDOCK ONLY via button/F key, and only at the
