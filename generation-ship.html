@@ -270,6 +270,9 @@
   }
   #toolBody button.ctl2.right { background: #1d5c2e; color: #d8ffd8; border-color: #7dff9b; }
   #toolBody button.ctl2.wrong { background: #5c1d1d; color: #ffd9d9; border-color: #ff6b6b; }
+  /* Next stands out: the card-advance button is cyan-filled, so it is
+     never lost in the middle of the panel text. */
+  #toolBody button.ctl2#fc-next, #toolBody button.ctl2#qz-next { background: #59d6ff; color: #06101e; border-color: #aee9ff; font-weight: 700; }
   #toolBody button.ctl2:disabled { opacity: 0.55; cursor: default; }
   #toolFeedback { min-height: 22px; margin-top: 12px; font-size: 15px; color: #ffd166; }
   #toolFeedback.ok { color: #7dff9b; }
@@ -387,7 +390,8 @@
   <div class="row"><span>CONJUGATION SPOKEN</span><b id="progConj">0 / 1695</b></div>
   <div class="row"><span>DICTATION SPOKEN</span><b id="progDict">0 / 2830</b></div>
   <div class="row"><span>SER VS. ESTAR SPOKEN</span><b id="progSer">0 / 100</b></div>
-  <div class="controls">Progress counts spoken Spanish only — flipping, tapping, and listening don’t count; English practice doesn’t count either.</div>
+  <button class="closeBtn" id="btn-menu-review" type="button">REVIEW EVERYTHING</button>
+  <div class="controls">Progress counts spoken Spanish only — flipping, tapping, and listening don’t count; English practice doesn’t count either. REVIEW EVERYTHING opens the same review panel as the terminals: everything you have already answered, anytime.</div>
   </div><button class="subHead" data-sub="settings" data-label="SETTINGS" type="button">▸ SETTINGS</button><div class="subBody" id="sub-settings">
   <div class="row"><span>SOUND VOLUME</span><span><input id="volSlider" type="range" min="0" max="100" value="100"> <b id="volPct">100%</b></span></div>
   <div class="row"><span>SOUND EFFECTS</span><span><input id="sfxChk" type="checkbox" checked> <span class="controls">On</span></span></div>
@@ -3703,10 +3707,11 @@ function updateProgressUI() {
 // ignored, and the tutorial can be skipped from the quest box. Steps
 // advance only forward; each advance dings and saves, so progress
 // survives reloads. The step itself is stored in the save (tutorial:
-// 0-4, 5 = done); old saves without it migrate from what the player
+// 0-5, 6 = done); old saves without it migrate from what the player
 // has already done (see applySave).
 let questStep = 0;
 let questCollected = false;
+let menuReviewVisited = false; // tutorial step 5: opened review from the in-game menu
 let recognizedRepos = {};
 let celebrateText = '';
 const QUEST_STEPS = [
@@ -3714,7 +3719,8 @@ const QUEST_STEPS = [
   'At the Cognates station, say 3 cognates in Spanish.',
   'Depart from an Exploration Terminal — walk up and tap DEPART.',
   'Recover the nearest word or exercise in space — fly within 250 m and say it aloud.',
-  'Return aboard the ARK-7 — fly within 100 m of any glowing port to dock.'
+  'Return aboard the ARK-7 — fly within 100 m of any glowing port to dock.',
+  'Open ☰ → PROGRESS → REVIEW EVERYTHING to review anything you have already answered.'
 ];
 const questBox = document.getElementById('questBox');
 const questStepEl = document.getElementById('questStep');
@@ -3736,6 +3742,7 @@ function questStepDone(i) {
   if (i === 2) return mode === 'flight';
   if (i === 3) return questCollected;
   if (i === 4) return mode === 'walk';
+  if (i === 5) return menuReviewVisited;
   return true;
 }
 // The six repositories, in menu PROGRESS order. Counts mirror
@@ -3784,7 +3791,7 @@ function checkRepoCompletions(wc) {
 function updateQuestUI() {
   if (titleOpen) { if (questBox) questBox.style.display = 'none'; return; }
   let changed = false;
-  while (questStep < 5 && questStepDone(questStep)) {
+  while (questStep < 6 && questStepDone(questStep)) {
     questStep++;
     changed = true;
     try { playDing(); } catch (e) {}
@@ -3798,8 +3805,8 @@ function updateQuestUI() {
   if (!questBox) return;
   questBox.style.display = 'block';
   /* Placement is the #topBoxes flex container's job now (column in portrait, row in landscape). */
-  if (questStep >= 5) {
-    questStepEl.textContent = 'Keep recovering words — every spoken word rebuilds the repositories.';
+  if (questStep >= 6) {
+    questStepEl.textContent = 'Keep recovering words — every spoken word rebuilds the repositories. Review anything you have answered anytime: ☰ → PROGRESS → REVIEW EVERYTHING.';
     questProgEl.textContent = '';
     if (btnQuestSkip) btnQuestSkip.style.display = 'none';
   } else {
@@ -3814,7 +3821,7 @@ function updateQuestUI() {
 }
 if (btnQuestSkip) btnQuestSkip.addEventListener('pointerdown', function (e) {
   e.preventDefault(); e.target.blur();
-  questStep = 5;
+  questStep = 6;
   try { saveGame(); } catch (e) {}
   updateQuestUI();
 });
@@ -3834,7 +3841,7 @@ function questLocalToWorld(angle, z, out) {
 }
 function updateQuestArrow() {
   if (!questArrowLineEl || !questArrowEl || !questArrowLabelEl) return;
-  if (titleOpen || questStep >= 5) { questArrowLineEl.style.display = 'none'; return; }
+  if (titleOpen || questStep >= 6) { questArrowLineEl.style.display = 'none'; return; }
   let target = null, label = '';
   const cog = STATIONS.find(function (s) { return s.id === 'cognates'; });
   if (questStep === 0 || questStep === 1) {
@@ -5479,7 +5486,22 @@ function startToolRecogAttempt() {
         if (ok) { try { playDing(); } catch (e) {} r.fb.textContent = '✓ Correct!'; r.fb.classList.add('ok'); }
         else { r.fb.textContent = 'Heard: "' + heard + '" — not quite, try again'; r.fb.classList.remove('ok'); }
       }
-      else if (ok) { try { playDing(); } catch (e) {} setToolSayFeedback('\u2713 Correct!', true); if (dir === 'es') creditSpoken(); }
+      else if (ok) {
+        try { playDing(); } catch (e) {}
+        setToolSayFeedback('\u2713 Correct!', true);
+        if (dir === 'es') creditSpoken();
+        // Flashcard stations only: quizzes advance on their answer
+        // click, never on Say-it. Correct in either direction counts.
+        if (toolId === 'cognates' || toolId === 'idioms') {
+          clearToolAdvanceTimer();
+          const advPos = fc.pos;
+          toolAdvanceTimer = setTimeout(function () {
+            toolAdvanceTimer = null;
+            if (!toolOpen || (toolId !== 'cognates' && toolId !== 'idioms') || fc.pos !== advPos) return;
+            fc.pos = (fc.pos + 1) % fc.deck.length; fc.flipped = false; renderFlashcards();
+          }, 1500);
+        }
+      }
       else setToolSayFeedback('Heard: "' + heard + '" \u2014 not quite, try again');
     } catch (e) {
       try { toolRecog.stop(); } catch (e2) {}
@@ -5561,6 +5583,7 @@ function spokenMatchesEn(spoken, target) {
 function startToolListening() {
   try {
     ensureAudio();
+    clearToolAdvanceTimer();
     if (!WordRec || !toolAudio) return;
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     stopToolListening(false); // clear any previous attempt (bumps the guard)
@@ -5686,6 +5709,7 @@ function closeTool() {
   if (!toolOpen) return;
   toolOpen = false; toolId = null;
   stopToolListening(false);
+  clearToolAdvanceTimer();
   try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (e) {}
   setToolAudio(null);
   toolPanel.style.display = 'none';
@@ -5762,6 +5786,14 @@ btnTerminal.addEventListener('pointerdown', function (e) {
 });
 document.getElementById('btn-review-close').addEventListener('pointerdown', function (e) {
   e.preventDefault(); e.target.blur(); closeReview();
+});
+// In-game menu review: the same shared panel the terminals open
+// (z 40, above the menu, so the menu stays open behind it). Counts
+// as tutorial step 5 the first time it is tapped.
+document.getElementById('btn-menu-review').addEventListener('click', function () {
+  menuReviewVisited = true;
+  openReview();
+  updateQuestUI();
 });
 const TERM_SER_FORM = { yo: ['soy', 'estoy'], tu: ['eres', 'estás'], el: ['es', 'está'], nos: ['somos', 'estamos'], ellos: ['son', 'están'] };
 function resolveDictKey(k) {
@@ -5875,6 +5907,12 @@ function startReviewSay(btn, fb, target) {
   reviewSay = { btn: btn, fb: fb };
   btn.textContent = '● Listening… — tap to stop'; btn.classList.add('listening');
 }
+// Auto-advance: after a correct answer, a momentary pause (1.5 s) so
+// the player sees they got it right, then the next card/question.
+// One pending timer only; cleared on close, manual Next, or a new
+// Say-it attempt, and guarded on fire (same panel, same card).
+let toolAdvanceTimer = null;
+function clearToolAdvanceTimer() { if (toolAdvanceTimer) { clearTimeout(toolAdvanceTimer); toolAdvanceTimer = null; } }
 // ---------- Flashcards (Cognates, Idioms) ----------
 // Full verbatim decks: all 487 cognates (with category filter) and all
 // 135 idioms. Cognate cards show Spanish first, Flip reveals English;
@@ -5910,7 +5948,7 @@ function renderFlashcards() {
   toolBody.innerHTML = html;
   setToolAudio(es, en, false, false);
   document.getElementById('fc-flip').addEventListener('click', function () { fc.flipped = !fc.flipped; renderFlashcards(); });
-  document.getElementById('fc-next').addEventListener('click', function () { fc.pos = (fc.pos + 1) % fc.deck.length; fc.flipped = false; renderFlashcards(); });
+  document.getElementById('fc-next').addEventListener('click', function () { clearToolAdvanceTimer(); fc.pos = (fc.pos + 1) % fc.deck.length; fc.flipped = false; renderFlashcards(); });
   document.getElementById('fc-shuffle').addEventListener('click', function () { fc.deck = shuf(fc.deck); fc.pos = 0; fc.flipped = false; renderFlashcards(); });
   toolBody.querySelectorAll('.fc-filter').forEach(function (b) {
     b.addEventListener('click', function () {
@@ -5975,7 +6013,16 @@ function renderQuiz() {
       const nx = document.getElementById('qz-next');
       nx.style.display = '';
       nx.textContent = (qz.qi + 1 >= qz.qs.length) ? 'See score →' : 'Next →';
-      nx.addEventListener('click', function () { qz.qi++; qz.answered = false; setToolFeedback(''); renderQuiz(); });
+      nx.addEventListener('click', function () { clearToolAdvanceTimer(); qz.qi++; qz.answered = false; setToolFeedback(''); renderQuiz(); });
+      if (picked === q.answer) {
+        clearToolAdvanceTimer();
+        const advQi = qz.qi;
+        toolAdvanceTimer = setTimeout(function () {
+          toolAdvanceTimer = null;
+          if (!toolOpen || qz.qi !== advQi) return;
+          qz.qi++; qz.answered = false; setToolFeedback(''); renderQuiz();
+        }, 1500);
+      }
     });
   });
 }
@@ -6651,7 +6698,7 @@ function applySave(s) {
 // Fresh state: haul zeroed, every tile uncollected (sprites restored to the
 // scene, textures re-stream on approach), every mineable asteroid unmined.
 function resetProgress() {
-  water = 0; metal = 0; freeCrashUsed = false; questStep = 0; questCollected = false; recognizedRepos = {}; celebrateText = '';
+  water = 0; metal = 0; freeCrashUsed = false; questStep = 0; questCollected = false; menuReviewVisited = false; recognizedRepos = {}; celebrateText = '';
   for (const k in prog) prog[k].clear();
   for (const w of wordTiles) {
     if (w.live) {
