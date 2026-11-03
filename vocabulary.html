@@ -66,7 +66,7 @@ function vSayNorm(s){s=(s||"").toLowerCase().trim();s=s.replace(/[.,!?;:'"()¡¿
 function vSpeak(w){if(!("speechSynthesis" in window)){return;}try{window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(w);u.rate=0.85;var vs=window.speechSynthesis.getVoices()||[];var v=null;for(var i=0;i<vs.length;i++){if(vs[i].lang==="es-MX"){v=vs[i];break;}}if(!v){for(var j=0;j<vs.length;j++){if(vs[j].lang==="es-US"){v=vs[j];break;}}}if(!v){for(var k=0;k<vs.length;k++){if(vs[k].lang&&vs[k].lang.indexOf("es")===0){v=vs[k];break;}}}if(v){u.voice=v;}u.lang="es-MX";window.speechSynthesis.speak(u);}catch(err){}}
 var vAudio=null;
 function vAudioEnsure(){try{if(!vAudio){var AC=window.AudioContext||window.webkitAudioContext;if(!AC){return null;}vAudio=new AC();}if(vAudio.state==="suspended"){vAudio.resume();}return vAudio;}catch(err){return null;}}
-function vDing(){var ac=vAudioEnsure();if(!ac){return;}try{if(ac.resume){ac.resume();}var tm=ac.currentTime;var g=ac.createGain();g.gain.setValueAtTime(0.0001,tm);g.gain.linearRampToValueAtTime(0.5,tm+0.02);g.gain.setValueAtTime(0.5,tm+0.35);g.gain.exponentialRampToValueAtTime(0.0001,tm+1.05);g.connect(ac.destination);var o1=ac.createOscillator();o1.type="sine";o1.frequency.setValueAtTime(880,tm);var o2=ac.createOscillator();o2.type="sine";o2.frequency.setValueAtTime(1318.5,tm+0.15);o1.connect(g);o2.connect(g);o1.start(tm);o2.start(tm+0.15);o1.stop(tm+0.55);o2.stop(tm+1.1);}catch(err){}}
+function vDing(){var ac=vAudioEnsure();if(!ac){return;}try{if(ac.resume){ac.resume();}var tm=ac.currentTime;var g=ac.createGain();g.gain.setValueAtTime(0.0001,tm);g.gain.linearRampToValueAtTime(0.5,tm+0.02);g.gain.setValueAtTime(0.5,tm+0.35);g.gain.exponentialRampToValueAtTime(0.0001,tm+1.05);g.connect(ac.destination);var o1=ac.createOscillator();o1.type="sine";o1.frequency.setValueAtTime(880,tm);o1.connect(g);o1.start(tm);o1.stop(tm+0.55);}catch(err){}}
 var vRows=[];
 var vLis=document.querySelectorAll("ul.words li");
 for(var i=0;i<vLis.length;i++){
@@ -113,21 +113,23 @@ function vSearch(){
   if(nav){nav.style.display=q?"none":"";}
   document.getElementById("vcount").textContent="Showing "+shown.toLocaleString("en-US")+" of 1,000 words";
 }
-var vRec=null,vRecBtn=null,vRecFb=null,vRecTimer=null;
-function vSayStop(){if(vRec){try{vRec.abort();}catch(err){}}if(vRecTimer){clearTimeout(vRecTimer);vRecTimer=null;}if(vRecBtn){vRecBtn.classList.remove("listening");vRecBtn=null;}vRec=null;if(vRecFb&&vRecFb.textContent.indexOf("Listening")>=0){vRecFb.textContent="";}vRecFb=null;}
+var vRec=null,vRecBtn=null,vRecFb=null,vRecTimer=null,vRecUserStop=false;
+function vSayStop(){if(vRec){try{vRec.abort();}catch(err){}}if(vRecTimer){clearTimeout(vRecTimer);vRecTimer=null;}if(vRecBtn){vRecBtn.classList.remove("listening");vRecBtn=null;}vRec=null;if(vRecFb&&vRecFb.textContent.indexOf("Listening")>=0){vRecFb.textContent="";}vRecFb=null;vRecUserStop=false;}
+/* Tap-to-stop: stop (not abort) so a final transcript is still delivered and scored; cleanup waits for result/end. */
+function vSayUserStop(){if(!vRec){return;}vRecUserStop=true;if(vRecTimer){clearTimeout(vRecTimer);vRecTimer=null;}try{vRec.stop();}catch(err){}}
 function vSay(btn,es){
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   var fb=(btn.parentElement&&btn.parentElement.querySelector)?btn.parentElement.querySelector(".vsay"):null;
   if(!SR){if(fb){fb.textContent="Speech check isn't available in this browser.";}return;}
-  if(vRec){var wasBtn=(btn===vRecBtn);vSayStop();if(wasBtn){return;}}
+  if(vRec){var wasBtn=(btn===vRecBtn);if(wasBtn){vSayUserStop();return;}vSayStop();}
   vAudioEnsure();
   try{if(window.speechSynthesis){window.speechSynthesis.cancel();}}catch(err){}
   var langs=["es-MX","es-US"];var li2=0;
   function startRec(){var r;try{r=new SR();}catch(err){if(fb){fb.textContent="Speech check isn't available in this browser.";}return;}
     r.lang=langs[li2];r.interimResults=false;r.continuous=false;r.maxAlternatives=1;
     r.onresult=function(ev){var tr="";try{tr=ev.results[0][0].transcript||"";}catch(err){}vSayStop();if(fb){if(vSayNorm(tr)===vSayNorm(es)){fb.textContent="✓ ¡Correcto!";vDing();}else{fb.textContent="Heard: “"+tr+"” — not quite, try again.";}}};
-    r.onerror=function(ev){var code=ev&&ev.error;if(code==="language-not-supported"&&li2+1<langs.length){li2++;try{r.abort();}catch(err){}startRec();return;}vSayStop();if(fb){if(code==="not-allowed"||code==="service-not-allowed"){fb.textContent="Microphone blocked — allow the microphone to try again.";}else{fb.textContent="Couldn't hear that — try again.";}}};
-    r.onend=function(){if(vRec===r){vSayStop();}};
+    r.onerror=function(ev){var code=ev&&ev.error;if(vRecUserStop){vSayStop();if(fb){fb.textContent="Couldn't hear that — try again.";}return;}if(code==="language-not-supported"&&li2+1<langs.length){li2++;try{r.abort();}catch(err){}startRec();return;}vSayStop();if(fb){if(code==="not-allowed"||code==="service-not-allowed"){fb.textContent="Microphone blocked — allow the microphone to try again.";}else{fb.textContent="Couldn't hear that — try again.";}}};
+    r.onend=function(){if(vRec===r){if(vRecUserStop){vSayStop();if(fb){fb.textContent="Couldn't hear that — try again.";}}else{vSayStop();}}};
     vRec=r;vRecBtn=btn;vRecFb=fb;btn.classList.add("listening");
     if(fb){fb.textContent="Listening… — tap to stop";}
     try{r.start();}catch(err){vSayStop();}

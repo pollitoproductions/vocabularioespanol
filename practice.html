@@ -189,7 +189,7 @@ function flashShow(){
 
 var pracAudio=null;
 function pracAudioEnsure(){try{if(!pracAudio){var AC=window.AudioContext||window.webkitAudioContext;if(!AC){return null;}pracAudio=new AC();}if(pracAudio.state==="suspended"){pracAudio.resume();}return pracAudio;}catch(err){return null;}}
-function pracDing(){var ac=pracAudioEnsure();if(!ac){return;}try{if(ac.resume){ac.resume();}var tm=ac.currentTime;var g=ac.createGain();g.gain.setValueAtTime(0.0001,tm);g.gain.linearRampToValueAtTime(0.5,tm+0.02);g.gain.setValueAtTime(0.5,tm+0.35);g.gain.exponentialRampToValueAtTime(0.0001,tm+1.05);g.connect(ac.destination);var o1=ac.createOscillator();o1.type="sine";o1.frequency.setValueAtTime(880,tm);var o2=ac.createOscillator();o2.type="sine";o2.frequency.setValueAtTime(1318.5,tm+0.15);o1.connect(g);o2.connect(g);o1.start(tm);o2.start(tm+0.15);o1.stop(tm+0.55);o2.stop(tm+1.1);}catch(err){}}
+function pracDing(){var ac=pracAudioEnsure();if(!ac){return;}try{if(ac.resume){ac.resume();}var tm=ac.currentTime;var g=ac.createGain();g.gain.setValueAtTime(0.0001,tm);g.gain.linearRampToValueAtTime(0.5,tm+0.02);g.gain.setValueAtTime(0.5,tm+0.35);g.gain.exponentialRampToValueAtTime(0.0001,tm+1.05);g.connect(ac.destination);var o1=ac.createOscillator();o1.type="sine";o1.frequency.setValueAtTime(880,tm);o1.connect(g);o1.start(tm);o1.stop(tm+0.55);}catch(err){}}
 /* SAY-GATE-MATCH-START: pure pronunciation-matching helpers (no DOM) */
 function sayNorm(s){return (s||'').toLowerCase().trim().replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i').replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/[^a-zñ ]/g,' ').replace(/\s+/g,' ').trim()}
 const SAY_ARTICLES=['el','la','los','las','un','una'];
@@ -219,7 +219,7 @@ function sayGate(w,eligible){
   const setListening=on=>{listening=on;mic.classList.toggle('listening',on);if(on)mic.textContent='\u25cf Listening\u2026 \u2014 tap to stop';else mic.textContent=tried?'🎤 Try again':'🎤 Speak'};
   mic.onclick=()=>{
     /* tap while listening = stop, so the user is never stuck on Listening… */
-    if(listening){stopping=true;clearTimeout(listenTimer);try{rec.stop()}catch(e){}setListening(false);status.textContent='Stopped \u2014 try again.';return}
+    if(listening){stopping=true;clearTimeout(listenTimer);try{rec.stop()}catch(e){}setListening(false);/* user stop: do not finalize here — onresult scores a final transcript if one arrives, onend shows try-again if none does */return}
     pracAudioEnsure();
     /* iPhone fix: free the speech audio session first, or iOS may never engage the mic */
     if(window.speechSynthesis){try{speechSynthesis.cancel()}catch(e){}}
@@ -248,7 +248,7 @@ function sayGate(w,eligible){
       rec.onerror=ev=>{
         if(my!==attempt||done)return;
         const err=ev.error||'';
-        if(err==='language-not-supported'){nextLang();return}
+        if(err==='language-not-supported'){if(stopping){done=true;mic.disabled=false;clearTimeout(listenTimer);setListening(false);status.textContent='Didn\u2019t catch that \u2014 try again.';mic.textContent='🎤 Try again';return}nextLang();return}
         done=true;heardAny=true;mic.disabled=false;clearTimeout(listenTimer);setListening(false);
         if(err==='not-allowed'||err==='service-not-allowed'){status.textContent='Microphone access was denied — use the skip link below to move on.';skip.style.fontWeight='bold'}
         else if(err==='no-speech'){status.textContent='Didn’t hear anything — try again.';mic.textContent='🎤 Try again'}
@@ -256,8 +256,10 @@ function sayGate(w,eligible){
         else{status.textContent='Something went wrong listening — try again or skip this step.'}
       };
       rec.onend=()=>{
-        if(stopping||my!==attempt||done)return;
+        if(my!==attempt||done)return;
         clearTimeout(listenTimer);
+        /* user stop with no result: end cleanly, never retry another language */
+        if(stopping){setListening(false);status.textContent='Didn\u2019t catch that \u2014 try again.';mic.textContent='🎤 Try again';mic.disabled=false;return}
         /* iOS Safari often ends recognition silently with no result and no error: retry the next language */
         if(!heardAny&&li<langs.length-1){li++;startWith(langs[li]);return}
         setListening(false);

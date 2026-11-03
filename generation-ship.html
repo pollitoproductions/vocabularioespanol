@@ -40,6 +40,23 @@
   }
   /* The hint pill is transient-only: fully gone (not just empty text) when no message is showing. */
   #hint:empty { display: none; }
+  #questBox {
+    position: fixed; left: calc(12px + env(safe-area-inset-left, 0px)); z-index: 5;
+    color: #eaf2ff;
+    background: linear-gradient(160deg, rgba(10, 17, 30, 0.78), rgba(10, 17, 30, 0.58));
+    border: 1px solid rgba(89, 214, 255, 0.5);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.38), 0 0 14px rgba(89, 214, 255, 0.25);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    padding: 10px 14px; border-radius: 18px;
+    max-width: min(92vw, 440px, calc(100vw - 84px));
+    font-size: clamp(12px, 2.6vw, 15px); line-height: 1.5;
+    pointer-events: none;
+    display: none;
+  }
+  #questTitle { font-weight: 800; letter-spacing: 0.10em; color: #7fe3ff; font-size: clamp(12px, 2.6vw, 14px); margin-bottom: 2px; }
+  #questProg { color: #59d6ff; font-weight: 700; }
+  #questRepo { color: #b9c9e2; }
+  #questBox button { pointer-events: auto; }
   #nogl {
     position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center;
     color: #fff; background: #111; font-size: 18px; text-align: center; padding: 24px;
@@ -366,6 +383,8 @@
     <div class="mBody">Fly within 250 m of a floating word or exercise question to pause and pronounce it: words ask for the Spanish word; questions ask you to speak the answer (tap Show answer to peek &mdash; peeking never counts, only speaking does). Say it right to collect it for +5 WATER and +5 METAL; Leave (or Escape) flies on, and the item waits until you are 400 m clear. A gold arrow points to the nearest uncollected item &mdash; word or question &mdash; with a tag saying which; distant items show as small glow dots until their plates stream in.</div>
     <div class="mHead">REVIEW TERMINALS</div>
     <div class="mBody">Eight gold review terminals stand around the industrial side &mdash; one on the mezzanine, seven on the main deck, spread evenly around the hull. Walk up and tap Review (or press Enter) to review everything you have already spoken, by tool, with Hear in both languages. Reviewing never changes progress.</div>
+    <div class="mHead">QUESTS</div>
+    <div class="mBody">Your quest is to rebuild the lost Spanish repository. The quest box (top left) guides you from your first station visit to your first space collect, then tracks every word you recover. Quests guide; they never block &mdash; skip the tutorial anytime from the quest box.</div>
     <div class="mHead">SAVING</div>
     <div class="mBody">SAVE JOURNEY in this menu saves at once; the game also saves after every collect, every mining yield, and every docking. GO TO HOME SCREEN saves, then returns to the title screen. Resuming restores your haul, your collected items, and your position &mdash; aboard or in flight.</div>
   </div>
@@ -465,6 +484,13 @@
   <button id="btn-fail-title" type="button" style="display:none;">RETURN TO TITLE</button>
 </div>
 <div id="hint"></div>
+<div id="questBox">
+  <div id="questTitle">REBUILD THE REPOSITORY</div>
+  <div id="questStep"></div>
+  <div id="questProg"></div>
+  <div id="questRepo"></div>
+  <button class="ctl2" id="btn-quest-skip" type="button" style="margin-top:8px;font-size:12px;padding:6px 12px;">Skip tutorial</button>
+</div>
 <div id="nogl" hidden>Sorry &mdash; this prototype needs WebGL, and your browser could not provide it. Try a recent desktop or mobile browser.</div>
 <div id="joy"><div id="knob"></div></div>
 <div id="buttons">
@@ -3638,7 +3664,77 @@ function updateProgressUI() {
   setTxt('progConj', prog.conjugation.size, TOOL_VERBS.length * 5 * 3);
   setTxt('progDict', prog.dictation.size, WORDS.length + TOOL_VERBS.length * 5 * 3 + TOOL_IDIOMS.length);
   setTxt('progSer', prog.serestar.size, TOOL_SER.length);
+  try { updateQuestUI(); } catch (e) {}
 }
+
+// Quest tutorial: REBUILD THE REPOSITORY. The title story becomes the
+// playable quest: the player recovers the lost Spanish repository, one
+// spoken word at a time. Quests guide, never block — every step can be
+// ignored, and the tutorial can be skipped from the quest box. Steps
+// advance only forward; each advance dings and saves, so progress
+// survives reloads. The step itself is stored in the save (tutorial:
+// 0-4, 5 = done); old saves without it migrate from what the player
+// has already done (see applySave).
+let questStep = 0;
+let questCollected = false;
+const QUEST_STEPS = [
+  'Walk to the Cognates station in the agriculture ring — look for the glowing cyan ring.',
+  'At the Cognates station, say 3 cognates in Spanish.',
+  'Depart from an Exploration Terminal — walk up and tap DEPART.',
+  'Collect your first item in space — fly within 250 m and say it aloud.',
+  'Return aboard the ARK-7 — fly within 100 m of any glowing port to dock.'
+];
+const questBox = document.getElementById('questBox');
+const questStepEl = document.getElementById('questStep');
+const questProgEl = document.getElementById('questProg');
+const questRepoEl = document.getElementById('questRepo');
+const btnQuestSkip = document.getElementById('btn-quest-skip');
+let lastQuestKey = '';
+function questWordCount() {
+  let n = 0; for (const w of wordTiles) if (w.collected) n++;
+  return n;
+}
+function questStepDone(i) {
+  if (i === 0) return !!(stationNear && stationNear.id === 'cognates');
+  if (i === 1) return prog.cognates.size >= 3;
+  if (i === 2) return mode === 'flight';
+  if (i === 3) return questCollected;
+  if (i === 4) return mode === 'walk';
+  return true;
+}
+function updateQuestUI() {
+  if (titleOpen) { if (questBox) questBox.style.display = 'none'; return; }
+  let changed = false;
+  while (questStep < 5 && questStepDone(questStep)) {
+    questStep++;
+    changed = true;
+    try { playDing(); } catch (e) {}
+  }
+  if (changed) { try { saveGame(); } catch (e) {} }
+  const wc = questWordCount();
+  const key = questStep + '|' + prog.cognates.size + '|' + wc + '|' + mode;
+  if (key === lastQuestKey) return;
+  lastQuestKey = key;
+  if (!questBox) return;
+  questBox.style.display = 'block';
+  questBox.style.top = (mode === 'flight') ? 'calc(140px + env(safe-area-inset-top, 0px))' : 'calc(12px + env(safe-area-inset-top, 0px))';
+  if (questStep >= 5) {
+    questStepEl.textContent = 'Keep recovering words — every spoken word rebuilds what was lost.';
+    questProgEl.textContent = '';
+    if (btnQuestSkip) btnQuestSkip.style.display = 'none';
+  } else {
+    questStepEl.textContent = QUEST_STEPS[questStep];
+    questProgEl.textContent = (questStep === 1) ? ('Cognates spoken: ' + prog.cognates.size + ' / 3') : '';
+    if (btnQuestSkip) btnQuestSkip.style.display = '';
+  }
+  questRepoEl.textContent = 'Repository: ' + wc + ' / ' + wordTiles.length + ' words';
+}
+if (btnQuestSkip) btnQuestSkip.addEventListener('pointerdown', function (e) {
+  e.preventDefault(); e.target.blur();
+  questStep = 5;
+  try { saveGame(); } catch (e) {}
+  updateQuestUI();
+});
 updateHint();
 
 // Mode switching: UNDOCK ONLY via button/F key, and only at the
@@ -3679,6 +3775,7 @@ function undock() {
   if (hint.textContent.indexOf('tap LEARN') !== -1) hint.textContent = '';
   btnJump.style.visibility = 'hidden';
   updateHint();
+  try { updateQuestUI(); } catch (e) {}
 }
 // Auto-docking: flying within DOCK_RANGE of ANY of the nine ports docks the
 // shuttle automatically. This is a mode change on proximity, not a
@@ -3720,6 +3817,7 @@ function autoDock(port) {
   btnJump.style.visibility = 'visible';
   updateHint();
   saveGame(); // auto-dock saves the journey
+  try { updateQuestUI(); } catch (e) {}
 }
 // Button / F key: undock-only, and only at an Exploration Terminal (any of the eight).
 // While undocked they do nothing, because docking is automatic on
@@ -4565,9 +4663,9 @@ function updateFootsteps(dt) {
     }
   } catch (e) {}
 }
-// Correct-answer ding, softened for the ship: the same two sine notes
-// (880 Hz then 1318.5 Hz), but peak gain 0.3 with a slow attack, so it
-// chimes instead of pings. The web tools keep the site-standard 0.5;
+// Correct-answer ding, softened for the ship: a single 880 Hz sine note
+// (the second, higher note was harsh, so it is gone), peak gain 0.3 with
+// a slow attack, so it chimes instead of pings. The web tools keep the site-standard 0.5;
 // this softer one is ship-only. Only ever played on a correct pronunciation.
 function playDing() {
   // Triple little buzz on every correct answer — the ding's haptic twin.
@@ -4587,7 +4685,7 @@ function playDing() {
       o.start(start); o.stop(stop + 0.05);
     };
     note(880, t0, t0 + 0.55);
-    note(1318.5, t0 + 0.55, t0 + 1.1);
+    // Single tone only: the second (1318.5 Hz) note was the harsh one, so it is gone — the first (880 Hz) note is the whole ding.
   } catch (e) {}
 }
 // Speech output: full Spanish form with article, rate 0.85, es-MX voice
@@ -4685,15 +4783,28 @@ function buildRecogLangs(base) {
   return chain;
 }
 let recogSeq = 0, recogLangs = [], recogLangIdx = 0, recogGotResult = false, recogClosed = false;
+let recogUserStopped = false; // tap-to-stop: judge the final transcript instead of discarding it
 function stopListening(showTry) {
   recogSeq++; // invalidate any pending handlers from the stopped attempt
-  recogClosed = true;
+  recogClosed = true; recogUserStopped = false;
   try { if (recog) recog.stop(); } catch (e) {}
   if (recogTimer) { clearTimeout(recogTimer); recogTimer = null; }
   if (recogActive) {
     recogActive = false; setMicUI(false);
     if (showTry) setFeedback('Try again \u2014 tap \uD83C\uDFA4 when you are ready.');
   }
+}
+// Tap-to-stop, refined: stopping used to invalidate the attempt first,
+// so the final transcript the recognizer delivers on stop() was thrown
+// away and tapping stop never registered anything — you had to wait for
+// the browser to end the listen on its own. This path leaves the guards
+// intact and just stops the recognizer, so the normal onresult (speech
+// heard: judged) or onend (silence: Try again, no language retry)
+// finishes the attempt at once. The 12 s timer stays as the fallback.
+function stopListeningForResult() {
+  recogUserStopped = true;
+  try { if (recog) recog.stop(); } catch (e) {}
+  if (!recog) stopListening(true);
 }
 function endRecogAttempt(msg) {
   recogClosed = true;
@@ -4737,6 +4848,7 @@ function startRecogAttempt() {
   };
   recog.onerror = function (ev) {
     if (mySeq !== recogSeq || recogClosed || recogGotResult) return;
+    if (recogUserStopped) { endRecogAttempt('Try again \u2014 tap \uD83C\uDFA4 when you are ready.'); return; }
     const err = ev && ev.error;
     if (err === 'language-not-supported' && recogLangIdx + 1 < recogLangs.length) {
       recogLangIdx++;
@@ -4748,6 +4860,7 @@ function startRecogAttempt() {
   };
   recog.onend = function () {
     if (mySeq !== recogSeq || recogClosed || recogGotResult) return;
+    if (recogUserStopped) { endRecogAttempt('Try again \u2014 tap \uD83C\uDFA4 when you are ready.'); return; }
     if (recogLangIdx + 1 < recogLangs.length) {
       recogLangIdx++;
       startRecogAttempt(); // silent end: retry with the next language
@@ -4855,7 +4968,9 @@ function onCollectCorrect() {
   }
   water += COLLECT_WATER;
   metal += COLLECT_METAL;
+  questCollected = true;
   saveGame(); // collect saves the journey (word or question tile)
+  try { updateQuestUI(); } catch (e) {}
   hint.textContent = '+' + COLLECT_WATER + ' WATER, +' + COLLECT_METAL + ' METAL collected — ' + (w.q ? w.q.tag + ': ' : '') + w.sprite.userData.es;
   if (mineTimer) clearTimeout(mineTimer);
   mineTimer = setTimeout(updateHint, 3000);
@@ -4927,7 +5042,7 @@ btnCollectMic.addEventListener('click', function () {
   // the collect mic was the last speech trigger on the old pointerdown +
   // preventDefault wiring (see the Hear buttons above).
   ensureAudio();
-  if (recogActive) stopListening(true); else startListening();
+  if (recogActive) stopListeningForResult(); else startListening();
 });
 document.getElementById('btn-collect-leave').addEventListener('pointerdown', function (e) {
   e.preventDefault(); e.target.blur(); closeCollect(false);
@@ -5156,16 +5271,26 @@ function toolSayUI(listening) {
   btnToolSay.classList.toggle('listening', listening);
 }
 let toolRecogSeq = 0, toolRecogLangs = [], toolRecogLangIdx = 0, toolRecogGotResult = false, toolRecogClosed = false;
+let toolRecogUserStopped = false; // tap-to-stop: judge the final transcript instead of discarding it
 function stopToolListening(showTry) {
   if (reviewSay) { const r = reviewSay; reviewSay = null; r.btn.textContent = '🎤 Say it'; r.btn.classList.remove('listening'); if (showTry) r.fb.textContent = 'Try again — tap 🎤 when you are ready.'; }
   toolRecogSeq++; // invalidate any pending handlers from the stopped attempt
-  toolRecogClosed = true;
+  toolRecogClosed = true; toolRecogUserStopped = false;
   try { if (toolRecog) toolRecog.stop(); } catch (e) {}
   if (toolRecogTimer) { clearTimeout(toolRecogTimer); toolRecogTimer = null; }
   if (toolRecogActive) {
     toolRecogActive = false; toolSayUI(false);
     if (showTry) setToolSayFeedback('Try again \u2014 tap \uD83C\uDFA4 when you are ready.');
   }
+}
+// Tap-to-stop, refined (same fix as the collect mic): leave the guards
+// intact and just stop the recognizer, so the final transcript is
+// judged instead of thrown away. Covers stations and review rows,
+// which share this recognizer.
+function stopToolListeningForResult() {
+  toolRecogUserStopped = true;
+  try { if (toolRecog) toolRecog.stop(); } catch (e) {}
+  if (!toolRecog) stopToolListening(true);
 }
 function endToolRecogAttempt(msg) {
   toolRecogClosed = true;
@@ -5212,6 +5337,7 @@ function startToolRecogAttempt() {
   };
   toolRecog.onerror = function (ev) {
     if (mySeq !== toolRecogSeq || toolRecogClosed || toolRecogGotResult) return;
+    if (toolRecogUserStopped) { endToolRecogAttempt('Try again \u2014 tap \uD83C\uDFA4 when you are ready.'); return; }
     const err = ev && ev.error;
     if (err === 'language-not-supported' && toolRecogLangIdx + 1 < toolRecogLangs.length) {
       toolRecogLangIdx++;
@@ -5223,6 +5349,7 @@ function startToolRecogAttempt() {
   };
   toolRecog.onend = function () {
     if (mySeq !== toolRecogSeq || toolRecogClosed || toolRecogGotResult) return;
+    if (toolRecogUserStopped) { endToolRecogAttempt('Try again \u2014 tap \uD83C\uDFA4 when you are ready.'); return; }
     if (toolRecogLangIdx + 1 < toolRecogLangs.length) {
       toolRecogLangIdx++;
       startToolRecogAttempt(); // silent end: retry with the next language
@@ -5317,7 +5444,7 @@ btnToolHearEn.addEventListener('click', function () { toolHear('en'); });
 btnToolSay.addEventListener('click', function () {
   if (toolAudioGated()) { setToolSayFeedback('Answer the question first — then listen.'); setToolFeedback('Answer the question first — then listen.'); return; }
   ensureAudio();
-  if (toolRecogActive) stopToolListening(true); else startToolListening();
+  if (toolRecogActive) stopToolListeningForResult(); else startToolListening();
 });
 btnToolDir.addEventListener('click', function () {
   if (toolAudioGated()) return; // Round 30: the toggle has no effect before answering.
@@ -5584,7 +5711,7 @@ function renderReviewList() {
 // guards in stopToolListening / endToolRecogAttempt / onresult.
 function startReviewSay(btn, fb, target) {
   ensureAudio();
-  if (reviewSay && reviewSay.btn === btn) { stopToolListening(false); return; } // tap-to-stop
+  if (reviewSay && reviewSay.btn === btn) { stopToolListeningForResult(); return; } // tap-to-stop: judge what was said
   if (reviewSay) stopToolListening(false);
   if (!WordRec) { fb.textContent = 'Speech recognition isn\'t available on this device or browser.'; return; }
   toolAudio = { es: target, en: '', esGated: false, enGated: false };
@@ -6169,7 +6296,7 @@ function animate() {
       if (mode === 'walk') updateWalk(dt);
       else updateFlight(dt);
     }
-    if (!crashed && mode === 'walk') { checkStations(); checkTerminal(); checkDepart(); }
+    if (!crashed && mode === 'walk') { checkStations(); checkTerminal(); checkDepart(); try { updateQuestUI(); } catch (e) {} }
     shuttleLight.visible = (mode === 'flight' && !crashed); // the flight light rides only while flying
   }
   // Round 25: auto-walk backstop. Any dock/undock transition clears
@@ -6193,7 +6320,8 @@ function animate() {
 // words: [collected word-tile indices], mined: [mined aura-asteroid indices],
 // freeCrashUsed: bool, progress: { cognates, idioms, practice, conjugation,
 // dictation, serestar: per-item identifier arrays },
-// pos: { mode: 'walk'|'flight'|'docked', ... } }. A round-21 save
+// pos: { mode: 'walk'|'flight'|'docked', ... } }, tutorial: quest step 0-5
+// (5 = tutorial done; old saves without it migrate from progress). A round-21 save
 // without the flag migrates to false (flag missing/non-boolean never
 // rejects the save, it just means unused); a save without progress fields
 // migrates to empty progress sets, same pattern, never rejected.
@@ -6320,7 +6448,7 @@ function readSave() {
     if (!Array.isArray(s.words) || !Array.isArray(s.mined)) return null;
     const words = s.words.filter(function (i) { return Number.isInteger(i) && i >= 0 && i < wordTiles.length; });
     const mined = s.mined.filter(function (i) { return Number.isInteger(i) && i >= 0 && i < auraAsteroids.length; });
-    return { water: Math.floor(s.water), metal: Math.floor(s.metal), words: words, mined: mined, freeCrashUsed: s.freeCrashUsed === true, progress: (s.progress && typeof s.progress === 'object') ? s.progress : null, pos: validPos(s.pos) };
+    return { water: Math.floor(s.water), metal: Math.floor(s.metal), words: words, mined: mined, freeCrashUsed: s.freeCrashUsed === true, progress: (s.progress && typeof s.progress === 'object') ? s.progress : null, pos: validPos(s.pos), tutorial: (Number.isInteger(s.tutorial) ? s.tutorial : null) };
   } catch (e) { return null; }
 }
 function saveGame() {
@@ -6329,7 +6457,7 @@ function saveGame() {
     for (let i = 0; i < wordTiles.length; i++) if (wordTiles[i].collected) words.push(i);
     const mined = [];
     for (let i = 0; i < auraAsteroids.length; i++) if (auraAsteroids[i].mined) mined.push(i);
-    window.localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, water: water, metal: metal, words: words, mined: mined, freeCrashUsed: freeCrashUsed, progress: progToSave(), pos: capturePosition() }));
+    window.localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, water: water, metal: metal, words: words, mined: mined, freeCrashUsed: freeCrashUsed, progress: progToSave(), pos: capturePosition(), tutorial: questStep }));
   } catch (e) {}
 }
 function applySave(s) {
@@ -6352,6 +6480,12 @@ function applySave(s) {
     if (a.coma) a.coma.visible = false;
   }
   restoreSavedPosition(s.pos);
+  // Quest tutorial restore: a stored step wins; old saves without one
+  // migrate from what the player has already done.
+  if (Number.isInteger(s.tutorial) && s.tutorial >= 0 && s.tutorial <= 5) { questStep = s.tutorial; }
+  else if (s.words.length > 0) { questStep = 5; }
+  else if (prog.cognates.size >= 3) { questStep = 2; }
+  else { questStep = 0; }
   try { syncWordDots(); } catch (e) {}
   try { syncQuestionDots(); } catch (e) {}
   updateMenu();
@@ -6359,7 +6493,7 @@ function applySave(s) {
 // Fresh state: haul zeroed, every tile uncollected (sprites restored to the
 // scene, textures re-stream on approach), every mineable asteroid unmined.
 function resetProgress() {
-  water = 0; metal = 0; freeCrashUsed = false;
+  water = 0; metal = 0; freeCrashUsed = false; questStep = 0; questCollected = false;
   for (const k in prog) prog[k].clear();
   for (const w of wordTiles) {
     if (w.live) {
@@ -6433,10 +6567,12 @@ function showTitle(journeyEnded) {
   titleConfirm.style.display = 'none';
   titleOpen = true;
   titlePanel.style.display = 'flex';
+  try { updateQuestUI(); } catch (e) {}
 }
 function hideTitle() {
   titleOpen = false;
   titlePanel.style.display = 'none';
+  try { updateQuestUI(); } catch (e) {}
 }
 btnTitleResume.addEventListener('pointerdown', function (e) {
   e.preventDefault(); e.target.blur();
