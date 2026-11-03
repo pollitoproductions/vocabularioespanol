@@ -62,7 +62,7 @@
   #questArrowLine { color: #b9c9e2; }
   #questBox button { pointer-events: auto; }
   #btn-quest-collapse { flex-shrink: 0; background: rgba(8, 24, 44, 0.75); color: #7fe3ff; border: 1px solid rgba(89, 214, 255, 0.65); border-radius: 10px; font-size: 14px; line-height: 1; padding: 3px 8px; cursor: pointer; }
-  #questBox.collapsed #questStep, #questBox.collapsed #questProg, #questBox.collapsed #questRepo, #questBox.collapsed #questCelebrate, #questBox.collapsed #questArrowLine, #questBox.collapsed #btn-quest-skip { display: none; }
+  #questBox.collapsed #questStep, #questBox.collapsed #questProg, #questBox.collapsed #questRepo, #questBox.collapsed #questCelebrate, #questBox.collapsed #btn-quest-skip { display: none; }
   #questBox.collapsed #questTitle { margin-bottom: 0; }
   #nogl {
     position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center;
@@ -3819,7 +3819,7 @@ function questLocalToWorld(angle, z, out) {
 }
 function updateQuestArrow() {
   if (!questArrowLineEl || !questArrowEl || !questArrowLabelEl) return;
-  if (titleOpen || questStep >= 5 || (questBox && questBox.classList.contains('collapsed'))) { questArrowLineEl.style.display = 'none'; return; }
+  if (titleOpen || questStep >= 5) { questArrowLineEl.style.display = 'none'; return; }
   let target = null, label = '';
   const cog = STATIONS.find(function (s) { return s.id === 'cognates'; });
   if (questStep === 0 || questStep === 1) {
@@ -3853,8 +3853,9 @@ function updateQuestArrow() {
   questArrowLineEl.style.display = '';
 }
 // Quest box collapse: the title-row button folds the box to its
-// header bar only (about the menu button's 40 px height). The
-// folded state persists in its own localStorage key across
+// header bar, keeping the guiding arrow line visible when a tutorial
+// destination is showing (so the collapsed bar still points the way).
+// The folded state persists in its own localStorage key across
 // sessions; updateQuestUI never touches the class, so the state
 // survives every quest refresh.
 const btnQuestCollapse = document.getElementById('btn-quest-collapse');
