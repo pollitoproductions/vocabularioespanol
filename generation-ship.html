@@ -1709,12 +1709,12 @@ function basisQuat(radial) {
     // Mounted on the bulkhead faces themselves, high above each doorway
     // (radius 148 = 12 m above the deck). Round 20 (wayfinding):
     // each sign sits on the APPROACH-side face and faces the walker
-    // heading for that sector — INDUSTRIAL on the agriculture face
-    // (z -0.9, facing -Z) so a walker in agriculture reads the
-    // destination before walking through, and on the technology face
-    // (z +0.9, facing +Z) the sign names what is through the door in
-    // Brant's words: TO LEARNING TERMINALS, or TO REVIEW TERMINALS at
-    // the residential approach (Nov 5). The previous mounting had them
+    // heading for that sector — both faces name what is through the
+    // door in Brant's words (Nov 5): on the agriculture face (z -0.9,
+    // facing -Z) TO REVIEW TERMINALS, or RESIDENTIAL ZONE at the
+    // residential approach; on the technology face (z +0.9, facing +Z)
+    // TO LEARNING TERMINALS, or TO REVIEW TERMINALS at the residential
+    // approach. No sector labels remain. The previous mounting had them
     // backwards: each sign
     // faced only its own sector, so it read from the side you were
     // already standing on (Brant's screenshots). Single-sided, one
@@ -1729,16 +1729,16 @@ function basisQuat(radial) {
     // and z-fought into one garbled plate). Industrial face: TO
     // LEARNING TERMINALS into agriculture, TO REVIEW TERMINALS at the
     // residential approach (pi/2), where the review terminals stand.
-    // Agriculture face: INDUSTRIAL SECTOR everywhere except the
-    // residential approach, where RESIDENTIAL ZONE replaces it — the
+    // Agriculture face: TO REVIEW TERMINALS everywhere except the
+    // residential approach, where RESIDENTIAL ZONE stands instead — the
     // old floating sign over the approach (z 12) is gone; the label
     // now lives above the doorway where it belongs. Single-sided, one
-    // plate per face, exactly as the sector signs were.
+    // plate per face. No sector labels remain anywhere (Nov 5).
     if (d === Math.PI / 2) {
       mountAxialSign('RESIDENTIAL ZONE', '#ffc27a', 5.5, d, 148, -0.9, -1, false);
       mountAxialSign('TO REVIEW TERMINALS', '#ffd76a', 5.5, d, 148, 0.9, 1, false);
     } else {
-      mountAxialSign('INDUSTRIAL SECTOR', '#59d6ff', 5.5, d, 148, -0.9, -1, false);
+      mountAxialSign('TO REVIEW TERMINALS', '#ffd76a', 5.5, d, 148, -0.9, -1, false);
       mountAxialSign('TO LEARNING TERMINALS', '#39d97a', 5.5, d, 148, 0.9, 1, false);
     }
   }
