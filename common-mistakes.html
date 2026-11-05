@@ -63,7 +63,7 @@ ul.links span{display:block;font-size:.88rem;color:#333333}
 </style>
 <div class="tool">
 <h2>False friends practice</h2>
-<p>100 Spanish words that look like English words — but mean something else. Pick the real meaning. One of the choices is the English lookalike that fools everyone.</p>
+<p>100 Spanish words that look like English words — but mean something else. One choice is the real meaning, the other is the English lookalike that fools everyone. Pick the real one.</p>
 <div class="qbox"><b id="q-sen"></b><span id="q-sub"></span></div>
 <div class="opts" id="opts"></div>
 <p class="feedback" id="feedback"></p>
@@ -80,14 +80,9 @@ function shuffle2(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random(
 function $(id){return document.getElementById(id);}
 function show(){
 var q=deck[pos];
-// Choices: the true meaning, the lookalike trap, and two other real
-// meanings from the bank (never the true meaning or the trap, so the
-// four choices are always distinct).
-var pool=Q.map(function(x){return x[2];}).filter(function(m){return m!==q[2]&&m!==q[3];});
-var d1=pool[Math.floor(Math.random()*pool.length)];
-var pool2=pool.filter(function(m){return m!==d1;});
-var d2=pool2[Math.floor(Math.random()*pool2.length)];
-var opts=shuffle2([q[2],q[3],d1,d2]);completed=q[1];
+// Two choices only: the real meaning and the English lookalike.
+// The student plainly accepts one and rejects the other.
+var opts=shuffle2([q[2],q[3]]);completed=q[1];
 cur={q:q,opts:opts,ans:opts.indexOf(q[2])};answered=false;
 $('q-sen').textContent=q[0];
 $('q-sub').textContent=q[1]+' — What does '+q[0]+' mean?';
