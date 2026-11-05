@@ -39,6 +39,90 @@ ul.links span{display:block;font-size:.88rem;color:#333333}
 @media(max-width:520px){ul.words{columns:1}.keyboard-controls{grid-template-columns:1fr}}</style></head>
 <body><main>
 <a class="back" href="/">&larr; Back to home</a>
+<style>
+.tool{background:#fff;border:1px solid #dddddd;border-radius:18px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,.10);margin:18px 0 26px}
+.tool h2{font-size:1.3rem;letter-spacing:0;text-transform:none;color:#000000;margin:0 0 8px}
+.tool button.btn{display:inline-block;margin:6px 8px 0 0;padding:12px 22px;border-radius:12px;background:#f97316;color:#000;font-weight:700;letter-spacing:.04em;box-shadow:0 3px 0 #000000;border:0;cursor:pointer;font:inherit;-webkit-appearance:none;appearance:none}
+.tool button.btn:hover,.tool button.btn:focus-visible{background:#000000;color:#fff}
+.tool button.btn.alt{background:#fff;color:#000000;border:2px solid #000000;box-shadow:none;padding:10px 20px;cursor:pointer;font:inherit}
+.tool .qbox{border:2px solid #f97316;border-radius:14px;padding:26px 16px;text-align:center;min-height:110px;display:flex;flex-direction:column;justify-content:center}
+.tool .qbox b{font-size:1.55rem;color:#000000;line-height:1.3}
+.tool .qbox span{font-size:.85rem;color:#333333;margin-top:8px}
+.tool .count{font-size:.85rem;color:#333333;margin:12px 0 4px}
+.tool .ctl{display:flex;gap:10px;margin-top:14px}
+.tool .ctl button{flex:1;padding:12px 8px;text-align:center;margin:0}
+.opts{display:flex;gap:10px;margin:14px 0 4px}
+.opts button{flex:1;padding:14px 8px;font-size:1.25rem;margin:0}
+.trans{font-size:.95rem;color:#333333;margin:8px 0;min-height:1.4em}
+.reveal{display:none;border-top:1px solid #dddddd;margin-top:12px;padding-top:12px}
+.reveal.show{display:block}
+.reveal b{color:#000000;font-size:1.15rem}
+.feedback{min-height:1.4em;font-size:.95rem;margin:6px 0;color:#333333}
+.feedback.ok{color:#1f5c3f;font-weight:700}
+.feedback.bad{color:#8a3b00}
+</style>
+<div class="tool">
+<h2>Saber vs. conocer practice</h2>
+<p>100 sentences, five subjects, one choice: saber or conocer. Pick the right form, use the translation help whenever you want it, and hear the full sentence after you answer.</p>
+<div class="qbox"><b id="q-sen"></b><span>Pick saber or conocer</span></div>
+<p class="trans" id="trans" style="display:none"></p>
+<div><button class="btn alt" id="btn-trans" type="button">Show translation</button></div>
+<div class="opts" id="opts"></div>
+<p class="feedback" id="feedback"></p>
+<div class="reveal" id="reveal"><b id="reveal-sen"></b><p id="reveal-en"></p><p id="reveal-note"></p><button class="btn alt" id="btn-hear" type="button" style="display:none">🔊 Hear it</button></div>
+<p class="count" id="card-count"></p>
+<div class="ctl"><button class="btn" id="btn-next" type="button">Next card</button> <button class="btn alt" id="btn-shuffle" type="button">Shuffle</button></div>
+<noscript><p>Turn on JavaScript to use the sentence tool.</p></noscript>
+</div>
+<script>
+var Q=[["Yo ___ la respuesta.", "yo", "saber", "I know the answer.", "Saber: facts"], ["Yo ___ nadar.", "yo", "saber", "I know how to swim.", "Saber: how to do something"], ["Yo ___ dónde vive Ana.", "yo", "saber", "I know where Ana lives.", "Saber: question word"], ["Yo ___ que tienes razón.", "yo", "saber", "I know that you are right.", "Saber: know that"], ["Yo ___ tocar la guitarra.", "yo", "saber", "I know how to play the guitar.", "Saber: how to do something"], ["Yo ___ cuándo empieza la clase.", "yo", "saber", "I know when the class starts.", "Saber: question word"], ["Yo ___ hablar español.", "yo", "saber", "I know how to speak Spanish.", "Saber: how to do something"], ["Yo ___ el nombre del profesor.", "yo", "saber", "I know the teacher's name.", "Saber: facts"], ["Yo ___ cocinar arroz.", "yo", "saber", "I know how to cook rice.", "Saber: how to do something"], ["Yo ___ quién es el presidente, pero no lo conozco.", "yo", "saber", "I know who the president is, but I do not know him personally.", "Tricky pair: saber = know a fact"], ["Yo ___ a María.", "yo", "conocer", "I know María.", "Conocer: people (personal a)"], ["Yo ___ Madrid.", "yo", "conocer", "I know Madrid.", "Conocer: places"], ["Yo ___ esa canción.", "yo", "conocer", "I know that song.", "Conocer: familiar with"], ["Yo ___ a tu hermana.", "yo", "conocer", "I know your sister.", "Conocer: people (personal a)"], ["Yo ___ este parque.", "yo", "conocer", "I know this park.", "Conocer: places"], ["Yo ___ un buen restaurante.", "yo", "conocer", "I know a good restaurant.", "Conocer: familiar with"], ["Yo ___ ese libro.", "yo", "conocer", "I know that book.", "Conocer: familiar with"], ["Yo ___ a mi profesor.", "yo", "conocer", "I know my teacher.", "Conocer: people (personal a)"], ["Yo ___ la biblioteca de mi ciudad.", "yo", "conocer", "I know my city's library.", "Conocer: places"], ["Yo ___ Barcelona.", "yo", "conocer", "I know Barcelona.", "Conocer: places"], ["¿Tú ___ dónde está la biblioteca?", "tu", "saber", "Do you know where the library is?", "Saber: question word"], ["¿Tú ___ hablar español?", "tu", "saber", "Do you know how to speak Spanish?", "Saber: how to do something"], ["Tú ___ la respuesta.", "tu", "saber", "You know the answer.", "Saber: facts"], ["¿Tú ___ que hoy es martes?", "tu", "saber", "Do you know that today is Tuesday?", "Saber: know that"], ["Tú ___ bailar muy bien.", "tu", "saber", "You know how to dance very well.", "Saber: how to do something"], ["¿Tú ___ cuándo es el examen?", "tu", "saber", "Do you know when the exam is?", "Saber: question word"], ["Tú ___ usar la computadora.", "tu", "saber", "You know how to use the computer.", "Saber: how to do something"], ["¿Tú ___ por qué está triste?", "tu", "saber", "Do you know why he is sad?", "Saber: question word"], ["Tú ___ cocinar.", "tu", "saber", "You know how to cook.", "Saber: how to do something"], ["¿Tú ___ el número de teléfono?", "tu", "saber", "Do you know the phone number?", "Saber: facts"], ["¿Tú ___ a mi profesor?", "tu", "conocer", "Do you know my teacher?", "Conocer: people (personal a)"], ["¿Tú ___ este parque?", "tu", "conocer", "Do you know this park?", "Conocer: places"], ["Tú ___ a Luis.", "tu", "conocer", "You know Luis.", "Conocer: people (personal a)"], ["¿Tú ___ la biblioteca?", "tu", "conocer", "Do you know the library?", "Conocer: places"], ["Tú ___ esa película.", "tu", "conocer", "You know that movie.", "Conocer: familiar with"], ["¿Tú ___ a mi hermana?", "tu", "conocer", "Do you know my sister?", "Conocer: people (personal a)"], ["Tú ___ México.", "tu", "conocer", "You know Mexico.", "Conocer: places"], ["¿Tú ___ un buen restaurante?", "tu", "conocer", "Do you know a good restaurant?", "Conocer: familiar with"], ["Tú ___ esta canción.", "tu", "conocer", "You know this song.", "Conocer: familiar with"], ["¿Tú ___ al director?", "tu", "conocer", "Do you know the principal?", "Conocer: people (personal a)"], ["Ella ___ dónde está el museo.", "el", "saber", "She knows where the museum is.", "Saber: question word"], ["Él ___ que tienes razón.", "el", "saber", "He knows that you are right.", "Saber: know that"], ["Mi abuelo ___ tocar la guitarra.", "el", "saber", "My grandfather knows how to play the guitar.", "Saber: how to do something"], ["Ella ___ cuándo empieza la clase.", "el", "saber", "She knows when the class starts.", "Saber: question word"], ["Él ___ la respuesta.", "el", "saber", "He knows the answer.", "Saber: facts"], ["La sopa ___ a ajo.", "el", "saber", "The soup tastes like garlic.", "Tricky pair: saber a = taste like"], ["Mi madre ___ cocinar muy bien.", "el", "saber", "My mother knows how to cook very well.", "Saber: how to do something"], ["Él ___ nadar.", "el", "saber", "He knows how to swim.", "Saber: how to do something"], ["Ella ___ el nombre de todos.", "el", "saber", "She knows everyone's name.", "Saber: facts"], ["El profesor ___ que no hay clase mañana.", "el", "saber", "The teacher knows that there is no class tomorrow.", "Saber: know that"], ["Ella ___ un buen restaurante.", "el", "conocer", "She knows a good restaurant.", "Conocer: familiar with"], ["Él ___ a María.", "el", "conocer", "He knows María.", "Conocer: people (personal a)"], ["Mi hermana ___ Barcelona.", "el", "conocer", "My sister knows Barcelona.", "Conocer: places"], ["Ella ___ esa canción.", "el", "conocer", "She knows that song.", "Conocer: familiar with"], ["Él ___ a tu hermano.", "el", "conocer", "He knows your brother.", "Conocer: people (personal a)"], ["La profesora ___ este libro.", "el", "conocer", "The teacher knows this book.", "Conocer: familiar with"], ["Mi padre ___ Madrid.", "el", "conocer", "My father knows Madrid.", "Conocer: places"], ["Ella ___ a su profesor.", "el", "conocer", "She knows her teacher.", "Conocer: people (personal a)"], ["Él ___ el museo.", "el", "conocer", "He knows the museum.", "Conocer: places"], ["María ___ a Luis.", "el", "conocer", "María knows Luis.", "Conocer: people (personal a)"], ["Nosotros ___ la respuesta.", "nos", "saber", "We know the answer.", "Saber: facts"], ["Nosotros ___ nadar.", "nos", "saber", "We know how to swim.", "Saber: how to do something"], ["Nosotros ___ dónde está la escuela.", "nos", "saber", "We know where the school is.", "Saber: question word"], ["Nosotros ___ que la clase empieza a las ocho.", "nos", "saber", "We know that the class starts at eight.", "Saber: know that"], ["Nosotros ___ cocinar arroz.", "nos", "saber", "We know how to cook rice.", "Saber: how to do something"], ["Nosotros ___ cuándo es el examen.", "nos", "saber", "We know when the exam is.", "Saber: question word"], ["Nosotros ___ hablar francés.", "nos", "saber", "We know how to speak French.", "Saber: how to do something"], ["Nosotros ___ el nombre del profesor.", "nos", "saber", "We know the teacher's name.", "Saber: facts"], ["Nosotros ___ bailar salsa.", "nos", "saber", "We know how to dance salsa.", "Saber: how to do something"], ["Nosotros ___ por qué no hay clase.", "nos", "saber", "We know why there is no class.", "Saber: question word"], ["Nosotros ___ esa canción.", "nos", "conocer", "We know that song.", "Conocer: familiar with"], ["Nosotros ___ a tu hermana.", "nos", "conocer", "We know your sister.", "Conocer: people (personal a)"], ["Nosotros ___ Barcelona.", "nos", "conocer", "We know Barcelona.", "Conocer: places"], ["Nosotros ___ este parque.", "nos", "conocer", "We know this park.", "Conocer: places"], ["Nosotros ___ un buen restaurante.", "nos", "conocer", "We know a good restaurant.", "Conocer: familiar with"], ["Nosotros ___ a María.", "nos", "conocer", "We know María.", "Conocer: people (personal a)"], ["Nosotros ___ la biblioteca.", "nos", "conocer", "We know the library.", "Conocer: places"], ["Nosotros ___ esa película.", "nos", "conocer", "We know that movie.", "Conocer: familiar with"], ["Nosotros ___ al director.", "nos", "conocer", "We know the principal.", "Conocer: people (personal a)"], ["Nosotros ___ México.", "nos", "conocer", "We know Mexico.", "Conocer: places"], ["Ellos ___ la respuesta.", "ellos", "saber", "They know the answer.", "Saber: facts"], ["Ellas ___ nadar.", "ellos", "saber", "They know how to swim.", "Saber: how to do something"], ["Ustedes ___ dónde está la biblioteca.", "ellos", "saber", "You know where the library is.", "Saber: question word"], ["Ellos ___ que no hay clase mañana.", "ellos", "saber", "They know that there is no class tomorrow.", "Saber: know that"], ["Mis hermanos ___ tocar la guitarra.", "ellos", "saber", "My brothers know how to play the guitar.", "Saber: how to do something"], ["Ellas ___ cuándo empieza la película.", "ellos", "saber", "They know when the movie starts.", "Saber: question word"], ["Los estudiantes ___ hablar español.", "ellos", "saber", "The students know how to speak Spanish.", "Saber: how to do something"], ["Ustedes ___ el número de teléfono.", "ellos", "saber", "You know the phone number.", "Saber: facts"], ["Ellos ___ cocinar.", "ellos", "saber", "They know how to cook.", "Saber: how to do something"], ["Mis padres ___ por qué estoy triste.", "ellos", "saber", "My parents know why I am sad.", "Saber: question word"], ["Ellos ___ a María.", "ellos", "conocer", "They know María.", "Conocer: people (personal a)"], ["Ellas ___ Barcelona.", "ellos", "conocer", "They know Barcelona.", "Conocer: places"], ["Ustedes ___ este parque.", "ellos", "conocer", "You know this park.", "Conocer: places"], ["Los profesores ___ un buen restaurante.", "ellos", "conocer", "The teachers know a good restaurant.", "Conocer: familiar with"], ["Ellos ___ esa canción.", "ellos", "conocer", "They know that song.", "Conocer: familiar with"], ["Mis amigos ___ a Luis.", "ellos", "conocer", "My friends know Luis.", "Conocer: people (personal a)"], ["Ellas ___ el museo.", "ellos", "conocer", "They know the museum.", "Conocer: places"], ["Ustedes ___ a mi profesor.", "ellos", "conocer", "You know my teacher.", "Conocer: people (personal a)"], ["Ellos ___ esa película.", "ellos", "conocer", "They know that movie.", "Conocer: familiar with"], ["Las estudiantes ___ Madrid.", "ellos", "conocer", "They know Madrid.", "Conocer: places"]];
+var PAIRS={"yo": ["sé", "conozco"], "tu": ["sabes", "conoces"], "el": ["sabe", "conoce"], "nos": ["sabemos", "conocemos"], "ellos": ["saben", "conocen"]};
+var deck=[],pos=0,answered=false,cur=null,completed="";
+function shuffleDeck(){deck=Q.slice();for(var i=deck.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=deck[i];deck[i]=deck[j];deck[j]=t;}pos=0;}
+function shuffle2(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function $(id){return document.getElementById(id);}
+function show(){
+var q=deck[pos];var pair=PAIRS[q[1]];var correct=q[2]==='saber'?pair[0]:pair[1];
+var opts=shuffle2(pair.slice());completed=q[0].replace('___',correct);
+cur={q:q,opts:opts,ans:opts.indexOf(correct),correct:correct};answered=false;
+$('q-sen').textContent=q[0];
+$('trans').style.display='none';$('trans').textContent='';
+$('btn-trans').style.display='inline-block';
+$('reveal').className='reveal';$('btn-hear').style.display='none';
+$('feedback').textContent='';$('feedback').className='feedback';
+var ob=$('opts');ob.innerHTML='';
+for(var o=0;o<opts.length;o++){var b=document.createElement('button');b.type='button';b.className='btn alt';b.textContent=opts[o];(function(ix){b.addEventListener('click',function(){answer(ix);});})(o);ob.appendChild(b);}
+$('card-count').textContent='Question '+(pos+1)+' of '+deck.length;
+}
+function answer(i){
+if(answered)return;answered=true;var q=cur.q;
+var f=$('feedback');
+if(i===cur.ans){f.textContent='✓ ¡Correcto!';f.className='feedback ok';}else{f.textContent='Not quite — the answer is '+cur.correct+'.';f.className='feedback bad';}
+$('reveal-sen').textContent=completed;
+$('reveal-en').textContent=q[3];
+$('reveal-note').textContent=q[4];
+$('trans').textContent=q[3];$('trans').style.display='block';
+$('btn-trans').style.display='none';
+$('reveal').className='reveal show';$('btn-hear').style.display='inline-block';
+}
+function showTrans(){var q=deck[pos];$('trans').textContent=q[3];$('trans').style.display='block';}
+function hearIt(){
+try{speechSynthesis.cancel();}catch(e){}
+var u=new SpeechSynthesisUtterance(completed);u.lang='es-MX';u.rate=0.85;
+var vs=[];try{vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.toLowerCase().indexOf('es-')===0;});}catch(e){}
+var mx=vs.filter(function(v){return v.lang.toLowerCase().indexOf('es-mx')===0;});
+var us=vs.filter(function(v){return v.lang.toLowerCase().indexOf('es-us')===0;});
+if(mx.length){u.voice=mx[0];}else if(us.length){u.voice=us[0];}else if(vs.length){u.voice=vs[0];}
+speechSynthesis.speak(u);
+}
+function next(){pos++;if(pos>=deck.length){shuffleDeck();}show();}
+$('btn-next').addEventListener('click',next);
+$('btn-shuffle').addEventListener('click',function(){shuffleDeck();show();});
+$('btn-trans').addEventListener('click',showTrans);
+$('btn-hear').addEventListener('click',hearIt);
+shuffleDeck();show();
+
+</script>
 <h1>Saber vs. conocer: two ways to say “to know”</h1>
 <p>Like “to be,” the English verb “to know” splits into two verbs in Spanish. <i>Saber</i> is about knowing facts and knowing how to do something. <i>Conocer</i> is about being familiar with a person, a place, or a thing. Once you see the difference, the choice is usually easy.</p>
 <h2>The present tense forms</h2>
