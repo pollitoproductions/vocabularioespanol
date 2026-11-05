@@ -135,7 +135,7 @@ function opts(extra,head,countLabel){
   (countLabel?'<label>'+countLabel+' <select id="n"><option>10</option><option selected>20</option><option>30</option><option>40</option><option>50</option><option>60</option><option>70</option><option>80</option><option>90</option><option>100</option></select></label>':'')+'</div>'+
   (extra?'<div class="opt-row">'+(head?'<span class="opt-head">'+head+'</span>':'')+extra+'</div>':'')+'</div>';
 }
-function setMode(m){mode=m;document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.m===m));
+function setMode(m){enSayAbort();mode=m;document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.m===m));
   if(m==='flash')flashSetup();else if(m==='quiz')quizSetup();else if(m==='el')elSetup();else knownSetup();}
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
 const pronChk=$('#pron');if(pronChk){pronChk.checked=pronEnabled;pronChk.addEventListener('change',e=>{pronEnabled=e.target.checked;try{localStorage.setItem('vocabPronunciation',pronEnabled?'1':'0')}catch(_){}})}
@@ -267,6 +267,79 @@ function sayGate(w,eligible){
   };
 }
 
+/* EN-SAY-START: "say it in English" — answer a Spanish→English quiz question by speaking the English meaning. Recognition is en-US (en-GB fallback). A correct spoken answer runs the same quizAnswer flow as tapping the right choice (score, feedback, ding, advance); it does NOT satisfy the Say-it-to-advance Spanish gate — that still applies for marking when it is on. Tap-to-stop scores the final transcript, like the cognates Say-it. */
+function enSayNorm(s){let x=(s||'').toLowerCase().trim().replace(/[áàäâ]/g,'a').replace(/[éèëê]/g,'e').replace(/[íìïî]/g,'i').replace(/[óòöô]/g,'o').replace(/[úùüû]/g,'u').replace(/[^a-z0-9ñ ]/g,' ').replace(/\s+/g,' ').trim();while(/^(the|a|an|to) /.test(x))x=x.replace(/^(the|a|an|to) /,'');return x.trim()}
+function enSayMatch(transcript,answer){const t=enSayNorm(transcript);if(!t)return false;if(t===enSayNorm(answer))return true;const parts=String(answer||'').split('/');if(parts.length>1){for(let i=0;i<parts.length;i++){if(t===enSayNorm(parts[i]))return true}}return false}
+const enSR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let enRec=null,enAttempt=0,enTimer=null,enListening=false,enTried=false;
+function enSayAbort(){enAttempt++;enListening=false;if(enTimer){clearTimeout(enTimer);enTimer=null}if(enRec){try{enRec.abort()}catch(e){}}enRec=null}
+function enSayStart(w,answerFn){
+  if(!enSR||!answerFn)return;
+  const mic=$('#sayen'),status=$('#enstatus');
+  if(!mic||!status)return;
+  if(!document.getElementById('ensay-style')){const st=document.createElement('style');st.id='ensay-style';st.textContent='#sayen.listening{background:#c0392b!important;color:#fff!important;animation:saypulse 1s infinite}@keyframes saypulse{50%{opacity:.55}}';document.head.appendChild(st)}
+  const setEnListening=on=>{enListening=on;mic.classList.toggle('listening',on);if(on)mic.textContent='\u25cf Listening\u2026 \u2014 tap to stop';else mic.textContent=enTried?'🎤 Try again':'🎤 Say it in English'};
+  let stopping=false;
+  const begin=()=>{
+    pracAudioEnsure();
+    /* iPhone fix: free the speech audio session first, or iOS may never engage the mic */
+    if(window.speechSynthesis){try{speechSynthesis.cancel()}catch(e){}}
+    if(enRec){try{enRec.abort()}catch(e){}}
+    enAttempt++;const my=enAttempt;enTried=true;stopping=false;
+    let done=false,heardAny=false,li=0;
+    const langs=['en-US','en-GB'];
+    status.textContent='Listening…';setEnListening(true);
+    clearTimeout(enTimer);
+    enTimer=setTimeout(()=>{if(my===enAttempt&&enListening){stopping=true;try{enRec.stop()}catch(e){}setEnListening(false);status.textContent='Didn\u2019t catch that \u2014 try again.'}},12000);
+    const nextLang=()=>{
+      if(li<langs.length-1){li++;startWith(langs[li])}
+      else{done=true;setEnListening(false);status.textContent='This phone\u2019s speech service doesn\u2019t offer English \u2014 tap an answer instead.'}
+    };
+    const startWith=lang=>{
+      if(my!==enAttempt)return;
+      let rec;try{rec=new enSR()}catch(e){setEnListening(false);status.textContent='Speech check isn\u2019t available in this browser.';return}
+      rec.lang=lang;rec.continuous=false;rec.interimResults=false;rec.maxAlternatives=1;
+      rec.onresult=ev=>{
+        if(my!==enAttempt||done)return;done=true;heardAny=true;clearTimeout(enTimer);setEnListening(false);
+        const heard=(ev.results[0]&&ev.results[0][0])?ev.results[0][0].transcript:'';
+        try{rec.stop()}catch(e){}
+        if(enSayMatch(heard,w.en)){status.textContent='✓ Heard it — nice work!';answerFn(w,null)}
+        else{status.textContent='Heard: “'+heard+'” — not quite. Try again.';mic.textContent='🎤 Try again'}
+      };
+      rec.onerror=ev=>{
+        if(my!==enAttempt||done)return;
+        const err=ev.error||'';
+        if(err==='language-not-supported'){if(stopping){done=true;setEnListening(false);status.textContent='Didn\u2019t catch that \u2014 try again.';mic.textContent='🎤 Try again';return}nextLang();return}
+        done=true;heardAny=true;clearTimeout(enTimer);setEnListening(false);
+        if(err==='not-allowed'||err==='service-not-allowed'){status.textContent='Microphone access was denied — tap an answer instead.'}
+        else if(err==='no-speech'){status.textContent='Didn’t hear anything — try again.';mic.textContent='🎤 Try again'}
+        else if(err==='network'){status.textContent='Speech service isn’t reachable right now — tap an answer instead.'}
+        else{status.textContent='Something went wrong listening — try again.'}
+      };
+      rec.onend=()=>{
+        if(my!==enAttempt||done)return;
+        clearTimeout(enTimer);
+        /* user stop or timeout with no result: end cleanly, never retry another language */
+        if(stopping){setEnListening(false);status.textContent='Didn\u2019t catch that \u2014 try again.';mic.textContent='🎤 Try again';return}
+        /* iOS Safari often ends recognition silently with no result and no error: retry the next language */
+        if(!heardAny&&li<langs.length-1){li++;startWith(langs[li]);return}
+        setEnListening(false);
+        if(!heardAny){status.textContent='Didn’t catch that — try again.';mic.textContent='🎤 Try again';return}
+      };
+      enRec=rec;
+      try{rec.start()}catch(e){clearTimeout(enTimer);setEnListening(false);status.textContent='Couldn’t start listening — try again.'}
+    };
+    startWith(langs[0]);
+  };
+  mic.onclick=()=>{
+    /* tap while listening = stop, so the user is never stuck on Listening… — the final transcript still scores (see onresult/onend) */
+    if(enListening){stopping=true;clearTimeout(enTimer);try{enRec.stop()}catch(e){}setEnListening(false);return}
+    begin();
+  };
+  begin();
+}
+/* EN-SAY-END */
+
 /* quiz */
 let qs=[],qi=0,score=0,qdir='es';
 function quizSetup(){
@@ -285,14 +358,15 @@ function quizShow(){
   const ch=shuffle([w].concat(wrong));
   emojiSeenThisQuestion=emojiOn;quizAwaitingAnswer=true;
   el.innerHTML='<p class="stat">Question '+(qi+1)+' of '+qs.length+' · Score '+score+'</p><div class="bar"><i style="width:'+(qi/qs.length*100)+'%"></i></div><div class="card" style="cursor:default"><div class="em">'+w.em+'</div><div class="big">'+(qdir==='es'?w.es:w.en)+'</div></div><div class="choices" id="ch"></div><div class="act" id="nx"></div>';
-  if(qdir==='es'&&pronEnabled){$('#nx').innerHTML='<button class="alt" id="spkq">🔊 Escuchar</button>';$('#spkq').onclick=()=>speakWord(w.es)}
-  ch.forEach(x=>{const b=document.createElement('button');b.textContent=x[key];b.onclick=()=>{quizAwaitingAnswer=false;
+  if(qdir==='es'){let nxHtml='';if(pronEnabled)nxHtml+='<button class="alt" id="spkq">🔊 Escuchar</button>';if(enSR)nxHtml+='<button class="alt" id="sayen">🎤 Say it in English</button><div class="stat" id="enstatus"></div><div class="stat">🎤 Your voice is sent to your browser\'s speech service to check it — it isn\'t stored.</div>';$('#nx').innerHTML=nxHtml;const sp=$('#spkq');if(sp)sp.onclick=()=>speakWord(w.es);const se=$('#sayen');if(se)se.onclick=()=>enSayStart(w,quizAnswer)}
+  const quizAnswer=(x,clickedBtn)=>{quizAwaitingAnswer=false;enSayAbort();
     [...$('#ch').children].forEach(c=>{c.disabled=true;if(c.textContent===ans)c.classList.add('good')});
     const eligible=(x===w)&&!emojiSeenThisQuestion;let markedKnown=false;
-    if(x===w)score++;else b.classList.add('bad');
+    if(x===w)score++;else if(clickedBtn)clickedBtn.classList.add('bad');
     if(eligible&&!known[w.es]&&!sayAdv){known[w.es]=1;save();markedKnown=true}
     speakWord(w.es);
-    if(sayAdv){sayGate(w,eligible)}else{$('#nx').innerHTML='<button id="next">'+(qi+1>=qs.length?'See score':'Next')+'</button>'+(markedKnown?' <span class="stat">✓ Marked as known — answered with no emoji hint</span>':'');$('#next').focus();$('#next').onclick=()=>{qi++;quizShow()}}};$('#ch').appendChild(b)});
+    if(sayAdv){sayGate(w,eligible)}else{$('#nx').innerHTML='<button id="next">'+(qi+1>=qs.length?'See score':'Next')+'</button>'+(markedKnown?' <span class="stat">✓ Marked as known — answered with no emoji hint</span>':'');$('#next').focus();$('#next').onclick=()=>{qi++;quizShow()}}};
+  ch.forEach(x=>{const b=document.createElement('button');b.textContent=x[key];b.onclick=()=>quizAnswer(x,b);$('#ch').appendChild(b)});
 }
 
 /* el / la */
