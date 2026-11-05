@@ -1711,30 +1711,37 @@ function basisQuat(radial) {
     // each sign sits on the APPROACH-side face and faces the walker
     // heading for that sector — INDUSTRIAL on the agriculture face
     // (z -0.9, facing -Z) so a walker in agriculture reads the
-    // destination before walking through, AGRICULTURAL on the
-    // technology face (z +0.9, facing +Z) for the walker heading the
-    // other way. The previous mounting had them backwards: each sign
+    // destination before walking through, and on the technology face
+    // (z +0.9, facing +Z) the sign names what is through the door in
+    // Brant's words: TO LEARNING TERMINALS, or TO REVIEW TERMINALS at
+    // the residential approach (Nov 5). The previous mounting had them
+    // backwards: each sign
     // faced only its own sector, so it read from the side you were
     // already standing on (Brant's screenshots). Single-sided, one
     // plate per face — never a gapped pair — and from either side
     // exactly one sign (the destination) is visible, the other being
     // backface-culled.
-    mountAxialSign('INDUSTRIAL SECTOR', '#59d6ff', 5.5, d, 148, -0.9, -1, false);
-    mountAxialSign('AGRICULTURAL SECTOR', '#39d97a', 5.5, d, 148, 0.9, 1, false);
-    // Brant (Nov 5): "To Learning Terminals" beside every bulkhead
-    // doorway, industrial face — the walker heading for agriculture
-    // reads it before walking through. Green, like the sector sign
-    // for agriculture; offset 0.12 rad (~18 m) so it never overlaps
-    // the doorway frame or the sector sign. Single-sided, facing +Z.
-    mountAxialSign('TO LEARNING TERMINALS', '#39d97a', 5.5, d + 0.12, 148, 0.9, 1, false);
+    // Brant (Nov 5, from his screenshots): the sign ABOVE each doorway
+    // names the destination, and the text switches with the doorway
+    // angle — one sign per face, centred on the doorway, never offset
+    // to the side (the offset signs floated on the wall, and at the
+    // residential doorway the two offset signs landed on the same spot
+    // and z-fought into one garbled plate). Industrial face: TO
+    // LEARNING TERMINALS into agriculture, TO REVIEW TERMINALS at the
+    // residential approach (pi/2), where the review terminals stand.
+    // Agriculture face: INDUSTRIAL SECTOR everywhere except the
+    // residential approach, where RESIDENTIAL ZONE replaces it — the
+    // old floating sign over the approach (z 12) is gone; the label
+    // now lives above the doorway where it belongs. Single-sided, one
+    // plate per face, exactly as the sector signs were.
+    if (d === Math.PI / 2) {
+      mountAxialSign('RESIDENTIAL ZONE', '#ffc27a', 5.5, d, 148, -0.9, -1, false);
+      mountAxialSign('TO REVIEW TERMINALS', '#ffd76a', 5.5, d, 148, 0.9, 1, false);
+    } else {
+      mountAxialSign('INDUSTRIAL SECTOR', '#59d6ff', 5.5, d, 148, -0.9, -1, false);
+      mountAxialSign('TO LEARNING TERMINALS', '#39d97a', 5.5, d, 148, 0.9, 1, false);
+    }
   }
-  // Brant (Nov 5): one "To Review Terminals" sign on the industrial
-  // face, beside the main residential approach (bulkhead doorway
-  // 1.5708 — the approach the RESIDENTIAL ZONE sign stands over at
-  // z 12). The review terminals stand in the town squares around the
-  // industrial side, so arrivals from the bulkhead read it on their
-  // way in. Gold, like the review terminals; single-sided, +Z.
-  mountAxialSign('TO REVIEW TERMINALS', '#ffd76a', 5.5, 1.5708 + 0.12, 148, 0.9, 1, false);
 }
 // Industrial enclosure: a ceiling shell overhead (radius 140) across the
 // whole industrial half, so from inside it you can no longer see across
@@ -2038,9 +2045,10 @@ function basisQuat(radial) {
 // are emissive MeshBasicMaterial). Long tangential runs are segmented
 // (16 m) so they follow the deck curve instead of cutting through it;
 // the plaza is a small disc (sag 0.11 m) ringed with planters. A
-// RESIDENTIAL ZONE sign in the existing fitted-sign style stands over
-// the main approach: the bulkhead doorway at angle 1.5708, facing
-// arrivals from the bulkhead.
+// The RESIDENTIAL ZONE sign stands above the main approach doorway
+// (bulkhead doorway at angle 1.5708, agriculture face), replacing the
+// INDUSTRIAL SECTOR sign there — it used to float over the approach
+// at z 12 (Brant: it looked like it was floating in the doorway).
 // Nov 1 expansion: the city proper gains houses — four rows flanking
 // the main street and two side lanes, plus a second pair of cross
 // streets, a trades row (smithy, carpenter, tailor, baker), a
@@ -2100,8 +2108,6 @@ function basisQuat(radial) {
     const disc = new THREE.Mesh(new THREE.CylinderGeometry(6, 6, 0.2, 24), plazaMat);
     g.add(disc);
   }
-  // RESIDENTIAL ZONE sign over the main approach (bulkhead doorway 1.5708, z 12, facing arrivals).
-  mountAxialSign('RESIDENTIAL ZONE', '#ffc27a', 5.5, 1.5708, RADIUS - 4.2, 12, -1, true);
   // Street lamps: emissive heads, no real lights.
   for (const [la, lz] of [[1.42, 60], [1.42, 110], [1.42, 160], [1.42, 210], [1.42, 260], [1.42, 285], [1.49, 172], [1.61, 188]]) {
     const g = cityGroup(la, lz, 0.4);
