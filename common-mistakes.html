@@ -39,6 +39,88 @@ ul.links span{display:block;font-size:.88rem;color:#333333}
 @media(max-width:520px){ul.words{columns:1}.keyboard-controls{grid-template-columns:1fr}}</style></head>
 <body><main>
 <a class="back" href="/">&larr; Back to home</a>
+<style>
+.tool{background:#fff;border:1px solid #dddddd;border-radius:18px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,.10);margin:18px 0 26px}
+.tool h2{font-size:1.3rem;letter-spacing:0;text-transform:none;color:#000000;margin:0 0 8px}
+.tool button.btn{display:inline-block;margin:6px 8px 0 0;padding:12px 22px;border-radius:12px;background:#f97316;color:#000000;font-weight:700;letter-spacing:.04em;box-shadow:0 3px 0 #333333;border:0;cursor:pointer;font:inherit;-webkit-appearance:none;appearance:none}
+.tool button.btn:hover,.tool button.btn:focus-visible{background:#000000;color:#fff}
+.tool button.btn.alt{background:#fff;color:#000000;border:2px solid #000000;box-shadow:none;padding:10px 20px;cursor:pointer;font:inherit}
+.tool .qbox{border:2px solid #000000;border-radius:14px;padding:26px 16px;text-align:center;min-height:110px;display:flex;flex-direction:column;justify-content:center}
+.tool .qbox b{font-size:1.55rem;color:#000000;line-height:1.3}
+.tool .qbox span{font-size:.85rem;color:#333333;margin-top:8px}
+.tool .count{font-size:.85rem;color:#333333;margin:12px 0 4px}
+.tool .ctl{display:flex;gap:10px;margin-top:14px}
+.tool .ctl button{flex:1;padding:12px 8px;text-align:center;margin:0}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px}
+.opts button{padding:14px 8px;font-size:1.05rem;margin:0}
+.trans{font-size:.95rem;color:#333333;margin:8px 0;min-height:1.4em}
+.reveal{display:none;border-top:1px solid #dddddd;margin-top:12px;padding-top:12px}
+.reveal.show{display:block}
+.reveal b{color:#000000;font-size:1.15rem}
+.feedback{min-height:1.4em;font-size:.95rem;margin:6px 0;color:#333333}
+.feedback.ok{color:#1f5c3f;font-weight:700}
+.feedback.bad{color:#8a3b00}
+</style>
+<div class="tool">
+<h2>False friends practice</h2>
+<p>50 Spanish words that look like English words — but mean something else. Pick the real meaning. One of the choices is the English lookalike that fools everyone.</p>
+<div class="qbox"><b id="q-sen"></b><span id="q-sub"></span></div>
+<div class="opts" id="opts"></div>
+<p class="feedback" id="feedback"></p>
+<div class="reveal" id="reveal"><b id="reveal-sen"></b><p id="reveal-en"></p><p id="reveal-note"></p><button class="btn alt" id="btn-hear" type="button" style="display:none">🔊 Hear it</button></div>
+<p class="count" id="card-count"></p>
+<div class="ctl"><button class="btn" id="btn-next" type="button">Next card</button> <button class="btn alt" id="btn-shuffle" type="button">Shuffle</button></div>
+<noscript><p>Turn on JavaScript to use the false friends tool.</p></noscript>
+</div>
+<script>
+var Q=[["embarazada", "Ella está embarazada.", "pregnant", "embarrassed", "Looks like 'embarrassed' but means pregnant — 'embarrassed' is 'avergonzado'."], ["éxito", "Tuvo mucho éxito en su trabajo.", "success", "exit", "Looks like 'exit' but means success — 'exit' is 'salida'."], ["librería", "Compré este libro en la librería.", "bookstore", "library", "Looks like 'library' but means bookstore — 'library' is 'biblioteca'."], ["largo", "El río es muy largo.", "long", "large", "Looks like 'large' but means long — 'large' is 'grande'."], ["actualmente", "Actualmente vivo en México.", "currently", "actually", "Looks like 'actually' but means currently — 'actually' is 'en realidad'."], ["asistir", "Voy a asistir a la clase de español.", "to attend", "to assist", "Looks like 'to assist' but means to attend — 'to assist' is 'ayudar'."], ["recordar", "No puedo recordar su nombre.", "to remember", "to record", "Looks like 'to record' but means to remember — 'to record' is 'grabar'."], ["pretender", "Pretende ser médico.", "to try", "to pretend", "Looks like 'to pretend' but means to try or intend — 'to pretend' is 'fingir'."], ["soportar", "No puedo soportar el ruido.", "to put up with", "to support", "Looks like 'to support' but means to put up with — 'to support' is 'apoyar'."], ["molestar", "No me molestes, por favor.", "to bother", "to molest", "Looks like 'to molest' but means to bother."], ["realizar", "Realizó el proyecto a tiempo.", "to carry out", "to realize", "Looks like 'to realize' but means to carry out — 'to realize' (to understand) is 'darse cuenta'."], ["colegio", "Mi hijo va al colegio todos los días.", "school", "college", "Looks like 'college' but means school (for children) — 'college' is 'universidad'."], ["lectura", "La lectura es interesante.", "reading", "lecture", "Looks like 'lecture' but means reading — 'lecture' is 'conferencia'."], ["sensible", "Es una persona muy sensible.", "sensitive", "sensible", "Looks like 'sensible' but means sensitive — 'sensible' (sensible) is 'sensato'."], ["constipado", "Estoy constipado hoy.", "having a cold", "constipated", "Looks like 'constipated' but means having a cold — 'constipated' is 'estreñido'."], ["carpeta", "Guarda los papeles en la carpeta.", "folder", "carpet", "Looks like 'carpet' but means folder — 'carpet' is 'alfombra'."], ["actual", "El presidente actual es nuevo.", "current", "actual", "Looks like 'actual' but means current — 'actual' in English is 'real' in Spanish."], ["advertir", "Te advierto del peligro.", "to warn", "to advertise", "Looks like 'to advertise' but means to warn — 'to advertise' is 'anunciar'."], ["arena", "Los niños juegan en la arena.", "sand", "arena", "Looks like 'arena' but means sand — 'arena' (the venue) is 'estadio'."], ["argumento", "El argumento de la película es triste.", "plot", "argument", "Looks like 'argument' but means the plot of a story — 'argument' (a disagreement) is 'discusión'."], ["balón", "Patea el balón.", "ball", "balloon", "Looks like 'balloon' but means ball — 'balloon' is 'globo'."], ["campo", "Vivo en el campo.", "countryside", "camp", "Looks like 'camp' but means countryside — 'camp' is 'campamento'."], ["casualidad", "Fue una casualidad, no un plan.", "coincidence", "casualty", "Looks like 'casualty' but means coincidence — 'casualty' is 'víctima'."], ["compromiso", "Tiene un compromiso importante mañana.", "commitment", "compromise", "Looks like 'compromise' but means a commitment — 'compromise' is 'acuerdo'."], ["conductor", "El conductor del autobús es amable.", "driver", "conductor", "Looks like 'conductor' (orchestra) but means driver — an orchestra conductor is 'director'."], ["contestar", "Contesta la pregunta, por favor.", "to answer", "to contest", "Looks like 'to contest' but means to answer — 'to contest' is 'impugnar'."], ["decepción", "Qué decepción, no ganó el premio.", "disappointment", "deception", "Looks like 'deception' but means disappointment — 'deception' is 'engaño'."], ["desgracia", "Qué desgracia, perdió su trabajo.", "misfortune", "disgrace", "Looks like 'disgrace' but means misfortune — 'disgrace' is 'vergüenza'."], ["discutir", "Discuten el problema en clase.", "to discuss", "to disgust", "Looks like 'to disgust' but means to discuss — 'to disgust' is 'dar asco'."], ["educado", "Es un niño muy educado.", "polite", "educated", "Looks like 'educated' but means polite — 'educated' is 'culto'."], ["fábrica", "Trabaja en una fábrica de zapatos.", "factory", "fabric", "Looks like 'fabric' but means factory — 'fabric' is 'tela'."], ["firma", "Escribe tu firma aquí.", "signature", "firm", "Looks like 'firm' but means signature — 'firm' (company) is 'empresa'."], ["globo", "El niño tiene un globo rojo.", "balloon", "globe", "Looks like 'globe' but means balloon — 'globe' is 'globo terráqueo'."], ["introducir", "Introduce la llave en la cerradura.", "to insert", "to introduce", "Looks like 'to introduce' but means to insert — 'to introduce' (a person) is 'presentar'."], ["noticia", "Vi la noticia en la televisión.", "news", "notice", "Looks like 'notice' but means news — 'notice' is 'aviso'."], ["pan", "Como pan todos los días.", "bread", "pan", "Looks like 'pan' but means bread — 'pan' (cooking) is 'sartén'."], ["pariente", "Es pariente mío.", "relative", "parent", "Looks like 'parent' but means relative — 'parent' is 'padre' or 'madre'."], ["particular", "Tiene un coche particular.", "private", "particular", "Looks like 'particular' but usually means private — 'particular' (picky) is 'exigente'."], ["profesión", "¿Cuál es tu profesión?", "profession", "professor", "Looks like 'professor' but means profession — 'professor' is 'profesor'."], ["propaganda", "Vi la propaganda en la televisión.", "advertising", "propaganda", "Looks like 'propaganda' but usually just means advertising — political propaganda is 'propaganda política'."], ["quitar", "Quita la mesa, por favor.", "to remove", "to quit", "Looks like 'to quit' but means to remove — 'to quit' is 'dejar'."], ["receta", "Sigue la receta para hacer el pan.", "recipe", "receipt", "Looks like 'receipt' but means recipe — 'receipt' is 'recibo'. (It also means a doctor's prescription.)"], ["red", "La red no funciona hoy.", "network", "red", "Looks like 'red' but means network — 'red' (the color) is 'rojo'."], ["regular", "¿Cómo estás? — Regular.", "so-so", "regular", "Looks like 'regular' but means so-so, not great — 'regular' (normal) is 'normal'."], ["ropa", "La ropa está limpia.", "clothes", "rope", "Looks like 'rope' but means clothes — 'rope' is 'cuerda'."], ["sano", "Es una persona sana.", "healthy", "sane", "Looks like 'sane' but means healthy — 'sane' is 'cuerdo'."], ["simpático", "Es un hombre muy simpático.", "nice", "sympathetic", "Looks like 'sympathetic' but means nice — 'sympathetic' is 'compasivo'."], ["suceso", "El suceso ocurrió ayer.", "event", "success", "Looks like 'success' but means event — 'success' is 'éxito'."], ["vaso", "Un vaso de agua, por favor.", "glass", "vase", "Looks like 'vase' but means a (drinking) glass — 'vase' is 'florero'."], ["viaje", "Hice un viaje a España.", "trip", "voyage", "Looks like 'voyage' but means any trip — a sea voyage is 'travesía'."]];
+var deck=[],pos=0,answered=false,cur=null,completed="";
+function shuffleDeck(){deck=Q.slice();for(var i=deck.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=deck[i];deck[i]=deck[j];deck[j]=t;}pos=0;}
+function shuffle2(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function $(id){return document.getElementById(id);}
+function show(){
+var q=deck[pos];
+// Choices: the true meaning, the lookalike trap, and two other real
+// meanings from the bank (never the true meaning or the trap, so the
+// four choices are always distinct).
+var pool=Q.map(function(x){return x[2];}).filter(function(m){return m!==q[2]&&m!==q[3];});
+var d1=pool[Math.floor(Math.random()*pool.length)];
+var pool2=pool.filter(function(m){return m!==d1;});
+var d2=pool2[Math.floor(Math.random()*pool2.length)];
+var opts=shuffle2([q[2],q[3],d1,d2]);completed=q[1];
+cur={q:q,opts:opts,ans:opts.indexOf(q[2])};answered=false;
+$('q-sen').textContent=q[0];
+$('q-sub').textContent=q[1]+' — What does '+q[0]+' mean?';
+$('reveal').className='reveal';$('btn-hear').style.display='none';
+$('feedback').textContent='';$('feedback').className='feedback';
+var ob=$('opts');ob.innerHTML='';
+for(var o=0;o<opts.length;o++){var b=document.createElement('button');b.type='button';b.className='btn alt';b.textContent=opts[o];(function(ix){b.addEventListener('click',function(){answer(ix);});})(o);ob.appendChild(b);}
+$('card-count').textContent='Question '+(pos+1)+' of '+deck.length;
+}
+function answer(i){
+if(answered)return;answered=true;var q=cur.q;
+var f=$('feedback');
+if(i===cur.ans){f.textContent='✓ ¡Correcto!';f.className='feedback ok';}else{f.textContent='Not quite — the answer is '+q[2]+'.';f.className='feedback bad';}
+$('reveal-sen').textContent=q[1];
+$('reveal-en').textContent='"'+q[0]+'" means "'+q[2]+'".';
+$('reveal-note').textContent=q[4];
+$('reveal').className='reveal show';$('btn-hear').style.display='inline-block';
+}
+function hearIt(){
+try{speechSynthesis.cancel();}catch(e){}
+var u=new SpeechSynthesisUtterance(completed);u.lang='es-MX';u.rate=0.85;
+var vs=[];try{vs=speechSynthesis.getVoices().filter(function(v){return v.lang&&v.lang.toLowerCase().indexOf('es-')===0;});}catch(e){}
+var mx=vs.filter(function(v){return v.lang.toLowerCase().indexOf('es-mx')===0;});
+var us=vs.filter(function(v){return v.lang.toLowerCase().indexOf('es-us')===0;});
+if(mx.length){u.voice=mx[0];}else if(us.length){u.voice=us[0];}else if(vs.length){u.voice=vs[0];}
+speechSynthesis.speak(u);
+}
+function next(){pos++;if(pos>=deck.length){shuffleDeck();}show();}
+$('btn-next').addEventListener('click',next);
+$('btn-shuffle').addEventListener('click',function(){shuffleDeck();show();});
+$('btn-hear').addEventListener('click',hearIt);
+shuffleDeck();show();
+</script>
 <h1>Common mistakes English speakers make in Spanish</h1>
 <p>Everyone makes mistakes when learning a language, and most of them are predictable. Knowing the common ones ahead of time makes them easier to catch. Here are the ones that trip up English speakers most often.</p>
 <h2>False friends</h2>
