@@ -241,7 +241,7 @@ fcard.addEventListener('click',flip);
 fcard.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();flip();}});
 function norm(s){return s.toLowerCase().trim().replace(/[.,;:!?¿¡"']/g,'').replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i').replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/\s+/g,' ');}
 function normEn(s){return norm(s.replace(/\([^)]*\)/g,' ')).replace(/^to\s+/,'');}
-function enMatch(heard,want){var h=normEn(heard);if(h===normEn(want)){return true;}var first=want.split(/[,;]/)[0];return h===normEn(first);}
+function enMatch(heard,want){var h=normEn(heard);if(h===normEn(want)){return true;}var parts=want.split(/[,;]/);for(var i=0;i<parts.length;i++){if(h===normEn(parts[i])){return true;}}return false;}
 var recog=null,listening=false;
 function setFeedback(msg,cls){var f=document.getElementById('feedback');f.textContent=msg;f.className='feedback'+(cls?' '+cls:'');}
 function stopListen(){if(recog){try{recog.abort();}catch(e){}}listening=false;var b=document.getElementById('btn-say');b.classList.remove('say-listening');b.textContent='🎤 Say it';}

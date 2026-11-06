@@ -5607,7 +5607,12 @@ function spokenMatchesEn(spoken, target) {
       .replace(/^(the|a|an)\s+/, '').replace(/^to\s+/, '')
       .replace(/\s+/g, ' ').trim();
   };
-  return strip(spoken) === strip(target);
+  if (strip(spoken) === strip(target)) return true;
+  const parts = target.split(/[,;]/);
+  for (let i = 0; i < parts.length; i++) {
+    if (strip(spoken) === strip(parts[i])) return true;
+  }
+  return false;
 }
 function startToolListening() {
   try {
