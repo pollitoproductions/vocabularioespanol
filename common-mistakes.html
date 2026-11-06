@@ -70,7 +70,7 @@ ul.links span{display:block;font-size:.88rem;color:#333333}
 <div class="qbox"><b id="q-sen"></b><span id="q-sub"></span><span id="q-not" class="not"></span></div>
 <div class="opts" id="opts"></div>
 <p class="feedback" id="feedback"></p>
-<div class="reveal" id="reveal"><b id="reveal-sen"></b><p id="reveal-en"></p><p id="reveal-note"></p><button class="btn alt" id="btn-hear" type="button" style="display:none">🔊 Hear it</button> <button class="btn alt" id="btn-say" type="button" style="display:none">🎤 Decir en inglés</button><p class="trans" id="say-privacy" style="display:none">Tu voz se envía al servicio de voz de tu navegador para comprobarla; no se guarda.</p><p class="feedback" id="say-feedback"></p></div>
+<div class="reveal" id="reveal"><b id="reveal-sen"></b><p id="reveal-en"></p><p id="reveal-note"></p><button class="btn alt" id="btn-hear" type="button" style="display:none">🔊 Hear it</button> <button class="btn alt" id="btn-say" type="button" style="display:none">🎤 Say it in Spanish</button><p class="trans" id="say-privacy" style="display:none">Voice input is checked by your browser speech service. Nothing is stored.</p><p class="feedback" id="say-feedback"></p></div>
 <p class="count" id="card-count"></p>
 <div class="ctl"><button class="btn" id="btn-next" type="button">Next card</button> <button class="btn alt" id="btn-shuffle" type="button">Shuffle</button></div>
 <noscript><p>Turn on JavaScript to use the false friends tool.</p></noscript>
@@ -115,7 +115,7 @@ if(i===cur.ans){f.textContent=dir===0?'✓ ¡Correcto!':'✓ Correct!';f.classNa
 $('reveal-sen').textContent=q[1];
 $('reveal-en').textContent=dir===0?'"'+q[0]+'" means "'+q[2]+'".':'"'+q[0]+'" significa "'+q[2]+'".';
 $('reveal-note').textContent=q[4];
-$('reveal').className='reveal show';$('btn-hear').style.display='inline-block';$('btn-say').style.display=dir===1?'inline-block':'none';$('say-privacy').style.display=dir===1?'block':'none';$('say-feedback').textContent='';$('say-feedback').className='feedback';
+$('reveal').className='reveal show';$('btn-hear').style.display='inline-block';$('btn-say').style.display='inline-block';$('say-privacy').style.display='block';$('btn-say').textContent=dir===0?'🎤 Say it in Spanish':'🎤 Decir en inglés';$('say-privacy').textContent=dir===0?'Voice input is checked by your browser speech service. Nothing is stored.':'Tu voz se envía al servicio de voz de tu navegador para comprobarla; no se guarda.';$('say-feedback').textContent='';$('say-feedback').className='feedback';
 }
 function hearIt(){
 try{speechSynthesis.cancel();}catch(e){}
@@ -142,7 +142,7 @@ dir=d;
 $('tool-intro').textContent=dir===0?INTRO0:INTRO1;
 $('btn-next').textContent=dir===0?'Next card':'Siguiente tarjeta';
 $('btn-shuffle').textContent=dir===0?'Shuffle':'Mezclar';
-$('btn-hear').textContent=dir===0?'🔊 Hear it':'🔊 Escuchar';
+$('btn-hear').textContent=dir===0?'🔊 Hear it':'🔊 Escuchar';$('btn-say').textContent=dir===0?'🎤 Say it in Spanish':'🎤 Decir en inglés';$('say-privacy').textContent=dir===0?'Voice input is checked by your browser speech service. Nothing is stored.':'Tu voz se envía al servicio de voz de tu navegador para comprobarla; no se guarda.';
 shuffleDeck();show();
 }
 var recog=null,listenTimer=null,lastTranscript="",listening=false;
@@ -152,35 +152,35 @@ if(listenTimer){clearTimeout(listenTimer);listenTimer=null;}
 if(recog){try{recog.stop();}catch(e){}recog=null;}
 listening=false;
 var b=$('btn-say');
-if(b){b.textContent='🎤 Decir en inglés';b.classList.remove('listening');}
+if(b){b.textContent=dir===0?'🎤 Say it in Spanish':'🎤 Decir en inglés';b.classList.remove('listening');}
 if(score&&lastTranscript){
 var q=deck[pos];
 var got=normSp(lastTranscript),want=normSp(q[1]);
-if(got===want){var f=$('say-feedback');f.textContent='✓ ¡Bien dicho!';f.className='feedback ok';}
-else{var f=$('say-feedback');f.textContent='Escuché: "'+lastTranscript+'" — no es exacto. Inténtalo de nuevo.';f.className='feedback bad';}
+if(got===want){var f=$('say-feedback');f.textContent=dir===0?'✓ Well said!':'✓ ¡Bien dicho!';f.className='feedback ok';}
+else{var f=$('say-feedback');f.textContent=dir===0?'Heard: "'+lastTranscript+'" — not quite. Try again.':'Escuché: "'+lastTranscript+'" — no es exacto. Inténtalo de nuevo.';f.className='feedback bad';}
 lastTranscript="";
 }
 }
 function sayIt(){
-if(!answered||dir!==1)return;
+if(!answered)return;
 if(listening){stopSay(true);return;}
 var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-if(!SR){var f=$('say-feedback');f.textContent='Speech input is not available in this browser.';f.className='feedback bad';return;}
+if(!SR){var f=$('say-feedback');f.textContent=dir===0?'Speech input is not available in this browser.':'La entrada de voz no está disponible en este navegador.';f.className='feedback bad';return;}
 try{speechSynthesis.cancel();}catch(e){}
 recog=new SR();
-recog.lang='en-US';
+recog.lang=dir===0?'es-MX':'en-US';
 recog.interimResults=false;
 recog.maxAlternatives=1;
 lastTranscript="";listening=true;
 var b=$('btn-say');
-b.textContent='● Listening… — tap to stop';
+b.textContent=dir===0?'● Listening… — tap to stop':'● Escuchando… — toca para parar';
 b.classList.add('listening');
 recog.onresult=function(ev){
 var t="";
 for(var i=ev.resultIndex;i<ev.results.length;i++){if(ev.results[i].isFinal){t+=ev.results[i][0].transcript;}}
 if(t){lastTranscript=t;stopSay(true);}
 };
-recog.onerror=function(){stopSay(false);var f=$('say-feedback');f.textContent='Could not hear that — try again.';f.className='feedback bad';};
+recog.onerror=function(){stopSay(false);var f=$('say-feedback');f.textContent=dir===0?'Could not hear that — try again.':'No se pudo escuchar — inténtalo de nuevo.';f.className='feedback bad';};
 recog.onend=function(){if(listening){stopSay(true);}};
 try{recog.start();}catch(e){stopSay(false);return;}
 listenTimer=setTimeout(function(){if(listening){stopSay(true);}},12000);
