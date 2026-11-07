@@ -4081,13 +4081,17 @@ function updateProgressUI() {
 // ignored, and the tutorial can be skipped from the quest box. Steps
 // advance only forward; each advance dings and saves, so progress
 // survives reloads. The step itself is stored in the save (tutorial:
-// 0-7, 8 = done); old saves without it migrate from what the player
-// has already done (see applySave).
+// 0-6, 7 = done); old saves without it migrate from what the player
+// has already done (see applySave). One continuous flow (Brant Nov 7):
+// the arrow never gaps — it points back to the port to dock, then
+// retargets to the nearest depository (water or metal, whichever is
+// closest) the moment the player is back inside, so the deposits
+// follow the return without a break.
 let questStep = 0;
 let questCollected = false;
-let menuReviewVisited = false; // tutorial step 5: opened review from the in-game menu
-let tutDepWater = false; // tutorial step 6: deposited WATER at a water depository
-let tutDepMetal = false; // tutorial step 7: deposited METAL at a metal depository
+let menuReviewVisited = false; // no longer a tutorial step (Nov 7): the menu-review step was removed so the arrow flows straight from the port to the deposits; the menu REVIEW feature itself stays
+let tutDepWater = false; // tutorial deposit: deposited WATER at a water depository
+let tutDepMetal = false; // tutorial deposit: deposited METAL at a metal depository
 let recognizedRepos = {};
 let celebrateText = '';
 const QUEST_STEPS = [
@@ -4096,9 +4100,8 @@ const QUEST_STEPS = [
   'Depart from an Exploration Terminal — walk up and tap DEPART.',
   'Recover the nearest word or exercise in space — fly within 250 m and say it aloud.',
   'Return aboard the ARK-7 — fly within 100 m of any glowing port to dock.',
-  'Open ☰ → PROGRESS → REVIEW EVERYTHING to review anything you have already answered.',
-  'Deposit your WATER at a blue water depository in the agriculture ring — walk up and tap DEPOSIT.',
-  'Deposit your METAL at an amber metal depository in the residential half — walk up and tap DEPOSIT.'
+  'Make your first deposit — follow the arrow to the nearest depository (water or metal) and tap DEPOSIT.',
+  'Deposit the other kind — follow the arrow to the nearest depository of the other kind and tap DEPOSIT.'
 ];
 const questBox = document.getElementById('questBox');
 const questStepEl = document.getElementById('questStep');
@@ -4122,20 +4125,27 @@ function questWordCount() {
   let n = 0; for (const w of wordTiles) if (w.collected) n++;
   return n;
 }
+// A deposit kind counts as done when the player deposited it this
+// session (tutDepWater/tutDepMetal) or has a banked amount at any
+// depository of that kind.
+function depKindDone(kind) {
+  if (kind === 'water') return tutDepWater || DEPOSITORIES.some(function (d) { return d.kind === 'water' && d.bank > 0; });
+  return tutDepMetal || DEPOSITORIES.some(function (d) { return d.kind === 'metal' && d.bank > 0; });
+}
 function questStepDone(i) {
   if (i === 0) return !!(stationNear && stationNear.id === 'cognates');
   if (i === 1) return prog.cognates.size >= 3;
   if (i === 2) return mode === 'flight';
   if (i === 3) return questCollected;
   if (i === 4) return mode === 'walk';
-  if (i === 5) return menuReviewVisited;
-  // Tutorial deposit steps (Brant Nov 7): step 6/7 complete ONLY on an
-  // actual deposit (tutDepWater/tutDepMetal) or a banked amount — never
-  // because the player happens to hold 0 water/metal. The old `water === 0`
-  // / `metal === 0` shortcut let the tutorial skip straight past the
-  // depositories, so the player never got the arrow guiding them there.
-  if (i === 6) return tutDepWater || DEPOSITORIES.some(function (d) { return d.kind === 'water' && d.bank > 0; });
-  if (i === 7) return tutDepMetal || DEPOSITORIES.some(function (d) { return d.kind === 'metal' && d.bank > 0; });
+  // Deposits are order-flexible (Brant Nov 7): the arrow points to the
+  // nearest depository of either kind, so the player deposits whichever
+  // is closest first, then the other kind. Step 5 completes on EITHER
+  // kind deposited; step 6 only when BOTH kinds are deposited. No
+  // `water === 0` / `metal === 0` shortcut — the player is in the
+  // tutorial until both deposits are done (or they skip it).
+  if (i === 5) return depKindDone('water') || depKindDone('metal');
+  if (i === 6) return depKindDone('water') && depKindDone('metal');
   return true;
 }
 // The nine repositories, in menu PROGRESS order. Counts mirror
@@ -4188,12 +4198,12 @@ function updateQuestUI() {
   if (titleOpen) { if (questBox) questBox.style.display = 'none'; return; }
   let changed = false;
   const stepBefore = questStep;
-  while (questStep < 8 && questStepDone(questStep)) {
+  while (questStep < 7 && questStepDone(questStep)) {
     questStep++;
     changed = true;
     try { playDing(); } catch (e) {}
   }
-  if (stepBefore < 8 && questStep >= 8) showTutDone();
+  if (stepBefore < 7 && questStep >= 7) showTutDone();
   if (changed) { try { saveGame(); } catch (e) {} }
   const wc = questWordCount();
   try { checkRepoCompletions(wc); } catch (e) {}
@@ -4212,7 +4222,7 @@ function updateQuestUI() {
   if (!questBox) return;
   questBox.style.display = 'block';
   /* Placement is the #topBoxes flex container's job now (column in portrait, row in landscape). */
-  if (questStep >= 8) {
+  if (questStep >= 7) {
     questStepEl.textContent = 'Tutorial complete! Keep recovering words — every spoken word rebuilds the repositories. Deposit water and metal at the depositories to rebuild the habitat.';
     questProgEl.textContent = '';
     if (btnQuestSkip) btnQuestSkip.style.display = 'none';
@@ -4244,12 +4254,12 @@ function updateQuestUI() {
 }
 if (btnQuestSkip) btnQuestSkip.addEventListener('pointerdown', function (e) {
   e.preventDefault(); e.target.blur();
-  questStep = 8;
+  questStep = 7;
   try { saveGame(); } catch (e) {}
   updateQuestUI();
 });
 // Tutorial-complete screen: shown once, the moment the last tutorial
-// step completes (stepBefore < 8 guard in updateQuestUI, so a reload
+// step completes (stepBefore < 7 guard in updateQuestUI, so a reload
 // with the tutorial already done never re-shows it). Dismiss with
 // KEEP PLAYING; the game keeps running underneath.
 const tutDonePanel = document.getElementById('tutDonePanel');
@@ -4291,9 +4301,18 @@ function nearestDepository(kind) {
   }
   return best;
 }
+function nearestDepositoryAny() {
+  let best = null, bestD = Infinity;
+  for (const d of DEPOSITORIES) {
+    const w = questLocalToWorld(d.angle, d.z, new THREE.Vector3());
+    const dist = camera.position.distanceTo(w);
+    if (dist < bestD) { bestD = dist; best = d; }
+  }
+  return best;
+}
 function updateQuestArrow() {
   if (!questArrowLineEl || !questArrowEl || !questArrowLabelEl) return;
-  if (titleOpen || questStep >= 8) { questArrowLineEl.style.display = 'none'; return; }
+  if (titleOpen || questStep >= 7) { questArrowLineEl.style.display = 'none'; return; }
   let target = null, label = '';
   const cog = STATIONS.find(function (s) { return s.id === 'cognates'; });
   if (questStep === 0 || questStep === 1) {
@@ -4316,8 +4335,16 @@ function updateQuestArrow() {
     const near = nearestPortToShuttle();
     if (!near.port) { questArrowLineEl.style.display = 'none'; return; }
     target = near.world; label = 'Nearest port';
-  } else if (questStep === 6 || questStep === 7) {
-    const kind = questStep === 6 ? 'water' : 'metal';
+  } else if (questStep === 5) {
+    // First deposit: nearest depository of EITHER kind (water or metal,
+    // whichever is closest) — the player deposits that one first.
+    const dep = nearestDepositoryAny();
+    if (!dep) { questArrowLineEl.style.display = 'none'; return; }
+    if (depositDist2(dep) < STATION_DIST * STATION_DIST) { questArrowLineEl.style.display = 'none'; return; }
+    target = questLocalToWorld(dep.angle, dep.z, _questTmp); label = (dep.kind === 'water' ? 'Water' : 'Metal') + ' depository';
+  } else if (questStep === 6) {
+    // Second deposit: nearest depository of the kind NOT yet deposited.
+    const kind = depKindDone('water') ? 'metal' : 'water';
     const dep = nearestDepository(kind);
     if (!dep) { questArrowLineEl.style.display = 'none'; return; }
     if (depositDist2(dep) < STATION_DIST * STATION_DIST) { questArrowLineEl.style.display = 'none'; return; }
@@ -6455,8 +6482,9 @@ document.getElementById('btn-review-close').addEventListener('pointerdown', func
   e.preventDefault(); e.target.blur(); closeReview();
 });
 // In-game menu review: the same shared panel the terminals open
-// (z 40, above the menu, so the menu stays open behind it). Counts
-// as tutorial step 5 the first time it is tapped.
+// (z 40, above the menu, so the menu stays open behind it). Not a
+// tutorial step (Nov 7) — the menu-review step was removed so the arrow
+// flows straight to the deposits; the review itself stays available anytime.
 document.getElementById('btn-menu-review').addEventListener('click', function () {
   menuReviewVisited = true;
   openReview();
@@ -7299,15 +7327,16 @@ function animate() {
 // words: [collected word-tile indices], mined: [mined aura-asteroid indices],
 // freeCrashUsed: bool, progress: { cognates, idioms, practice, conjugation,
 // dictation, serestar, saberconocer, pronouns: per-item identifier arrays },
-// pos: { mode: 'walk'|'flight'|'docked', ... } }, tutorial: quest step 0-7 (8 = done)
+// pos: { mode: 'walk'|'flight'|'docked', ... } }, tutorial: quest step 0-6 (7 = done)
 // Depositories: depBank: [8 banked amounts 0..799], cropsGrown: [16 booleans],
 // hoodsBuilt: [16 booleans]. Old saves without these keys load as banked 0 /
 // all ungrown and unbuilt (construction resets; haul and collected progress
 // preserved). An old gardensBuilt key, if present, is ignored — gardens now
 // follow their neighborhood.
-// (8 = tutorial done; a save with 6, the old done value, lands on step 6,
-// deposit water, so players who finished the old tutorial meet the new
-// depository steps. Old saves without it migrate from progress.) A round-21 save
+// (7 = tutorial done under the Nov 7 renumbering: the 8-step scheme
+// (0-7, 8 = done) maps to 7 steps (0-6, 7 = done) — the menu-review step
+// is gone and the deposits are order-flexible; see migrateTutorialStep.
+// Old saves without it migrate from progress.) A round-21 save
 // without the flag migrates to false (flag missing/non-boolean never
 // rejects the save, it just means unused); a save without progress fields
 // migrates to empty progress sets, same pattern, never rejected.
@@ -7474,6 +7503,28 @@ function applyBuiltState(cGrown, hBuilt) {
     for (const si of neighborhoods[i].solidIdxs) if (SOLID[si]) SOLID[si][4] = b;
   }
 }
+// Nov 7 tutorial renumbering: the tutorial went from 8 steps (0-7,
+// 8 = done) to 7 steps (0-6, 7 = done) — the menu-review step was
+// removed and the two deposits became order-flexible (nearest first).
+// Old saves store the step under the 8-step scheme; map it here.
+// Deposit evidence comes from the save itself (banks and built state),
+// since tutDepWater/tutDepMetal are session-only and are not stored.
+function migrateTutorialStep(oldStep, s) {
+  if (oldStep <= 4) return oldStep; // Cognates -> depart -> collect -> return: unchanged
+  if (oldStep === 8) return 7; // done stays done
+  var waterDone = false, metalDone = false;
+  var banks = s.depBank || [];
+  for (var i = 0; i < DEPOSITORIES.length && i < banks.length; i++) {
+    if (banks[i] > 0) { if (DEPOSITORIES[i].kind === 'water') waterDone = true; else metalDone = true; }
+  }
+  var crops = s.cropsGrown || [];
+  for (var j = 0; j < crops.length; j++) if (crops[j]) { waterDone = true; break; }
+  var hoods = s.hoodsBuilt || [];
+  for (var k = 0; k < hoods.length; k++) if (hoods[k]) { metalDone = true; break; }
+  if (waterDone && metalDone) return 7; // both deposits done: tutorial done
+  if (waterDone || metalDone) return 6; // one kind left to deposit
+  return 5; // no deposits yet: first deposit (old 5/6/7 all land here)
+}
 function applySave(s) {
   water = s.water; metal = s.metal; freeCrashUsed = !!s.freeCrashUsed; progFromSave(s.progress);
   for (const i of s.words) {
@@ -7496,7 +7547,7 @@ function applySave(s) {
   restoreSavedPosition(s.pos);
   // Quest tutorial restore: a stored step wins; old saves without one
   // migrate from what the player has already done.
-  if (Number.isInteger(s.tutorial) && s.tutorial >= 0 && s.tutorial <= 7) { questStep = s.tutorial; }
+  if (Number.isInteger(s.tutorial) && s.tutorial >= 0 && s.tutorial <= 8) { questStep = migrateTutorialStep(s.tutorial, s); }
   else if (s.words.length > 0) { questStep = 5; }
   else if (prog.cognates.size >= 3) { questStep = 2; }
   else { questStep = 0; }
