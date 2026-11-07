@@ -52,15 +52,25 @@
     display: none;
   }
   #questTitle { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 800; letter-spacing: 0.10em; color: #7fe3ff; font-size: clamp(12px, 2.6vw, 14px); margin-bottom: 2px; }
+  #questHaul { color: #b9c9e2; font-weight: 700; font-size: clamp(11px, 2.4vw, 13px); letter-spacing: 0.02em; white-space: nowrap; }
   #questProg { color: #59d6ff; font-weight: 700; }
-  #questRepo { color: #b9c9e2; font-size: clamp(11px, 2.4vw, 13px); }
+  #questRepo, #questFuture { color: #b9c9e2; font-size: clamp(11px, 2.4vw, 13px); }
+  /* Two quests in the box: each section has its own expand/collapse
+     head (a full-width button, same pattern as the menu subHeads) and
+     its own persisted folded state. The head shows a compact done
+     count so a collapsed quest still reports its progress. */
+  .questSecHead { display: flex; align-items: center; gap: 6px; width: 100%; background: none; border: none; padding: 2px 0 0; margin: 0; text-align: left; font: inherit; font-weight: 800; letter-spacing: 0.08em; color: #7fe3ff; font-size: clamp(11px, 2.4vw, 13px); cursor: pointer; }
+  .questSecToggle { flex-shrink: 0; color: #7fe3ff; font-size: 12px; line-height: 1; }
+  .questSecCount { margin-left: auto; color: #59d6ff; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; }
+  .questSecBody { padding-left: 18px; }
+  .questSec.collapsed .questSecBody { display: none; }
   #questCelebrate { color: #ffd166; font-weight: 700; }
   #questCelebrate:empty { display: none; }
   #questArrow { display: inline-block; font-size: 20px; line-height: 1; color: #7fe3ff; text-shadow: 0 0 10px rgba(127, 227, 255, 0.8); margin-right: 6px; }
   #questArrowLine { color: #b9c9e2; }
   #questBox button { pointer-events: auto; }
   #btn-quest-collapse { flex-shrink: 0; background: rgba(8, 24, 44, 0.75); color: #7fe3ff; border: 1px solid rgba(89, 214, 255, 0.65); border-radius: 10px; font-size: 14px; line-height: 1; padding: 3px 8px; cursor: pointer; }
-  #questBox.collapsed #questStep, #questBox.collapsed #questProg, #questBox.collapsed #questRepo, #questBox.collapsed #questCelebrate, #questBox.collapsed #btn-quest-skip { display: none; }
+  #questBox.collapsed #questStep, #questBox.collapsed #questProg, #questBox.collapsed .questSec, #questBox.collapsed #questCelebrate, #questBox.collapsed #btn-quest-skip { display: none; }
   #questBox.collapsed #questTitle { margin-bottom: 0; }
   /* Top cluster: the flight HUD box and the quest box share one fixed
      flex container at the top-left. Portrait stacks them with an 8 px
@@ -390,11 +400,18 @@
   <div id="beaconWarn">LEAVING BEACON RANGE — TURN BACK — 20 km TO THE LIMIT</div>
 </div>
 <div id="questBox">
-  <div id="questTitle"><span>REBUILD THE REPOSITORIES</span><button id="btn-quest-collapse" type="button" aria-label="Collapse quest box">▾</button></div>
+  <div id="questTitle"><span>QUESTS</span><span id="questHaul"></span><button id="btn-quest-collapse" type="button" aria-label="Collapse quest box">▾</button></div>
   <div id="questArrowLine"><span id="questArrow">&#8593;</span><span id="questArrowLabel"></span></div>
   <div id="questStep"></div>
   <div id="questProg"></div>
-  <div id="questRepo"></div>
+  <div class="questSec" id="questSecRepos">
+    <button class="questSecHead" id="questSecReposHead" type="button" aria-label="Toggle repositories quest"><span class="questSecToggle" id="questSecReposToggle">▾</span><span>REBUILD THE REPOSITORIES</span><span class="questSecCount" id="questReposCount"></span></button>
+    <div class="questSecBody"><div id="questRepo"></div></div>
+  </div>
+  <div class="questSec" id="questSecFuture">
+    <button class="questSecHead" id="questSecFutureHead" type="button" aria-label="Toggle secure the future quest"><span class="questSecToggle" id="questSecFutureToggle">▾</span><span>SECURE THE FUTURE</span><span class="questSecCount" id="questFutureCount"></span></button>
+    <div class="questSecBody"><div id="questFuture"></div></div>
+  </div>
   <div id="questCelebrate"></div>
   <button class="ctl2" id="btn-quest-skip" type="button" style="margin-top:8px;font-size:12px;padding:6px 12px;">Skip tutorial</button>
 </div>
@@ -4081,6 +4098,14 @@ const questBox = document.getElementById('questBox');
 const questStepEl = document.getElementById('questStep');
 const questProgEl = document.getElementById('questProg');
 const questRepoEl = document.getElementById('questRepo');
+const questHaulEl = document.getElementById('questHaul');
+const questFutureEl = document.getElementById('questFuture');
+const questSecRepos = document.getElementById('questSecRepos');
+const questSecFuture = document.getElementById('questSecFuture');
+const questSecReposToggle = document.getElementById('questSecReposToggle');
+const questSecFutureToggle = document.getElementById('questSecFutureToggle');
+const questReposCountEl = document.getElementById('questReposCount');
+const questFutureCountEl = document.getElementById('questFutureCount');
 const questCelebrateEl = document.getElementById('questCelebrate');
 const questArrowLineEl = document.getElementById('questArrowLine');
 const questArrowEl = document.getElementById('questArrow');
@@ -4163,7 +4188,14 @@ function updateQuestUI() {
   try { checkRepoCompletions(wc); } catch (e) {}
   const cGrown = cropBeds.filter(function (c) { return c.grown; }).length;
   const hBuilt = neighborhoods.filter(function (h) { return h.built; }).length;
-  const key = questStep + '|' + wc + '|' + prog.cognates.size + '|' + prog.idioms.size + '|' + prog.conjugation.size + '|' + prog.dictation.size + '|' + prog.serestar.size + '|' + prog.saberconocer.size + '|' + prog.pronouns.size + '|' + prog.porpara.size + '|' + cGrown + '|' + hBuilt + '|' + celebrateText + '|' + mode;
+  // Banked progress toward the next build, per kind: the HIGHEST bank
+  // among that kind's depositories, since each depository builds its
+  // own nearest items — the highest bank is the one closest to paying
+  // for the next build. (A total across depositories would mislead:
+  // banked material cannot be pooled between depositories.)
+  const maxWaterBank = Math.max.apply(null, DEPOSITORIES.filter(function (d) { return d.kind === 'water'; }).map(function (d) { return d.bank; }));
+  const maxMetalBank = Math.max.apply(null, DEPOSITORIES.filter(function (d) { return d.kind === 'metal'; }).map(function (d) { return d.bank; }));
+  const key = questStep + '|' + wc + '|' + prog.cognates.size + '|' + prog.idioms.size + '|' + prog.conjugation.size + '|' + prog.dictation.size + '|' + prog.serestar.size + '|' + prog.saberconocer.size + '|' + prog.pronouns.size + '|' + prog.porpara.size + '|' + cGrown + '|' + hBuilt + '|' + water + '|' + metal + '|' + maxWaterBank + '|' + maxMetalBank + '|' + celebrateText + '|' + mode;
   if (key === lastQuestKey) return;
   lastQuestKey = key;
   if (!questBox) return;
@@ -4178,9 +4210,25 @@ function updateQuestUI() {
     questProgEl.textContent = (questStep === 1) ? ('Cognates spoken: ' + prog.cognates.size + ' / 3') : '';
     if (btnQuestSkip) btnQuestSkip.style.display = '';
   }
-  questRepoEl.innerHTML = questRepos(wc).map(function (r) {
+  // Collapsed header shows the live haul on the same line as QUESTS.
+  if (questHaulEl) questHaulEl.textContent = '💧 ' + water + ' WATER · 🏠 ' + metal + ' METAL';
+  const repos = questRepos(wc);
+  const reposDone = repos.filter(function (r) { return r.count >= r.total; }).length;
+  if (questReposCountEl) questReposCountEl.textContent = reposDone + ' / ' + repos.length;
+  if (questRepoEl) questRepoEl.innerHTML = repos.map(function (r) {
     return (r.count >= r.total ? '✓ ' : '') + r.label + ' ' + r.count + ' / ' + r.total;
-  }).join('<br>') + '<br>' + (cGrown >= cropBeds.length ? '✓ ' : '') + 'Crop beds ' + cGrown + ' / ' + cropBeds.length + '<br>' + (hBuilt >= neighborhoods.length ? '✓ ' : '') + 'Neighborhoods ' + hBuilt + ' / ' + neighborhoods.length;
+  }).join('<br>');
+  // SECURE THE FUTURE: the habitat rebuild. Bank lines show the
+  // highest single-depository bank per kind (see maxWaterBank above);
+  // once a kind is fully built its bank line is hidden, not shown
+  // as a misleading "toward next" number.
+  if (questFutureCountEl) questFutureCountEl.textContent = (cGrown + hBuilt) + ' / ' + (cropBeds.length + neighborhoods.length);
+  if (questFutureEl) {
+    let fut = (cGrown >= cropBeds.length ? '✓ ' : '') + 'Crop beds grown ' + cGrown + ' / ' + cropBeds.length + '<br>' + (hBuilt >= neighborhoods.length ? '✓ ' : '') + 'Neighborhoods built ' + hBuilt + ' / ' + neighborhoods.length;
+    if (cGrown < cropBeds.length) fut += '<br>💧 ' + maxWaterBank + ' / 800 toward next crop bed';
+    if (hBuilt < neighborhoods.length) fut += '<br>🏠 ' + maxMetalBank + ' / 800 toward next neighborhood';
+    questFutureEl.innerHTML = fut;
+  }
   if (questCelebrateEl) questCelebrateEl.textContent = celebrateText;
 }
 if (btnQuestSkip) btnQuestSkip.addEventListener('pointerdown', function (e) {
@@ -4293,6 +4341,31 @@ try {
 if (btnQuestCollapse) btnQuestCollapse.addEventListener('pointerdown', function (e) {
   e.preventDefault(); e.target.blur();
   setQuestCollapsed(!questBox.classList.contains('collapsed'), true);
+});
+// Two quests in the box: each section folds on its own, with its own
+// persisted localStorage key (same pattern as the outer box). Both
+// start expanded; the outer box's folded key is untouched.
+const QUEST_REPOS_COLLAPSED_KEY = 'generationShipQuestReposCollapsed_v1';
+const QUEST_FUTURE_COLLAPSED_KEY = 'generationShipQuestFutureCollapsed_v1';
+function setQuestSecCollapsed(secEl, toggleEl, collapsed, key, save) {
+  if (!secEl) return;
+  secEl.classList.toggle('collapsed', !!collapsed);
+  if (toggleEl) toggleEl.textContent = collapsed ? '▸' : '▾';
+  if (save) { try { window.localStorage.setItem(key, collapsed ? '1' : '0'); } catch (e) {} }
+}
+try {
+  if (window.localStorage.getItem(QUEST_REPOS_COLLAPSED_KEY) === '1') setQuestSecCollapsed(questSecRepos, questSecReposToggle, true, QUEST_REPOS_COLLAPSED_KEY, false);
+  if (window.localStorage.getItem(QUEST_FUTURE_COLLAPSED_KEY) === '1') setQuestSecCollapsed(questSecFuture, questSecFutureToggle, true, QUEST_FUTURE_COLLAPSED_KEY, false);
+} catch (e) {}
+const questSecReposHead = document.getElementById('questSecReposHead');
+const questSecFutureHead = document.getElementById('questSecFutureHead');
+if (questSecReposHead) questSecReposHead.addEventListener('pointerdown', function (e) {
+  e.preventDefault(); questSecReposHead.blur();
+  setQuestSecCollapsed(questSecRepos, questSecReposToggle, !questSecRepos.classList.contains('collapsed'), QUEST_REPOS_COLLAPSED_KEY, true);
+});
+if (questSecFutureHead) questSecFutureHead.addEventListener('pointerdown', function (e) {
+  e.preventDefault(); questSecFutureHead.blur();
+  setQuestSecCollapsed(questSecFuture, questSecFutureToggle, !questSecFuture.classList.contains('collapsed'), QUEST_FUTURE_COLLAPSED_KEY, true);
 });
 updateHint();
 
