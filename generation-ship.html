@@ -575,7 +575,7 @@ const METAL_YIELD = 15;       // metal per mined metal rock
 const SHUTTLE_THRUST = 12;    // m/s^2
 const SHUTTLE_YAW_RATE = 0.9; // rad/s
 const SHUTTLE_PITCH_RATE = 0.7; // rad/s
-const SHUTTLE_PITCH_LIMIT = Math.PI / 2 - 0.02; // rad (~89 deg) — pitch clamp (Brant Nov 7): past vertical the shuttle's up inverts, so yaw reads reversed and the camera goes upside-down. Clamping keeps the axis honest; ~89 deg still reaches the top of the tile cloud. Looping past vertical is gone.
+const SHUTTLE_PITCH_LIMIT = Math.PI / 2 - 0.02; // rad (~89 deg) — bound only for the asin pitch reconstructions in undock/save-load (asin already returns ±90 deg). It is NOT a steering clamp anymore (Brant Nov 7): the old clamp felt like a wall, so pitch is free now and the anti-reverse lives in rotateShuttle's cos(pitch) yaw scaling instead.
 // Decoupled flight camera (round 30 shuttle pass + LOOK/STEER toggle):
 // in LOOK mode mouse drag / touch drag in flight looks around
 // the shuttle instead of steering it; in STEER mode the same drag steers
@@ -4180,11 +4180,19 @@ function rotateShuttle(yawDelta, pitchDelta) {
   // Roll-free: accumulate yaw/pitch state and rebuild. Euler 'YXZ' gives
   // Q = Ry * Rx, matching the old single-axis steps exactly (same rates,
   // same signs) — the only change is that combined yaw+pitch can no
-  // longer accumulate roll. Pitch IS clamped just short of vertical
-  // (SHUTTLE_PITCH_LIMIT): past 90 deg the shuttle's up inverts, so
-  // yaw reads reversed and the camera goes upside-down — the axis flip
-  // Brant saw. Clamping keeps steering honest in both directions.
-  shipYaw += yawDelta; shipPitch = Math.max(-SHUTTLE_PITCH_LIMIT, Math.min(SHUTTLE_PITCH_LIMIT, shipPitch + pitchDelta));
+  // longer accumulate roll.
+  // Pitch is NOT clamped (Brant Nov 7): the old ~89 deg clamp felt like
+  // a wall — pitch as far forward/back as you like, including right
+  // over the top. Past vertical the shuttle's up inverts, which used to
+  // make yaw read reversed; the yaw input is now scaled by cos(pitch)
+  // so the turn never flips: level cos = 1 (full turn), vertical
+  // cos = 0 (yaw can't turn a nose pointing straight up), past vertical
+  // cos goes negative and the world-yaw reverses, which reads as the
+  // SAME turn to the upside-down pilot. Steering never goes reverse,
+  // however far you pitch. (Camera: it stays the plane of view behind
+  // the ship from takeoff; the player can put it right back behind
+  // them with the look controls if it ever drifts.)
+  shipYaw += yawDelta * Math.cos(shipPitch); shipPitch += pitchDelta;
   shuttle.quaternion.setFromEuler(new THREE.Euler(shipPitch, shipYaw, 0, 'YXZ'));
 }
 canvas.addEventListener('pointerdown', function (e) {
