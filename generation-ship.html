@@ -242,6 +242,9 @@
     border-radius: 14px; touch-action: manipulation;
   }
   #collectCard button.ctl2.listening { background: #c81e1e; color: #fff; border-color: #ff6b6b; animation: collectPulse 1s infinite; }
+  /* Recognition screen (Nov 7): the Continue flying button is cyan-filled,
+     like the station Next buttons, so it is the obvious next tap. */
+  #collectCard button.ctl2#btn-collect-continue { background: #59d6ff; color: #06101e; border-color: #aee9ff; font-weight: 700; }
   @keyframes collectPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
   #collectFeedback { min-height: 22px; margin-top: 12px; font-size: 15px; color: #ffd166; }
   #collectFeedback.ok { color: #7dff9b; }
@@ -427,13 +430,14 @@
     <div class="mBody">SAVE JOURNEY in this menu saves at once; the game also saves after every collect, every mining yield, and every docking. GO TO HOME SCREEN saves, then returns to the title screen. Resuming restores your haul, your collected items, and your position &mdash; aboard or in flight.</div>
   </div>
   </div><button class="subHead" data-sub="note" data-label="NOTE" type="button">▸ NOTE</button><div class="subBody" id="sub-note">
-  <div class="controls">An ark bound for another star. Spin gravity holds the decks &mdash; thrust is the only other gravity you&rsquo;ll get. Nine glowing docking ports: eight around the hull, one at the top end-cap hub. Fly within 100 m of any port and you dock automatically &mdash; there is no dock button. Hitting the hull or an asteroid anywhere else ends the run. An asteroid belt drifts clear of the ship &mdash; dodge the rocks; any asteroid can be mined (hold M, or the MINE button, for about 3 seconds within 100 m) for water from icy comets and metal from metal rocks. Jumps inside the ship: the ground slides beneath you while you&rsquo;re airborne, because the ship keeps spinning and you don&rsquo;t. (Jump arcs feel Mars-like by movement tuning; the ship&rsquo;s spin gravity itself is unchanged.) After departing, docking re-arms once you fly 150 m clear of every port, so launching never snaps you straight back aboard. Inside, the ship is divided into sections: AGRICULTURE aft (open farmland) and the enclosed industrial half forward, split into TECHNOLOGY (plus a two-story gallery hall with stair towers and a railed upper gallery) and EDUCATION; a bulkhead with four glowing entrances divides the halves. Beacon range: a warning appears past 25 km from the ship, grows urgent past 40 km, and past 50 km you are LOST and the run ends (retry returns you aboard, haul kept, free). The sun is huge and sits about 30 km out — fly within 5 km of it and your heat shield vaporizes, ending the run. A cyan beacon beam rises from the nearest port while you fly, and the nav readout adds an up/down elevation angle, so guidance works in 3D — but it only ever points, it never steers or returns you. Farther out, all 1,000 Spanish vocabulary words float from about 3 km to 20 km out, plus exercise questions between 1.5 km and 15 km out — fly within 250 m of one to pause and pronounce it; say it right to collect it for +5 WATER and +5 METAL. A gold arrow under the port readout points to the nearest uncollected item — word or exercise question — with a tag saying which, and distant items show as small glow dots until their plates stream in. Crash repairs cost 10 WATER + 10 METAL; your first crash is free. If you can't pay, you return to your last save.</div>
+  <div class="controls">An ark bound for another star. Spin gravity holds the decks &mdash; thrust is the only other gravity you&rsquo;ll get. Nine glowing docking ports: eight around the hull, one at the top end-cap hub. Fly within 100 m of any port and you dock automatically &mdash; there is no dock button. Hitting the hull or an asteroid anywhere else ends the run. An asteroid belt drifts clear of the ship &mdash; dodge the rocks; any asteroid can be mined (hold M, or the MINE button, for about 3 seconds within 100 m) for water from icy comets and metal from metal rocks. Jumps inside the ship: the ground slides beneath you while you&rsquo;re airborne, because the ship keeps spinning and you don&rsquo;t. (Jump arcs feel Mars-like by movement tuning; the ship&rsquo;s spin gravity itself is unchanged.) After departing, docking re-arms once you fly 150 m clear of every port, so launching never snaps you straight back aboard. Inside, the ship is divided into sections: AGRICULTURE aft (open farmland) and the enclosed industrial half forward, split into TECHNOLOGY (plus a two-story gallery hall with stair towers and a railed upper gallery) and EDUCATION; a bulkhead with four glowing entrances divides the halves. Beacon range: a warning appears past 25 km from the ship, grows urgent past 40 km, and past 50 km you are LOST and the run ends (retry returns you aboard, haul kept, free). The star is huge and sits about 30 km out — fly within 5 km of it and your heat shield vaporizes, ending the run. A cyan beacon beam rises from the nearest port while you fly, and the nav readout adds an up/down elevation angle, so guidance works in 3D — but it only ever points, it never steers or returns you. Farther out, all 1,000 Spanish vocabulary words float from about 3 km to 20 km out, plus exercise questions between 1.5 km and 15 km out — fly within 250 m of one to pause and pronounce it; say it right to collect it for +5 WATER and +5 METAL. A gold arrow under the port readout points to the nearest uncollected item — word or exercise question — with a tag saying which, and distant items show as small glow dots until their plates stream in. Crash repairs cost 10 WATER + 10 METAL; your first crash is free. If you can't pay, you return to your last save.</div>
   </div>
   <button class="closeBtn" id="btn-menu-home" type="button">GO TO HOME SCREEN</button>
   <button class="closeBtn" id="btn-menu-close" type="button">CLOSE</button>
 </div>
 <div id="collectPanel">
   <div id="collectCard">
+    <div id="collectPrompt">
     <div id="collectEmoji"></div>
     <div id="collectEs"></div>
     <div id="collectEn"></div>
@@ -455,6 +459,14 @@
     <div id="collectPrivacy">Your voice is sent to your browser&rsquo;s speech service to check it &mdash; it isn&rsquo;t stored.</div>
     <div class="ctl-row">
       <button class="ctl2" id="btn-collect-leave" type="button">Leave it / fly on</button>
+    </div>
+    </div>
+    <div id="collectRecognition" style="display:none">
+      <div id="collectRecogTitle" style="font-size:30px;font-weight:700;color:#7dff9b;margin-top:6px;">✓ Correct!</div>
+      <div id="collectRecogItem" style="font-size:24px;font-weight:700;color:#eaf7ff;margin-top:12px;"></div>
+      <div id="collectRecogRepo" style="font-size:16px;color:#9fd8ef;margin-top:10px;"></div>
+      <div id="collectRecogReward" style="font-size:16px;color:#ffd166;margin-top:8px;"></div>
+      <div class="ctl-row"><button class="ctl2" id="btn-collect-continue" type="button">Continue flying →</button></div>
     </div>
   </div>
 </div>
@@ -496,7 +508,7 @@
 <div id="titlePanel">
   <div id="titleCard">
     <h1>GENERATION SHIP &mdash; ARK-7</h1>
-    <p id="titleStory">The ARK-7 was on its way to a new star when it stopped to mine in an asteroid field &mdash; but there was an accident, and it lost its Spanish repositories. The second language it carried for the next generation is scattered among the rocks. Now the crew is stationed in the minefield to regroup: fly out, recover every word, speak it aloud, and rebuild what was lost &mdash; so the knowledge is not lost to the next generation.</p>
+    <p id="titleStory">The ARK-7 arrived at a new star &mdash; but there was no planet, only an asteroid belt circling it. The crew decided to mine the belt for resources before moving on to the next star &mdash; but there was an accident, and the ship lost its Spanish repositories. The second language it carried for the next generation is scattered among the rocks. Now the crew is stationed in the asteroid belt to regroup: fly out, recover every word, speak it aloud, and rebuild what was lost &mdash; so the knowledge is not lost to the next generation.</p>
     <div id="title-main-btns" style="display:flex;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap;">
       <button class="ctl2 primary" id="btn-title-resume" type="button" style="display:none">RESUME JOURNEY</button>
       <button class="ctl2" id="btn-title-begin" type="button">BEGIN NEW JOURNEY</button>
@@ -552,8 +564,8 @@ const DOCK_RANGE = 100;       // metres from any docking port; flying inside thi
 const BEACON_WARN_DIST = 25000; // metres from the ship centre; first warning past 25 km (staged warnings 25/40 km, LOST at 50 km)
 const BEACON_URGENT_DIST = 40000; // metres from the ship centre; urgent warning past 40 km — 10 km to the limit
 const BEACON_LOST_DIST = 50000; // metres from the ship centre; past this, the run ends LOST (25 km from the first warning, 10 km from the urgent one)
-const SUN_HEAT_WARN_DIST = 8000; // metres from the sun centre; heat warning inside this
-const SUN_HEAT_DEATH_DIST = 5000; // metres from the sun centre; inside this the heat shield vaporizes and the run ends
+const STAR_HEAT_WARN_DIST = 8000; // metres from the star centre; heat warning inside this
+const STAR_HEAT_DEATH_DIST = 5000; // metres from the star centre; inside this the heat shield vaporizes and the run ends
 const COLLIDE_DIST = 3;       // metres from the hull surface; closer than this (outside every port zone) = crash
 const MINE_RANGE = 100;       // metres from a mineable asteroid's surface; inside this, mining is available
 const MINE_TIME = 3;          // seconds of holding to complete a mine
@@ -675,19 +687,19 @@ scene.add(new THREE.HemisphereLight(0xbdd3ff, 0x332211, 0.7));
 const sun = new THREE.DirectionalLight(0xfff1d6, 3.0);
 sun.position.set(400, 200, 300);
 scene.add(sun);
-// Fill light opposite the sun. The hull metals have no environment
-// reflections, so off-sun they read nearly black from outside — this
+// Fill light opposite the star. The hull metals have no environment
+// reflections, so away from the star they read nearly black from outside — this
 // dim cool light from the far side lifts the night side (mothership
-// and shuttle alike) while the sun side keeps the contrast.
+// and shuttle alike) while the star side keeps the contrast.
 const fill = new THREE.DirectionalLight(0x9fc0ff, 0.7);
 fill.position.set(-400, -200, -300);
 scene.add(fill);
-const sunBall = new THREE.Mesh(
+const starBall = new THREE.Mesh(
   new THREE.SphereGeometry(3000, 48, 32),
   new THREE.MeshBasicMaterial({ color: 0xffe9a8 })
 );
-sunBall.position.set(22611, 11306, 16151); // ~30 km out, same direction as the old 1.9 km sun — HUGE now (~11 deg across from the ship)
-scene.add(sunBall);
+starBall.position.set(22611, 11306, 16151); // ~30 km out, same direction as the old 1.9 km star — HUGE now (~11 deg across from the ship)
+scene.add(starBall);
 
 // Starfield: points on a distant shell, no external textures.
 const starCount = 1600;
@@ -3543,7 +3555,7 @@ function doJump() {
 }
 
 // Collision ends the run: full-screen MISSION FAILED, frozen flight.
-// Cause picks the message: 'hull' (mothership), 'asteroid', 'sun' (heat shield vaporized), or 'lost'
+// Cause picks the message: 'hull' (mothership), 'asteroid', 'star' (heat shield vaporized), or 'lost'
 // (beyond beacon range — same fail screen, same retry, haul kept).
 // Crash-repair economy (crashes only; LOST keeps its free retry):
 // the first crash of a journey is a free repair and teaches the rule;
@@ -3563,11 +3575,11 @@ function crashMission(cause) {
   stopAutoWalk();
   hideNav();
   btnMine.style.display = 'none';
-  const isCrash = cause === 'asteroid' || cause === 'hull' || cause === 'sun';
+  const isCrash = cause === 'asteroid' || cause === 'hull' || cause === 'star';
   const canPay = water >= 10 && metal >= 10;
   failKind = !isCrash ? 'lost' : (!freeCrashUsed ? 'free' : (canPay ? 'pay' : 'over'));
   failTitle.textContent = failKind === 'over' ? 'GAME OVER' : 'MISSION FAILED';
-  failText.textContent = cause === 'asteroid' ? 'You crashed into an asteroid.' : cause === 'lost' ? 'LOST — you flew past the 50 km beacon limit. The ARK-7 cannot reach you here.' : cause === 'sun' ? 'Your heat shield vaporized — the sun destroyed the shuttle.' : 'You crashed into the mothership.';
+  failText.textContent = cause === 'asteroid' ? 'You crashed into an asteroid.' : cause === 'lost' ? 'LOST — you flew past the 50 km beacon limit. The ARK-7 cannot reach you here.' : cause === 'star' ? 'Your heat shield vaporized — the star destroyed the shuttle.' : 'You crashed into the mothership.';
   if (failKind === 'free') {
     failWarn.textContent = 'FIRST CRASH — FREE REPAIR. From now on, repairing your ship costs 10 WATER + 10 METAL. If you can\'t pay but have a save, you return to your last save; with no save, the journey ends. Mine asteroids and collect words to stay stocked.';
     failWarn.style.display = '';
@@ -4481,10 +4493,10 @@ function updateFlight(dt) {
   // this ends the run, it never rescues or returns the shuttle.
   if (shuttle.position.length() >= BEACON_LOST_DIST) { crashMission('lost'); return; }
 
-  // Sun heat: the sun is HUGE at ~30 km out. Inside 5 km of its centre
+  // Star heat: the star is HUGE at ~30 km out. Inside 5 km of its centre
   // the heat shield vaporizes and the run ends — a crash, same repair
-  // economy as a hull/asteroid crash, with a sun-specific message.
-  if (shuttle.position.distanceTo(sunBall.position) < SUN_HEAT_DEATH_DIST) { crashMission('sun'); return; }
+  // economy as a hull/asteroid crash, with a star-specific message.
+  if (shuttle.position.distanceTo(starBall.position) < STAR_HEAT_DEATH_DIST) { crashMission('star'); return; }
 
   // Auto-docking: within DOCK_RANGE of ANY of the nine ports, the shuttle
   // docks automatically — no button, no denial. This is a mode change on
@@ -4659,9 +4671,9 @@ function updateFlight(dt) {
     // urgent past 40 km, LOST at 50 km. Each states the distance left to
     // the limit, so the player can judge speed against it. Clears below 25 km.
     const _bd = shuttle.position.length();
-    const _sd = shuttle.position.distanceTo(sunBall.position);
-    if (_sd < SUN_HEAT_WARN_DIST) {
-      beaconWarn.textContent = 'HEAT SHIELD FAILING — TURN BACK — ' + Math.max(0, Math.round((_sd - SUN_HEAT_DEATH_DIST) / 1000)) + ' km TO THE SUN';
+    const _sd = shuttle.position.distanceTo(starBall.position);
+    if (_sd < STAR_HEAT_WARN_DIST) {
+      beaconWarn.textContent = 'HEAT SHIELD FAILING — TURN BACK — ' + Math.max(0, Math.round((_sd - STAR_HEAT_DEATH_DIST) / 1000)) + ' km TO THE STAR';
       beaconWarn.style.display = 'block';
     } else if (_bd >= BEACON_URGENT_DIST) {
       beaconWarn.textContent = 'BEACON SIGNAL FADING — TURN BACK — ' + Math.max(0, Math.round((BEACON_LOST_DIST - _bd) / 1000)) + ' km TO THE LIMIT';
@@ -5105,6 +5117,10 @@ function startListening() {
 }
 function openCollect(w) {
   collectTile = w; collectOpen = true;
+  // Recognition screen (Nov 7): always open on the prompt view, never
+  // on a stale recognition (closeCollect also resets this).
+  document.getElementById('collectRecognition').style.display = 'none';
+  document.getElementById('collectPrompt').style.display = '';
   stopAutoWalk();
   try { if (document.exitPointerLock) document.exitPointerLock(); } catch (e) {}
   try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (e) {}
@@ -5155,8 +5171,16 @@ function closeCollect(collected) {
   document.getElementById('collectRevealRow').style.display = 'none';
   document.getElementById('collectPeekHint').style.display = 'none';
   document.getElementById('collectAnswerBox').style.display = 'none';
+  // Recognition screen (Nov 7): always restore the prompt view, so the
+  // next tile opens on the prompt, never on a stale recognition.
+  document.getElementById('collectRecognition').style.display = 'none';
+  document.getElementById('collectPrompt').style.display = '';
   if (menuOn) updateMenu();
 }
+// Recognition screen (Nov 7): tile set -> repository label. Word tiles
+// (w.q null) belong to Vocabulary. Conjugation tiles are set
+// 'conjugation' but the quest repository is labelled Verbs.
+const COLLECT_REPO_LABEL = { cognates: 'Cognates', idioms: 'Idioms', conjugation: 'Verbs', dictation: 'Dictation', serestar: 'Ser vs. estar', saberconocer: 'Saber vs. conocer', pronouns: 'Pronouns', porpara: 'Por vs. para' };
 function onCollectCorrect() {
   if (!collectTile || !collectOpen) return;
   const w = collectTile;
@@ -5189,7 +5213,16 @@ function onCollectCorrect() {
   hint.textContent = '+' + COLLECT_WATER + ' WATER, +' + COLLECT_METAL + ' METAL collected — ' + (w.q ? w.q.tag + ': ' : '') + w.sprite.userData.es;
   if (mineTimer) clearTimeout(mineTimer);
   mineTimer = setTimeout(updateHint, 3000);
-  setTimeout(function () { closeCollect(true); }, 900);
+  // Recognition screen (Nov 7): no auto-close — the prompt view hides
+  // and the recognition view shows the item, the repository it was
+  // added to, and the reward. The player taps Continue flying when
+  // ready, matching the station Next button. The world stays paused
+  // (collectOpen) until then.
+  document.getElementById('collectRecogItem').textContent = collectAnswer();
+  document.getElementById('collectRecogRepo').textContent = 'Added to the ' + (w.q ? (COLLECT_REPO_LABEL[w.q.set] || w.q.tag) : 'Vocabulary') + ' repository';
+  document.getElementById('collectRecogReward').textContent = '+' + COLLECT_WATER + ' WATER, +' + COLLECT_METAL + ' METAL';
+  document.getElementById('collectPrompt').style.display = 'none';
+  document.getElementById('collectRecognition').style.display = 'block';
 }
 // Round 29 watchdog: if synthesis never starts within 500 ms of a Hear
 // tap, the button resets and the panel says so plainly — silence is
@@ -5261,6 +5294,12 @@ btnCollectMic.addEventListener('click', function () {
 });
 document.getElementById('btn-collect-leave').addEventListener('pointerdown', function (e) {
   e.preventDefault(); e.target.blur(); closeCollect(false);
+});
+// Recognition screen (Nov 7): the player taps Continue flying to
+// resume flight after seeing the recognition. Plain click, matching
+// the station Next buttons. (Escape also closes, as before.)
+document.getElementById('btn-collect-continue').addEventListener('click', function () {
+  closeCollect(true);
 });
 // LOOK/STEER toggle: pointerdown (not click) so it fires mid-steer.
 // Switches drag between looking (camera) and steering (ship) in flight;
