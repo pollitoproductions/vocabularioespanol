@@ -5539,17 +5539,9 @@ function startToolRecogAttempt() {
         try { playDing(); } catch (e) {}
         setToolSayFeedback('\u2713 Correct!', true);
         if (dir === 'es') creditSpoken();
-        // Flashcard stations only: quizzes advance on their answer
-        // click, never on Say-it. Correct in either direction counts.
-        if (toolId === 'cognates' || toolId === 'idioms') {
-          clearToolAdvanceTimer();
-          const advPos = fc.pos;
-          toolAdvanceTimer = setTimeout(function () {
-            toolAdvanceTimer = null;
-            if (!toolOpen || (toolId !== 'cognates' && toolId !== 'idioms') || fc.pos !== advPos) return;
-            fc.pos = (fc.pos + 1) % fc.deck.length; fc.flipped = false; renderFlashcards();
-          }, 1500);
-        }
+        // Correct spoken answer: the card stays put — the player taps
+        // the cyan Next button when ready (no auto-advance, Nov 7).
+        // Quizzes advance on their answer click, never on Say-it.
       }
       else setToolSayFeedback('Heard: "' + heard + '" \u2014 not quite, try again');
     } catch (e) {
@@ -5977,10 +5969,10 @@ function startReviewSay(btn, fb, target) {
   reviewSay = { btn: btn, fb: fb };
   btn.textContent = '● Listening… — tap to stop'; btn.classList.add('listening');
 }
-// Auto-advance: after a correct answer, a momentary pause (1.5 s) so
-// the player sees they got it right, then the next card/question.
-// One pending timer only; cleared on close, manual Next, or a new
-// Say-it attempt, and guarded on fire (same panel, same card).
+// No auto-advance (Nov 7): after a correct answer the card/question
+// stays put and the player taps the cyan Next button when ready, so
+// the "Correct!" feedback is easy to see. The timer machinery below
+// is kept (harmless no-op) because the Next handlers still call it.
 let toolAdvanceTimer = null;
 function clearToolAdvanceTimer() { if (toolAdvanceTimer) { clearTimeout(toolAdvanceTimer); toolAdvanceTimer = null; } }
 // ---------- Flashcards (Cognates, Idioms) ----------
@@ -6084,15 +6076,8 @@ function renderQuiz() {
       nx.style.display = '';
       nx.textContent = (qz.qi + 1 >= qz.qs.length) ? 'See score →' : 'Next →';
       nx.addEventListener('click', function () { clearToolAdvanceTimer(); qz.qi++; qz.answered = false; setToolFeedback(''); renderQuiz(); });
-      if (picked === q.answer) {
-        clearToolAdvanceTimer();
-        const advQi = qz.qi;
-        toolAdvanceTimer = setTimeout(function () {
-          toolAdvanceTimer = null;
-          if (!toolOpen || qz.qi !== advQi) return;
-          qz.qi++; qz.answered = false; setToolFeedback(''); renderQuiz();
-        }, 1500);
-      }
+      // Correct answer: no auto-advance — the player taps the cyan
+      // Next button (already shown above) when ready (Nov 7).
     });
   });
 }
