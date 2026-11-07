@@ -3538,6 +3538,23 @@ const TILE_RENDER_DIST = 3500; // metres from the shuttle: texture appears
 const TILE_DROP_DIST = 4200;   // hysteresis: texture disposed past this
 const TILE_MAX_LIVE = 80;
 const TILE_NEW_PER_TICK = 6;
+// SPEED THROTTLE (round 32): flying fast past the ship crashed Brant's
+// iPhone — the device was doing two heavy jobs at once (drawing the
+// detailed ship up close AND creating tile textures as it swept through
+// the tile field at speed). So the per-tick new-texture budget depends on
+// shuttle speed: fast flight pauses tile-texture creation entirely and
+// the ship gets the GPU to itself; slowing down resumes streaming. Only
+// CREATION is throttled — disposal of out-of-range textures still runs
+// every tick at any speed, so memory never grows while flying fast. The
+// collect flow is unaffected: collecting pauses the game near a tile,
+// and a player must slow down to collect anyway. Both loops share this
+// one budget (QTILE_NEW_PER_TICK was also 6 and is removed).
+function tileNewPerTick() {
+  const sp = shuttleVel.length(); // m/s
+  if (sp > 20) return 0; // flying fast: no new tile textures
+  if (sp > 8) return 2;  // cruising: a trickle
+  return TILE_NEW_PER_TICK; // slow or stopped: normal streaming
+}
 const wordTiles = []; // { sprite, base, phase, speed, amp, live }
 for (let wi = 0; wi < WORDS.length; wi++) {
   const pair = WORDS[wi];
@@ -3640,8 +3657,9 @@ function updateWordTiles(dt, elapsed) {
   }
   if (_tileQueue.length > 1) _tileQueue.sort((a, b) => a[0] - b[0]);
   let made = 0;
+  const budget = tileNewPerTick(); // speed-based: fast flight pauses creation
   for (const entry of _tileQueue) {
-    if (made >= TILE_NEW_PER_TICK || wordTileLive >= TILE_MAX_LIVE) break;
+    if (made >= budget || wordTileLive >= TILE_MAX_LIVE) break;
     const w = entry[1];
     w.sprite.material.map = makeWordTileTexture(w.sprite.userData.emoji, w.sprite.userData.es, w.sprite.userData.en);
     w.sprite.material.needsUpdate = true;
@@ -6860,7 +6878,7 @@ const QTILE_SPACING = 150; // metres: min question-question AND question-word cl
 const QTILE_ROCK_CLEAR = 40; // metres: min clearance from near-belt + far rocks
 const QTILE_AURA_CLEAR = 300; // metres: exclusion around mining aura asteroids
 const QTILE_MAX_LIVE = 80; // live question plates (words keep their own 80)
-const QTILE_NEW_PER_TICK = 6;
+// (per-tick creation budget is speed-based now: see tileNewPerTick)
 const QTILE_COLORS = { cognates: 0x7dff9b, conjugation: 0xffb347, idioms: 0xff7ad9, dictation: 0xffe066, serestar: 0xc792ff, saberconocer: 0x5b8cff, pronouns: 0xff6b9d, porpara: 0xaeea00 };
 const QTILE_CSS = { cognates: '#7dff9b', conjugation: '#ffb347', idioms: '#ff7ad9', dictation: '#ffe066', serestar: '#c792ff', saberconocer: '#5b8cff', pronouns: '#ff6b9d', porpara: '#aeea00' };
 const QTILE_DOT_TAGS = ['cognates', 'conjugation', 'idioms', 'dictation', 'serestar', 'saberconocer', 'pronouns', 'porpara'];
@@ -7078,8 +7096,9 @@ function updateQuestionTiles(dt, elapsed) {
   }
   if (_qTileQueue.length > 1) _qTileQueue.sort((a, b) => a[0] - b[0]);
   let made = 0;
+  const budget = tileNewPerTick(); // speed-based: fast flight pauses creation
   for (const entry of _qTileQueue) {
-    if (made >= QTILE_NEW_PER_TICK || qTileLive >= QTILE_MAX_LIVE) break;
+    if (made >= budget || qTileLive >= QTILE_MAX_LIVE) break;
     const t = entry[1];
     t.sprite.material.map = makeQuestionTileTexture(t.q.tag, t.q.plateLine, QTILE_CSS[t.q.tool]);
     t.sprite.material.needsUpdate = true;
