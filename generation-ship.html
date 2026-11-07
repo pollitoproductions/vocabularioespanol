@@ -5165,11 +5165,11 @@ function startRecogAttempt() {
   recog.onend = function () {
     if (mySeq !== recogSeq || recogClosed || recogGotResult) return;
     if (recogUserStopped) { endRecogAttempt('Try again \u2014 tap \uD83C\uDFA4 when you are ready.'); return; }
-    if (recogLangIdx + 1 < recogLangs.length) {
-      recogLangIdx++;
-      startRecogAttempt(); // silent end: retry with the next language
-      return;
-    }
+    // Silent end: the user didn't speak (or paused) — do NOT advance the
+    // language. Advancing here drifted the recognizer to the device
+    // language (English), so correct Spanish was heard as English words
+    // ("Work with me on the project we are him") and marked wrong.
+    // Only 'language-not-supported' (onerror) advances the chain.
     endRecogAttempt("Didn't catch that \u2014 try again");
   };
   try { recog.start(); } catch (e) { endRecogAttempt('Try again \u2014 tap \uD83C\uDFA4 when you are ready.'); }
@@ -5691,11 +5691,11 @@ function startToolRecogAttempt() {
   toolRecog.onend = function () {
     if (mySeq !== toolRecogSeq || toolRecogClosed || toolRecogGotResult) return;
     if (toolRecogUserStopped) { endToolRecogAttempt('Try again \u2014 tap \uD83C\uDFA4 when you are ready.'); return; }
-    if (toolRecogLangIdx + 1 < toolRecogLangs.length) {
-      toolRecogLangIdx++;
-      startToolRecogAttempt(); // silent end: retry with the next language
-      return;
-    }
+    // Silent end: the user didn't speak (or paused) — do NOT advance the
+    // language. Same drift as the space-tile recognizer (Brant Nov 7):
+    // advancing here walks the chain to the device language (English),
+    // so correct Spanish is heard as English words and marked wrong.
+    // Only 'language-not-supported' (onerror) advances the chain.
     endToolRecogAttempt("Didn't catch that \u2014 try again");
   };
   try { toolRecog.start(); } catch (e) { endToolRecogAttempt('Try again \u2014 tap \uD83C\uDFA4 when you are ready.'); }
@@ -6555,7 +6555,7 @@ function buildQuestionTileItems() {
   for (let si = 0; si < TOOL_SER.length; si++) {
     const q = TOOL_SER[si];
     const correct = SER_FORM[q[1]][q[2] === 'ser' ? 0 : 1];
-    items.push({ tool: 'serestar', set: 'serestar', key: si, tag: 'SER-ESTAR', icon: '⚖️', promptBig: q[0], promptSub: 'Speak the full completed sentence', hearText: q[3], hearLang: 'en', answer: q[0].replace('___', correct), plateLine: SER_DISP[q[1]] + ' ___' });
+    items.push({ tool: 'serestar', set: 'serestar', key: si, tag: 'SER-ESTAR', icon: '⚖️', promptBig: q[0], promptSub: q[3], hearText: q[3], hearLang: 'en', answer: q[0].replace('___', correct), plateLine: SER_DISP[q[1]] + ' ___' });
   }
   // Saber vs. conocer: 100 items, key = question index (sid, same as
   // buildSycoQs). Prompt = blank sentence; Hear = English translation;
@@ -6565,7 +6565,7 @@ function buildQuestionTileItems() {
   for (let si = 0; si < TOOL_SYCO.length; si++) {
     const q = TOOL_SYCO[si];
     const correct = SYCO_FORM[q[1]][q[2] === 'saber' ? 0 : 1];
-    items.push({ tool: 'saberconocer', set: 'saberconocer', key: si, tag: 'SABER-CONOCER', icon: '🧠', promptBig: q[0], promptSub: 'Speak the full completed sentence', hearText: q[3], hearLang: 'en', answer: q[0].replace('___', correct), plateLine: SYCO_DISP[q[1]] + ' ___' });
+    items.push({ tool: 'saberconocer', set: 'saberconocer', key: si, tag: 'SABER-CONOCER', icon: '🧠', promptBig: q[0], promptSub: q[3], hearText: q[3], hearLang: 'en', answer: q[0].replace('___', correct), plateLine: SYCO_DISP[q[1]] + ' ___' });
   }
   // Pronouns: 700 items (7 categories x 100), key = question index
   // (sid, same as buildPronQs). Prompt = blank sentence; Hear =
@@ -6575,7 +6575,7 @@ function buildQuestionTileItems() {
   for (let si = 0; si < TOOL_PRON.length; si++) {
     const q = TOOL_PRON[si];
     const correct = q[1];
-    items.push({ tool: 'pronouns', set: 'pronouns', key: si, tag: 'PRONOUNS', icon: '👤', promptBig: q[0], promptSub: 'Speak the full completed sentence', hearText: q[3], hearLang: 'en', answer: q[0].replace('___', correct), plateLine: PRON_CAT[(si / 100) | 0] });
+    items.push({ tool: 'pronouns', set: 'pronouns', key: si, tag: 'PRONOUNS', icon: '👤', promptBig: q[0], promptSub: q[3], hearText: q[3], hearLang: 'en', answer: q[0].replace('___', correct), plateLine: PRON_CAT[(si / 100) | 0] });
   }
   // Por vs. para: 100 items, key = question index (sid, same as
   // buildPorParaQs). Prompt = blank sentence; Hear = English
@@ -6584,7 +6584,7 @@ function buildQuestionTileItems() {
   for (let si = 0; si < TOOL_PORPARA.length; si++) {
     const q = TOOL_PORPARA[si];
     const correct = q[1];
-    items.push({ tool: 'porpara', set: 'porpara', key: si, tag: 'POR-PARA', icon: '\uD83D\uDD00', promptBig: q[0], promptSub: 'Speak the full completed sentence', hearText: q[3], hearLang: 'en', answer: q[0].replace('___', correct), plateLine: 'POR / PARA' });
+    items.push({ tool: 'porpara', set: 'porpara', key: si, tag: 'POR-PARA', icon: '\uD83D\uDD00', promptBig: q[0], promptSub: q[3], hearText: q[3], hearLang: 'en', answer: q[0].replace('___', correct), plateLine: 'POR / PARA' });
   }
   // Practice: NO tiles — its content is already the floating vocab words.
   return items;
