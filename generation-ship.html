@@ -1542,18 +1542,29 @@ const cropBeds = [];
     const crops = new THREE.Group();
     crops.visible = false; // ungrown: bare soil until regrown with water
     ship.add(crops);
-    for (const row of vegRows) {
-      for (let k = 0; k < 40; k++) {
-        const plant = new THREE.Mesh(row.geo, row.mat);
-        const s = 0.85 + (((k * 7 + bi * 3) % 5) * 0.1);
-        plant.scale.set(s, s * row.squash, s);
-        plant.position.copy(radial).multiplyScalar(RADIUS - 1.2).add(tang.clone().multiplyScalar(row.off));
-        plant.position.z = -292 + k * 6.3;
-        plant.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), radial.clone().negate());
-        crops.add(plant);
+    // Lazy plants (memory): the 160 plants for this bed are NOT created
+    // at startup. They are built on demand by grow() the first time the
+    // bed is regrown (or loaded as grown) — so an ungrown bed costs zero
+    // plant meshes. 16 beds x 160 plants = 2,560 hidden nodes used to
+    // sit in the scene from load; on an iPhone that pressure near the
+    // ship could get the page killed. grow() is idempotent: a second
+    // call just re-shows the plants already built.
+    const grow = function () {
+      if (crops.children.length > 0) { crops.visible = true; return; }
+      for (const row of vegRows) {
+        for (let k = 0; k < 40; k++) {
+          const plant = new THREE.Mesh(row.geo, row.mat);
+          const sc = 0.85 + (((k * 7 + bi * 3) % 5) * 0.1);
+          plant.scale.set(sc, sc * row.squash, sc);
+          plant.position.copy(radial).multiplyScalar(RADIUS - 1.2).add(tang.clone().multiplyScalar(row.off));
+          plant.position.z = -292 + k * 6.3;
+          plant.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), radial.clone().negate());
+          crops.add(plant);
+        }
       }
-    }
-    cropBeds.push({ angle: fa, z: -165, dep: -1, grown: false, crops: crops });
+      crops.visible = true;
+    };
+    cropBeds.push({ angle: fa, z: -165, dep: -1, grown: false, crops: crops, grow: grow });
   }
   for (const [bi, fa] of [1.2, 2.6, 4.0].entries()) makeCropBed(fa, bi);
   // Round 29 trees flanking the Greenhouse axis (angle 0.6): trunks +
@@ -6277,7 +6288,7 @@ function tryBuild(d) {
   // Water regrows a crop bed (show its crops); metal rebuilds a
   // neighborhood (show its houses, shops, trees, lamps, lane — and its
   // little gardens, which ride along in the neighborhood's groups).
-  if (isWater) { target.grown = true; if (target.crops) target.crops.visible = true; }
+  if (isWater) { target.grown = true; if (target.grow) target.grow(); else if (target.crops) target.crops.visible = true; }
   else {
     target.built = true;
     const groups = target.groups || (target.group ? [target.group] : []);
@@ -7306,7 +7317,10 @@ function applyBuiltState(cGrown, hBuilt) {
   for (let i = 0; i < cropBeds.length; i++) {
     const b = !!(cGrown && cGrown[i]);
     cropBeds[i].grown = b;
-    if (cropBeds[i].crops) cropBeds[i].crops.visible = b;
+    // Lazy plants: only a grown bed gets plant meshes (built on demand
+    // by grow()); ungrown beds keep an empty crops group.
+    if (b) { if (cropBeds[i].grow) cropBeds[i].grow(); else if (cropBeds[i].crops) cropBeds[i].crops.visible = true; }
+    else if (cropBeds[i].crops) cropBeds[i].crops.visible = false;
   }
   for (let i = 0; i < neighborhoods.length; i++) {
     const b = !!(hBuilt && hBuilt[i]);
