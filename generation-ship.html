@@ -416,7 +416,7 @@
   <div class="row"><span>SABER VS. CONOCER SPOKEN</span><b id="progSyco">0 / 100</b></div>
   <div class="row"><span>PRONOUNS SPOKEN</span><b id="progPron">0 / 700</b></div>
   <div class="row"><span>POR VS. PARA SPOKEN</span><b id="progPorPara">0 / 100</b></div>
-  <div class="row"><span>GARDENS PLANTED</span><b id="progGardens">0 / 32</b></div>
+  <div class="row"><span>CROP BEDS GROWN</span><b id="progCrops">0 / 16</b></div>
   <div class="row"><span>NEIGHBORHOODS BUILT</span><b id="progHoods">0 / 16</b></div>
   <button class="closeBtn" id="btn-menu-review" type="button">REVIEW EVERYTHING</button>
   <div class="controls">Progress counts spoken Spanish only — flipping, tapping, and listening don’t count; English practice doesn’t count either. REVIEW EVERYTHING opens the same review panel as the terminals: everything you have already answered, anytime.</div>
@@ -447,7 +447,7 @@
     <div class="mHead">REVIEW TERMINALS</div>
     <div class="mBody">Eight gold review terminals stand around the industrial side &mdash; one on the mezzanine, seven on the main deck, spread evenly around the hull. Walk up and tap Review (or press Enter) to review everything you have already spoken, by tool, with Hear in both languages. Reviewing never changes progress.</div>
     <div class="mHead">DEPOSITORIES</div>
-    <div class="mBody">Eight depositories rebuild the ship&rsquo;s city: four blue WATER depositories in the agriculture ring and four amber METAL depositories in the residential half. Walk up and tap DEPOSIT (or press Enter) to deposit material from your haul in person &mdash; 400 WATER raises one garden, 800 METAL raises one neighborhood (half as many neighborhoods, so each one costs twice as much). Partial deposits bank toward the next build, so you can deposit what you have and come back later. Gardens and neighborhoods start unbuilt and appear only when you build them.</div>
+    <div class="mBody">Eight depositories rebuild the ship&rsquo;s city: four blue WATER depositories in the agriculture ring and four amber METAL depositories in the residential half. Walk up and tap DEPOSIT (or press Enter) to deposit material from your haul in person &mdash; 800 WATER regrows one crop bed in the farm, 800 METAL rebuilds one neighborhood (and its little gardens appear too, planted). Partial deposits bank toward the next build, so you can deposit what you have and come back later. Crop beds start ungrown and neighborhoods start unbuilt — they appear only when you regrow or rebuild them.</div>
     <div class="mHead">QUESTS</div>
     <div class="mBody">Your quest is to rebuild the lost Spanish repositories &mdash; vocabulary, cognates, idioms, verbs, dictation, ser vs. estar, saber vs. conocer, and pronouns. The quest box (top left) shows what you have collected in each repository, with an arrow pointing to your next tutorial step, and celebrates each repository you finish &mdash; and all of them together. Quests guide; they never block &mdash; skip the tutorial anytime from the quest box.</div>
     <div class="mHead">SAVING</div>
@@ -1401,6 +1401,9 @@ function basisQuat(radial) {
 // ---------- Round 9: bulkhead, industrial enclosure, gallery ----------
 // Agricultural dressing, confined to the agricultural half: field strips
 // with crop rows. Nothing agricultural is placed in the industrial half.
+// Crop beds live here (top level) so the depository section can assign
+// them: each bed is { angle, z, dep (0..3 water), grown, crops }.
+const cropBeds = [];
 {
   const cropBedMat = new THREE.MeshStandardMaterial({ color: 0x6a7a5a, roughness: 1 });
   applyGameTexture(cropBedMat, 'https://pollitoproductions.github.io/Vocabulario-Espanol/crops.jpg', 2, 24);
@@ -1494,7 +1497,12 @@ function basisQuat(radial) {
     { off: 0.9, geo: vegGeos.hedge, mat: vegMats.hedge, squash: 0.8 },
     { off: 2.6, geo: vegGeos.bush, mat: vegMats.bushB, squash: 0.9 }
   ];
-  for (const [bi, fa] of [1.2, 2.6, 4.0].entries()) {
+  // Crop beds: 16 farm rows in the agriculture ring. Each bed is a bare
+  // soil box (always visible) plus a crops group (160 plants) that starts
+  // HIDDEN (ungrown) and appears only when the bed is regrown with WATER
+  // at a water depository. Recorded here so the depository section can
+  // assign each bed to its nearest water depository (4 beds each).
+  function makeCropBed(fa, bi) {
     const radial = new THREE.Vector3(Math.cos(fa), Math.sin(fa), 0);
     const tang = new THREE.Vector3(-Math.sin(fa), Math.cos(fa), 0);
     const bed = new THREE.Mesh(new THREE.BoxGeometry(6, 0.8, 240), cropBedMat);
@@ -1502,6 +1510,9 @@ function basisQuat(radial) {
     bed.position.z = -165;
     bed.quaternion.copy(basisQuat(radial));
     ship.add(bed);
+    const crops = new THREE.Group();
+    crops.visible = false; // ungrown: bare soil until regrown with water
+    ship.add(crops);
     for (const row of vegRows) {
       for (let k = 0; k < 40; k++) {
         const plant = new THREE.Mesh(row.geo, row.mat);
@@ -1510,10 +1521,12 @@ function basisQuat(radial) {
         plant.position.copy(radial).multiplyScalar(RADIUS - 1.2).add(tang.clone().multiplyScalar(row.off));
         plant.position.z = -292 + k * 6.3;
         plant.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), radial.clone().negate());
-        ship.add(plant);
+        crops.add(plant);
       }
     }
+    cropBeds.push({ angle: fa, z: -165, dep: -1, grown: false, crops: crops });
   }
+  for (const [bi, fa] of [1.2, 2.6, 4.0].entries()) makeCropBed(fa, bi);
   // Round 29 trees flanking the Greenhouse axis (angle 0.6): trunks +
   // canopies, 6 trees, tangential offsets clear of the doorway path
   // (and of the Cognates console at angle 0.2618, z -120).
@@ -1674,51 +1687,13 @@ function basisQuat(radial) {
   // Greenhouse trees, the existing beds, the sheds, and the Round 30
   // extra trees; orchards dodge the strips, consoles, and extra trees.
   // All new plants sit at z <= -46, clear of the bulkhead.
-  for (const [bi, fa] of [0.85, 1.6, 2.9, 3.85, 4.9, 5.65].entries()) {
-    const radial = new THREE.Vector3(Math.cos(fa), Math.sin(fa), 0);
-    const tang = new THREE.Vector3(-Math.sin(fa), Math.cos(fa), 0);
-    const bed = new THREE.Mesh(new THREE.BoxGeometry(6, 0.8, 240), cropBedMat);
-    bed.position.copy(radial).multiplyScalar(RADIUS - 0.4);
-    bed.position.z = -165;
-    bed.quaternion.copy(basisQuat(radial));
-    ship.add(bed);
-    for (const row of vegRows) {
-      for (let k = 0; k < 40; k++) {
-        const plant = new THREE.Mesh(row.geo, row.mat);
-        const s = 0.85 + (((k * 7 + bi * 3) % 5) * 0.1);
-        plant.scale.set(s, s * row.squash, s);
-        plant.position.copy(radial).multiplyScalar(RADIUS - 1.2).add(tang.clone().multiplyScalar(row.off));
-        plant.position.z = -292 + k * 6.3;
-        plant.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), radial.clone().negate());
-        ship.add(plant);
-      }
-    }
-  }
+  for (const [bi, fa] of [0.85, 1.6, 3.85, 4.9, 5.65].entries()) makeCropBed(fa, bi);
   // Doubled fields: eight more crop beds (same bed + veg-row pattern,
   // 40 plants per row, not denser rows), plus crates and pipes along
   // them. Angles dodge every station console, the existing beds and
   // strips, the Greenhouse trees, the sheds, the orchards, and the
   // extra trees; all plants sit at z <= -46, clear of the bulkhead.
-  for (const [bi, fa] of [0.11, 1.025, 1.45, 2.1, 2.75, 3.55, 4.3, 5.275].entries()) {
-    const radial = new THREE.Vector3(Math.cos(fa), Math.sin(fa), 0);
-    const tang = new THREE.Vector3(-Math.sin(fa), Math.cos(fa), 0);
-    const bed = new THREE.Mesh(new THREE.BoxGeometry(6, 0.8, 240), cropBedMat);
-    bed.position.copy(radial).multiplyScalar(RADIUS - 0.4);
-    bed.position.z = -165;
-    bed.quaternion.copy(basisQuat(radial));
-    ship.add(bed);
-    for (const row of vegRows) {
-      for (let k = 0; k < 40; k++) {
-        const plant = new THREE.Mesh(row.geo, row.mat);
-        const s = 0.85 + (((k * 7 + bi * 3) % 5) * 0.1);
-        plant.scale.set(s, s * row.squash, s);
-        plant.position.copy(radial).multiplyScalar(RADIUS - 1.2).add(tang.clone().multiplyScalar(row.off));
-        plant.position.z = -292 + k * 6.3;
-        plant.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), radial.clone().negate());
-        ship.add(plant);
-      }
-    }
-  }
+  for (const [bi, fa] of [0.11, 1.025, 1.45, 2.1, 2.75, 3.55, 4.3, 5.275].entries()) makeCropBed(fa, bi);
   for (let ci = 0; ci < 8; ci++) {
     const fa = [0.11, 1.025, 1.45, 2.1, 2.75, 3.55, 4.3, 5.275][ci];
     const radial = new THREE.Vector3(Math.cos(fa), Math.sin(fa), 0);
@@ -2442,14 +2417,16 @@ function basisQuat(radial) {
 }
 
 // ---------- Depositories + rebuild (Brant Nov 7) ----------
-// Gardens and neighborhoods start UNBUILT and materialize when the
-// player deposits 400 WATER (a garden) or 800 METAL (a neighborhood)
-// at a depository, in person. The fill functions in the city block
-// below record every garden and neighborhood element here; the
-// depository section (after the review terminals) assigns each to its
-// nearest depository and applies the saved built state.
+// Crop beds start UNGROWN and neighborhoods start UNBUILT. Water
+// regrows a crop bed (800 WATER) and metal rebuilds a neighborhood
+// (800 METAL) at a depository, in person — a rebuilt neighborhood
+// brings its little gardens with it, planted, at no extra cost. The
+// fill functions in the city block below record every garden and
+// neighborhood element here; the depository section (after the review
+// terminals) assigns each crop bed and neighborhood to its nearest
+// depository and applies the saved grown/built state.
 const HOOD_CENTERS = [[0.55, 150], [0.625, 250], [2.725, 110], [2.375, 250], [3.425, 150], [3.775, 260], [5.175, 200], [5.525, 200], [4.35, 240], [4.25, 120], [6.0, 200], [0.2, 120], [0.2, 260], [3.1, 150], [3.1, 260], [0.9, 250]];
-const gardens = []; // { angle, z, group, solidIdx, dep (0..3 water), built }
+const gardens = []; // { angle, z, group, solidIdx, hood (nearest neighborhood) } — little gardens that appear with their neighborhood, no separate cost
 const hoodParts = []; // { angle, z, group, solidIdx } — houses/shops/trees/lamps, assigned to nearest HOOD_CENTERS entry after the block
 const neighborhoods = []; // 16 entries: { angle, z, groups: [], solidIdxs: [], dep (4..7 metal), built }
 for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0], z: HOOD_CENTERS[hi][1], groups: [], solidIdxs: [], dep: -1, built: false });
@@ -2643,7 +2620,7 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
     fillBox(g, 5, 0.5, 1.2, fillCropMat, 0, -0.15, 1.5);
     const sIdx = addSolid(angle, 3, z, 3);
     g.visible = false; SOLID[sIdx][4] = false; // unbuilt: hidden + walk-through until a depository raises it
-    gardens.push({ angle: angle, z: z, group: g, solidIdx: sIdx, dep: -1, built: false });
+    gardens.push({ angle: angle, z: z, group: g, solidIdx: sIdx, hood: -1 });
     return g;
   }
   function fillTree(angle, z) {
@@ -2689,6 +2666,22 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
     }
     neighborhoods[best].groups.push(part.group);
     if (part.solidIdx >= 0) neighborhoods[best].solidIdxs.push(part.solidIdx);
+  }
+  // Gardens belong to their nearest neighborhood: when a neighborhood
+  // is rebuilt with METAL, its little gardens appear too (planted, no
+  // extra cost). Their visibility and collision follow the neighborhood
+  // through its groups/solidIdxs, exactly like the houses and shops.
+  for (const g of gardens) {
+    let best = 0, bestD2 = Infinity;
+    for (let ci = 0; ci < HOOD_CENTERS.length; ci++) {
+      const tang = Math.abs(angDiff(g.angle, HOOD_CENTERS[ci][0])) * RADIUS;
+      const dz = g.z - HOOD_CENTERS[ci][1];
+      const d2 = tang * tang + dz * dz;
+      if (d2 < bestD2) { bestD2 = d2; best = ci; }
+    }
+    g.hood = best;
+    neighborhoods[best].groups.push(g.group);
+    if (g.solidIdx >= 0) neighborhoods[best].solidIdxs.push(g.solidIdx);
   }
   // One water tower per neighborhood, same build as the original city
   // tower (four legs, hull-panel tank, flat disc top). Spots sit on
@@ -3090,16 +3083,17 @@ for (const tp of REVIEW_TERMINALS_POS) {
 // a clear gap — no station, review terminal, exploration terminal,
 // crop bed, orchard, or neighborhood in the way (placements checked
 // against every list before they were written). Depositing a depository's
-// full cost materializes the next unbuilt garden (400 WATER) or
-// neighborhood (800 METAL) nearest to it: each water depository raises
-// 8 gardens, each metal depository 4 neighborhoods. Gardens and
-// neighborhoods start unbuilt (hidden, walk-through) and appear only
-// when built.
+// full cost regrows the next ungrown crop bed (800 WATER) or rebuilds
+// the next unbuilt neighborhood (800 METAL) nearest to it: each water
+// depository regrows 4 crop beds, each metal depository rebuilds 4
+// neighborhoods (gardens included). Crop beds start ungrown (bare soil,
+// crops hidden) and neighborhoods start unbuilt (hidden, walk-through);
+// each appears only when regrown or rebuilt.
 const DEPOSITORIES = [
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 0.48, z: -100, bank: 0, cost: 400 },
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 3.22, z: -100, bank: 0, cost: 400 },
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 4.07, z: -100, bank: 0, cost: 400 },
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 4.60, z: -100, bank: 0, cost: 400 },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 0.48, z: -100, bank: 0, cost: 800 },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 3.22, z: -100, bank: 0, cost: 800 },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 4.07, z: -100, bank: 0, cost: 800 },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 4.60, z: -100, bank: 0, cost: 800 },
   { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 0.75, z: 200, bank: 0, cost: 800 },
   { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 2.54, z: 200, bank: 0, cost: 800 },
   { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 4.07, z: 200, bank: 0, cost: 800 },
@@ -3113,9 +3107,9 @@ for (const d of DEPOSITORIES) {
   con.quaternion.copy(basisQuat(rad));
   ship.add(con);
 }
-// Assign each garden to its nearest water depository and each
+// Assign each crop bed to its nearest water depository and each
 // neighborhood to its nearest metal depository (tangential + axial
-// distance), 8 gardens and 4 neighborhoods per depository. Greedy by
+// distance), 4 crop beds and 4 neighborhoods per depository. Greedy by
 // distance so every depository gets its nearest available items.
 (function assignDepositories() {
   function assign(items, depIdxs, cap) {
@@ -3138,7 +3132,7 @@ for (const d of DEPOSITORIES) {
       items[i].dep = depIdxs[j];
     }
   }
-  assign(gardens, [0, 1, 2, 3], 8);
+  assign(cropBeds, [0, 1, 2, 3], 4);
   assign(neighborhoods, [4, 5, 6, 7], 4);
 })();
 
@@ -3927,9 +3921,9 @@ function updateProgressUI() {
   setTxt('progSyco', prog.saberconocer.size, TOOL_SYCO.length);
   setTxt('progPron', prog.pronouns.size, TOOL_PRON.length);
   setTxt('progPorPara', prog.porpara.size, 100);
-  let gBuilt = 0; for (const g of gardens) if (g.built) gBuilt++;
+  let cGrown = 0; for (const c of cropBeds) if (c.grown) cGrown++;
   let hBuilt = 0; for (const h of neighborhoods) if (h.built) hBuilt++;
-  setTxt('progGardens', gBuilt, gardens.length);
+  setTxt('progCrops', cGrown, cropBeds.length);
   setTxt('progHoods', hBuilt, neighborhoods.length);
   try { updateQuestUI(); } catch (e) {}
 }
@@ -4050,9 +4044,9 @@ function updateQuestUI() {
   if (changed) { try { saveGame(); } catch (e) {} }
   const wc = questWordCount();
   try { checkRepoCompletions(wc); } catch (e) {}
-  const gBuilt = gardens.filter(function (g) { return g.built; }).length;
+  const cGrown = cropBeds.filter(function (c) { return c.grown; }).length;
   const hBuilt = neighborhoods.filter(function (h) { return h.built; }).length;
-  const key = questStep + '|' + wc + '|' + prog.cognates.size + '|' + prog.idioms.size + '|' + prog.conjugation.size + '|' + prog.dictation.size + '|' + prog.serestar.size + '|' + prog.saberconocer.size + '|' + prog.pronouns.size + '|' + prog.porpara.size + '|' + gBuilt + '|' + hBuilt + '|' + celebrateText + '|' + mode;
+  const key = questStep + '|' + wc + '|' + prog.cognates.size + '|' + prog.idioms.size + '|' + prog.conjugation.size + '|' + prog.dictation.size + '|' + prog.serestar.size + '|' + prog.saberconocer.size + '|' + prog.pronouns.size + '|' + prog.porpara.size + '|' + cGrown + '|' + hBuilt + '|' + celebrateText + '|' + mode;
   if (key === lastQuestKey) return;
   lastQuestKey = key;
   if (!questBox) return;
@@ -4069,7 +4063,7 @@ function updateQuestUI() {
   }
   questRepoEl.innerHTML = questRepos(wc).map(function (r) {
     return (r.count >= r.total ? '✓ ' : '') + r.label + ' ' + r.count + ' / ' + r.total;
-  }).join('<br>') + '<br>' + (gBuilt >= gardens.length ? '✓ ' : '') + 'Gardens ' + gBuilt + ' / ' + gardens.length + '<br>' + (hBuilt >= neighborhoods.length ? '✓ ' : '') + 'Neighborhoods ' + hBuilt + ' / ' + neighborhoods.length;
+  }).join('<br>') + '<br>' + (cGrown >= cropBeds.length ? '✓ ' : '') + 'Crop beds ' + cGrown + ' / ' + cropBeds.length + '<br>' + (hBuilt >= neighborhoods.length ? '✓ ' : '') + 'Neighborhoods ' + hBuilt + ' / ' + neighborhoods.length;
   if (questCelebrateEl) questCelebrateEl.textContent = celebrateText;
 }
 if (btnQuestSkip) btnQuestSkip.addEventListener('pointerdown', function (e) {
@@ -6172,7 +6166,7 @@ btnTerminal.addEventListener('pointerdown', function (e) {
 // Depositories: same walk-up pattern as stations and review terminals.
 // The DEPOSIT button shows while the player stands inside a
 // depository's 8 m trigger; tapping it (or Enter) deposits material
-// from the haul, in person. Partial deposits bank toward the next build (400 WATER / 800 METAL).
+// from the haul, in person. Partial deposits bank toward the next build (800 WATER / 800 METAL).
 const btnDeposit = document.getElementById('btn-deposit');
 let depositNear = null;
 function depositDist2(d) {
@@ -6202,11 +6196,11 @@ function doDeposit() {
   const d = depositNear;
   if (!d || mode !== 'walk') return;
   const isWater = d.kind === 'water';
-  const items = isWater ? gardens : neighborhoods;
+  const items = isWater ? cropBeds : neighborhoods;
   const di = DEPOSITORIES.indexOf(d);
   let hasUnbuilt = false;
-  for (const it of items) if (it.dep === di && !it.built) { hasUnbuilt = true; break; }
-  if (!hasUnbuilt) { hint.textContent = 'This depository has rebuilt everything nearby — nothing left to build here'; return; }
+  for (const it of items) if (it.dep === di && !(isWater ? it.grown : it.built)) { hasUnbuilt = true; break; }
+  if (!hasUnbuilt) { hint.textContent = isWater ? 'This depository has regrown every crop bed nearby — nothing left to regrow here' : 'This depository has rebuilt every neighborhood nearby — nothing left to build here'; return; }
   const haul = isWater ? water : metal;
   if (haul <= 0) { hint.textContent = 'No ' + d.label + ' in your haul — collect words or mine asteroids first'; return; }
   const need = d.cost - d.bank;
@@ -6216,7 +6210,7 @@ function doDeposit() {
   if (isWater) tutDepWater = true; else tutDepMetal = true;
   const built = tryBuild(d);
   if (!built) {
-    hint.textContent = 'Deposited ' + amount + ' ' + d.label + ' — ' + d.bank + ' / ' + d.cost + ' toward the next ' + (isWater ? 'garden' : 'neighborhood');
+    hint.textContent = 'Deposited ' + amount + ' ' + d.label + ' — ' + d.bank + ' / ' + d.cost + ' toward the next ' + (isWater ? 'crop bed' : 'neighborhood');
   }
   try { updateMenu(); } catch (e) {}
   try { updateProgressUI(); } catch (e) {}
@@ -6225,26 +6219,33 @@ function doDeposit() {
 function tryBuild(d) {
   if (d.bank < d.cost) return false;
   const isWater = d.kind === 'water';
-  const items = isWater ? gardens : neighborhoods;
+  const items = isWater ? cropBeds : neighborhoods;
   const di = DEPOSITORIES.indexOf(d);
   let target = null;
   for (const it of items) {
-    if (it.dep === di && !it.built) { target = it; break; }
+    if (it.dep === di && !(isWater ? it.grown : it.built)) { target = it; break; }
   }
   if (!target) return false;
   d.bank -= d.cost;
-  target.built = true;
-  const groups = target.groups || (target.group ? [target.group] : []);
-  for (const g of groups) if (g) g.visible = true;
-  const sIdxs = target.solidIdxs || (typeof target.solidIdx === 'number' && target.solidIdx >= 0 ? [target.solidIdx] : []);
-  for (const si of sIdxs) if (SOLID[si]) SOLID[si][4] = true;
-  const what = isWater ? 'garden' : 'neighborhood';
-  const n = items.filter(function (x) { return x.built; }).length;
+  // Water regrows a crop bed (show its crops); metal rebuilds a
+  // neighborhood (show its houses, shops, trees, lamps, lane — and its
+  // little gardens, which ride along in the neighborhood's groups).
+  if (isWater) { target.grown = true; if (target.crops) target.crops.visible = true; }
+  else {
+    target.built = true;
+    const groups = target.groups || (target.group ? [target.group] : []);
+    for (const g of groups) if (g) g.visible = true;
+    const sIdxs = target.solidIdxs || (typeof target.solidIdx === 'number' && target.solidIdx >= 0 ? [target.solidIdx] : []);
+    for (const si of sIdxs) if (SOLID[si]) SOLID[si][4] = true;
+  }
+  const what = isWater ? 'crop bed' : 'neighborhood';
+  const verb = isWater ? 'regrown' : 'rebuilt';
+  const n = items.filter(function (x) { return isWater ? x.grown : x.built; }).length;
   const total = items.length;
-  celebrateText = '★ A ' + what + ' was rebuilt! (' + n + ' / ' + total + ')';
+  celebrateText = '★ A ' + what + ' was ' + verb + '! (' + n + ' / ' + total + ')';
   try { playDing(); } catch (e) {}
-  try { announcePair('A ' + what + ' was rebuilt!', isWater ? '¡Un jardín fue reconstruido!' : '¡Un barrio fue construido!'); } catch (e) {}
-  hint.textContent = '★ A ' + what + ' was rebuilt! ' + d.bank + ' / ' + d.cost + ' banked toward the next one';
+  try { announcePair('A ' + what + ' was ' + verb + '!', isWater ? '¡Un cultivo volvió a crecer!' : '¡Un barrio fue construido!'); } catch (e) {}
+  hint.textContent = '★ A ' + what + ' was ' + verb + '! ' + d.bank + ' / ' + d.cost + ' banked toward the next one';
   return true;
 }
 btnDeposit.addEventListener('pointerdown', function (e) {
@@ -7097,9 +7098,11 @@ function animate() {
 // freeCrashUsed: bool, progress: { cognates, idioms, practice, conjugation,
 // dictation, serestar, saberconocer, pronouns: per-item identifier arrays },
 // pos: { mode: 'walk'|'flight'|'docked', ... } }, tutorial: quest step 0-7 (8 = done)
-// Depositories: depBank: [8 banked amounts 0..199], gardensBuilt: [32 booleans],
+// Depositories: depBank: [8 banked amounts 0..799], cropsGrown: [16 booleans],
 // hoodsBuilt: [16 booleans]. Old saves without these keys load as banked 0 /
-// all unbuilt (construction resets; haul and collected progress preserved).
+// all ungrown and unbuilt (construction resets; haul and collected progress
+// preserved). An old gardensBuilt key, if present, is ignored — gardens now
+// follow their neighborhood.
 // (8 = tutorial done; a save with 6, the old done value, lands on step 6,
 // deposit water, so players who finished the old tutorial meet the new
 // depository steps. Old saves without it migrate from progress.) A round-21 save
@@ -7234,11 +7237,11 @@ function readSave() {
     const mined = s.mined.filter(function (i) { return Number.isInteger(i) && i >= 0 && i < auraAsteroids.length; });
     const depBank = (Array.isArray(s.depBank) ? s.depBank : []).map(function (v) { return (Number.isFinite(v) && v >= 0 && v < 800) ? Math.floor(v) : 0; });
     while (depBank.length < 8) depBank.push(0);
-    const gardensBuilt = (Array.isArray(s.gardensBuilt) ? s.gardensBuilt : []).map(function (v) { return v === true; });
-    while (gardensBuilt.length < 32) gardensBuilt.push(false);
+    const cropsGrown = (Array.isArray(s.cropsGrown) ? s.cropsGrown : []).map(function (v) { return v === true; });
+    while (cropsGrown.length < 16) cropsGrown.push(false);
     const hoodsBuilt = (Array.isArray(s.hoodsBuilt) ? s.hoodsBuilt : []).map(function (v) { return v === true; });
     while (hoodsBuilt.length < 16) hoodsBuilt.push(false);
-    return { water: Math.floor(s.water), metal: Math.floor(s.metal), words: words, mined: mined, freeCrashUsed: s.freeCrashUsed === true, progress: (s.progress && typeof s.progress === 'object') ? s.progress : null, pos: validPos(s.pos), tutorial: (Number.isInteger(s.tutorial) ? s.tutorial : null), recognized: (s.recognized && typeof s.recognized === 'object') ? s.recognized : null, depBank: depBank, gardensBuilt: gardensBuilt, hoodsBuilt: hoodsBuilt };
+    return { water: Math.floor(s.water), metal: Math.floor(s.metal), words: words, mined: mined, freeCrashUsed: s.freeCrashUsed === true, progress: (s.progress && typeof s.progress === 'object') ? s.progress : null, pos: validPos(s.pos), tutorial: (Number.isInteger(s.tutorial) ? s.tutorial : null), recognized: (s.recognized && typeof s.recognized === 'object') ? s.recognized : null, depBank: depBank, cropsGrown: cropsGrown, hoodsBuilt: hoodsBuilt };
   } catch (e) { return null; }
 }
 function saveGame() {
@@ -7247,15 +7250,14 @@ function saveGame() {
     for (let i = 0; i < wordTiles.length; i++) if (wordTiles[i].collected) words.push(i);
     const mined = [];
     for (let i = 0; i < auraAsteroids.length; i++) if (auraAsteroids[i].mined) mined.push(i);
-    window.localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, water: water, metal: metal, words: words, mined: mined, freeCrashUsed: freeCrashUsed, progress: progToSave(), pos: capturePosition(), tutorial: questStep, recognized: recognizedRepos, depBank: DEPOSITORIES.map(function (d) { return d.bank; }), gardensBuilt: gardens.map(function (g) { return g.built; }), hoodsBuilt: neighborhoods.map(function (h) { return h.built; }) }));
+    window.localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, water: water, metal: metal, words: words, mined: mined, freeCrashUsed: freeCrashUsed, progress: progToSave(), pos: capturePosition(), tutorial: questStep, recognized: recognizedRepos, depBank: DEPOSITORIES.map(function (d) { return d.bank; }), cropsGrown: cropBeds.map(function (c) { return c.grown; }), hoodsBuilt: neighborhoods.map(function (h) { return h.built; }) }));
   } catch (e) {}
 }
-function applyBuiltState(gBuilt, hBuilt) {
-  for (let i = 0; i < gardens.length; i++) {
-    const b = !!(gBuilt && gBuilt[i]);
-    gardens[i].built = b;
-    if (gardens[i].group) gardens[i].group.visible = b;
-    if (gardens[i].solidIdx >= 0 && SOLID[gardens[i].solidIdx]) SOLID[gardens[i].solidIdx][4] = b;
+function applyBuiltState(cGrown, hBuilt) {
+  for (let i = 0; i < cropBeds.length; i++) {
+    const b = !!(cGrown && cGrown[i]);
+    cropBeds[i].grown = b;
+    if (cropBeds[i].crops) cropBeds[i].crops.visible = b;
   }
   for (let i = 0; i < neighborhoods.length; i++) {
     const b = !!(hBuilt && hBuilt[i]);
@@ -7298,7 +7300,7 @@ function applySave(s) {
   // neighborhoods. Old saves without these keys start at 0 / unbuilt
   // (construction resets; haul and collected progress are preserved).
   for (let i = 0; i < DEPOSITORIES.length && i < (s.depBank || []).length; i++) DEPOSITORIES[i].bank = s.depBank[i];
-  applyBuiltState(s.gardensBuilt, s.hoodsBuilt);
+  applyBuiltState(s.cropsGrown, s.hoodsBuilt);
   try { syncWordDots(); } catch (e) {}
   try { syncQuestionDots(); } catch (e) {}
   updateMenu();
@@ -7308,7 +7310,7 @@ function applySave(s) {
 function resetProgress() {
   water = 0; metal = 0; freeCrashUsed = false; questStep = 0; questCollected = false; menuReviewVisited = false; recognizedRepos = {}; celebrateText = '';
   for (const d of DEPOSITORIES) d.bank = 0;
-  applyBuiltState(null, null); // fresh start: every garden and neighborhood unbuilt again
+  applyBuiltState(null, null); // fresh start: every crop bed ungrown and every neighborhood unbuilt again
   for (const k in prog) prog[k].clear();
   for (const w of wordTiles) {
     if (w.live) {
