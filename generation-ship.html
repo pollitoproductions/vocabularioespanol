@@ -523,7 +523,7 @@
         <button class="ctl2" id="btn-tool-hear-es" type="button">&#128266; Hear (ES)</button>
         <button class="ctl2" id="btn-tool-hear-en" type="button">&#128266; Hear (EN)</button>
         <button class="ctl2" id="btn-tool-say" type="button">&#127908; Say it</button>
-        <button class="ctl2" id="btn-tool-dir" type="button">Say: Spanish</button>
+        <button class="ctl2" id="btn-tool-dir" type="button" style="display:none">Say: Spanish</button>
       </div>
       <div id="toolSayFeedback"></div>
       <div id="toolNoMic">Speech recognition isn&rsquo;t available on this device or browser &mdash; you can still hear everything in Spanish and English.</div>
@@ -3593,6 +3593,12 @@ const TILE_NEW_PER_TICK = 6;
 // and a player must slow down to collect anyway. Both loops share this
 // one budget (QTILE_NEW_PER_TICK was also 6 and is removed).
 function tileNewPerTick() {
+  // Near the ship (Brant Nov 7): approaching to dock froze the phone —
+  // closing in slowly means the speed budget is 6/tick, right in the
+  // dense question-tile field (1.5 km band), so many textures are built
+  // at once. Within 2 km of the ship centre the player is about to go
+  // inside and needs no new tile textures, so create none.
+  if (shuttle.position.length() < 2000) return 0; // docking approach: no new tile textures
   const sp = shuttleVel.length(); // m/s
   if (sp > 20) return 0; // flying fast: no new tile textures
   if (sp > 8) return 2;  // cruising: a trickle
@@ -4123,8 +4129,13 @@ function questStepDone(i) {
   if (i === 3) return questCollected;
   if (i === 4) return mode === 'walk';
   if (i === 5) return menuReviewVisited;
-  if (i === 6) return tutDepWater || water === 0 || DEPOSITORIES.some(function (d) { return d.kind === 'water' && d.bank > 0; });
-  if (i === 7) return tutDepMetal || metal === 0 || DEPOSITORIES.some(function (d) { return d.kind === 'metal' && d.bank > 0; });
+  // Tutorial deposit steps (Brant Nov 7): step 6/7 complete ONLY on an
+  // actual deposit (tutDepWater/tutDepMetal) or a banked amount — never
+  // because the player happens to hold 0 water/metal. The old `water === 0`
+  // / `metal === 0` shortcut let the tutorial skip straight past the
+  // depositories, so the player never got the arrow guiding them there.
+  if (i === 6) return tutDepWater || DEPOSITORIES.some(function (d) { return d.kind === 'water' && d.bank > 0; });
+  if (i === 7) return tutDepMetal || DEPOSITORIES.some(function (d) { return d.kind === 'metal' && d.bank > 0; });
   return true;
 }
 // The nine repositories, in menu PROGRESS order. Counts mirror
@@ -5946,7 +5957,6 @@ const toolNoMic = document.getElementById('toolNoMic');
 const btnToolHearEs = document.getElementById('btn-tool-hear-es');
 const btnToolHearEn = document.getElementById('btn-tool-hear-en');
 const btnToolSay = document.getElementById('btn-tool-say');
-const btnToolDir = document.getElementById('btn-tool-dir');
 const toolAudioGate = document.getElementById('toolAudioGate');
 const toolAudioBtns = document.getElementById('toolAudioBtns');
 // Current speakable item: { es, en, esGated, enGated }. A gated Hear item
@@ -6036,9 +6046,9 @@ function startToolRecogAttempt() {
       try { toolRecog.stop(); } catch (e) {}
       if (toolRecogTimer) { clearTimeout(toolRecogTimer); toolRecogTimer = null; }
       toolRecogActive = false; toolSayUI(false);
-      const dir = toolSayDir;
-      const target = dir === 'es' ? toolAudio.es : toolAudio.en;
-      const ok = dir === 'es' ? spokenMatches(heard, target) : spokenMatchesEn(heard, target);
+      // Spanish-only: the target is always the Spanish answer.
+      const target = toolAudio.es;
+      const ok = spokenMatches(heard, target);
       if (reviewSay) {
         // Round 30 review terminal: feedback ONLY — ding + echo, never
         // creditSpoken, never save, never change known status.
@@ -6050,7 +6060,7 @@ function startToolRecogAttempt() {
       else if (ok) {
         try { playDing(); } catch (e) {}
         let earned = false;
-        if (dir === 'es') earned = creditSpoken();
+        earned = creditSpoken(); // Spanish-only: a correct spoken answer always earns
         setToolSayFeedback(earned ? '\u2713 Correct! +5 WATER, +5 METAL' : '\u2713 Correct!', true);
         // Correct spoken answer: the card stays put — the player taps
         // the cyan Next button when ready (no auto-advance, Nov 7).
@@ -6155,7 +6165,7 @@ function startToolListening() {
     if (!WordRec || !toolAudio) return;
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     stopToolListening(false); // clear any previous attempt (bumps the guard)
-    toolRecogLangs = buildRecogLangs(toolSayDir === 'es' ? ['es-MX', 'es-US'] : ['en-US', 'en-GB']);
+    toolRecogLangs = buildRecogLangs(['es-MX', 'es-US']); // Spanish-only: no English direction in the ship
     toolRecogLangIdx = 0; toolRecogGotResult = false; toolRecogClosed = false;
     toolRecogActive = true;
     toolSayUI(true);
@@ -6190,13 +6200,10 @@ btnToolSay.addEventListener('click', function () {
   ensureAudio();
   if (toolRecogActive) stopToolListeningForResult(); else startToolListening();
 });
-btnToolDir.addEventListener('click', function () {
-  if (toolAudioGated()) return; // Round 30: the toggle has no effect before answering.
-  toolSayDir = toolSayDir === 'es' ? 'en' : 'es';
-  btnToolDir.textContent = toolSayDir === 'es' ? 'Say: Spanish' : 'Say: English';
-  if (toolRecogActive) stopToolListening(false);
-  setToolSayFeedback('');
-});
+// Spanish-only speaking (Brant Nov 7): the ship has no English speaking
+// activities — the Say: English direction toggle is hidden and removed,
+// so toolSayDir stays 'es' and the station recognizer always listens
+// in Spanish. Hearing English (Hear EN) is unchanged.
 // Round 30 (layout): all nine stations in agriculture, 60 degrees apart,
 // offset 15 degrees from the bulkhead doorway angles. kind 'ext' for all:
 // plain 8 m walk-up proximity; the old gallery gate in stationDist2 no
@@ -6348,7 +6355,7 @@ function closeReview() {
   if (reviewSay) stopToolListening(false);
   try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (e) {}
   // Review always speaks Spanish; leave the station toggle label honest.
-  toolSayDir = 'es'; btnToolDir.textContent = 'Say: Spanish';
+  toolSayDir = 'es'; // Spanish-only: the direction toggle is gone
   reviewPanel.style.display = 'none';
 }
 btnTerminal.addEventListener('pointerdown', function (e) {
