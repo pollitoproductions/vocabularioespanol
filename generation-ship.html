@@ -564,8 +564,8 @@ const DOCK_RANGE = 100;       // metres from any docking port; flying inside thi
 const BEACON_WARN_DIST = 25000; // metres from the ship centre; first warning past 25 km (staged warnings 25/40 km, LOST at 50 km)
 const BEACON_URGENT_DIST = 40000; // metres from the ship centre; urgent warning past 40 km — 10 km to the limit
 const BEACON_LOST_DIST = 50000; // metres from the ship centre; past this, the run ends LOST (25 km from the first warning, 10 km from the urgent one)
-const STAR_HEAT_WARN_DIST = 8000; // metres from the star centre; heat warning inside this
-const STAR_HEAT_DEATH_DIST = 5000; // metres from the star centre; inside this the heat shield vaporizes and the run ends
+const STAR_HEAT_WARN_DIST = 11000; // metres from the star centre; heat warning inside this
+const STAR_HEAT_DEATH_DIST = 8000; // metres from the star centre; inside this the heat shield vaporizes and the run ends
 const COLLIDE_DIST = 3;       // metres from the hull surface; closer than this (outside every port zone) = crash
 const MINE_RANGE = 100;       // metres from a mineable asteroid's surface; inside this, mining is available
 const MINE_TIME = 3;          // seconds of holding to complete a mine
@@ -699,10 +699,10 @@ scene.add(fill);
 // Loads async; if star.jpg is not there yet the plain warm color stays.
 const starMat = new THREE.MeshBasicMaterial({ color: 0xffe9a8 });
 const starBall = new THREE.Mesh(
-  new THREE.SphereGeometry(3000, 48, 32),
+  new THREE.SphereGeometry(6000, 48, 32),
   starMat
 );
-starBall.position.set(22611, 11306, 16151); // ~30 km out, same direction as the old 1.9 km star — HUGE now (~11 deg across from the ship)
+starBall.position.set(22611, 11306, 16151); // ~30 km out, same direction as the old 1.9 km star — HUGE now (~22 deg across from the ship)
 scene.add(starBall);
 new THREE.TextureLoader().load('https://pollitoproductions.github.io/Vocabulario-Espanol/star.jpg', function (tex) {
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -729,7 +729,7 @@ function makeStarGlowTexture() {
 }
 const starGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: makeStarGlowTexture(), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
 starGlow.position.copy(starBall.position);
-starGlow.scale.set(15000, 15000, 1);
+starGlow.scale.set(30000, 30000, 1);
 scene.add(starGlow);
 
 // Starfield: points on a distant shell, no external textures.
