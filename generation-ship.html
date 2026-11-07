@@ -4376,15 +4376,16 @@ function rotateShuttle(yawDelta, pitchDelta) {
   // Pitch is NOT clamped (Brant Nov 7): the old ~89 deg clamp felt like
   // a wall — pitch as far forward/back as you like, including right
   // over the top. Past vertical the shuttle's up inverts, which used to
-  // make yaw read reversed; the yaw input is now scaled by cos(pitch)
-  // so the turn never flips: level cos = 1 (full turn), vertical
-  // cos = 0 (yaw can't turn a nose pointing straight up), past vertical
-  // cos goes negative and the world-yaw reverses, which reads as the
-  // SAME turn to the upside-down pilot. Steering never goes reverse,
-  // however far you pitch. (Camera: it stays the plane of view behind
-  // the ship from takeoff; the player can put it right back behind
-  // them with the look controls if it ever drifts.)
-  shipYaw += yawDelta * Math.cos(shipPitch); shipPitch += pitchDelta;
+  // make yaw read reversed. The yaw SIGN flips when upside down
+  // (cos(pitch) < 0) so the turn always reads the same way to the pilot,
+  // but the magnitude is NEVER scaled down: the old cos(pitch) scaling
+  // drove yaw to ~0 at pitch near +-90 deg, so a departure with a
+  // near-vertical tangent (pitch ~89 deg from the asin clamp) left the
+  // player unable to turn left/right at all. Full-strength yaw with a
+  // sign flip keeps steering alive at every pitch. (Camera: it stays
+  // the plane of view behind the ship from takeoff; the player can put
+  // it right back behind them with the look controls if it ever drifts.)
+  shipYaw += yawDelta * (Math.cos(shipPitch) >= 0 ? 1 : -1); shipPitch += pitchDelta;
   shuttle.quaternion.setFromEuler(new THREE.Euler(shipPitch, shipYaw, 0, 'YXZ'));
 }
 canvas.addEventListener('pointerdown', function (e) {
