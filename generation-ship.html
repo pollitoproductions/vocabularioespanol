@@ -136,6 +136,7 @@
      101) with MINE's cyan accent so it pops at a glance in range. */
   #btn-station { width: 56px; height: 56px; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(101px + env(safe-area-inset-bottom, 0px)); border: 2px solid rgba(127, 227, 255, 0.9); background: linear-gradient(160deg, rgba(127, 227, 255, 0.35), rgba(127, 227, 255, 0.12)); box-shadow: 0 0 18px rgba(127, 227, 255, 0.55), 0 6px 18px rgba(0, 0, 0, 0.30); }
   #btn-terminal { width: 56px; height: 56px; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(176px + env(safe-area-inset-bottom, 0px)); }
+  #btn-deposit { width: 56px; height: 56px; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(251px + env(safe-area-inset-bottom, 0px)); }
   /* Mini menu button: small, rounded, cyber-blue synthetic look. */
   #btn-menu {
     position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); right: calc(12px + env(safe-area-inset-right, 0px)); z-index: 9;
@@ -396,6 +397,8 @@
   <div class="row"><span>SABER VS. CONOCER SPOKEN</span><b id="progSyco">0 / 100</b></div>
   <div class="row"><span>PRONOUNS SPOKEN</span><b id="progPron">0 / 700</b></div>
   <div class="row"><span>POR VS. PARA SPOKEN</span><b id="progPorPara">0 / 100</b></div>
+  <div class="row"><span>GARDENS PLANTED</span><b id="progGardens">0 / 32</b></div>
+  <div class="row"><span>NEIGHBORHOODS BUILT</span><b id="progHoods">0 / 16</b></div>
   <button class="closeBtn" id="btn-menu-review" type="button">REVIEW EVERYTHING</button>
   <div class="controls">Progress counts spoken Spanish only — flipping, tapping, and listening don’t count; English practice doesn’t count either. REVIEW EVERYTHING opens the same review panel as the terminals: everything you have already answered, anytime.</div>
   </div><button class="subHead" data-sub="settings" data-label="SETTINGS" type="button">▸ SETTINGS</button><div class="subBody" id="sub-settings">
@@ -424,6 +427,8 @@
     <div class="mBody">Fly within 250 m of a floating word or exercise question to pause and pronounce it: words ask for the Spanish word; questions ask you to speak the answer (tap Show answer to peek &mdash; peeking never counts, only speaking does). Say it right to collect it for +5 WATER and +5 METAL; Leave (or Escape) flies on, and the item waits until you are 400 m clear. A gold arrow points to the nearest uncollected item &mdash; word or question &mdash; with a tag saying which; distant items show as small glow dots until their plates stream in.</div>
     <div class="mHead">REVIEW TERMINALS</div>
     <div class="mBody">Eight gold review terminals stand around the industrial side &mdash; one on the mezzanine, seven on the main deck, spread evenly around the hull. Walk up and tap Review (or press Enter) to review everything you have already spoken, by tool, with Hear in both languages. Reviewing never changes progress.</div>
+    <div class="mHead">DEPOSITORIES</div>
+    <div class="mBody">Eight depositories rebuild the ship&rsquo;s city: four blue WATER depositories in the agriculture ring and four amber METAL depositories in the residential half. Walk up and tap DEPOSIT (or press Enter) to deposit material from your haul in person &mdash; 200 of a depository&rsquo;s material raises one garden (WATER) or one neighborhood (METAL). Partial deposits bank toward the next 200, so you can deposit what you have and come back later. Gardens and neighborhoods start unbuilt and appear only when you build them.</div>
     <div class="mHead">QUESTS</div>
     <div class="mBody">Your quest is to rebuild the lost Spanish repositories &mdash; vocabulary, cognates, idioms, verbs, dictation, ser vs. estar, saber vs. conocer, and pronouns. The quest box (top left) shows what you have collected in each repository, with an arrow pointing to your next tutorial step, and celebrates each repository you finish &mdash; and all of them together. Quests guide; they never block &mdash; skip the tutorial anytime from the quest box.</div>
     <div class="mHead">SAVING</div>
@@ -545,6 +550,7 @@
   <button class="ctl" id="btn-brake" type="button" style="display:none">BRAKE</button>
   <button class="ctl" id="btn-station" type="button" style="display:none">LEARN</button>
   <button class="ctl" id="btn-terminal" type="button" style="display:none">REVIEW</button>
+  <button class="ctl" id="btn-deposit" type="button" style="display:none">DEPOSIT</button>
 </div>
 <canvas id="game"></canvas>
 <script type="module">
@@ -1076,11 +1082,14 @@ function angDiff(a, b) { let d = a - b; return Math.atan2(Math.sin(d), Math.cos(
 const SOLID = [];
 const SOLID_MARGIN = 0.5;
 function addSolid(angle, halfTangM, zCenter, halfAxM) {
-  SOLID.push([angle, (halfTangM + SOLID_MARGIN) / RADIUS, zCenter - halfAxM - SOLID_MARGIN, zCenter + halfAxM + SOLID_MARGIN]);
+  const idx = SOLID.length;
+  SOLID.push([angle, (halfTangM + SOLID_MARGIN) / RADIUS, zCenter - halfAxM - SOLID_MARGIN, zCenter + halfAxM + SOLID_MARGIN, true]);
+  return idx;
 }
 function solidBlocked(a, z) {
   for (let i = 0; i < SOLID.length; i++) {
     const s = SOLID[i];
+    if (!s[4]) continue; // unbuilt garden/neighborhood: hidden and walk-through
     if (Math.abs(angDiff(a, s[0])) < s[1] && z >= s[2] && z <= s[3]) return true;
   }
   return false;
@@ -1088,6 +1097,7 @@ function solidBlocked(a, z) {
 function solidHit(a, z) {
   for (let i = 0; i < SOLID.length; i++) {
     const s = SOLID[i];
+    if (!s[4]) continue; // unbuilt garden/neighborhood: hidden and walk-through
     if (Math.abs(angDiff(a, s[0])) < s[1] && z >= s[2] && z <= s[3]) return s;
   }
   return null;
@@ -2402,6 +2412,19 @@ function basisQuat(radial) {
   }
 }
 
+// ---------- Depositories + rebuild (Brant Nov 7) ----------
+// Gardens and neighborhoods start UNBUILT and materialize when the
+// player deposits 200 WATER (a garden) or 200 METAL (a neighborhood)
+// at a depository, in person. The fill functions in the city block
+// below record every garden and neighborhood element here; the
+// depository section (after the review terminals) assigns each to its
+// nearest depository and applies the saved built state.
+const HOOD_CENTERS = [[0.55, 150], [0.625, 250], [2.725, 110], [2.375, 250], [3.425, 150], [3.775, 260], [5.175, 200], [5.525, 200], [4.35, 240], [4.25, 120], [6.0, 200], [0.2, 120], [0.2, 260], [3.1, 150], [3.1, 260], [0.9, 250]];
+const gardens = []; // { angle, z, group, solidIdx, dep (0..3 water), built }
+const hoodParts = []; // { angle, z, group, solidIdx } — houses/shops/trees/lamps, assigned to nearest HOOD_CENTERS entry after the block
+const neighborhoods = []; // 16 entries: { angle, z, groups: [], solidIdxs: [], dep (4..7 metal), built }
+for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0], z: HOOD_CENTERS[hi][1], groups: [], solidIdxs: [], dep: -1, built: false });
+
 // ---------- Nov 1: upper-half city fabric (round 30, updated) ----------
 // The residential pattern spreads across the whole upper half (everything
 // that is not agriculture): axial streets ring the half, seven town
@@ -2520,6 +2543,7 @@ function basisQuat(radial) {
     const g = fillGroup(angle, z, 0.4);
     fillBox(g, 0.25, 3, 0.25, fillPostMat, 0, 1.1, 0);
     fillBox(g, 0.5, 0.3, 0.5, fillLampMat, 0, 2.7, 0);
+    return g;
   }
   // Axial streets: full length of the upper half, z 40..310. The 1.5
   // main street and the 1.39/1.61 lanes already exist, so they are skipped.
@@ -2563,7 +2587,10 @@ function basisQuat(radial) {
     fillBox(g, 0.15, 2.2, 1.2, fillDoorMat, face * 4.08, 0.7, 0);
     fillBox(g, 0.12, 1.0, 2.6, fillWinMat, face * 4.06, 2.6, 0);
     fillBox(g, 0.2, 0.2, 0.2, fillLampMat, face * 4.1, 2.2, 0);
-    addSolid(angle, 4, z, 4);
+    const sIdx = addSolid(angle, 4, z, 4);
+    g.visible = false; SOLID[sIdx][4] = false; // unbuilt: hidden + walk-through until a depository raises it
+    hoodParts.push({ angle: angle, z: z, group: g, solidIdx: sIdx });
+    return g;
   }
   function fillShop(angle, z, faceZ, awnMat) {
     const g = fillGroup(angle, z, 0.4);
@@ -2572,7 +2599,10 @@ function basisQuat(radial) {
     fillBox(g, 1.2, 2.2, 0.15, fillDoorMat, 0, 0.7, faceZ * 3.08);
     fillBox(g, 2.0, 1.0, 0.12, fillWinMat, 0, 2.4, faceZ * 3.06);
     fillBox(g, 3.5, 0.15, 0.5, fillBenchMat, 0, -0.325, faceZ * 4.2);
-    addSolid(angle, 3, z + faceZ * 0.9, 3.9);
+    const sIdx = addSolid(angle, 3, z + faceZ * 0.9, 3.9);
+    g.visible = false; SOLID[sIdx][4] = false; // unbuilt: hidden + walk-through until a depository raises it
+    hoodParts.push({ angle: angle, z: z, group: g, solidIdx: sIdx });
+    return g;
   }
   function fillGarden(angle, z) {
     const g = fillGroup(angle, z, 0.4);
@@ -2582,7 +2612,10 @@ function basisQuat(radial) {
     fillBox(g, 0.15, 0.8, 6, fillBenchMat, 3, 0, 0);
     fillBox(g, 5, 0.5, 1.2, fillCropMat, 0, -0.15, -1.5);
     fillBox(g, 5, 0.5, 1.2, fillCropMat, 0, -0.15, 1.5);
-    addSolid(angle, 3, z, 3);
+    const sIdx = addSolid(angle, 3, z, 3);
+    g.visible = false; SOLID[sIdx][4] = false; // unbuilt: hidden + walk-through until a depository raises it
+    gardens.push({ angle: angle, z: z, group: g, solidIdx: sIdx, dep: -1, built: false });
+    return g;
   }
   function fillTree(angle, z) {
     const g = fillGroup(angle, z, 0.4);
@@ -2597,16 +2630,36 @@ function basisQuat(radial) {
       pl.position.set(0, 3.4, 0);
       g.add(pl);
     }
+    g.visible = false; // unbuilt: hidden until its neighborhood is raised
+    hoodParts.push({ angle: angle, z: z, group: g, solidIdx: -1 });
+    return g;
   }
   for (const [ha, hz, face] of [[0.4938, 130, 1], [0.4938, 143, 1], [0.4938, 157, 1], [0.4938, 170, 1], [0.6063, 130, -1], [0.6063, 143, -1], [0.6063, 157, -1], [0.6063, 170, -1], [0.5687, 230, 1], [0.5687, 243, 1], [0.5687, 257, 1], [0.5687, 270, 1], [0.6813, 230, -1], [0.6813, 243, -1], [0.6813, 257, -1], [0.6813, 270, -1], [2.6688, 90, 1], [2.6688, 103, 1], [2.6688, 117, 1], [2.6688, 130, 1], [2.7812, 90, -1], [2.7812, 103, -1], [2.7812, 117, -1], [2.7812, 130, -1], [2.3188, 230, 1], [2.3188, 243, 1], [2.3188, 257, 1], [2.3188, 270, 1], [2.4312, 230, -1], [2.4312, 243, -1], [2.4312, 257, -1], [2.4312, 270, -1], [3.3687, 130, 1], [3.3687, 143, 1], [3.3687, 157, 1], [3.3687, 170, 1], [3.4812, 130, -1], [3.4812, 143, -1], [3.4812, 157, -1], [3.4812, 170, -1], [3.7188, 240, 1], [3.7188, 253, 1], [3.7188, 267, 1], [3.7188, 280, 1], [3.8312, 240, -1], [3.8312, 253, -1], [3.8312, 267, -1], [3.8312, 280, -1], [5.1187, 180, 1], [5.1187, 193, 1], [5.1187, 207, 1], [5.1187, 220, 1], [5.2313, 180, -1], [5.2313, 193, -1], [5.2313, 207, -1], [5.2313, 220, -1], [5.4688, 180, 1], [5.4688, 193, 1], [5.4688, 207, 1], [5.4688, 220, 1], [5.5813, 180, -1], [5.5813, 193, -1], [5.5813, 207, -1], [5.5813, 220, -1], [4.2938, 220, 1], [4.4063, 220, -1], [4.2938, 233, 1], [4.4063, 233, -1], [4.2938, 247, 1], [4.4063, 247, -1], [4.2938, 260, 1], [4.4063, 260, -1], [4.1938, 100, 1], [4.3063, 100, -1], [4.1938, 113, 1], [4.3063, 113, -1], [4.1938, 127, 1], [4.3063, 127, -1], [4.1938, 140, 1], [4.3063, 140, -1], [5.9438, 180, 1], [6.0563, 180, -1], [5.9438, 193, 1], [6.0563, 193, -1], [5.9438, 207, 1], [6.0563, 207, -1], [5.9438, 220, 1], [6.0563, 220, -1], [0.1438, 100, 1], [0.2563, 100, -1], [0.1438, 113, 1], [0.2563, 113, -1], [0.1438, 127, 1], [0.2563, 127, -1], [0.1438, 140, 1], [0.2563, 140, -1], [0.1438, 240, 1], [0.2563, 240, -1], [0.1438, 253, 1], [0.2563, 253, -1], [0.1438, 267, 1], [0.2563, 267, -1], [0.1438, 280, 1], [0.2563, 280, -1], [3.0438, 130, 1], [3.1563, 130, -1], [3.0438, 143, 1], [3.1563, 143, -1], [3.0438, 157, 1], [3.1563, 157, -1], [3.0438, 170, 1], [3.1563, 170, -1], [3.0438, 240, 1], [3.1563, 240, -1], [3.0438, 253, 1], [3.1563, 253, -1], [3.0438, 267, 1], [3.1563, 267, -1], [3.0438, 280, 1], [3.1563, 280, -1], [0.8438, 230, 1], [0.9563, 230, -1], [0.8438, 243, 1], [0.9563, 243, -1], [0.8438, 257, 1], [0.9563, 257, -1], [0.8438, 270, 1], [0.9563, 270, -1]]) fillHouse(ha, hz, face);
   [[0.55, 122, 1], [0.55, 178, -1], [0.625, 222, 1], [0.625, 278, -1], [2.725, 82, 1], [2.725, 138, -1], [2.375, 222, 1], [2.375, 278, -1], [3.425, 122, 1], [3.425, 178, -1], [3.775, 232, 1], [3.775, 288, -1], [5.175, 172, 1], [5.175, 228, -1], [5.525, 172, 1], [5.525, 228, -1], [4.35, 212, 1], [4.35, 268, -1], [4.25, 92, 1], [4.25, 148, -1], [6.0, 172, 1], [6.0, 228, -1], [0.2, 92, 1], [0.2, 148, -1], [0.2, 232, 1], [0.2, 288, -1], [3.1, 122, 1], [3.1, 178, -1], [3.1, 232, 1], [3.1, 288, -1], [0.9, 222, 1], [0.9, 278, -1]].forEach(([sa, sz, faceZ], si) => fillShop(sa, sz, faceZ, fillStallMats[si % fillStallMats.length]));
   for (const [ga, gz] of [[0.4438, 150], [0.6562, 150], [0.5188, 250], [0.7312, 250], [2.6187, 110], [2.8313, 110], [2.2687, 250], [2.4813, 250], [3.3187, 150], [3.5312, 150], [3.6687, 260], [3.8813, 260], [5.0687, 200], [5.2812, 200], [5.4188, 200], [5.6313, 200], [4.2438, 240], [4.4563, 240], [4.1438, 120], [4.3563, 120], [5.8938, 200], [6.1063, 200], [0.0938, 120], [0.3063, 120], [0.0938, 260], [0.3063, 260], [2.9938, 150], [3.2063, 150], [2.9938, 260], [3.2063, 260], [0.7938, 250], [1.0063, 250]]) fillGarden(ga, gz);
   for (const [ta, tz] of [[0.4438, 130], [0.4438, 170], [0.6562, 130], [0.6562, 170], [0.5188, 230], [0.5188, 270], [0.7312, 230], [0.7312, 270], [2.6187, 90], [2.6187, 130], [2.8313, 90], [2.8313, 130], [2.2687, 230], [2.2687, 270], [2.4813, 230], [2.4813, 270], [3.3187, 130], [3.3187, 170], [3.5312, 130], [3.5312, 170], [3.6687, 240], [3.6687, 280], [3.8813, 240], [3.8813, 280], [5.0687, 180], [5.0687, 220], [5.2812, 180], [5.2812, 220], [5.4188, 180], [5.4188, 220], [5.6313, 180], [5.6313, 220], [4.2438, 220], [4.4563, 220], [4.2438, 260], [4.4563, 260], [4.1438, 100], [4.3563, 100], [4.1438, 140], [4.3563, 140], [5.8938, 180], [6.1063, 180], [5.8938, 220], [6.1063, 220], [0.0938, 100], [0.3063, 100], [0.0938, 140], [0.3063, 140], [0.0938, 240], [0.3063, 240], [0.0938, 280], [0.3063, 280], [2.9938, 130], [3.2063, 130], [2.9938, 170], [3.2063, 170], [2.9938, 240], [3.2063, 240], [2.9938, 280], [3.2063, 280], [0.7938, 230], [1.0063, 230], [0.7938, 270], [1.0063, 270]]) fillTree(ta, tz);
-  for (const [la, lz] of [[0.5125, 135], [0.5125, 165], [0.5875, 135], [0.5875, 165], [0.5875, 235], [0.5875, 265], [0.6625, 235], [0.6625, 265], [2.6875, 95], [2.6875, 125], [2.7625, 95], [2.7625, 125], [2.3375, 235], [2.3375, 265], [2.4125, 235], [2.4125, 265], [3.3875, 135], [3.3875, 165], [3.4625, 135], [3.4625, 165], [3.7375, 245], [3.7375, 275], [3.8125, 245], [3.8125, 275], [5.1375, 185], [5.1375, 215], [5.2125, 185], [5.2125, 215], [5.4875, 185], [5.4875, 215], [5.5625, 185], [5.5625, 215], [4.3125, 225], [4.3875, 225], [4.3125, 255], [4.3875, 255], [4.2125, 105], [4.2875, 105], [4.2125, 135], [4.2875, 135], [5.9625, 185], [6.0375, 185], [5.9625, 215], [6.0375, 215], [0.1625, 105], [0.2375, 105], [0.1625, 135], [0.2375, 135], [0.1625, 245], [0.2375, 245], [0.1625, 275], [0.2375, 275], [3.0625, 135], [3.1375, 135], [3.0625, 165], [3.1375, 165], [3.0625, 245], [3.1375, 245], [3.0625, 275], [3.1375, 275], [0.8625, 235], [0.9375, 235], [0.8625, 265], [0.9375, 265]]) fillLamp(la, lz);
+  for (const [la, lz] of [[0.5125, 135], [0.5125, 165], [0.5875, 135], [0.5875, 165], [0.5875, 235], [0.5875, 265], [0.6625, 235], [0.6625, 265], [2.6875, 95], [2.6875, 125], [2.7625, 95], [2.7625, 125], [2.3375, 235], [2.3375, 265], [2.4125, 235], [2.4125, 265], [3.3875, 135], [3.3875, 165], [3.4625, 135], [3.4625, 165], [3.7375, 245], [3.7375, 275], [3.8125, 245], [3.8125, 275], [5.1375, 185], [5.1375, 215], [5.2125, 185], [5.2125, 215], [5.4875, 185], [5.4875, 215], [5.5625, 185], [5.5625, 215], [4.3125, 225], [4.3875, 225], [4.3125, 255], [4.3875, 255], [4.2125, 105], [4.2875, 105], [4.2125, 135], [4.2875, 135], [5.9625, 185], [6.0375, 185], [5.9625, 215], [6.0375, 215], [0.1625, 105], [0.2375, 105], [0.1625, 135], [0.2375, 135], [0.1625, 245], [0.2375, 245], [0.1625, 275], [0.2375, 275], [3.0625, 135], [3.1375, 135], [3.0625, 165], [3.1375, 165], [3.0625, 245], [3.1375, 245], [3.0625, 275], [3.1375, 275], [0.8625, 235], [0.9375, 235], [0.8625, 265], [0.9375, 265]]) { const lg = fillLamp(la, lz); lg.visible = false; hoodParts.push({ angle: la, z: lz, group: lg, solidIdx: -1 }); }
   // Center lanes for the sixteen neighborhoods.
-  for (const [ca, cz] of [[0.55, 150], [0.625, 250], [2.725, 110], [2.375, 250], [3.425, 150], [3.775, 260], [5.175, 200], [5.525, 200], [4.35, 240], [4.25, 120], [6.0, 200], [0.2, 120], [0.2, 260], [3.1, 150], [3.1, 260], [0.9, 250]]) {
+  for (let ci = 0; ci < HOOD_CENTERS.length; ci++) {
+    const ca = HOOD_CENTERS[ci][0], cz = HOOD_CENTERS[ci][1];
     const g = fillGroup(ca, cz, 0.12);
     fillBox(g, 4, 0.15, 50, fillStreetMat, 0, 0, 0);
+    g.visible = false; // the lane belongs to its neighborhood; it appears when the neighborhood is built
+    neighborhoods[ci].groups.push(g);
+  }
+  // Assign every recorded neighborhood element to its nearest center
+  // lane (tangential + axial distance). The lane strips are already in
+  // neighborhoods[ci].groups above.
+  for (const part of hoodParts) {
+    let best = 0, bestD2 = Infinity;
+    for (let ci = 0; ci < HOOD_CENTERS.length; ci++) {
+      const tang = Math.abs(angDiff(part.angle, HOOD_CENTERS[ci][0])) * RADIUS;
+      const dz = part.z - HOOD_CENTERS[ci][1];
+      const d2 = tang * tang + dz * dz;
+      if (d2 < bestD2) { bestD2 = d2; best = ci; }
+    }
+    neighborhoods[best].groups.push(part.group);
+    if (part.solidIdx >= 0) neighborhoods[best].solidIdxs.push(part.solidIdx);
   }
   // One water tower per neighborhood, same build as the original city
   // tower (four legs, hull-panel tank, flat disc top). Spots sit on
@@ -3001,6 +3054,65 @@ for (const tp of REVIEW_TERMINALS_POS) {
   tgrp.quaternion.copy(basisQuat(trad));
   ship.add(tgrp);
 }
+// ---------- Depositories + rebuild (Brant Nov 7) ----------
+// Eight glowing consoles where the player deposits WATER and METAL in
+// person. Four WATER depositories in the agriculture ring (negative z),
+// four METAL depositories in the residential half (positive z), each in
+// a clear gap — no station, review terminal, exploration terminal,
+// crop bed, orchard, or neighborhood in the way (placements checked
+// against every list before they were written). Depositing 200 of a
+// depository's material materializes the next unbuilt garden (WATER)
+// or neighborhood (METAL) nearest to it: each water depository raises
+// 8 gardens, each metal depository 4 neighborhoods. Gardens and
+// neighborhoods start unbuilt (hidden, walk-through) and appear only
+// when built.
+const DEPOSITORIES = [
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 0.48, z: -100, bank: 0 },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 3.22, z: -100, bank: 0 },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 4.07, z: -100, bank: 0 },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 4.60, z: -100, bank: 0 },
+  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 0.75, z: 200, bank: 0 },
+  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 2.54, z: 200, bank: 0 },
+  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 4.07, z: 200, bank: 0 },
+  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 6.24, z: 200, bank: 0 },
+];
+for (const d of DEPOSITORIES) {
+  const rad = new THREE.Vector3(Math.cos(d.angle), Math.sin(d.angle), 0);
+  const con = makeStationConsole(d.label + ' DEPOSITORY', d.css, 14);
+  con.position.copy(rad).multiplyScalar(RADIUS);
+  con.position.z = d.z;
+  con.quaternion.copy(basisQuat(rad));
+  ship.add(con);
+}
+// Assign each garden to its nearest water depository and each
+// neighborhood to its nearest metal depository (tangential + axial
+// distance), 8 gardens and 4 neighborhoods per depository. Greedy by
+// distance so every depository gets its nearest available items.
+(function assignDepositories() {
+  function assign(items, depIdxs, cap) {
+    const pairs = [];
+    for (let i = 0; i < items.length; i++) {
+      for (let j = 0; j < depIdxs.length; j++) {
+        const d = DEPOSITORIES[depIdxs[j]];
+        const tang = Math.abs(angDiff(items[i].angle, d.angle)) * RADIUS;
+        const dz = items[i].z - d.z;
+        pairs.push([tang * tang + dz * dz, i, j]);
+      }
+    }
+    pairs.sort(function (a, b) { return a[0] - b[0]; });
+    const taken = new Array(items.length).fill(false);
+    const count = new Array(depIdxs.length).fill(0);
+    for (const p of pairs) {
+      const i = p[1], j = p[2];
+      if (taken[i] || count[j] >= cap) continue;
+      taken[i] = true; count[j]++;
+      items[i].dep = depIdxs[j];
+    }
+  }
+  assign(gardens, [0, 1, 2, 3], 8);
+  assign(neighborhoods, [4, 5, 6, 7], 4);
+})();
+
 // Round 30 gated DEPART (Brant: no more accidental ejects), now EIGHT
 // Exploration Terminals — one inside the ship for each of the eight
 // body ports (the top hub port gets none). Each stands at its port's
@@ -3785,7 +3897,11 @@ function updateProgressUI() {
   setTxt('progSer', prog.serestar.size, TOOL_SER.length);
   setTxt('progSyco', prog.saberconocer.size, TOOL_SYCO.length);
   setTxt('progPron', prog.pronouns.size, TOOL_PRON.length);
-  setTxt('progPorPara', prog.porpara.size, TOOL_PORPARA.length);
+  setTxt('progPorPara', prog.porpara.size, 100);
+  let gBuilt = 0; for (const g of gardens) if (g.built) gBuilt++;
+  let hBuilt = 0; for (const h of neighborhoods) if (h.built) hBuilt++;
+  setTxt('progGardens', gBuilt, gardens.length);
+  setTxt('progHoods', hBuilt, neighborhoods.length);
   try { updateQuestUI(); } catch (e) {}
 }
 
@@ -4029,6 +4145,7 @@ function undock() {
   btnMode.style.display = 'none';
   btnTerminal.style.display = 'none'; terminalNear = false; // walk-only checks stop in flight, so a REVIEW button left up at departure would otherwise hang on in space
   btnStation.style.display = 'none'; stationNear = null; // same staleness guard for LEARN
+  btnDeposit.style.display = 'none'; depositNear = null; // same staleness guard for DEPOSIT
   if (hint.textContent.indexOf('Near the review terminal') === 0) hint.textContent = '';
   if (hint.textContent.indexOf('tap LEARN') !== -1) hint.textContent = '';
   btnJump.style.visibility = 'hidden';
@@ -4163,6 +4280,7 @@ document.addEventListener('keydown', function (e) {
   if (crashed) { if (e.code === 'KeyR' && !e.repeat) failPrimaryAction(); return; } // fail screen owns all input until repaired
   if (e.code === 'Enter' && !e.repeat && stationNear) { openTool(stationNear.id); return; }
   if (e.code === 'Enter' && !e.repeat && terminalNear) { openReview(); return; }
+  if (e.code === 'Enter' && !e.repeat && depositNear) { doDeposit(); return; }
   if (e.code === 'Space' && !e.repeat && mode === 'walk') doJump();
   if (e.code === 'KeyF' && !e.repeat) toggleMode();
   if (e.code === 'KeyH' && !e.repeat) toggleMenu();
@@ -5969,6 +6087,87 @@ btnTerminal.addEventListener('pointerdown', function (e) {
   e.preventDefault(); e.target.blur();
   if (terminalNear) openReview();
 });
+// Depositories: same walk-up pattern as stations and review terminals.
+// The DEPOSIT button shows while the player stands inside a
+// depository's 8 m trigger; tapping it (or Enter) deposits material
+// from the haul, in person. Partial deposits bank toward the next 200.
+const btnDeposit = document.getElementById('btn-deposit');
+let depositNear = null;
+function depositDist2(d) {
+  if (mode !== 'walk' || toolOpen || reviewOpen) return Infinity;
+  const tang = Math.abs(angDiff(playerAngle, d.angle)) * RADIUS;
+  const dz = playerZ - d.z;
+  return tang * tang + dz * dz;
+}
+function checkDepositories() {
+  if (toolOpen || reviewOpen) { btnDeposit.style.display = 'none'; depositNear = null; return; }
+  let best = null, bestD2 = STATION_DIST * STATION_DIST;
+  for (const d of DEPOSITORIES) {
+    const d2 = depositDist2(d);
+    if (d2 < bestD2) { bestD2 = d2; best = d; }
+  }
+  btnDeposit.style.display = best ? '' : 'none';
+  if (best !== depositNear) {
+    depositNear = best;
+    if (best) {
+      hint.textContent = 'Near the ' + best.label + ' depository — tap DEPOSIT or press Enter (' + best.bank + ' / 200 banked)';
+    } else if (hint.textContent.indexOf('Near the ') === 0 && hint.textContent.indexOf('depository') >= 0) {
+      hint.textContent = '';
+    }
+  }
+}
+function doDeposit() {
+  const d = depositNear;
+  if (!d || mode !== 'walk') return;
+  const isWater = d.kind === 'water';
+  const items = isWater ? gardens : neighborhoods;
+  const di = DEPOSITORIES.indexOf(d);
+  let hasUnbuilt = false;
+  for (const it of items) if (it.dep === di && !it.built) { hasUnbuilt = true; break; }
+  if (!hasUnbuilt) { hint.textContent = 'This depository has rebuilt everything nearby — nothing left to build here'; return; }
+  const haul = isWater ? water : metal;
+  if (haul <= 0) { hint.textContent = 'No ' + d.label + ' in your haul — collect words or mine asteroids first'; return; }
+  const need = 200 - d.bank;
+  const amount = Math.min(haul, need);
+  if (isWater) water -= amount; else metal -= amount;
+  d.bank += amount;
+  const built = tryBuild(d);
+  if (!built) {
+    hint.textContent = 'Deposited ' + amount + ' ' + d.label + ' — ' + d.bank + ' / 200 toward the next ' + (isWater ? 'garden' : 'neighborhood');
+  }
+  try { updateMenu(); } catch (e) {}
+  try { updateProgressUI(); } catch (e) {}
+  try { saveGame(); } catch (e) {}
+}
+function tryBuild(d) {
+  if (d.bank < 200) return false;
+  const isWater = d.kind === 'water';
+  const items = isWater ? gardens : neighborhoods;
+  const di = DEPOSITORIES.indexOf(d);
+  let target = null;
+  for (const it of items) {
+    if (it.dep === di && !it.built) { target = it; break; }
+  }
+  if (!target) return false;
+  d.bank -= 200;
+  target.built = true;
+  const groups = target.groups || (target.group ? [target.group] : []);
+  for (const g of groups) if (g) g.visible = true;
+  const sIdxs = target.solidIdxs || (typeof target.solidIdx === 'number' && target.solidIdx >= 0 ? [target.solidIdx] : []);
+  for (const si of sIdxs) if (SOLID[si]) SOLID[si][4] = true;
+  const what = isWater ? 'garden' : 'neighborhood';
+  const n = items.filter(function (x) { return x.built; }).length;
+  const total = items.length;
+  celebrateText = '★ A ' + what + ' was rebuilt! (' + n + ' / ' + total + ')';
+  try { playDing(); } catch (e) {}
+  try { announcePair('A ' + what + ' was rebuilt!', isWater ? '¡Un jardín fue reconstruido!' : '¡Un barrio fue construido!'); } catch (e) {}
+  hint.textContent = '★ A ' + what + ' was rebuilt! ' + d.bank + ' / 200 banked toward the next one';
+  return true;
+}
+btnDeposit.addEventListener('pointerdown', function (e) {
+  e.preventDefault(); e.target.blur();
+  doDeposit();
+});
 document.getElementById('btn-review-close').addEventListener('pointerdown', function (e) {
   e.preventDefault(); e.target.blur(); closeReview();
 });
@@ -6789,7 +6988,7 @@ function animate() {
       if (mode === 'walk') updateWalk(dt);
       else updateFlight(dt);
     }
-    if (!crashed && mode === 'walk') { checkStations(); checkTerminal(); checkDepart(); try { updateQuestUI(); } catch (e) {} }
+    if (!crashed && mode === 'walk') { checkStations(); checkTerminal(); checkDepositories(); checkDepart(); try { updateQuestUI(); } catch (e) {} }
     if (!crashed) { try { updateQuestArrow(); } catch (e) {} }
     shuttleLight.visible = (mode === 'flight' && !crashed); // the flight light rides only while flying
   }
@@ -6815,6 +7014,9 @@ function animate() {
 // freeCrashUsed: bool, progress: { cognates, idioms, practice, conjugation,
 // dictation, serestar, saberconocer, pronouns: per-item identifier arrays },
 // pos: { mode: 'walk'|'flight'|'docked', ... } }, tutorial: quest step 0-5
+// Depositories: depBank: [8 banked amounts 0..199], gardensBuilt: [32 booleans],
+// hoodsBuilt: [16 booleans]. Old saves without these keys load as banked 0 /
+// all unbuilt (construction resets; haul and collected progress preserved).
 // (5 = tutorial done; old saves without it migrate from progress). A round-21 save
 // without the flag migrates to false (flag missing/non-boolean never
 // rejects the save, it just means unused); a save without progress fields
@@ -6945,7 +7147,13 @@ function readSave() {
     if (!Array.isArray(s.words) || !Array.isArray(s.mined)) return null;
     const words = s.words.filter(function (i) { return Number.isInteger(i) && i >= 0 && i < wordTiles.length; });
     const mined = s.mined.filter(function (i) { return Number.isInteger(i) && i >= 0 && i < auraAsteroids.length; });
-    return { water: Math.floor(s.water), metal: Math.floor(s.metal), words: words, mined: mined, freeCrashUsed: s.freeCrashUsed === true, progress: (s.progress && typeof s.progress === 'object') ? s.progress : null, pos: validPos(s.pos), tutorial: (Number.isInteger(s.tutorial) ? s.tutorial : null), recognized: (s.recognized && typeof s.recognized === 'object') ? s.recognized : null };
+    const depBank = (Array.isArray(s.depBank) ? s.depBank : []).map(function (v) { return (Number.isFinite(v) && v >= 0 && v < 200) ? Math.floor(v) : 0; });
+    while (depBank.length < 8) depBank.push(0);
+    const gardensBuilt = (Array.isArray(s.gardensBuilt) ? s.gardensBuilt : []).map(function (v) { return v === true; });
+    while (gardensBuilt.length < 32) gardensBuilt.push(false);
+    const hoodsBuilt = (Array.isArray(s.hoodsBuilt) ? s.hoodsBuilt : []).map(function (v) { return v === true; });
+    while (hoodsBuilt.length < 16) hoodsBuilt.push(false);
+    return { water: Math.floor(s.water), metal: Math.floor(s.metal), words: words, mined: mined, freeCrashUsed: s.freeCrashUsed === true, progress: (s.progress && typeof s.progress === 'object') ? s.progress : null, pos: validPos(s.pos), tutorial: (Number.isInteger(s.tutorial) ? s.tutorial : null), recognized: (s.recognized && typeof s.recognized === 'object') ? s.recognized : null, depBank: depBank, gardensBuilt: gardensBuilt, hoodsBuilt: hoodsBuilt };
   } catch (e) { return null; }
 }
 function saveGame() {
@@ -6954,8 +7162,22 @@ function saveGame() {
     for (let i = 0; i < wordTiles.length; i++) if (wordTiles[i].collected) words.push(i);
     const mined = [];
     for (let i = 0; i < auraAsteroids.length; i++) if (auraAsteroids[i].mined) mined.push(i);
-    window.localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, water: water, metal: metal, words: words, mined: mined, freeCrashUsed: freeCrashUsed, progress: progToSave(), pos: capturePosition(), tutorial: questStep, recognized: recognizedRepos }));
+    window.localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, water: water, metal: metal, words: words, mined: mined, freeCrashUsed: freeCrashUsed, progress: progToSave(), pos: capturePosition(), tutorial: questStep, recognized: recognizedRepos, depBank: DEPOSITORIES.map(function (d) { return d.bank; }), gardensBuilt: gardens.map(function (g) { return g.built; }), hoodsBuilt: neighborhoods.map(function (h) { return h.built; }) }));
   } catch (e) {}
+}
+function applyBuiltState(gBuilt, hBuilt) {
+  for (let i = 0; i < gardens.length; i++) {
+    const b = !!(gBuilt && gBuilt[i]);
+    gardens[i].built = b;
+    if (gardens[i].group) gardens[i].group.visible = b;
+    if (gardens[i].solidIdx >= 0 && SOLID[gardens[i].solidIdx]) SOLID[gardens[i].solidIdx][4] = b;
+  }
+  for (let i = 0; i < neighborhoods.length; i++) {
+    const b = !!(hBuilt && hBuilt[i]);
+    neighborhoods[i].built = b;
+    for (const g of neighborhoods[i].groups) if (g) g.visible = b;
+    for (const si of neighborhoods[i].solidIdxs) if (SOLID[si]) SOLID[si][4] = b;
+  }
 }
 function applySave(s) {
   water = s.water; metal = s.metal; freeCrashUsed = !!s.freeCrashUsed; progFromSave(s.progress);
@@ -6987,6 +7209,11 @@ function applySave(s) {
   // without one start empty (their completed repositories are
   // recognized on first load after the update, once each).
   recognizedRepos = (s.recognized && typeof s.recognized === 'object') ? s.recognized : {};
+  // Depository rebuild restore: banked amounts and built gardens /
+  // neighborhoods. Old saves without these keys start at 0 / unbuilt
+  // (construction resets; haul and collected progress are preserved).
+  for (let i = 0; i < DEPOSITORIES.length && i < (s.depBank || []).length; i++) DEPOSITORIES[i].bank = s.depBank[i];
+  applyBuiltState(s.gardensBuilt, s.hoodsBuilt);
   try { syncWordDots(); } catch (e) {}
   try { syncQuestionDots(); } catch (e) {}
   updateMenu();
@@ -6995,6 +7222,8 @@ function applySave(s) {
 // scene, textures re-stream on approach), every mineable asteroid unmined.
 function resetProgress() {
   water = 0; metal = 0; freeCrashUsed = false; questStep = 0; questCollected = false; menuReviewVisited = false; recognizedRepos = {}; celebrateText = '';
+  for (const d of DEPOSITORIES) d.bank = 0;
+  applyBuiltState(null, null); // fresh start: every garden and neighborhood unbuilt again
   for (const k in prog) prog[k].clear();
   for (const w of wordTiles) {
     if (w.live) {
