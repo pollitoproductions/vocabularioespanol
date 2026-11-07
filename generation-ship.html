@@ -4050,7 +4050,9 @@ function updateQuestUI() {
   if (changed) { try { saveGame(); } catch (e) {} }
   const wc = questWordCount();
   try { checkRepoCompletions(wc); } catch (e) {}
-  const key = questStep + '|' + wc + '|' + prog.cognates.size + '|' + prog.idioms.size + '|' + prog.conjugation.size + '|' + prog.dictation.size + '|' + prog.serestar.size + '|' + prog.saberconocer.size + '|' + prog.pronouns.size + '|' + prog.porpara.size + '|' + celebrateText + '|' + mode;
+  const gBuilt = gardens.filter(function (g) { return g.built; }).length;
+  const hBuilt = neighborhoods.filter(function (h) { return h.built; }).length;
+  const key = questStep + '|' + wc + '|' + prog.cognates.size + '|' + prog.idioms.size + '|' + prog.conjugation.size + '|' + prog.dictation.size + '|' + prog.serestar.size + '|' + prog.saberconocer.size + '|' + prog.pronouns.size + '|' + prog.porpara.size + '|' + gBuilt + '|' + hBuilt + '|' + celebrateText + '|' + mode;
   if (key === lastQuestKey) return;
   lastQuestKey = key;
   if (!questBox) return;
@@ -4067,7 +4069,7 @@ function updateQuestUI() {
   }
   questRepoEl.innerHTML = questRepos(wc).map(function (r) {
     return (r.count >= r.total ? '✓ ' : '') + r.label + ' ' + r.count + ' / ' + r.total;
-  }).join('<br>');
+  }).join('<br>') + '<br>' + (gBuilt >= gardens.length ? '✓ ' : '') + 'Gardens ' + gBuilt + ' / ' + gardens.length + '<br>' + (hBuilt >= neighborhoods.length ? '✓ ' : '') + 'Neighborhoods ' + hBuilt + ' / ' + neighborhoods.length;
   if (questCelebrateEl) questCelebrateEl.textContent = celebrateText;
 }
 if (btnQuestSkip) btnQuestSkip.addEventListener('pointerdown', function (e) {
