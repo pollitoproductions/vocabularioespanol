@@ -441,13 +441,13 @@
     <div class="mHead">TOUCH</div>
     <div class="mBody">Left half: floating stick (push to its edge to run; in flight it turns + thrusts) &middot; right half: floating stick in STEER — hold it to turn and climb, no swiping (the LOOK/STEER button switches to LOOK mode, where the right side drags to look around; the camera stays where you leave it) &middot; DEPART at an Exploration Terminal — one inside each hull port, eight in all (docking is automatic within 100 m of any port) &middot; JUMP while walking aboard &middot; hold MINE within 100 m of any asteroid (about 3 seconds) &middot; hold BRAKE to stop in flight &middot; &#9776; ship menu &middot; the nav readout is always on while flying</div>
     <div class="mHead">LEARNING STATIONS</div>
-    <div class="mBody">The seven tool stations are walk-up consoles in the agriculture ring: walk up to a glowing ring and tap LEARN (or press Enter); Close or Escape returns you to walking. Every station speaks in Spanish and English and lets you practise saying it (ding on a correct answer). A station never blocks you &mdash; speaking is feedback only, except that spoken Spanish earns progress. On Practice, Conjugation, Ser vs. estar, and Saber vs. conocer, the audio row stays hidden until you answer &mdash; answer first, then listen.</div>
+    <div class="mBody">The seven tool stations are walk-up consoles in the agriculture ring: walk up to a glowing ring and tap LEARN (or press Enter); Close or Escape returns you to walking. Every station speaks in Spanish and English and lets you practise saying it (ding on a correct answer). A station never blocks you &mdash; speaking is feedback only, except that spoken Spanish earns progress and +5 WATER / +5 METAL, the same reward as answering that question out in space. On Practice, Conjugation, Ser vs. estar, and Saber vs. conocer, the audio row stays hidden until you answer &mdash; answer first, then listen.</div>
     <div class="mHead">COLLECTING IN SPACE</div>
     <div class="mBody">Fly within 250 m of a floating word or exercise question to pause and pronounce it: words ask for the Spanish word; questions ask you to speak the answer (tap Show answer to peek &mdash; peeking never counts, only speaking does). Say it right to collect it for +5 WATER and +5 METAL; Leave (or Escape) flies on, and the item waits until you are 400 m clear. A gold arrow points to the nearest uncollected item &mdash; word or question &mdash; with a tag saying which; distant items show as small glow dots until their plates stream in.</div>
     <div class="mHead">REVIEW TERMINALS</div>
     <div class="mBody">Eight gold review terminals stand around the industrial side &mdash; one on the mezzanine, seven on the main deck, spread evenly around the hull. Walk up and tap Review (or press Enter) to review everything you have already spoken, by tool, with Hear in both languages. Reviewing never changes progress.</div>
     <div class="mHead">DEPOSITORIES</div>
-    <div class="mBody">Eight depositories rebuild the ship&rsquo;s city: four blue WATER depositories in the agriculture ring and four amber METAL depositories in the residential half. Walk up and tap DEPOSIT (or press Enter) to deposit material from your haul in person &mdash; 200 WATER raises one garden, 400 METAL raises one neighborhood (half as many neighborhoods, so each one costs twice as much). Partial deposits bank toward the next build, so you can deposit what you have and come back later. Gardens and neighborhoods start unbuilt and appear only when you build them.</div>
+    <div class="mBody">Eight depositories rebuild the ship&rsquo;s city: four blue WATER depositories in the agriculture ring and four amber METAL depositories in the residential half. Walk up and tap DEPOSIT (or press Enter) to deposit material from your haul in person &mdash; 400 WATER raises one garden, 800 METAL raises one neighborhood (half as many neighborhoods, so each one costs twice as much). Partial deposits bank toward the next build, so you can deposit what you have and come back later. Gardens and neighborhoods start unbuilt and appear only when you build them.</div>
     <div class="mHead">QUESTS</div>
     <div class="mBody">Your quest is to rebuild the lost Spanish repositories &mdash; vocabulary, cognates, idioms, verbs, dictation, ser vs. estar, saber vs. conocer, and pronouns. The quest box (top left) shows what you have collected in each repository, with an arrow pointing to your next tutorial step, and celebrates each repository you finish &mdash; and all of them together. Quests guide; they never block &mdash; skip the tutorial anytime from the quest box.</div>
     <div class="mHead">SAVING</div>
@@ -2443,7 +2443,7 @@ function basisQuat(radial) {
 
 // ---------- Depositories + rebuild (Brant Nov 7) ----------
 // Gardens and neighborhoods start UNBUILT and materialize when the
-// player deposits 200 WATER (a garden) or 400 METAL (a neighborhood)
+// player deposits 400 WATER (a garden) or 800 METAL (a neighborhood)
 // at a depository, in person. The fill functions in the city block
 // below record every garden and neighborhood element here; the
 // depository section (after the review terminals) assigns each to its
@@ -3090,20 +3090,20 @@ for (const tp of REVIEW_TERMINALS_POS) {
 // a clear gap — no station, review terminal, exploration terminal,
 // crop bed, orchard, or neighborhood in the way (placements checked
 // against every list before they were written). Depositing a depository's
-// full cost materializes the next unbuilt garden (200 WATER) or
-// neighborhood (400 METAL) nearest to it: each water depository raises
+// full cost materializes the next unbuilt garden (400 WATER) or
+// neighborhood (800 METAL) nearest to it: each water depository raises
 // 8 gardens, each metal depository 4 neighborhoods. Gardens and
 // neighborhoods start unbuilt (hidden, walk-through) and appear only
 // when built.
 const DEPOSITORIES = [
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 0.48, z: -100, bank: 0, cost: 200 },
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 3.22, z: -100, bank: 0, cost: 200 },
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 4.07, z: -100, bank: 0, cost: 200 },
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 4.60, z: -100, bank: 0, cost: 200 },
-  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 0.75, z: 200, bank: 0, cost: 400 },
-  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 2.54, z: 200, bank: 0, cost: 400 },
-  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 4.07, z: 200, bank: 0, cost: 400 },
-  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 6.24, z: 200, bank: 0, cost: 400 },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 0.48, z: -100, bank: 0, cost: 400 },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 3.22, z: -100, bank: 0, cost: 400 },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 4.07, z: -100, bank: 0, cost: 400 },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 4.60, z: -100, bank: 0, cost: 400 },
+  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 0.75, z: 200, bank: 0, cost: 800 },
+  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 2.54, z: 200, bank: 0, cost: 800 },
+  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 4.07, z: 200, bank: 0, cost: 800 },
+  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 6.24, z: 200, bank: 0, cost: 800 },
 ];
 for (const d of DEPOSITORIES) {
   const rad = new THREE.Vector3(Math.cos(d.angle), Math.sin(d.angle), 0);
@@ -5862,8 +5862,9 @@ function startToolRecogAttempt() {
       }
       else if (ok) {
         try { playDing(); } catch (e) {}
-        setToolSayFeedback('\u2713 Correct!', true);
-        if (dir === 'es') creditSpoken();
+        let earned = false;
+        if (dir === 'es') earned = creditSpoken();
+        setToolSayFeedback(earned ? '\u2713 Correct! +5 WATER, +5 METAL' : '\u2713 Correct!', true);
         // Correct spoken answer: the card stays put — the player taps
         // the cyan Next button when ready (no auto-advance, Nov 7).
         // Quizzes advance on their answer click, never on Say-it.
@@ -5936,9 +5937,15 @@ function currentSpokenKey() {
   return null;
 }
 function creditSpoken() {
-  const p = currentSpokenKey(); if (!p) return;
-  const set = prog[p.set]; if (!set || set.has(p.key)) return;
-  set.add(p.key); saveGame(); updateProgressUI();
+  const p = currentSpokenKey(); if (!p) return false;
+  const set = prog[p.set]; if (!set || set.has(p.key)) return false;
+  set.add(p.key);
+  // Same reward as answering that question out in space: +5 WATER, +5 METAL.
+  // Only for a NEW item (already-in-prog returns above), so a question
+  // pays once, whether answered at a station or out in space.
+  water += COLLECT_WATER; metal += COLLECT_METAL;
+  saveGame(); updateProgressUI();
+  return true;
 }
 function spokenMatchesEn(spoken, target) {
   const strip = function (s) {
@@ -6164,7 +6171,7 @@ btnTerminal.addEventListener('pointerdown', function (e) {
 // Depositories: same walk-up pattern as stations and review terminals.
 // The DEPOSIT button shows while the player stands inside a
 // depository's 8 m trigger; tapping it (or Enter) deposits material
-// from the haul, in person. Partial deposits bank toward the next build (200 WATER / 400 METAL).
+// from the haul, in person. Partial deposits bank toward the next build (400 WATER / 800 METAL).
 const btnDeposit = document.getElementById('btn-deposit');
 let depositNear = null;
 function depositDist2(d) {
@@ -7224,7 +7231,7 @@ function readSave() {
     if (!Array.isArray(s.words) || !Array.isArray(s.mined)) return null;
     const words = s.words.filter(function (i) { return Number.isInteger(i) && i >= 0 && i < wordTiles.length; });
     const mined = s.mined.filter(function (i) { return Number.isInteger(i) && i >= 0 && i < auraAsteroids.length; });
-    const depBank = (Array.isArray(s.depBank) ? s.depBank : []).map(function (v) { return (Number.isFinite(v) && v >= 0 && v < 400) ? Math.floor(v) : 0; });
+    const depBank = (Array.isArray(s.depBank) ? s.depBank : []).map(function (v) { return (Number.isFinite(v) && v >= 0 && v < 800) ? Math.floor(v) : 0; });
     while (depBank.length < 8) depBank.push(0);
     const gardensBuilt = (Array.isArray(s.gardensBuilt) ? s.gardensBuilt : []).map(function (v) { return v === true; });
     while (gardensBuilt.length < 32) gardensBuilt.push(false);
