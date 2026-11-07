@@ -428,7 +428,7 @@
     <div class="mHead">REVIEW TERMINALS</div>
     <div class="mBody">Eight gold review terminals stand around the industrial side &mdash; one on the mezzanine, seven on the main deck, spread evenly around the hull. Walk up and tap Review (or press Enter) to review everything you have already spoken, by tool, with Hear in both languages. Reviewing never changes progress.</div>
     <div class="mHead">DEPOSITORIES</div>
-    <div class="mBody">Eight depositories rebuild the ship&rsquo;s city: four blue WATER depositories in the agriculture ring and four amber METAL depositories in the residential half. Walk up and tap DEPOSIT (or press Enter) to deposit material from your haul in person &mdash; 200 of a depository&rsquo;s material raises one garden (WATER) or one neighborhood (METAL). Partial deposits bank toward the next 200, so you can deposit what you have and come back later. Gardens and neighborhoods start unbuilt and appear only when you build them.</div>
+    <div class="mBody">Eight depositories rebuild the ship&rsquo;s city: four blue WATER depositories in the agriculture ring and four amber METAL depositories in the residential half. Walk up and tap DEPOSIT (or press Enter) to deposit material from your haul in person &mdash; 200 WATER raises one garden, 400 METAL raises one neighborhood (half as many neighborhoods, so each one costs twice as much). Partial deposits bank toward the next build, so you can deposit what you have and come back later. Gardens and neighborhoods start unbuilt and appear only when you build them.</div>
     <div class="mHead">QUESTS</div>
     <div class="mBody">Your quest is to rebuild the lost Spanish repositories &mdash; vocabulary, cognates, idioms, verbs, dictation, ser vs. estar, saber vs. conocer, and pronouns. The quest box (top left) shows what you have collected in each repository, with an arrow pointing to your next tutorial step, and celebrates each repository you finish &mdash; and all of them together. Quests guide; they never block &mdash; skip the tutorial anytime from the quest box.</div>
     <div class="mHead">SAVING</div>
@@ -2414,7 +2414,7 @@ function basisQuat(radial) {
 
 // ---------- Depositories + rebuild (Brant Nov 7) ----------
 // Gardens and neighborhoods start UNBUILT and materialize when the
-// player deposits 200 WATER (a garden) or 200 METAL (a neighborhood)
+// player deposits 200 WATER (a garden) or 400 METAL (a neighborhood)
 // at a depository, in person. The fill functions in the city block
 // below record every garden and neighborhood element here; the
 // depository section (after the review terminals) assigns each to its
@@ -3060,21 +3060,21 @@ for (const tp of REVIEW_TERMINALS_POS) {
 // four METAL depositories in the residential half (positive z), each in
 // a clear gap — no station, review terminal, exploration terminal,
 // crop bed, orchard, or neighborhood in the way (placements checked
-// against every list before they were written). Depositing 200 of a
-// depository's material materializes the next unbuilt garden (WATER)
-// or neighborhood (METAL) nearest to it: each water depository raises
+// against every list before they were written). Depositing a depository's
+// full cost materializes the next unbuilt garden (200 WATER) or
+// neighborhood (400 METAL) nearest to it: each water depository raises
 // 8 gardens, each metal depository 4 neighborhoods. Gardens and
 // neighborhoods start unbuilt (hidden, walk-through) and appear only
 // when built.
 const DEPOSITORIES = [
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 0.48, z: -100, bank: 0 },
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 3.22, z: -100, bank: 0 },
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 4.07, z: -100, bank: 0 },
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 4.60, z: -100, bank: 0 },
-  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 0.75, z: 200, bank: 0 },
-  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 2.54, z: 200, bank: 0 },
-  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 4.07, z: 200, bank: 0 },
-  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 6.24, z: 200, bank: 0 },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 0.48, z: -100, bank: 0, cost: 200 },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 3.22, z: -100, bank: 0, cost: 200 },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 4.07, z: -100, bank: 0, cost: 200 },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 4.60, z: -100, bank: 0, cost: 200 },
+  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 0.75, z: 200, bank: 0, cost: 400 },
+  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 2.54, z: 200, bank: 0, cost: 400 },
+  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 4.07, z: 200, bank: 0, cost: 400 },
+  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 6.24, z: 200, bank: 0, cost: 400 },
 ];
 for (const d of DEPOSITORIES) {
   const rad = new THREE.Vector3(Math.cos(d.angle), Math.sin(d.angle), 0);
@@ -6090,7 +6090,7 @@ btnTerminal.addEventListener('pointerdown', function (e) {
 // Depositories: same walk-up pattern as stations and review terminals.
 // The DEPOSIT button shows while the player stands inside a
 // depository's 8 m trigger; tapping it (or Enter) deposits material
-// from the haul, in person. Partial deposits bank toward the next 200.
+// from the haul, in person. Partial deposits bank toward the next build (200 WATER / 400 METAL).
 const btnDeposit = document.getElementById('btn-deposit');
 let depositNear = null;
 function depositDist2(d) {
@@ -6110,7 +6110,7 @@ function checkDepositories() {
   if (best !== depositNear) {
     depositNear = best;
     if (best) {
-      hint.textContent = 'Near the ' + best.label + ' depository — tap DEPOSIT or press Enter (' + best.bank + ' / 200 banked)';
+      hint.textContent = 'Near the ' + best.label + ' depository — tap DEPOSIT or press Enter (' + best.bank + ' / ' + best.cost + ' banked)';
     } else if (hint.textContent.indexOf('Near the ') === 0 && hint.textContent.indexOf('depository') >= 0) {
       hint.textContent = '';
     }
@@ -6127,20 +6127,20 @@ function doDeposit() {
   if (!hasUnbuilt) { hint.textContent = 'This depository has rebuilt everything nearby — nothing left to build here'; return; }
   const haul = isWater ? water : metal;
   if (haul <= 0) { hint.textContent = 'No ' + d.label + ' in your haul — collect words or mine asteroids first'; return; }
-  const need = 200 - d.bank;
+  const need = d.cost - d.bank;
   const amount = Math.min(haul, need);
   if (isWater) water -= amount; else metal -= amount;
   d.bank += amount;
   const built = tryBuild(d);
   if (!built) {
-    hint.textContent = 'Deposited ' + amount + ' ' + d.label + ' — ' + d.bank + ' / 200 toward the next ' + (isWater ? 'garden' : 'neighborhood');
+    hint.textContent = 'Deposited ' + amount + ' ' + d.label + ' — ' + d.bank + ' / ' + d.cost + ' toward the next ' + (isWater ? 'garden' : 'neighborhood');
   }
   try { updateMenu(); } catch (e) {}
   try { updateProgressUI(); } catch (e) {}
   try { saveGame(); } catch (e) {}
 }
 function tryBuild(d) {
-  if (d.bank < 200) return false;
+  if (d.bank < d.cost) return false;
   const isWater = d.kind === 'water';
   const items = isWater ? gardens : neighborhoods;
   const di = DEPOSITORIES.indexOf(d);
@@ -6149,7 +6149,7 @@ function tryBuild(d) {
     if (it.dep === di && !it.built) { target = it; break; }
   }
   if (!target) return false;
-  d.bank -= 200;
+  d.bank -= d.cost;
   target.built = true;
   const groups = target.groups || (target.group ? [target.group] : []);
   for (const g of groups) if (g) g.visible = true;
@@ -6161,7 +6161,7 @@ function tryBuild(d) {
   celebrateText = '★ A ' + what + ' was rebuilt! (' + n + ' / ' + total + ')';
   try { playDing(); } catch (e) {}
   try { announcePair('A ' + what + ' was rebuilt!', isWater ? '¡Un jardín fue reconstruido!' : '¡Un barrio fue construido!'); } catch (e) {}
-  hint.textContent = '★ A ' + what + ' was rebuilt! ' + d.bank + ' / 200 banked toward the next one';
+  hint.textContent = '★ A ' + what + ' was rebuilt! ' + d.bank + ' / ' + d.cost + ' banked toward the next one';
   return true;
 }
 btnDeposit.addEventListener('pointerdown', function (e) {
@@ -7147,7 +7147,7 @@ function readSave() {
     if (!Array.isArray(s.words) || !Array.isArray(s.mined)) return null;
     const words = s.words.filter(function (i) { return Number.isInteger(i) && i >= 0 && i < wordTiles.length; });
     const mined = s.mined.filter(function (i) { return Number.isInteger(i) && i >= 0 && i < auraAsteroids.length; });
-    const depBank = (Array.isArray(s.depBank) ? s.depBank : []).map(function (v) { return (Number.isFinite(v) && v >= 0 && v < 200) ? Math.floor(v) : 0; });
+    const depBank = (Array.isArray(s.depBank) ? s.depBank : []).map(function (v) { return (Number.isFinite(v) && v >= 0 && v < 400) ? Math.floor(v) : 0; });
     while (depBank.length < 8) depBank.push(0);
     const gardensBuilt = (Array.isArray(s.gardensBuilt) ? s.gardensBuilt : []).map(function (v) { return v === true; });
     while (gardensBuilt.length < 32) gardensBuilt.push(false);
