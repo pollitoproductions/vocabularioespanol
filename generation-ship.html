@@ -575,6 +575,7 @@ const METAL_YIELD = 15;       // metal per mined metal rock
 const SHUTTLE_THRUST = 12;    // m/s^2
 const SHUTTLE_YAW_RATE = 0.9; // rad/s
 const SHUTTLE_PITCH_RATE = 0.7; // rad/s
+const SHUTTLE_PITCH_LIMIT = Math.PI / 2 - 0.02; // rad (~89 deg) — pitch clamp (Brant Nov 7): past vertical the shuttle's up inverts, so yaw reads reversed and the camera goes upside-down. Clamping keeps the axis honest; ~89 deg still reaches the top of the tile cloud. Looping past vertical is gone.
 // Decoupled flight camera (round 30 shuttle pass + LOOK/STEER toggle):
 // in LOOK mode mouse drag / touch drag in flight looks around
 // the shuttle instead of steering it; in STEER mode the same drag steers
@@ -4019,7 +4020,7 @@ function undock() {
   // pitch, not thrown away: pitch zero would point the nose along
   // ±X instead of the tangent (up to 90 deg off) and make the shuttle
   // fly sideways at departure.
-  shipYaw = Math.atan2(tangent.x, tangent.z); shipPitch = Math.asin(Math.max(-1, Math.min(1, -tangent.y)));
+  shipYaw = Math.atan2(tangent.x, tangent.z); shipPitch = Math.max(-SHUTTLE_PITCH_LIMIT, Math.min(SHUTTLE_PITCH_LIMIT, Math.asin(Math.max(-1, Math.min(1, -tangent.y)))));
   shuttle.quaternion.setFromEuler(new THREE.Euler(shipPitch, shipYaw, 0, 'YXZ'));
   // Co-rotating start: the shuttle inherits the station's local velocity.
   shuttleVel.copy(tangent).multiplyScalar(OMEGA * rr);
@@ -4179,9 +4180,11 @@ function rotateShuttle(yawDelta, pitchDelta) {
   // Roll-free: accumulate yaw/pitch state and rebuild. Euler 'YXZ' gives
   // Q = Ry * Rx, matching the old single-axis steps exactly (same rates,
   // same signs) — the only change is that combined yaw+pitch can no
-  // longer accumulate roll. Pitch is NOT clamped: looping past vertical
-  // still works, still roll-free.
-  shipYaw += yawDelta; shipPitch += pitchDelta;
+  // longer accumulate roll. Pitch IS clamped just short of vertical
+  // (SHUTTLE_PITCH_LIMIT): past 90 deg the shuttle's up inverts, so
+  // yaw reads reversed and the camera goes upside-down — the axis flip
+  // Brant saw. Clamping keeps steering honest in both directions.
+  shipYaw += yawDelta; shipPitch = Math.max(-SHUTTLE_PITCH_LIMIT, Math.min(SHUTTLE_PITCH_LIMIT, shipPitch + pitchDelta));
   shuttle.quaternion.setFromEuler(new THREE.Euler(shipPitch, shipYaw, 0, 'YXZ'));
 }
 canvas.addEventListener('pointerdown', function (e) {
@@ -6908,7 +6911,7 @@ function restoreSavedPosition(pos) {
     const savedQ = new THREE.Quaternion(pos.qx, pos.qy, pos.qz, pos.qw);
     const fwdSave = new THREE.Vector3(0, 0, 1).applyQuaternion(savedQ);
     shipYaw = Math.atan2(fwdSave.x, fwdSave.z);
-    shipPitch = Math.asin(Math.max(-1, Math.min(1, -fwdSave.y)));
+    shipPitch = Math.max(-SHUTTLE_PITCH_LIMIT, Math.min(SHUTTLE_PITCH_LIMIT, Math.asin(Math.max(-1, Math.min(1, -fwdSave.y)))));
     shuttle.quaternion.setFromEuler(new THREE.Euler(shipPitch, shipYaw, 0, 'YXZ'));
     shuttleVel.set(0, 0, 0); shuttle.visible = true;
     btnMode.style.display = 'none'; btnJump.style.visibility = 'hidden';
