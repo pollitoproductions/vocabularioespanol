@@ -1322,7 +1322,25 @@ const stationAuraRingGeo = new THREE.TorusGeometry(2.6, 0.22, 8, 40);
 const stationAuraHaloGeo = new THREE.TorusGeometry(4.0, 0.15, 8, 40);
 const stationAuraRingMat = new THREE.MeshBasicMaterial({ color: 0x59d6ff });
 const stationAuraHaloMat = new THREE.MeshBasicMaterial({ color: 0x59d6ff, transparent: true, opacity: 0.42, depthWrite: false });
-function makeStationConsole(labelText, colorCss, beaconH) {
+// Floating emoji sprites (Brant Nov 7): one canvas-drawn emoji per
+// station and depository, floating above the console so the player can
+// tell what it is from a distance. Sprites always face the camera.
+// Bobbed gently in animate() (base Y + slow sine) via emojiSprites.
+const emojiSprites = [];
+function makeEmojiSprite(emoji, scale) {
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 256;
+  const ctx = c.getContext('2d');
+  ctx.font = '200px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(emoji, 128, 138);
+  const tex = new THREE.CanvasTexture(c);
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+  const sp = new THREE.Sprite(mat);
+  sp.scale.set(scale, scale, 1);
+  return sp;
+}
+function makeStationConsole(labelText, colorCss, beaconH, emoji) {
   const grp = new THREE.Group();
   const ped = new THREE.Mesh(new THREE.BoxGeometry(2.2, 2.6, 1.1),
     new THREE.MeshStandardMaterial({ color: 0x2c3644, roughness: 0.6, metalness: 0.4 }));
@@ -1375,6 +1393,17 @@ function makeStationConsole(labelText, colorCss, beaconH) {
   const bigSign = makeMountedSign(labelText, colorCss, 5.5);
   bigSign.position.set(-3.6, 4.6, 0);
   grp.add(bigSign);
+  // Floating emoji above the console (local Y 7.5 clears the sign top
+  // at 5.44 and reads from across the room; the beacon beam is thin
+  // and translucent, so it never hides the glyph).
+  if (emoji) {
+    const sp = makeEmojiSprite(emoji, 3);
+    sp.position.set(0, 7.5, 0);
+    sp.userData.baseY = 7.5;
+    sp.userData.phase = emojiSprites.length * 0.9;
+    grp.add(sp);
+    emojiSprites.push(sp);
+  }
   return grp;
 }
 // (No tint bands: section identity comes from the solid floors + signs.)
@@ -2981,19 +3010,19 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
 // clean open walk space.)
 {
   const agriStations = [
-    { label: 'COGNATES', css: '#39d97a', angle: 0.2618, z: -120 },
-    { label: 'DICTATION', css: '#9fd8ef', angle: 1.3090, z: -40 },
-    { label: 'CONJUGATION', css: '#59d6ff', angle: 2.3562, z: -280 },
-    { label: 'IDIOMS', css: '#ffc27a', angle: 3.4034, z: -170 },
-    { label: 'PRACTICE', css: '#e8a33d', angle: 4.4506, z: -100 },
-    { label: 'SER VS. ESTAR', css: '#d0a0ff', angle: 5.4978, z: -200 },
-    { label: 'SABER VS. CONOCER', css: '#5b8cff', angle: 1.8326, z: -160 },
-    { label: 'PRONOUNS', css: '#ff6b9d', angle: 6.0214, z: -160 },
-    { label: 'POR VS. PARA', css: '#aeea00', angle: 4.9742, z: -150 },
+    { label: 'COGNATES', css: '#39d97a', angle: 0.2618, z: -120, emoji: '🔤' },
+    { label: 'DICTATION', css: '#9fd8ef', angle: 1.3090, z: -40, emoji: '🎧' },
+    { label: 'CONJUGATION', css: '#59d6ff', angle: 2.3562, z: -280, emoji: '🔄' },
+    { label: 'IDIOMS', css: '#ffc27a', angle: 3.4034, z: -170, emoji: '💬' },
+    { label: 'PRACTICE', css: '#e8a33d', angle: 4.4506, z: -100, emoji: '✏️' },
+    { label: 'SER VS. ESTAR', css: '#d0a0ff', angle: 5.4978, z: -200, emoji: '⚖️' },
+    { label: 'SABER VS. CONOCER', css: '#5b8cff', angle: 1.8326, z: -160, emoji: '🧠' },
+    { label: 'PRONOUNS', css: '#ff6b9d', angle: 6.0214, z: -160, emoji: '👤' },
+    { label: 'POR VS. PARA', css: '#aeea00', angle: 4.9742, z: -150, emoji: '➡️' },
   ];
   for (const s of agriStations) {
     const rad = new THREE.Vector3(Math.cos(s.angle), Math.sin(s.angle), 0);
-    const con = makeStationConsole(s.label, s.css, 14);
+    const con = makeStationConsole(s.label, s.css, 14, s.emoji);
     con.position.copy(rad).multiplyScalar(RADIUS);
     con.position.z = s.z;
     con.quaternion.copy(basisQuat(rad));
@@ -3090,18 +3119,18 @@ for (const tp of REVIEW_TERMINALS_POS) {
 // crops hidden) and neighborhoods start unbuilt (hidden, walk-through);
 // each appears only when regrown or rebuilt.
 const DEPOSITORIES = [
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 0.48, z: -100, bank: 0, cost: 800 },
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 3.22, z: -100, bank: 0, cost: 800 },
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 4.07, z: -100, bank: 0, cost: 800 },
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 4.60, z: -100, bank: 0, cost: 800 },
-  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 0.75, z: 200, bank: 0, cost: 800 },
-  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 2.54, z: 200, bank: 0, cost: 800 },
-  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 4.07, z: 200, bank: 0, cost: 800 },
-  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 6.24, z: 200, bank: 0, cost: 800 },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 0.30, z: -100, bank: 0, cost: 800, emoji: '💧' },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 1.87, z: -100, bank: 0, cost: 800, emoji: '💧' },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 3.44, z: -100, bank: 0, cost: 800, emoji: '💧' },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 5.01, z: -100, bank: 0, cost: 800, emoji: '💧' },
+  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 0.77, z: 200, bank: 0, cost: 800, emoji: '🏠' },
+  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 2.25, z: 200, bank: 0, cost: 800, emoji: '🏠' },
+  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 4.02, z: 200, bank: 0, cost: 800, emoji: '🏠' },
+  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 5.40, z: 200, bank: 0, cost: 800, emoji: '🏠' },
 ];
 for (const d of DEPOSITORIES) {
   const rad = new THREE.Vector3(Math.cos(d.angle), Math.sin(d.angle), 0);
-  const con = makeStationConsole(d.label + ' DEPOSITORY', d.css, 14);
+  const con = makeStationConsole(d.label + ' DEPOSITORY', d.css, 14, d.emoji);
   con.position.copy(rad).multiplyScalar(RADIUS);
   con.position.z = d.z;
   con.quaternion.copy(basisQuat(rad));
@@ -3659,6 +3688,24 @@ const menuSpeed = document.getElementById('menuSpeed');
 const menuPort = document.getElementById('menuPort');
 const menuDrive = document.getElementById('menuDrive');
 const hint = document.getElementById('hint');
+// Hint auto-dismiss (Brant Nov 7): a hint pill lingered until another
+// hint replaced it, so a stale message could sit on screen for
+// minutes. Watch the main #hint only (the menu's menuScrollHint
+// shadows the name inside its own function — this targets #hint by
+// id at setup) and clear it 3 s after it is set; a new hint restarts
+// the timer so it gets its full 3 s. Clearing to '' is a no-op (the
+// pill hides via #hint:empty), so the observer never loops. The
+// mining progress hint updates every frame while mining, so its
+// timer keeps restarting and it clears 3 s after mining stops.
+let hintTimer = null;
+if (hint) {
+  const hintObs = new MutationObserver(function () {
+    if (!hint.textContent) { if (hintTimer) { clearTimeout(hintTimer); hintTimer = null; } return; }
+    if (hintTimer) clearTimeout(hintTimer);
+    hintTimer = setTimeout(function () { hint.textContent = ''; hintTimer = null; }, 3000);
+  });
+  hintObs.observe(hint, { childList: true, characterData: true, subtree: true });
+}
 const navLine = document.getElementById('navLine');
 const guideArrow = document.getElementById('guideArrow');
 const guideDist = document.getElementById('guideDist');
@@ -7062,6 +7109,8 @@ function animate() {
     const bp = 0.24 + Math.sin(clock.elapsedTime * 1.8) * 0.08;
     for (const m of stationBeacons) m.opacity = bp;
     stationAuraHaloMat.opacity = 0.30 + Math.sin(clock.elapsedTime * 1.8) * 0.12; // station auras breathe with the beacons
+    // Floating station/depository emoji bob gently so they read as alive.
+    for (const es of emojiSprites) es.position.y = es.userData.baseY + Math.sin(clock.elapsedTime * 1.5 + es.userData.phase) * 0.3;
     // The star's surface turns slowly so the texture stays alive.
     starBall.rotation.y += dt * 0.005;
     // Belt rocks tumble slowly on their own axes.
