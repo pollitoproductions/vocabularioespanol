@@ -707,6 +707,7 @@ scene.add(starBall);
 new THREE.TextureLoader().load('https://pollitoproductions.github.io/Vocabulario-Espanol/star.jpg', function (tex) {
   tex.colorSpace = THREE.SRGBColorSpace;
   starMat.map = tex;
+  starMat.color.set(0xffffff); // show the texture at full color (the warm fallback color would wash it out)
   starMat.needsUpdate = true;
 });
 // Corona glow: a procedural radial-gradient sprite (no file needed),
