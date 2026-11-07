@@ -344,6 +344,25 @@
   }
   #titleCard button.ctl2.primary { background: #59d6ff; color: #06101e; border-color: #aee9ff; font-weight: 700; }
   #titleConfirmText { margin-top: 12px; font-size: 15px; color: #ffb347; line-height: 1.5; }
+  /* Tutorial-complete screen: same full overlay family as the title screen. */
+  #tutDonePanel {
+    position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center;
+    background: rgba(2, 10, 20, 0.85); padding: 20px;
+  }
+  #tutDoneCard {
+    width: min(560px, 94vw); max-height: 88vh; overflow-y: auto;
+    background: rgba(8, 24, 44, 0.96); color: #eaf2ff;
+    border: 1px solid rgba(89, 214, 255, 0.65); border-radius: 20px; padding: 26px;
+    text-align: center; font-family: monospace;
+  }
+  #tutDoneCard h1 { margin: 0; font-size: clamp(24px, 6vw, 34px); letter-spacing: 0.12em; color: #7fe3ff; }
+  #tutDoneCard p { margin-top: 16px; font-size: 16px; line-height: 1.7; color: #d7e3f4; }
+  #tutDoneCard p.es { color: #9fd8ef; font-size: 15px; }
+  #tutDoneCard button.ctl2 {
+    padding: 14px 22px; font-size: 17px; font-family: monospace; cursor: pointer;
+    background: #59d6ff; color: #06101e; border: 1px solid #aee9ff;
+    border-radius: 14px; touch-action: manipulation; margin: 6px; font-weight: 700;
+  }
   @media (max-height: 500px) {
     #hud { padding: 10px 12px; }
     #hint { max-width: calc(100vw - 460px); }
@@ -528,6 +547,16 @@
       </div>
     </div>
     <div id="titleCopy">© 2026 Brant Fuller</div>
+  </div>
+</div>
+<div id="tutDonePanel">
+  <div id="tutDoneCard">
+    <h1>&#9733; CONGRATULATIONS! &#9733;</h1>
+    <p>You finished the tutorial. Now complete the repositories and rebuild the habitat.</p>
+    <p class="es">&iexcl;Felicidades! Terminaste el tutorial. Ahora completa los repositorios y reconstruye el h&aacute;bitat.</p>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap;">
+      <button class="ctl2" id="btn-tut-done" type="button">KEEP PLAYING</button>
+    </div>
   </div>
 </div>
 <div id="failOverlay">
@@ -3918,11 +3947,13 @@ function updateProgressUI() {
 // ignored, and the tutorial can be skipped from the quest box. Steps
 // advance only forward; each advance dings and saves, so progress
 // survives reloads. The step itself is stored in the save (tutorial:
-// 0-5, 6 = done); old saves without it migrate from what the player
+// 0-7, 8 = done); old saves without it migrate from what the player
 // has already done (see applySave).
 let questStep = 0;
 let questCollected = false;
 let menuReviewVisited = false; // tutorial step 5: opened review from the in-game menu
+let tutDepWater = false; // tutorial step 6: deposited WATER at a water depository
+let tutDepMetal = false; // tutorial step 7: deposited METAL at a metal depository
 let recognizedRepos = {};
 let celebrateText = '';
 const QUEST_STEPS = [
@@ -3931,7 +3962,9 @@ const QUEST_STEPS = [
   'Depart from an Exploration Terminal — walk up and tap DEPART.',
   'Recover the nearest word or exercise in space — fly within 250 m and say it aloud.',
   'Return aboard the ARK-7 — fly within 100 m of any glowing port to dock.',
-  'Open ☰ → PROGRESS → REVIEW EVERYTHING to review anything you have already answered.'
+  'Open ☰ → PROGRESS → REVIEW EVERYTHING to review anything you have already answered.',
+  'Deposit your WATER at a blue water depository in the agriculture ring — walk up and tap DEPOSIT.',
+  'Deposit your METAL at an amber metal depository in the residential half — walk up and tap DEPOSIT.'
 ];
 const questBox = document.getElementById('questBox');
 const questStepEl = document.getElementById('questStep');
@@ -3954,6 +3987,8 @@ function questStepDone(i) {
   if (i === 3) return questCollected;
   if (i === 4) return mode === 'walk';
   if (i === 5) return menuReviewVisited;
+  if (i === 6) return tutDepWater || water === 0 || DEPOSITORIES.some(function (d) { return d.kind === 'water' && d.bank > 0; });
+  if (i === 7) return tutDepMetal || metal === 0 || DEPOSITORIES.some(function (d) { return d.kind === 'metal' && d.bank > 0; });
   return true;
 }
 // The nine repositories, in menu PROGRESS order. Counts mirror
@@ -4005,11 +4040,13 @@ function checkRepoCompletions(wc) {
 function updateQuestUI() {
   if (titleOpen) { if (questBox) questBox.style.display = 'none'; return; }
   let changed = false;
-  while (questStep < 6 && questStepDone(questStep)) {
+  const stepBefore = questStep;
+  while (questStep < 8 && questStepDone(questStep)) {
     questStep++;
     changed = true;
     try { playDing(); } catch (e) {}
   }
+  if (stepBefore < 8 && questStep >= 8) showTutDone();
   if (changed) { try { saveGame(); } catch (e) {} }
   const wc = questWordCount();
   try { checkRepoCompletions(wc); } catch (e) {}
@@ -4019,8 +4056,8 @@ function updateQuestUI() {
   if (!questBox) return;
   questBox.style.display = 'block';
   /* Placement is the #topBoxes flex container's job now (column in portrait, row in landscape). */
-  if (questStep >= 6) {
-    questStepEl.textContent = 'Keep recovering words — every spoken word rebuilds the repositories. Review anything you have answered anytime: ☰ → PROGRESS → REVIEW EVERYTHING.';
+  if (questStep >= 8) {
+    questStepEl.textContent = 'Tutorial complete! Keep recovering words — every spoken word rebuilds the repositories. Deposit water and metal at the depositories to rebuild the habitat.';
     questProgEl.textContent = '';
     if (btnQuestSkip) btnQuestSkip.style.display = 'none';
   } else {
@@ -4035,9 +4072,28 @@ function updateQuestUI() {
 }
 if (btnQuestSkip) btnQuestSkip.addEventListener('pointerdown', function (e) {
   e.preventDefault(); e.target.blur();
-  questStep = 6;
+  questStep = 8;
   try { saveGame(); } catch (e) {}
   updateQuestUI();
+});
+// Tutorial-complete screen: shown once, the moment the last tutorial
+// step completes (stepBefore < 8 guard in updateQuestUI, so a reload
+// with the tutorial already done never re-shows it). Dismiss with
+// KEEP PLAYING; the game keeps running underneath.
+const tutDonePanel = document.getElementById('tutDonePanel');
+function showTutDone() {
+  if (!tutDonePanel) return;
+  tutDonePanel.style.display = 'flex';
+  try { playDing(); } catch (e) {}
+}
+function hideTutDone() {
+  if (!tutDonePanel) return;
+  tutDonePanel.style.display = 'none';
+}
+const btnTutDone = document.getElementById('btn-tut-done');
+if (btnTutDone) btnTutDone.addEventListener('pointerdown', function (e) {
+  e.preventDefault(); e.target.blur();
+  hideTutDone();
 });
 // Quest arrow: a rotating arrow at the end of the quest box, pointing
 // at the current tutorial step's destination — guidance only, never
@@ -4053,9 +4109,19 @@ function questLocalToWorld(angle, z, out) {
   out.set(x * c - y * s, x * s + y * c, z);
   return out;
 }
+function nearestDepository(kind) {
+  let best = null, bestD = Infinity;
+  for (const d of DEPOSITORIES) {
+    if (d.kind !== kind) continue;
+    const w = questLocalToWorld(d.angle, d.z, new THREE.Vector3());
+    const dist = camera.position.distanceTo(w);
+    if (dist < bestD) { bestD = dist; best = d; }
+  }
+  return best;
+}
 function updateQuestArrow() {
   if (!questArrowLineEl || !questArrowEl || !questArrowLabelEl) return;
-  if (titleOpen || questStep >= 6) { questArrowLineEl.style.display = 'none'; return; }
+  if (titleOpen || questStep >= 8) { questArrowLineEl.style.display = 'none'; return; }
   let target = null, label = '';
   const cog = STATIONS.find(function (s) { return s.id === 'cognates'; });
   if (questStep === 0 || questStep === 1) {
@@ -4078,6 +4144,12 @@ function updateQuestArrow() {
     const near = nearestPortToShuttle();
     if (!near.port) { questArrowLineEl.style.display = 'none'; return; }
     target = near.world; label = 'Nearest port';
+  } else if (questStep === 6 || questStep === 7) {
+    const kind = questStep === 6 ? 'water' : 'metal';
+    const dep = nearestDepository(kind);
+    if (!dep) { questArrowLineEl.style.display = 'none'; return; }
+    if (depositDist2(dep) < STATION_DIST * STATION_DIST) { questArrowLineEl.style.display = 'none'; return; }
+    target = questLocalToWorld(dep.angle, dep.z, _questTmp); label = (kind === 'water' ? 'Water' : 'Metal') + ' depository';
   } else { questArrowLineEl.style.display = 'none'; return; }
   if (!target) { questArrowLineEl.style.display = 'none'; return; }
   const toT = target.clone().sub(camera.position);
@@ -6131,6 +6203,7 @@ function doDeposit() {
   const amount = Math.min(haul, need);
   if (isWater) water -= amount; else metal -= amount;
   d.bank += amount;
+  if (isWater) tutDepWater = true; else tutDepMetal = true;
   const built = tryBuild(d);
   if (!built) {
     hint.textContent = 'Deposited ' + amount + ' ' + d.label + ' — ' + d.bank + ' / ' + d.cost + ' toward the next ' + (isWater ? 'garden' : 'neighborhood');
@@ -7013,11 +7086,13 @@ function animate() {
 // words: [collected word-tile indices], mined: [mined aura-asteroid indices],
 // freeCrashUsed: bool, progress: { cognates, idioms, practice, conjugation,
 // dictation, serestar, saberconocer, pronouns: per-item identifier arrays },
-// pos: { mode: 'walk'|'flight'|'docked', ... } }, tutorial: quest step 0-5
+// pos: { mode: 'walk'|'flight'|'docked', ... } }, tutorial: quest step 0-7 (8 = done)
 // Depositories: depBank: [8 banked amounts 0..199], gardensBuilt: [32 booleans],
 // hoodsBuilt: [16 booleans]. Old saves without these keys load as banked 0 /
 // all unbuilt (construction resets; haul and collected progress preserved).
-// (5 = tutorial done; old saves without it migrate from progress). A round-21 save
+// (8 = tutorial done; a save with 6, the old done value, lands on step 6,
+// deposit water, so players who finished the old tutorial meet the new
+// depository steps. Old saves without it migrate from progress.) A round-21 save
 // without the flag migrates to false (flag missing/non-boolean never
 // rejects the save, it just means unused); a save without progress fields
 // migrates to empty progress sets, same pattern, never rejected.
@@ -7201,7 +7276,7 @@ function applySave(s) {
   restoreSavedPosition(s.pos);
   // Quest tutorial restore: a stored step wins; old saves without one
   // migrate from what the player has already done.
-  if (Number.isInteger(s.tutorial) && s.tutorial >= 0 && s.tutorial <= 5) { questStep = s.tutorial; }
+  if (Number.isInteger(s.tutorial) && s.tutorial >= 0 && s.tutorial <= 7) { questStep = s.tutorial; }
   else if (s.words.length > 0) { questStep = 5; }
   else if (prog.cognates.size >= 3) { questStep = 2; }
   else { questStep = 0; }
