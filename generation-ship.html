@@ -5211,7 +5211,7 @@ function openCollect(w) {
     collectEmoji.textContent = w.q.icon;
     collectEs.textContent = w.q.promptBig;
     collectEn.textContent = w.q.promptSub;
-    document.getElementById('btn-collect-hear').textContent = '🔊 Hear';
+    document.getElementById('btn-collect-hear').textContent = collectTile.q.hearLang === 'en' ? '🔊 Hear (EN)' : '🔊 Hear (ES)';
     document.getElementById('btn-collect-hear-en').style.display = 'none';
     document.getElementById('collectRevealRow').style.display = '';
     document.getElementById('collectPeekHint').style.display = '';
@@ -5339,8 +5339,8 @@ document.getElementById('btn-collect-hear').addEventListener('click', function (
     // Question side only — never the answer (dictation excepted: its
     // audio IS the word). Same in-gesture speak + watchdog as words.
     stopListening(false);
-    if (collectTile.q.hearLang === 'en') speakEn(collectTile.q.hearText, collectHearState(document.getElementById('btn-collect-hear'), '🔊 Hear'));
-    else speakWord(collectTile.q.hearText, collectHearState(document.getElementById('btn-collect-hear'), '🔊 Hear'));
+    if (collectTile.q.hearLang === 'en') speakEn(collectTile.q.hearText, collectHearState(document.getElementById('btn-collect-hear'), '🔊 Hear (EN)'));
+    else speakWord(collectTile.q.hearText, collectHearState(document.getElementById('btn-collect-hear'), '🔊 Hear (ES)'));
   } else speakWord(collectTile.sprite.userData.es, collectHearState(document.getElementById('btn-collect-hear'), '🔊 Hear (ES)'));
 });
 document.getElementById('btn-collect-hear-en').addEventListener('click', function () {
@@ -6555,7 +6555,7 @@ function buildQuestionTileItems() {
   for (let si = 0; si < TOOL_SER.length; si++) {
     const q = TOOL_SER[si];
     const correct = SER_FORM[q[1]][q[2] === 'ser' ? 0 : 1];
-    items.push({ tool: 'serestar', set: 'serestar', key: si, tag: 'SER-ESTAR', icon: '⚖️', promptBig: q[0], promptSub: q[3], hearText: q[3], hearLang: 'en', answer: q[0].replace('___', correct), plateLine: SER_DISP[q[1]] + ' ___' });
+    items.push({ tool: 'serestar', set: 'serestar', key: si, tag: 'SER-ESTAR', icon: '⚖️', promptBig: q[0], promptSub: q[3] + ' — speak the full sentence', hearText: q[3], hearLang: 'en', answer: q[0].replace('___', correct), plateLine: SER_DISP[q[1]] + ' ___' });
   }
   // Saber vs. conocer: 100 items, key = question index (sid, same as
   // buildSycoQs). Prompt = blank sentence; Hear = English translation;
@@ -6565,7 +6565,7 @@ function buildQuestionTileItems() {
   for (let si = 0; si < TOOL_SYCO.length; si++) {
     const q = TOOL_SYCO[si];
     const correct = SYCO_FORM[q[1]][q[2] === 'saber' ? 0 : 1];
-    items.push({ tool: 'saberconocer', set: 'saberconocer', key: si, tag: 'SABER-CONOCER', icon: '🧠', promptBig: q[0], promptSub: q[3], hearText: q[3], hearLang: 'en', answer: q[0].replace('___', correct), plateLine: SYCO_DISP[q[1]] + ' ___' });
+    items.push({ tool: 'saberconocer', set: 'saberconocer', key: si, tag: 'SABER-CONOCER', icon: '🧠', promptBig: q[0], promptSub: q[3] + ' — speak the full sentence', hearText: q[3], hearLang: 'en', answer: q[0].replace('___', correct), plateLine: SYCO_DISP[q[1]] + ' ___' });
   }
   // Pronouns: 700 items (7 categories x 100), key = question index
   // (sid, same as buildPronQs). Prompt = blank sentence; Hear =
@@ -6575,7 +6575,7 @@ function buildQuestionTileItems() {
   for (let si = 0; si < TOOL_PRON.length; si++) {
     const q = TOOL_PRON[si];
     const correct = q[1];
-    items.push({ tool: 'pronouns', set: 'pronouns', key: si, tag: 'PRONOUNS', icon: '👤', promptBig: q[0], promptSub: q[3], hearText: q[3], hearLang: 'en', answer: q[0].replace('___', correct), plateLine: PRON_CAT[(si / 100) | 0] });
+    items.push({ tool: 'pronouns', set: 'pronouns', key: si, tag: 'PRONOUNS', icon: '👤', promptBig: q[0], promptSub: q[3] + ' — speak the full sentence', hearText: q[3], hearLang: 'en', answer: q[0].replace('___', correct), plateLine: PRON_CAT[(si / 100) | 0] });
   }
   // Por vs. para: 100 items, key = question index (sid, same as
   // buildPorParaQs). Prompt = blank sentence; Hear = English
@@ -6584,7 +6584,7 @@ function buildQuestionTileItems() {
   for (let si = 0; si < TOOL_PORPARA.length; si++) {
     const q = TOOL_PORPARA[si];
     const correct = q[1];
-    items.push({ tool: 'porpara', set: 'porpara', key: si, tag: 'POR-PARA', icon: '\uD83D\uDD00', promptBig: q[0], promptSub: q[3], hearText: q[3], hearLang: 'en', answer: q[0].replace('___', correct), plateLine: 'POR / PARA' });
+    items.push({ tool: 'porpara', set: 'porpara', key: si, tag: 'POR-PARA', icon: '\uD83D\uDD00', promptBig: q[0], promptSub: q[3] + ' — speak the full sentence', hearText: q[3], hearLang: 'en', answer: q[0].replace('___', correct), plateLine: 'POR / PARA' });
   }
   // Practice: NO tiles — its content is already the floating vocab words.
   return items;
