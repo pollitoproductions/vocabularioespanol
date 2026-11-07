@@ -720,6 +720,20 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 
 // ---------- Scene ----------
 const scene = new THREE.Scene();
+// CELLS (round 32): the ship interior and the outside of the ship are
+// different "cells" (the open-world concept — only the cell the player is
+// in is rendered). Before this, the game drew BOTH worlds at once: flying
+// outside it still rendered the whole detailed interior, and docked inside
+// it still rendered the space tiles and the star. That double load is the
+// prime suspect for the iPhone crash when flying fast past the ship.
+// exteriorCell holds the space environment (star, tiles, asteroids,
+// shuttle, beacon beam) — visible only while flying. The ship's own
+// exterior lives in shipExterior (a child of the rotating ship group,
+// so the hull and ports keep spinning with it). Lights stay in the
+// scene itself: they are never rendered, only illuminate, so they
+// serve both cells.
+const exteriorCell = new THREE.Group();
+scene.add(exteriorCell);
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 200000); // far plane raised from 6000 so the beacon beam (round 14) still renders at 30–50 km
 
 scene.add(new THREE.AmbientLight(0x8899aa, 0.9));
@@ -743,7 +757,7 @@ const starBall = new THREE.Mesh(
   starMat
 );
 starBall.position.set(22611, 11306, 16151); // ~30 km out, same direction as the old 1.9 km star — HUGE now (~22 deg across from the ship)
-scene.add(starBall);
+exteriorCell.add(starBall);
 new THREE.TextureLoader().load('https://pollitoproductions.github.io/Vocabulario-Espanol/star.jpg', function (tex) {
   tex.colorSpace = THREE.SRGBColorSpace;
   starMat.map = tex;
@@ -770,7 +784,7 @@ function makeStarGlowTexture() {
 const starGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: makeStarGlowTexture(), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
 starGlow.position.copy(starBall.position);
 starGlow.scale.set(30000, 30000, 1);
-scene.add(starGlow);
+exteriorCell.add(starGlow);
 
 // Starfield: points on a distant shell, no external textures.
 const starCount = 1600;
@@ -781,13 +795,25 @@ for (let i = 0; i < starCount; i++) {
 }
 const starGeo = new THREE.BufferGeometry();
 starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({
+exteriorCell.add(new THREE.Points(starGeo, new THREE.PointsMaterial({
   color: 0xffffff, size: 1.8, sizeAttenuation: false, transparent: true, opacity: 0.95, depthWrite: false
 })));
 
 // ---------- The ship: one rotating group, long axis along Z ----------
+// CELLS: ship is the rotating container; its children split into two
+// cells. shipInterior holds everything seen from inside the habitat
+// (interior hull sleeves, rings, spine, end caps, stations, terminals,
+// crop beds, neighborhoods, gardens, orchards, doorway signs, emoji
+// sprites) — visible only while docked/walking. shipExterior holds the
+// outside of the hull (exterior hull, caps, collars, engine, nav lamps,
+// docking ports) — visible only while flying. Both rotate with the ship;
+// applyCellVisibility() (near the mode state) toggles which one renders.
 const ship = new THREE.Group();
 scene.add(ship);
+const shipInterior = new THREE.Group();
+ship.add(shipInterior);
+const shipExterior = new THREE.Group();
+ship.add(shipExterior);
 
 function makeTerrainTexture() {
   const c = document.createElement('canvas');
@@ -942,7 +968,7 @@ for (const [zC, mat] of [[-LENGTH / 4, agriHullMat], [LENGTH / 4, chromeHullMat]
   geo.rotateX(Math.PI / 2); // cylinder axis (Y) -> Z
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.z = zC;
-  ship.add(mesh);
+  shipInterior.add(mesh);
 }
 
 // Structural rings + central spine.
@@ -950,11 +976,11 @@ const ringMat = new THREE.MeshStandardMaterial({ color: 0x2e343b, roughness: 0.6
 for (let i = 0; i <= slices; i++) {
   const ring = new THREE.Mesh(new THREE.TorusGeometry(RADIUS - 0.4, 1.1, 8, 64), ringMat);
   ring.position.z = -LENGTH / 2 + i * sliceLen;
-  ship.add(ring);
+  shipInterior.add(ring);
 }
 const spineGeo = new THREE.CylinderGeometry(2, 2, LENGTH, 10);
 spineGeo.rotateX(Math.PI / 2);
-ship.add(new THREE.Mesh(spineGeo, ringMat));
+shipInterior.add(new THREE.Mesh(spineGeo, ringMat));
 
 // Interior end caps (seen from inside).
 const capInMat = new THREE.MeshStandardMaterial({ color: 0x878f99, roughness: 0.9, metalness: 0.2, side: THREE.DoubleSide });
@@ -963,39 +989,39 @@ for (const s of [1, -1]) {
   const cap = new THREE.Mesh(new THREE.CircleGeometry(RADIUS, 48), capInMat);
   cap.position.z = s * LENGTH / 2;
   if (s < 0) cap.rotation.y = Math.PI;
-  ship.add(cap);
+  shipInterior.add(cap);
 }
 
 // Exterior hull + caps (offset slightly outward to avoid coplanar faces).
 const hullGeo = new THREE.CylinderGeometry(RADIUS + 1, RADIUS + 1, LENGTH, 64, 1, true);
 hullGeo.rotateX(Math.PI / 2);
 const extHullMat = new THREE.MeshStandardMaterial({ color: 0x878f99, roughness: 0.55, metalness: 0.25, side: THREE.FrontSide });
-ship.add(new THREE.Mesh(hullGeo, extHullMat));
+shipExterior.add(new THREE.Mesh(hullGeo, extHullMat));
 applyGameTexture(extHullMat, 'https://pollitoproductions.github.io/Vocabulario-Espanol/hull-panels.jpg', 28, 7);
 const capOutMat = new THREE.MeshStandardMaterial({ color: 0x7d858f, roughness: 0.55, metalness: 0.25 });
 for (const s of [1, -1]) {
   const cap = new THREE.Mesh(new THREE.CircleGeometry(RADIUS + 1, 48), capOutMat);
   cap.position.z = s * (LENGTH / 2 + 0.5);
   if (s < 0) cap.rotation.y = Math.PI;
-  ship.add(cap);
+  shipExterior.add(cap);
 }
 // Round 27: exterior hull collars (one shared geometry, existing ring material).
 const collarGeo = new THREE.TorusGeometry(RADIUS + 1.2, 1.5, 8, 64);
 for (const cz of [-160, 0, 160]) {
   const collar = new THREE.Mesh(collarGeo, ringMat);
   collar.position.z = cz;
-  ship.add(collar);
+  shipExterior.add(collar);
 }
 // Engine glow + blocks at the rear.
 const glow = new THREE.Mesh(new THREE.CircleGeometry(18, 32), new THREE.MeshBasicMaterial({ color: 0x7fb8ff }));
 glow.position.z = -(LENGTH / 2 + 1.1); glow.rotation.y = Math.PI;
-ship.add(glow);
+shipExterior.add(glow);
 const blockMat = new THREE.MeshStandardMaterial({ color: 0x565e68, roughness: 0.55, metalness: 0.25 });
 for (let i = 0; i < 4; i++) {
   const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
   const b = new THREE.Mesh(new THREE.BoxGeometry(10, 10, 24), blockMat);
   b.position.set(Math.cos(a) * (RADIUS + 2), Math.sin(a) * (RADIUS + 2), -LENGTH / 2 - 6);
-  ship.add(b);
+  shipExterior.add(b);
 }
 
 // Exterior lights: emissive nav lamps + lit hull rings so the ship reads from
@@ -1010,22 +1036,22 @@ for (const s of [1, -1]) {
     const a = (k / 4) * Math.PI * 2 + Math.PI / 4;
     const lamp = new THREE.Mesh(navGeo, navWhite);
     lamp.position.set(Math.cos(a) * (RADIUS + 1.5), Math.sin(a) * (RADIUS + 1.5), s * (LENGTH / 2 + 0.5));
-    ship.add(lamp);
+    shipExterior.add(lamp);
   }
 }
 const portLamp = new THREE.Mesh(navGeo, navRed);
-portLamp.position.set(RADIUS + 1.5, 0, 0); ship.add(portLamp);
+portLamp.position.set(RADIUS + 1.5, 0, 0); shipExterior.add(portLamp);
 const starLamp = new THREE.Mesh(navGeo, navGreen);
-starLamp.position.set(-(RADIUS + 1.5), 0, 0); ship.add(starLamp);
+starLamp.position.set(-(RADIUS + 1.5), 0, 0); shipExterior.add(starLamp);
 const stripMat = new THREE.MeshBasicMaterial({ color: 0xffd9a0 });
 for (const z of [-LENGTH / 4, 0, LENGTH / 4]) {
   const strip = new THREE.Mesh(new THREE.TorusGeometry(RADIUS + 1.3, 0.35, 8, 64), stripMat);
   strip.position.z = z;
-  ship.add(strip);
+  shipExterior.add(strip);
 }
 const hullFill = new THREE.PointLight(0x8fb4ff, 0.55, 600, 0);
 hullFill.position.set(-(RADIUS + 60), -80, -120);
-ship.add(hullFill);
+shipExterior.add(hullFill);
 
 // Docking port at the top end-cap hub (+Z cap, opposite the engines). It sits
 // on the spin axis, so the hub itself never whirls — the physically sensible
@@ -1034,22 +1060,22 @@ const portCollarGeo = new THREE.CylinderGeometry(8, 10, 20, 24);
 portCollarGeo.rotateX(Math.PI / 2); // collar axis (Y) -> Z
 const portCollar = new THREE.Mesh(portCollarGeo, new THREE.MeshStandardMaterial({ color: 0x9aa4ae, roughness: 0.4, metalness: 0.7 }));
 portCollar.position.z = LENGTH / 2 + 10;
-ship.add(portCollar);
+shipExterior.add(portCollar);
 const portRing = new THREE.Mesh(
   new THREE.TorusGeometry(13, 1.1, 10, 48),
   new THREE.MeshBasicMaterial({ color: 0x59d6ff })
 );
 portRing.position.z = LENGTH / 2 + 20;
-ship.add(portRing);
+shipExterior.add(portRing);
 const portHalo = new THREE.Mesh(
   new THREE.TorusGeometry(20, 0.7, 8, 48),
   new THREE.MeshBasicMaterial({ color: 0x59d6ff, transparent: true, opacity: 0.45 })
 );
 portHalo.position.z = LENGTH / 2 + 20;
-ship.add(portHalo);
+shipExterior.add(portHalo);
 const portLight = new THREE.PointLight(0x59d6ff, 1.4, 400, 0);
 portLight.position.set(0, 0, LENGTH / 2 + 24);
-ship.add(portLight);
+shipExterior.add(portLight);
 
 // Beacon beam (round 14 guidance): a tall cyan light pillar that sits on
 // the NEAREST port, repositioned every frame while flying, so the player
@@ -1063,7 +1089,7 @@ const beaconBeamGeo = new THREE.CylinderGeometry(12, 12, 4000, 12, 1, true);
 const beaconBeamMat = new THREE.MeshBasicMaterial({ color: 0x59d6ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
 const beaconBeam = new THREE.Mesh(beaconBeamGeo, beaconBeamMat);
 beaconBeam.visible = false;
-scene.add(beaconBeam);
+exteriorCell.add(beaconBeam);
 const _beamDir = new THREE.Vector3();
 const _beamUp = new THREE.Vector3(0, 1, 0);
 
@@ -1096,7 +1122,7 @@ for (const qa of bodyPortAngles) {
     const bhalo = new THREE.Mesh(bodyPortHaloGeo, bodyPortHaloMat);
     bhalo.position.z = 10;
     grp.add(bhalo);
-    ship.add(grp);
+    shipExterior.add(grp);
     ports.push({ local: new THREE.Vector3(radial.x * (RADIUS + 20), radial.y * (RADIUS + 20), z), top: false });
   }
 }
@@ -1174,7 +1200,7 @@ for (let i = 0; i < 14; i++) {
   m.position.copy(radial).multiplyScalar(RADIUS - h / 2);
   m.position.z = z;
   m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), radial.clone().negate());
-  ship.add(m);
+  shipInterior.add(m);
   addSolid(a, Math.hypot(w, d) / 2, z, Math.hypot(w, d) / 2);
 }
 
@@ -1188,7 +1214,7 @@ for (const [bzc, blen] of [[110, 120], [240, 60]]) {
   const band = new THREE.Mesh(bandGeo, habitatBandMat);
   band.scale.z = blen;
   band.position.z = bzc;
-  ship.add(band);
+  shipInterior.add(band);
 }
 // ---------- Interior sections ----------
 // Round 9 layout (z along the 640 m hull, -320 aft ... +320 forward):
@@ -1291,7 +1317,7 @@ function mountAxialSign(text, colorCss, w, angle, radius, z, faceDir, bothSides)
   grp.position.z = z;
   grp.quaternion.copy(basisQuat(radial));
   if (faceDir < 0) grp.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI));
-  ship.add(grp);
+  shipInterior.add(grp);
   return grp;
 }
 // Mount a sign facing tangentially (normal +/-tangential), for building
@@ -1303,7 +1329,7 @@ function mountTangentialSign(text, colorCss, w, angle, radius, z) {
   grp.position.z = z;
   grp.quaternion.copy(basisQuat(radial));
   grp.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2));
-  ship.add(grp);
+  shipInterior.add(grp);
   return grp;
 }
 // Round 17: walk-up tool station console. A pedestal with a glowing
@@ -1538,10 +1564,10 @@ const cropBeds = [];
     bed.position.copy(radial).multiplyScalar(RADIUS - 0.4);
     bed.position.z = -165;
     bed.quaternion.copy(basisQuat(radial));
-    ship.add(bed);
+    shipInterior.add(bed);
     const crops = new THREE.Group();
     crops.visible = false; // ungrown: bare soil until regrown with water
-    ship.add(crops);
+    shipInterior.add(crops);
     // Lazy plants (memory): the 160 plants for this bed are NOT created
     // at startup. They are built on demand by grow() the first time the
     // bed is regrown (or loaded as grown) — so an ungrown bed costs zero
@@ -1584,13 +1610,13 @@ const cropBeds = [];
       trunk.position.copy(radial).multiplyScalar(RADIUS - 2.5).add(tang.clone().multiplyScalar(to));
       trunk.position.z = tz;
       trunk.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), up);
-      ship.add(trunk);
+      shipInterior.add(trunk);
       const canopy = new THREE.Mesh(canopyGeo, canopyMat);
       canopy.position.copy(radial).multiplyScalar(RADIUS - 4.8).add(tang.clone().multiplyScalar(to));
       canopy.position.z = tz;
       canopy.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), up);
       canopy.scale.setScalar(0.9 + (Math.abs(tz + to) % 3) * 0.15);
-      ship.add(canopy);
+      shipInterior.add(canopy);
     }
   }
   // Round 27 farm props: crates beside the beds + irrigation pipes along them.
@@ -1602,7 +1628,7 @@ const cropBeds = [];
     crate.position.copy(radial).multiplyScalar(RADIUS - 0.6).add(tang.clone().multiplyScalar(ci % 2 === 0 ? 3.6 : -3.6));
     crate.position.z = -280 + ci * 20;
     crate.quaternion.copy(basisQuat(radial));
-    ship.add(crate);
+    shipInterior.add(crate);
   }
   for (const fa of [1.2, 2.6, 4.0]) {
     const radial = new THREE.Vector3(Math.cos(fa), Math.sin(fa), 0);
@@ -1610,7 +1636,7 @@ const cropBeds = [];
     pipe.position.copy(radial).multiplyScalar(RADIUS - 0.5);
     pipe.position.z = -165;
     pipe.quaternion.copy(basisQuat(radial));
-    ship.add(pipe);
+    shipInterior.add(pipe);
   }  // Round 30 ground vegetation: the beds alone read as too sparse, so
   // the open ground across the whole agriculture section gets dense
   // groves too — 25 clusters x 40 plants (seeded, fixed count) plus 8
@@ -1701,7 +1727,7 @@ const cropBeds = [];
       plant.position.copy(radial).multiplyScalar(RADIUS - 1.2);
       plant.position.z = cz + dz;
       plant.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), radial.clone().negate());
-      ship.add(plant);
+      shipInterior.add(plant);
     }
   }
   // Round 30 extra trees: 8 more at fixed clear spots (checked against
@@ -1713,12 +1739,12 @@ const cropBeds = [];
     trunk.position.copy(radial).multiplyScalar(RADIUS - 2.5);
     trunk.position.z = tz;
     trunk.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), up);
-    ship.add(trunk);
+    shipInterior.add(trunk);
     const canopy = new THREE.Mesh(canopyGeo, canopyMat);
     canopy.position.copy(radial).multiplyScalar(RADIUS - 4.8);
     canopy.position.z = tz;
     canopy.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), up);
-    ship.add(canopy);
+    shipInterior.add(canopy);
   }
   // Nov 1 dense planting: the beds and groves alone read as sparse on a
   // deck this big, so six more field strips (same bed + veg-row pattern,
@@ -1742,7 +1768,7 @@ const cropBeds = [];
     crate.position.copy(radial).multiplyScalar(RADIUS - 0.6).add(tang.clone().multiplyScalar(ci % 2 === 0 ? 3.6 : -3.6));
     crate.position.z = -270 + ci * 25;
     crate.quaternion.copy(basisQuat(radial));
-    ship.add(crate);
+    shipInterior.add(crate);
   }
   for (const fa of [0.11, 1.025, 1.45, 2.1, 2.75, 3.55, 4.3, 5.275]) {
     const radial = new THREE.Vector3(Math.cos(fa), Math.sin(fa), 0);
@@ -1750,7 +1776,7 @@ const cropBeds = [];
     pipe.position.copy(radial).multiplyScalar(RADIUS - 0.5);
     pipe.position.z = -165;
     pipe.quaternion.copy(basisQuat(radial));
-    ship.add(pipe);
+    shipInterior.add(pipe);
   }
   // Orchards: 8 trees each (trunk + canopy, same shared geometries).
   for (const [ca, cz] of [[0.3, -220], [5.1, -120], [3.15, -80], [2.4, -60], [0.45, -150], [4.6, -260]]) {
@@ -1763,13 +1789,13 @@ const cropBeds = [];
         trunk.position.copy(radial).multiplyScalar(RADIUS - 2.5).add(tang.clone().multiplyScalar(to));
         trunk.position.z = cz + dz;
         trunk.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), up);
-        ship.add(trunk);
+        shipInterior.add(trunk);
         const canopy = new THREE.Mesh(canopyGeo, canopyMat);
         canopy.position.copy(radial).multiplyScalar(RADIUS - 4.8).add(tang.clone().multiplyScalar(to));
         canopy.position.z = cz + dz;
         canopy.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), up);
         canopy.scale.setScalar(0.9 + (Math.abs(cz + dz + to) % 3) * 0.15);
-        ship.add(canopy);
+        shipInterior.add(canopy);
       }
     }
   }
@@ -1784,17 +1810,17 @@ const cropBeds = [];
   applyGameTexture(bulkMat, 'https://pollitoproductions.github.io/Vocabulario-Espanol/hull-panels.jpg', 16, 16); // paneled bulkhead
   const disc = new THREE.Mesh(new THREE.CircleGeometry(140, 48), bulkMat);
   disc.position.z = 0;
-  ship.add(disc);
+  shipInterior.add(disc);
   const rim = new THREE.Mesh(new THREE.TorusGeometry(140, 0.6, 8, 64), bulkMat);
   rim.position.z = 0;
-  ship.add(rim);
+  shipInterior.add(rim);
   const GAP = 0.045; // doorway half-width, radians (~7 m at the deck)
   for (let i = 0; i < 4; i++) {
     const a0 = BULK_DOORS[i] + GAP;
     const a1 = BULK_DOORS[(i + 1) % 4] + (i === 3 ? Math.PI * 2 : 0) - GAP;
     const seg = new THREE.Mesh(new THREE.RingGeometry(140, 160, 64, 1, a0, a1 - a0), bulkMat);
     seg.position.z = 0;
-    ship.add(seg);
+    shipInterior.add(seg);
   }
   // Glowing doorway frames + sector signs at each entrance.
   const frameMat = new THREE.MeshBasicMaterial({ color: 0x59d6ff });
@@ -1805,13 +1831,13 @@ const cropBeds = [];
       const post = new THREE.Mesh(new THREE.BoxGeometry(1.2, 8, 1.5), frameMat);
       post.position.copy(prad).multiplyScalar(156);
       post.quaternion.copy(basisQuat(prad));
-      ship.add(post);
+      shipInterior.add(post);
     }
     const lrad = new THREE.Vector3(Math.cos(d), Math.sin(d), 0);
     const lintel = new THREE.Mesh(new THREE.BoxGeometry(2 * GAP * 156 + 1.2, 1.2, 1.5), frameMat);
     lintel.position.copy(lrad).multiplyScalar(152.5);
     lintel.quaternion.copy(basisQuat(lrad));
-    ship.add(lintel);
+    shipInterior.add(lintel);
     // Mounted on the bulkhead faces themselves, high above each doorway
     // (radius 148 = 12 m above the deck). Round 20 (wayfinding):
     // each sign sits on the APPROACH-side face and faces the walker
@@ -1859,7 +1885,7 @@ const cropBeds = [];
   applyGameTexture(ceilMat, 'https://pollitoproductions.github.io/Vocabulario-Espanol/ceiling-panels.jpg', 24, 8); // Round 30: paneled ceiling (flat dark stays the fallback)
   const ceil = new THREE.Mesh(ceilGeo, ceilMat);
   ceil.position.z = 160;
-  ship.add(ceil);
+  shipInterior.add(ceil);
   const colMat = new THREE.MeshStandardMaterial({ color: 0x4a5560, roughness: 0.8, metalness: 0.3 });
   for (const ca of [0, Math.PI / 2, Math.PI, 3 * Math.PI / 2]) {
     for (const cz of [60, 120, 180, 240, 300]) {
@@ -1869,7 +1895,7 @@ const cropBeds = [];
       col.position.z = cz;
       addSolid(ca, 0.6, cz, 0.6);
       col.quaternion.copy(basisQuat(crad));
-      ship.add(col);
+      shipInterior.add(col);
     }
   }
   const lightMat = new THREE.MeshBasicMaterial({ color: 0xfff2cc });
@@ -1880,7 +1906,7 @@ const cropBeds = [];
       strip.position.copy(lrad).multiplyScalar(140.5);
       strip.position.z = lz;
       strip.quaternion.copy(basisQuat(lrad));
-      ship.add(strip);
+      shipInterior.add(strip);
     }
   }
 }
@@ -1922,7 +1948,7 @@ const cropBeds = [];
     podium.position.copy(rad).multiplyScalar(155.4);
     podium.position.z = (GZ0 + GZ1) / 2;
     podium.quaternion.copy(basisQuat(rad));
-    ship.add(podium);
+    shipInterior.add(podium);
   }
   // Pillars + warm window strips on both podium side faces.
   for (const edge of [GALLERY_A0, GALLERY_A1]) {
@@ -1934,12 +1960,12 @@ const cropBeds = [];
       pillar.position.copy(erad).multiplyScalar(155.4).add(etan.clone().multiplyScalar(out * 0.6));
       pillar.position.z = pz;
       pillar.quaternion.copy(basisQuat(erad));
-      ship.add(pillar);
+      shipInterior.add(pillar);
       const win = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.4, 7), warmMat);
       win.position.copy(erad).multiplyScalar(157).add(etan.clone().multiplyScalar(out * 0.8));
       win.position.z = pz + 5;
       win.quaternion.copy(basisQuat(erad));
-      ship.add(win);
+      shipInterior.add(win);
     }
   }
   // Upper gallery deck planks at radius 150 (top surface), z 60 ... 140.
@@ -1951,7 +1977,7 @@ const cropBeds = [];
     plank.position.copy(rad).multiplyScalar(150.4);
     plank.position.z = (GZ0 + GZ1) / 2;
     plank.quaternion.copy(basisQuat(rad));
-    ship.add(plank);
+    shipInterior.add(plank);
   }
   // Back wall along the GALLERY_A1 edge: full upper-storey height
   // (deck 150 up to ceiling 141), with warm window band + door recesses.
@@ -1962,18 +1988,18 @@ const cropBeds = [];
     panel.position.copy(brad).multiplyScalar(145.5);
     panel.position.z = wz;
     panel.quaternion.copy(basisQuat(brad));
-    ship.add(panel);
+    shipInterior.add(panel);
     const win = new THREE.Mesh(new THREE.BoxGeometry(0.25, 1.6, 6), warmMat);
     win.position.copy(brad).multiplyScalar(144).add(new THREE.Vector3(Math.sin(GALLERY_A1), -Math.cos(GALLERY_A1), 0).multiplyScalar(0.4));
     win.position.z = wz;
     win.quaternion.copy(basisQuat(brad));
-    ship.add(win);
+    shipInterior.add(win);
     if (k === 2 || k === 4 || k === 6) {
       const door = new THREE.Mesh(new THREE.BoxGeometry(0.25, 3, 2.5), darkMat);
       door.position.copy(brad).multiplyScalar(148.5).add(new THREE.Vector3(Math.sin(GALLERY_A1), -Math.cos(GALLERY_A1), 0).multiplyScalar(0.4));
       door.position.z = wz;
       door.quaternion.copy(basisQuat(brad));
-      ship.add(door);
+      shipInterior.add(door);
     }
   }
   // Warm strip light along the back wall, above the gallery deck.
@@ -1983,7 +2009,7 @@ const cropBeds = [];
     strip.position.copy(brad).multiplyScalar(141.8).add(new THREE.Vector3(Math.sin(GALLERY_A1), -Math.cos(GALLERY_A1), 0).multiplyScalar(0.4));
     strip.position.z = (GZ0 + GZ1) / 2;
     strip.quaternion.copy(basisQuat(brad));
-    ship.add(strip);
+    shipInterior.add(strip);
   }
   // Front railing along the GALLERY_A0 edge: posts + top and mid rails,
   // hard edge — no open slope, no gap a walker can slip through.
@@ -1993,7 +2019,7 @@ const cropBeds = [];
     post.position.copy(frad).multiplyScalar(149.45);
     post.position.z = rz;
     post.quaternion.copy(basisQuat(frad));
-    ship.add(post);
+    shipInterior.add(post);
   }
   for (let k = 0; k < 8; k++) {
     const rz = GZ0 + 5 + k * 10;
@@ -2003,7 +2029,7 @@ const cropBeds = [];
       rail.position.copy(frad).multiplyScalar(rr);
       rail.position.z = rz;
       rail.quaternion.copy(basisQuat(frad));
-      ship.add(rail);
+      shipInterior.add(rail);
     }
   }
   // Stair towers: 10 steps each, full-height cheek walls on both sides.
@@ -2020,7 +2046,7 @@ const cropBeds = [];
         step.position.copy(rad).multiplyScalar(top - 0.5);
         step.position.z = zBase + 1 + 2 * j;
         step.quaternion.copy(basisQuat(rad));
-        ship.add(step);
+        shipInterior.add(step);
       }
     }
     for (const edge of [GALLERY_A0, GALLERY_A1]) {
@@ -2029,7 +2055,7 @@ const cropBeds = [];
       cheek.position.copy(erad).multiplyScalar(155);
       cheek.position.z = zBase + 10;
       cheek.quaternion.copy(basisQuat(erad));
-      ship.add(cheek);
+      shipInterior.add(cheek);
     }
   }
   // Gallery signs, mounted: hall name on the back wall (facing the deck),
@@ -2052,7 +2078,7 @@ const cropBeds = [];
       bench.position.set(0, -0.55, bz);
       tgrp.add(bench);
     }
-    ship.add(tgrp);
+    shipInterior.add(tgrp);
   }
 }
 // ---------- Round 30 realism — industrial-half dressing ----------
@@ -2075,13 +2101,13 @@ const cropBeds = [];
     tech.position.copy(radial).multiplyScalar(141);
     tech.position.z = 160;
     tech.quaternion.copy(basisQuat(radial));
-    ship.add(tech);
+    shipInterior.add(tech);
     const edu = new THREE.Mesh(pipeGeo, pipeMat);
     edu.position.copy(radial).multiplyScalar(141);
     edu.position.z = 260;
     edu.quaternion.copy(basisQuat(radial));
     edu.scale.z = 0.5;
-    ship.add(edu);
+    shipInterior.add(edu);
   }
   // Crate stacks on the far side: two on deck + one stacked on top.
   for (const [ca, cz] of [[3.1, 60], [3.1, 180], [3.9, 90], [3.9, 240], [5.9, 70], [5.9, 220], [0.3, 120], [0.3, 260]]) {
@@ -2092,13 +2118,13 @@ const cropBeds = [];
       crate.position.copy(radial).multiplyScalar(RADIUS - 0.6).add(tang.clone().multiplyScalar(to));
       crate.position.z = cz;
       crate.quaternion.copy(basisQuat(radial));
-      ship.add(crate);
+      shipInterior.add(crate);
     }
     const top = new THREE.Mesh(crateGeo, crateMat);
     top.position.copy(radial).multiplyScalar(RADIUS - 1.8);
     top.position.z = cz;
     top.quaternion.copy(basisQuat(radial));
-    ship.add(top);
+    shipInterior.add(top);
   }
   // Gantry frames over open deck: posts + high beam, 6 m clearance.
   for (const [ga, gz] of [[3.5, 120], [3.5, 220], [5.9, 150]]) {
@@ -2115,7 +2141,7 @@ const cropBeds = [];
     const beam = new THREE.Mesh(new THREE.BoxGeometry(8.8, 0.4, 0.4), lineMat);
     beam.position.set(0, 6.2, 0);
     grp.add(beam);
-    ship.add(grp);
+    shipInterior.add(grp);
   }
   // Cool ceiling light strips (emissive only, no real lights).
   for (const sa of [1.0, 2.6, 5.2]) {
@@ -2124,7 +2150,7 @@ const cropBeds = [];
     strip.position.copy(radial).multiplyScalar(142.5);
     strip.position.z = 160;
     strip.quaternion.copy(basisQuat(radial));
-    ship.add(strip);
+    shipInterior.add(strip);
   }
   // Equipment cabinets against the bulkhead face (z 1, inside tech),
   // clear of all four bulkhead doorways (angles 0, 1.5708, 3.1416, 4.7124).
@@ -2134,7 +2160,7 @@ const cropBeds = [];
     cab.position.copy(radial).multiplyScalar(RADIUS - 1.5);
     cab.position.z = 1;
     cab.quaternion.copy(basisQuat(radial));
-    ship.add(cab);
+    shipInterior.add(cab);
   }
 }
 
@@ -2189,7 +2215,7 @@ const cropBeds = [];
     grp.position.copy(radial).multiplyScalar(RADIUS - rOff);
     grp.position.z = z;
     grp.quaternion.copy(basisQuat(radial));
-    ship.add(grp);
+    shipInterior.add(grp);
     return grp;
   }
   function cityBox(grp, w, h, d, mat, x, y, z) {
@@ -2576,7 +2602,7 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
     grp.position.copy(radial).multiplyScalar(RADIUS - rOff);
     grp.position.z = z;
     grp.quaternion.copy(basisQuat(radial));
-    ship.add(grp);
+    shipInterior.add(grp);
     return grp;
   }
   function fillBox(grp, w, h, d, mat, x, y, z) {
@@ -2798,7 +2824,7 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
     stoop.position.set(doorSide * 8.2, -2.3, 0);
     addSolid(angle, 7, z, 6);
     grp.add(stoop);
-    ship.add(grp);
+    shipInterior.add(grp);
   }
   let qi = 0;
   for (const z of [55, 75, 95, 115, 135, 155]) housingUnit(1.15, z, qCols[qi++ % qCols.length], -1);
@@ -2818,7 +2844,7 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
       bench.position.set(0, -0.55, bz);
       grp.add(bench);
     }
-    ship.add(grp);
+    shipInterior.add(grp);
   }
   for (const ma of [1.95, 2.15]) for (const mz of [90, 110, 130]) messTable(ma, mz);
   for (const mz of [225, 245]) messTable(2.05, mz);
@@ -2833,7 +2859,7 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
     wall.position.copy(radial).multiplyScalar(RADIUS - h / 2);
     wall.position.z = (z0 + z1) / 2;
     wall.quaternion.copy(basisQuat(radial));
-    ship.add(wall);
+    shipInterior.add(wall);
   }
   for (const pa of [0.85, 2.45]) {
     for (const [z0, z1] of [[50, 80], [90, 120], [130, 170]]) lowWall(pa, z0, z1, 1.3);
@@ -2853,7 +2879,7 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
       plant.position.set(0, 0.9, pz);
       grp.add(plant);
     }
-    ship.add(grp);
+    shipInterior.add(grp);
   }
   for (const pa of [0.95, 2.35]) for (const pz of [65, 105, 145]) planter(pa, pz);
   for (const mz of [95, 115, 135]) planter(2.05, mz);
@@ -2865,7 +2891,7 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
       bol.position.copy(brad).multiplyScalar(RADIUS - 0.5);
       bol.position.z = bz;
       bol.quaternion.copy(basisQuat(brad));
-      ship.add(bol);
+      shipInterior.add(bol);
     }
   }
   // Round 27 lived-in props: promenade benches + crates, laundry lines
@@ -2878,7 +2904,7 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
     bench.position.copy(brad).multiplyScalar(RADIUS - 0.5);
     bench.position.z = bz;
     bench.quaternion.copy(basisQuat(brad));
-    ship.add(bench);
+    shipInterior.add(bench);
   }
   for (let ci = 0; ci < 8; ci++) {
     const ca = [0.95, 2.35][ci % 2];
@@ -2887,7 +2913,7 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
     crate.position.copy(crad).multiplyScalar(RADIUS - 0.6);
     crate.position.z = 70 + ci * 12;
     crate.quaternion.copy(basisQuat(crad));
-    ship.add(crate);
+    shipInterior.add(crate);
   }
   let clothI = 0;
   for (const lz of [65, 85, 105, 125]) {
@@ -2896,13 +2922,13 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
     line.position.copy(lrad).multiplyScalar(RADIUS - 3.5);
     line.position.z = lz;
     line.quaternion.copy(basisQuat(lrad));
-    ship.add(line);
+    shipInterior.add(line);
     for (const off of [-5, 0, 5]) {
       const cloth = new THREE.Mesh(clothGeo, clothMats[clothI++ % 3]);
       cloth.position.copy(lrad).multiplyScalar(RADIUS - 3.0);
       cloth.position.z = lz + off;
       cloth.quaternion.copy(basisQuat(lrad));
-      ship.add(cloth);
+      shipInterior.add(cloth);
     }
   }
   planter(0.95, 85); planter(2.35, 125); planter(1.15, 165);
@@ -2917,14 +2943,14 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
       post.position.copy(arad).multiplyScalar(RADIUS - 2).add(atan.clone().multiplyScalar(off));
       post.position.z = 205;
       post.quaternion.copy(basisQuat(arad));
-      ship.add(post);
+      shipInterior.add(post);
     }
     const lintel = new THREE.Mesh(new THREE.BoxGeometry(13, 1.2, 1),
       new THREE.MeshStandardMaterial({ color: 0x4a5560, roughness: 0.85 }));
     lintel.position.copy(arad).multiplyScalar(RADIUS - 4.2);
     lintel.position.z = 205;
     lintel.quaternion.copy(basisQuat(arad));
-    ship.add(lintel);
+    shipInterior.add(lintel);
     mountAxialSign('EDUCATION ZONE', '#e8a33d', 5, 2.05, RADIUS - 4.2, 204.3, -1);
     addSolid(2.05 - 6 / RADIUS, 0.4, 205, 0.4);
     addSolid(2.05 + 6 / RADIUS, 0.4, 205, 0.4);
@@ -2937,7 +2963,7 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
     bench.position.copy(brad).multiplyScalar(RADIUS - 0.5);
     bench.position.z = bz;
     bench.quaternion.copy(basisQuat(brad));
-    ship.add(bench);
+    shipInterior.add(bench);
   }
   for (const sz of [-200, -155]) {
     const srad = new THREE.Vector3(Math.cos(2.2), Math.sin(2.2), 0);
@@ -2946,7 +2972,7 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
     shed.position.copy(srad).multiplyScalar(RADIUS - 2);
     shed.position.z = sz;
     shed.quaternion.copy(basisQuat(srad));
-    ship.add(shed);
+    shipInterior.add(shed);
     addSolid(2.2, 4.5, sz, 4.5);
   }
   // Warm point lights over the mess and the quarters row (living light;
@@ -2956,7 +2982,7 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
     const pl = new THREE.PointLight(0xffc27a, 0.8, 120, 0);
     pl.position.copy(lrad).multiplyScalar(152);
     pl.position.z = lz;
-    ship.add(pl);
+    shipInterior.add(pl);
   }  // Round 30 lived-in pass for the tech/edu half: more homes, more
   // seating, more clutter — no new real lights (glow comes from the
   // textures), no gameplay change. All dressing keeps clear of cells,
@@ -2971,7 +2997,7 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
     crate.position.copy(crad).multiplyScalar(RADIUS - 0.6);
     crate.position.z = cz;
     crate.quaternion.copy(basisQuat(crad));
-    ship.add(crate);
+    shipInterior.add(crate);
   }
   for (const [ba, bz] of [[0.95, 170], [2.35, 170], [0.95, 190], [2.35, 190]]) {
     const brad = new THREE.Vector3(Math.cos(ba), Math.sin(ba), 0);
@@ -2979,7 +3005,7 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
     bench.position.copy(brad).multiplyScalar(RADIUS - 0.5);
     bench.position.z = bz;
     bench.quaternion.copy(basisQuat(brad));
-    ship.add(bench);
+    shipInterior.add(bench);
   }
   lowWall(0.85, 175, 195, 1.3);
   lowWall(2.45, 175, 195, 1.3);
@@ -2994,7 +3020,7 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
     plate.position.copy(frad).multiplyScalar(RADIUS - 0.35);
     plate.position.z = zc;
     plate.quaternion.copy(basisQuat(frad));
-    ship.add(plate);
+    shipInterior.add(plate);
   }
 }
 
@@ -3037,7 +3063,7 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
     con.position.copy(rad).multiplyScalar(RADIUS);
     con.position.z = s.z;
     con.quaternion.copy(basisQuat(rad));
-    ship.add(con);
+    shipInterior.add(con);
   }
 }
 // Round 30 review terminals (EIGHT), respread Oct 31 (Brant: the old
@@ -3114,7 +3140,7 @@ for (const tp of REVIEW_TERMINALS_POS) {
   tgrp.position.copy(trad).multiplyScalar(tp.deck === 'main' ? 160 : 150);
   tgrp.position.z = tp.z;
   tgrp.quaternion.copy(basisQuat(trad));
-  ship.add(tgrp);
+  shipInterior.add(tgrp);
 }
 // ---------- Depositories + rebuild (Brant Nov 7) ----------
 // Eight glowing consoles where the player deposits WATER and METAL in
@@ -3145,7 +3171,7 @@ for (const d of DEPOSITORIES) {
   con.position.copy(rad).multiplyScalar(RADIUS);
   con.position.z = d.z;
   con.quaternion.copy(basisQuat(rad));
-  ship.add(con);
+  shipInterior.add(con);
 }
 // Assign each crop bed to its nearest water depository and each
 // neighborhood to its nearest metal depository (tangential + axial
@@ -3215,7 +3241,7 @@ for (const et of EXPLORATION_TERMINALS) {
   econ.position.copy(erad).multiplyScalar(RADIUS);
   econ.position.z = et.z;
   econ.quaternion.copy(basisQuat(erad));
-  ship.add(econ);
+  shipInterior.add(econ);
 }
 function explorationDist2() {
   if (mode !== 'walk') return Infinity;
@@ -3348,7 +3374,7 @@ const sideR = new THREE.Mesh(sideFlameGeo, sideFlameMat);
 sideR.position.set(-1.5, 0, -2.2); sideR.visible = false;
 shuttle.add(sideL, sideR);
 shuttle.visible = false;
-scene.add(shuttle);
+exteriorCell.add(shuttle);
 const shuttleVel = new THREE.Vector3();
 
 // ---------- Asteroid belt: procedural rocks, clear of the station ----------
@@ -3381,7 +3407,7 @@ function addAsteroid(x, y, z, r, sx, sy, sz) {
   m.position.set(x, y, z);
   m.scale.set(sx, sy, sz);
   m.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
-  scene.add(m);
+  exteriorCell.add(m);
   const a = { mesh: m, radius: r, spinAxis: new THREE.Vector3().randomDirection(), spinRate: (Math.random() - 0.5) * 0.2 };
   asteroids.push(a);
   return a;
@@ -3417,12 +3443,12 @@ for (const def of auraDefs) {
   ring.position.copy(pos);
   const halo = new THREE.Mesh(new THREE.TorusGeometry(r + 9, 0.5, 8, 40), new THREE.MeshBasicMaterial({ color: 0x59d6ff, transparent: true, opacity: 0.4 }));
   halo.position.copy(pos);
-  scene.add(ring, halo);
+  exteriorCell.add(ring, halo);
   let coma = null;
   if (def.type === 'comet') {
     coma = new THREE.Mesh(new THREE.SphereGeometry(r + 6, 16, 16), new THREE.MeshBasicMaterial({ color: 0xcfe8ff, transparent: true, opacity: 0.12, depthWrite: false }));
     coma.position.copy(pos);
-    scene.add(coma);
+    exteriorCell.add(coma);
   }
   auraAsteroids.push({ mesh: base.mesh, ring, halo, coma, type: def.type, radius: r, mined: false });
 }
@@ -3462,7 +3488,7 @@ for (let i = 0; i < 36; i++) {
   ring.position.copy(a.mesh.position);
   const halo = new THREE.Mesh(new THREE.TorusGeometry(r + 9, 0.5, 8, 40), new THREE.MeshBasicMaterial({ color: 0x59d6ff, transparent: true, opacity: 0.4 }));
   halo.position.copy(a.mesh.position);
-  scene.add(ring, halo);
+  exteriorCell.add(ring, halo);
   auraAsteroids.push({ mesh: a.mesh, ring, halo, coma: null, type: 'metal', radius: r, mined: false });
 }
 const farRng = mulberry32(20261030);
@@ -3581,7 +3607,7 @@ for (let wi = 0; wi < WORDS.length; wi++) {
   sp.scale.set(30, 22.5, 1); // 4:3 plate matches the 512x384 texture exactly
   sp.position.copy(pos);
   sp.visible = false;
-  scene.add(sp);
+  exteriorCell.add(sp);
   wordTiles.push({ sprite: sp, base: pos.clone(), phase: farRng() * Math.PI * 2, speed: 0.3 + farRng() * 0.5, amp: 2 + farRng() * 3, live: false, collected: false, suppress: false, dotHidden: false });
 }
 let wordTileLive = 0;
@@ -3617,7 +3643,7 @@ wordDotGeo.setAttribute('position', new THREE.BufferAttribute(wordDotPos, 3));
 const wordDotMat = new THREE.PointsMaterial({ size: 6, sizeAttenuation: false, map: makeWordGlowTexture(), color: 0x9fe8ff, transparent: true, opacity: 0.9, depthWrite: false, depthTest: true, blending: THREE.AdditiveBlending });
 const wordDots = new THREE.Points(wordDotGeo, wordDotMat);
 wordDots.frustumCulled = false;
-scene.add(wordDots);
+exteriorCell.add(wordDots);
 // Sync (called from updateWordTiles every frame): hide a dot by shunting
 // its vertex far below the far plane, where it clips for free; restore it
 // by putting it back on its base position. Only changed vertices upload.
@@ -3678,6 +3704,20 @@ function updateWordTiles(dt, elapsed) {
 
 // ---------- State ----------
 let mode = 'walk';
+// CELLS: show only the cell the player is in. Docked/walking renders
+// the interior (shipInterior); flying renders the outside of the ship
+// (shipExterior) plus the space environment (exteriorCell). The other
+// cell is hidden, so the renderer never draws both worlds at once.
+// Called at every mode transition (undock, autoDock, returnAboard,
+// retryMission, restoreSavedPosition) and once at startup. Visibility
+// does not affect gameplay logic — stations, tiles, mining and the
+// tutorial all keep working; only rendering is gated.
+function applyCellVisibility() {
+  const docked = (mode === 'walk');
+  shipInterior.visible = docked;
+  shipExterior.visible = !docked;
+  exteriorCell.visible = !docked;
+}
 let cylAngle = 0;
 let playerAngle = 0, playerZ = 40, yaw = 0, pitch = 0;
 let playerEyeR = RADIUS - EYE; // eye radius above the deck; drops 10 m on the gallery
@@ -3921,6 +3961,7 @@ function retryMission() {
   dockArmed = true;
   failOverlay.style.display = 'none';
   mode = 'walk';
+  applyCellVisibility(); // cells: interior on, exterior off
   shuttle.visible = false;
   shuttleVel.set(0, 0, 0);
   playerAngle = 0; playerZ = 40; yaw = 0; pitch = 0;
@@ -4265,6 +4306,7 @@ function undock() {
   if (explorationDist2() >= DEPART_DIST * DEPART_DIST) return; // gated DEPART: only at the Exploration Terminal
   dockArmed = false; // auto-dock stays OFF until the shuttle has flown clear of every port
   mode = 'flight';
+  applyCellVisibility(); // cells: exterior on, interior off
   driveState = 'COAST';
   buzz([80, 60, 80]); // departure thrum
   announceDeparting(); // farewell on every departure, English then Spanish
@@ -4307,6 +4349,7 @@ function undock() {
 // angle-0/z-40 industrial entry.
 function autoDock(port) {
   mode = 'walk';
+  applyCellVisibility(); // cells: interior on, exterior off
   driveState = 'DOCKED';
   buzz([60, 80, 120]); // dock clunk + settle
   announceBoarding(); // the ship greets every boarding, English then Spanish
@@ -7034,7 +7077,7 @@ for (const q of _qItems) {
   sp.scale.set(30, 22.5, 1);
   sp.position.copy(pos);
   sp.visible = false;
-  scene.add(sp);
+  exteriorCell.add(sp);
   const t = { sprite: sp, base: pos.clone(), phase: farRng() * Math.PI * 2, speed: 0.3 + farRng() * 0.5, amp: 2 + farRng() * 3, live: false, collected: false, suppress: false, dotHidden: false, q: q };
   questionTiles.push(t);
   questionTilesByTool[q.tool].push(t);
@@ -7055,7 +7098,7 @@ for (const tool of QTILE_DOT_TAGS) {
   const mat = new THREE.PointsMaterial({ size: 6, sizeAttenuation: false, map: _qGlowTex, color: QTILE_COLORS[tool], transparent: true, opacity: 0.9, depthWrite: false, depthTest: true, blending: THREE.AdditiveBlending });
   const pts = new THREE.Points(geo, mat);
   pts.frustumCulled = false;
-  scene.add(pts);
+  exteriorCell.add(pts);
   questionDots.push({ tool: tool, tiles: tiles, geo: geo, pos: dp });
 }
 function syncQuestionDots() {
@@ -7275,6 +7318,7 @@ function restoreSavedPosition(pos) {
     btnMode.textContent = 'DEPART'; btnMode.style.display = '';
     btnJump.style.visibility = 'visible';
     hideNav(); updateHint();
+    applyCellVisibility(); // cells: interior on, exterior off
     return;
   }
   if (pos.mode === 'flight') {
@@ -7293,6 +7337,7 @@ function restoreSavedPosition(pos) {
     shuttleVel.set(0, 0, 0); shuttle.visible = true;
     btnMode.style.display = 'none'; btnJump.style.visibility = 'hidden';
     updateHint();
+    applyCellVisibility(); // cells: exterior on, interior off
     return;
   }
   // Walk: aboard, deck height deriving from angle/z as in live walk.
@@ -7302,6 +7347,7 @@ function restoreSavedPosition(pos) {
   btnMode.textContent = 'DEPART'; btnMode.style.display = '';
   btnJump.style.visibility = 'visible';
   hideNav(); updateHint();
+  applyCellVisibility(); // cells: interior on, exterior off
 }
 function readSave() {
   try {
@@ -7388,7 +7434,7 @@ function applySave(s) {
   updateMenu();
 }
 // Fresh state: haul zeroed, every tile uncollected (sprites restored to the
-// scene, textures re-stream on approach), every mineable asteroid unmined.
+// exterior cell, textures re-stream on approach), every mineable asteroid unmined.
 function resetProgress() {
   water = 0; metal = 0; freeCrashUsed = false; questStep = 0; questCollected = false; menuReviewVisited = false; recognizedRepos = {}; celebrateText = '';
   for (const d of DEPOSITORIES) d.bank = 0;
@@ -7400,7 +7446,7 @@ function resetProgress() {
       w.sprite.material.map = null; w.live = false;
     }
     w.collected = false; w.suppress = false; w.sprite.visible = false;
-    try { scene.add(w.sprite); } catch (e) {}
+    try { exteriorCell.add(w.sprite); } catch (e) {}
   }
   wordTileLive = 0;
   // Round 30 question-tiles: same restore as word tiles.
@@ -7410,7 +7456,7 @@ function resetProgress() {
       t.sprite.material.map = null; t.live = false;
     }
     t.collected = false; t.suppress = false; t.sprite.visible = false;
-    try { scene.add(t.sprite); } catch (e) {}
+    try { exteriorCell.add(t.sprite); } catch (e) {}
   }
   qTileLive = 0;
   for (const a of auraAsteroids) {
@@ -7429,6 +7475,7 @@ function returnAboard() {
   try { failOverlay.style.display = 'none'; } catch (e) {}
   dockArmed = true;
   mode = 'walk';
+  applyCellVisibility(); // cells: interior on, exterior off
   try { shuttle.visible = false; } catch (e) {}
   shuttleVel.set(0, 0, 0);
   playerAngle = 0; playerZ = 40; yaw = 0; pitch = 0;
@@ -7528,6 +7575,7 @@ document.getElementById('btn-menu-home').addEventListener('pointerdown', functio
   returnAboard();
   showTitle();
 });
+applyCellVisibility(); // cells: start docked — interior on, exterior off (title shows over the docked scene)
 showTitle(); // title first: no play begins until Resume or Begin is chosen
 renderer.setAnimationLoop(animate);
 </script>
