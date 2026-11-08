@@ -434,7 +434,7 @@
   <div class="row"><span>PRONOUNS SPOKEN</span><b id="progPron">0 / 700</b></div>
   <div class="row"><span>POR VS. PARA SPOKEN</span><b id="progPorPara">0 / 100</b></div>
   <div class="row"><span>CROP BEDS GROWN</span><b id="progCrops">0 / 16</b></div>
-  <div class="row"><span>NEIGHBORHOODS BUILT</span><b id="progHoods">0 / 16</b></div>
+  <div class="row"><span>RESIDENTIAL BLOCKS BUILT</span><b id="progHoods">0 / 16</b></div>
   <button class="closeBtn" id="btn-menu-review" type="button">REVIEW EVERYTHING</button>
   <div class="controls">Progress counts spoken Spanish only — flipping, tapping, and listening don’t count; English practice doesn’t count either. REVIEW EVERYTHING opens the same review panel as the terminals: everything you have already answered, anytime.</div>
   </div><button class="subHead" data-sub="settings" data-label="SETTINGS" type="button">▸ SETTINGS</button><div class="subBody" id="sub-settings">
@@ -464,7 +464,7 @@
     <div class="mHead">REVIEW TERMINALS</div>
     <div class="mBody">Eight gold review terminals stand around the industrial side &mdash; one on the mezzanine, seven on the main deck, spread evenly around the hull. Walk up and tap Review (or press Enter) to review everything you have already spoken, by tool, with Hear in both languages. Reviewing never changes progress.</div>
     <div class="mHead">DEPOSITORIES</div>
-    <div class="mBody">Eight depositories rebuild the ship&rsquo;s city: four blue WATER depositories in the agriculture ring and four amber METAL depositories in the residential half. Walk up and tap DEPOSIT (or press Enter) to deposit material from your haul in person &mdash; 800 WATER regrows one crop bed in the farm, 800 METAL rebuilds one neighborhood (and its little gardens appear too, planted). Partial deposits bank toward the next build, so you can deposit what you have and come back later. Crop beds start ungrown and neighborhoods start unbuilt — they appear only when you regrow or rebuild them.</div>
+    <div class="mBody">Eight depositories rebuild the ship&rsquo;s city: four blue WATER depositories in the agriculture ring and four amber METAL depositories in the residential half. Walk up and tap DEPOSIT (or press Enter) to deposit material from your haul in person &mdash; 250 WATER regrows one crop bed in the farm, 250 METAL rebuilds one residential block (and its little gardens appear too, planted). Partial deposits bank toward the next build, so you can deposit what you have and come back later. Crop beds start ungrown and residential blocks start unbuilt — they appear only when you regrow or rebuild them.</div>
     <div class="mHead">QUESTS</div>
     <div class="mBody">Your quest is to rebuild the lost Spanish repositories &mdash; vocabulary, cognates, idioms, verbs, dictation, ser vs. estar, saber vs. conocer, and pronouns. The quest box (top left) shows what you have collected in each repository, with an arrow pointing to your next tutorial step, and celebrates each repository you finish &mdash; and all of them together. Quests guide; they never block &mdash; skip the tutorial anytime from the quest box.</div>
     <div class="mHead">SAVING</div>
@@ -2500,9 +2500,9 @@ const cropBeds = [];
 }
 
 // ---------- Depositories + rebuild (Brant Nov 7) ----------
-// Crop beds start UNGROWN and neighborhoods start UNBUILT. Water
-// regrows a crop bed (800 WATER) and metal rebuilds a neighborhood
-// (800 METAL) at a depository, in person — a rebuilt neighborhood
+// Crop beds start UNGROWN and residential blocks start UNBUILT. Water
+// regrows a crop bed (250 WATER) and metal rebuilds a residential block
+// (250 METAL) at a depository, in person — a rebuilt residential block
 // brings its little gardens with it, planted, at no extra cost. The
 // fill functions in the city block below record every garden and
 // neighborhood element here; the depository section (after the review
@@ -3166,21 +3166,21 @@ for (const tp of REVIEW_TERMINALS_POS) {
 // a clear gap — no station, review terminal, exploration terminal,
 // crop bed, orchard, or neighborhood in the way (placements checked
 // against every list before they were written). Depositing a depository's
-// full cost regrows the next ungrown crop bed (800 WATER) or rebuilds
-// the next unbuilt neighborhood (800 METAL) nearest to it: each water
+// full cost regrows the next ungrown crop bed (250 WATER) or rebuilds
+// the next unbuilt residential block (250 METAL) nearest to it: each water
 // depository regrows 4 crop beds, each metal depository rebuilds 4
 // neighborhoods (gardens included). Crop beds start ungrown (bare soil,
 // crops hidden) and neighborhoods start unbuilt (hidden, walk-through);
 // each appears only when regrown or rebuilt.
 const DEPOSITORIES = [
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 0.30, z: -100, bank: 0, cost: 800, emoji: '💧' },
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 1.87, z: -100, bank: 0, cost: 800, emoji: '💧' },
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 3.44, z: -100, bank: 0, cost: 800, emoji: '💧' },
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 5.01, z: -100, bank: 0, cost: 800, emoji: '💧' },
-  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 0.77, z: 200, bank: 0, cost: 800, emoji: '🏠' },
-  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 2.25, z: 200, bank: 0, cost: 800, emoji: '🏠' },
-  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 4.02, z: 200, bank: 0, cost: 800, emoji: '🏠' },
-  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 5.40, z: 200, bank: 0, cost: 800, emoji: '🏠' },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 0.30, z: -100, bank: 0, cost: 250, emoji: '💧' },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 1.87, z: -100, bank: 0, cost: 250, emoji: '💧' },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 3.44, z: -100, bank: 0, cost: 250, emoji: '💧' },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 5.01, z: -100, bank: 0, cost: 250, emoji: '💧' },
+  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 0.77, z: 200, bank: 0, cost: 250, emoji: '🏠' },
+  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 2.25, z: 200, bank: 0, cost: 250, emoji: '🏠' },
+  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 4.02, z: 200, bank: 0, cost: 250, emoji: '🏠' },
+  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 5.40, z: 200, bank: 0, cost: 250, emoji: '🏠' },
 ];
 for (const d of DEPOSITORIES) {
   const rad = new THREE.Vector3(Math.cos(d.angle), Math.sin(d.angle), 0);
@@ -4245,9 +4245,9 @@ function updateQuestUI() {
   // as a misleading "toward next" number.
   if (questFutureCountEl) questFutureCountEl.textContent = (cGrown + hBuilt) + ' / ' + (cropBeds.length + neighborhoods.length);
   if (questFutureEl) {
-    let fut = (cGrown >= cropBeds.length ? '✓ ' : '') + 'Crop beds grown ' + cGrown + ' / ' + cropBeds.length + '<br>' + (hBuilt >= neighborhoods.length ? '✓ ' : '') + 'Neighborhoods built ' + hBuilt + ' / ' + neighborhoods.length;
-    if (cGrown < cropBeds.length) fut += '<br>💧 ' + maxWaterBank + ' / 800 toward next crop bed';
-    if (hBuilt < neighborhoods.length) fut += '<br>🏠 ' + maxMetalBank + ' / 800 toward next neighborhood';
+    let fut = (cGrown >= cropBeds.length ? '✓ ' : '') + 'Crop beds grown ' + cGrown + ' / ' + cropBeds.length + '<br>' + (hBuilt >= neighborhoods.length ? '✓ ' : '') + 'Residential blocks built ' + hBuilt + ' / ' + neighborhoods.length;
+    if (cGrown < cropBeds.length) fut += '<br>💧 ' + maxWaterBank + ' / 250 toward next crop bed';
+    if (hBuilt < neighborhoods.length) fut += '<br>🏠 ' + maxMetalBank + ' / 250 toward next residential block';
     questFutureEl.innerHTML = fut;
   }
   if (questCelebrateEl) questCelebrateEl.textContent = celebrateText;
@@ -6392,7 +6392,7 @@ btnTerminal.addEventListener('pointerdown', function (e) {
 // Depositories: same walk-up pattern as stations and review terminals.
 // The DEPOSIT button shows while the player stands inside a
 // depository's 8 m trigger; tapping it (or Enter) deposits material
-// from the haul, in person. Partial deposits bank toward the next build (800 WATER / 800 METAL).
+// from the haul, in person. Partial deposits bank toward the next build (250 WATER / 250 METAL).
 const btnDeposit = document.getElementById('btn-deposit');
 let depositNear = null;
 function depositDist2(d) {
@@ -6426,17 +6426,20 @@ function doDeposit() {
   const di = DEPOSITORIES.indexOf(d);
   let hasUnbuilt = false;
   for (const it of items) if (it.dep === di && !(isWater ? it.grown : it.built)) { hasUnbuilt = true; break; }
-  if (!hasUnbuilt) { hint.textContent = isWater ? 'This depository has regrown every crop bed nearby — nothing left to regrow here' : 'This depository has rebuilt every neighborhood nearby — nothing left to build here'; return; }
+  if (!hasUnbuilt) { hint.textContent = isWater ? 'This depository has regrown every crop bed nearby — nothing left to regrow here' : 'This depository has rebuilt every residential block nearby — nothing left to build here'; return; }
   const haul = isWater ? water : metal;
-  if (haul <= 0) { hint.textContent = 'No ' + d.label + ' in your haul — collect words or mine asteroids first'; return; }
-  const need = d.cost - d.bank;
+  // A bank loaded under the old 800 cost can already cover a build — let
+  // it spend down even with an empty haul; only stop when there is nothing
+  // to deposit AND nothing banked toward the next build.
+  if (haul <= 0 && d.bank < d.cost) { hint.textContent = 'No ' + d.label + ' in your haul — collect words or mine asteroids first'; return; }
+  const need = Math.max(0, d.cost - d.bank); // never negative: a legacy bank can exceed the new cost
   const amount = Math.min(haul, need);
   if (isWater) water -= amount; else metal -= amount;
   d.bank += amount;
   if (isWater) tutDepWater = true; else tutDepMetal = true;
   const built = tryBuild(d);
   if (!built) {
-    hint.textContent = 'Deposited ' + amount + ' ' + d.label + ' — ' + d.bank + ' / ' + d.cost + ' toward the next ' + (isWater ? 'crop bed' : 'neighborhood');
+    hint.textContent = 'Deposited ' + amount + ' ' + d.label + ' — ' + d.bank + ' / ' + d.cost + ' toward the next ' + (isWater ? 'crop bed' : 'residential block');
   }
   try { updateMenu(); } catch (e) {}
   try { updateProgressUI(); } catch (e) {}
@@ -6447,31 +6450,43 @@ function tryBuild(d) {
   const isWater = d.kind === 'water';
   const items = isWater ? cropBeds : neighborhoods;
   const di = DEPOSITORIES.indexOf(d);
-  let target = null;
-  for (const it of items) {
-    if (it.dep === di && !(isWater ? it.grown : it.built)) { target = it; break; }
+  // A bank loaded from an old save (cost was 800) can exceed the new 250
+  // cost — spend it down, building as many as it pays for, so the banked
+  // material is never discarded (e.g. 600 banked builds 2, leaving 100).
+  let builtCount = 0;
+  while (d.bank >= d.cost) {
+    let target = null;
+    for (const it of items) {
+      if (it.dep === di && !(isWater ? it.grown : it.built)) { target = it; break; }
+    }
+    if (!target) break;
+    d.bank -= d.cost;
+    // Water regrows a crop bed (show its crops); metal rebuilds a
+    // residential block (show its houses, shops, trees, lamps, lane — and its
+    // little gardens, which ride along in the block's groups).
+    if (isWater) { target.grown = true; if (target.grow) target.grow(); else if (target.crops) target.crops.visible = true; }
+    else {
+      target.built = true;
+      const groups = target.groups || (target.group ? [target.group] : []);
+      for (const g of groups) if (g) g.visible = true;
+      const sIdxs = target.solidIdxs || (typeof target.solidIdx === 'number' && target.solidIdx >= 0 ? [target.solidIdx] : []);
+      for (const si of sIdxs) if (SOLID[si]) SOLID[si][4] = true;
+    }
+    builtCount++;
   }
-  if (!target) return false;
-  d.bank -= d.cost;
-  // Water regrows a crop bed (show its crops); metal rebuilds a
-  // neighborhood (show its houses, shops, trees, lamps, lane — and its
-  // little gardens, which ride along in the neighborhood's groups).
-  if (isWater) { target.grown = true; if (target.grow) target.grow(); else if (target.crops) target.crops.visible = true; }
-  else {
-    target.built = true;
-    const groups = target.groups || (target.group ? [target.group] : []);
-    for (const g of groups) if (g) g.visible = true;
-    const sIdxs = target.solidIdxs || (typeof target.solidIdx === 'number' && target.solidIdx >= 0 ? [target.solidIdx] : []);
-    for (const si of sIdxs) if (SOLID[si]) SOLID[si][4] = true;
-  }
-  const what = isWater ? 'crop bed' : 'neighborhood';
+  if (builtCount === 0) return false;
+  const what = isWater ? 'crop bed' : 'residential block';
   const verb = isWater ? 'regrown' : 'rebuilt';
   const n = items.filter(function (x) { return isWater ? x.grown : x.built; }).length;
   const total = items.length;
-  celebrateText = '★ A ' + what + ' was ' + verb + '! (' + n + ' / ' + total + ')';
+  const enLine = builtCount === 1 ? 'A ' + what + ' was ' + verb + '!' : builtCount + ' ' + (isWater ? 'crop beds' : 'residential blocks') + ' were ' + verb + '!';
+  const esLine = isWater
+    ? (builtCount === 1 ? '¡Un cultivo volvió a crecer!' : '¡' + builtCount + ' cultivos volvieron a crecer!')
+    : (builtCount === 1 ? '¡Un bloque residencial fue construido!' : '¡' + builtCount + ' bloques residenciales fueron construidos!');
+  celebrateText = '★ ' + enLine + ' (' + n + ' / ' + total + ')';
   try { playDing(); } catch (e) {}
-  try { announcePair('A ' + what + ' was ' + verb + '!', isWater ? '¡Un cultivo volvió a crecer!' : '¡Un barrio fue construido!'); } catch (e) {}
-  hint.textContent = '★ A ' + what + ' was ' + verb + '! ' + d.bank + ' / ' + d.cost + ' banked toward the next one';
+  try { announcePair(enLine, esLine); } catch (e) {}
+  hint.textContent = '★ ' + enLine + ' ' + d.bank + ' / ' + d.cost + ' banked toward the next one';
   return true;
 }
 btnDeposit.addEventListener('pointerdown', function (e) {
@@ -7328,7 +7343,7 @@ function animate() {
 // freeCrashUsed: bool, progress: { cognates, idioms, practice, conjugation,
 // dictation, serestar, saberconocer, pronouns: per-item identifier arrays },
 // pos: { mode: 'walk'|'flight'|'docked', ... } }, tutorial: quest step 0-6 (7 = done)
-// Depositories: depBank: [8 banked amounts 0..799], cropsGrown: [16 booleans],
+// Depositories: depBank: [8 banked amounts 0..800; banks banked under the old 800 cost load intact and spend down at the new 250 cost], cropsGrown: [16 booleans],
 // hoodsBuilt: [16 booleans]. Old saves without these keys load as banked 0 /
 // all ungrown and unbuilt (construction resets; haul and collected progress
 // preserved). An old gardensBuilt key, if present, is ignored — gardens now
@@ -7469,7 +7484,7 @@ function readSave() {
     if (!Array.isArray(s.words) || !Array.isArray(s.mined)) return null;
     const words = s.words.filter(function (i) { return Number.isInteger(i) && i >= 0 && i < wordTiles.length; });
     const mined = s.mined.filter(function (i) { return Number.isInteger(i) && i >= 0 && i < auraAsteroids.length; });
-    const depBank = (Array.isArray(s.depBank) ? s.depBank : []).map(function (v) { return (Number.isFinite(v) && v >= 0 && v < 800) ? Math.floor(v) : 0; });
+    const depBank = (Array.isArray(s.depBank) ? s.depBank : []).map(function (v) { return (Number.isFinite(v) && v >= 0 && v <= 800) ? Math.floor(v) : 0; }); // <= 800: banks banked under the old cost load intact; tryBuild spends them down at 250
     while (depBank.length < 8) depBank.push(0);
     const cropsGrown = (Array.isArray(s.cropsGrown) ? s.cropsGrown : []).map(function (v) { return v === true; });
     while (cropsGrown.length < 16) cropsGrown.push(false);
