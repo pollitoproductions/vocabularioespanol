@@ -432,6 +432,7 @@
   <div class="row"><span>SER VS. ESTAR SPOKEN</span><b id="progSer">0 / 100</b></div>
   <div class="row"><span>SABER VS. CONOCER SPOKEN</span><b id="progSyco">0 / 100</b></div>
   <div class="row"><span>PRONOUNS SPOKEN</span><b id="progPron">0 / 700</b></div>
+  <div class="controls" id="progPronCats" style="padding-left:12px;"></div>
   <div class="row"><span>POR VS. PARA SPOKEN</span><b id="progPorPara">0 / 100</b></div>
   <div class="row"><span>CROP BEDS GROWN</span><b id="progCrops">0 / 16</b></div>
   <div class="row"><span>RESIDENTIAL BLOCKS BUILT</span><b id="progHoods">0 / 16</b></div>
@@ -4041,6 +4042,26 @@ function updateMenu() {
     hint.style.display = moreBelow ? 'block' : 'none';
   }
 }
+// Pronoun categories, in Brant's order (Nov 7): the Pronouns
+// repository stays ONE repository (9 total in the quest), but its
+// progress breaks out by category so the player sees granular
+// progress. TOOL_PRON is 7 blocks of 100 by sid: 0-99 gustar,
+// 100-199 direct, 200-299 reflexive, 300-399 indirect, 400-499
+// prepositional, 500-599 possessive, 600-699 demonstrative (same
+// blocks as buildPronQs' CATS[(si / 100) | 0]). Display-only:
+// prog.pronouns stays one set of 700 sids; only the rendering
+// breaks it out.
+const PRON_CATS = [
+  { label: 'Gustar-type', lo: 0 }, { label: 'Direct object', lo: 100 },
+  { label: 'Reflexive', lo: 200 }, { label: 'Indirect object', lo: 300 },
+  { label: 'After prepositions', lo: 400 }, { label: 'Possessive', lo: 500 },
+  { label: 'Demonstrative', lo: 600 },
+];
+function pronounCatCounts() {
+  const counts = PRON_CATS.map(function () { return 0; });
+  prog.pronouns.forEach(function (si) { const c = (si / 100) | 0; if (c >= 0 && c < 7) counts[c]++; });
+  return counts;
+}
 // PROGRESS submenu counts. The practice-spoken line counts the live
 // collected tiles (collecting a tile requires speaking it, so this
 // line already proves practice — no separate practice line). The five spoken sets
@@ -4060,6 +4081,11 @@ function updateProgressUI() {
   setTxt('progSer', prog.serestar.size, TOOL_SER.length);
   setTxt('progSyco', prog.saberconocer.size, TOOL_SYCO.length);
   setTxt('progPron', prog.pronouns.size, TOOL_PRON.length);
+  const pronCatsEl = document.getElementById('progPronCats');
+  if (pronCatsEl) {
+    const pc = pronounCatCounts();
+    pronCatsEl.innerHTML = PRON_CATS.map(function (c, i) { return c.label + ' ' + pc[i] + ' / 100'; }).join('<br>');
+  }
   setTxt('progPorPara', prog.porpara.size, 100);
   let cGrown = 0; for (const c of cropBeds) if (c.grown) cGrown++;
   let hBuilt = 0; for (const h of neighborhoods) if (h.built) hBuilt++;
@@ -4237,7 +4263,14 @@ function updateQuestUI() {
   const reposDone = repos.filter(function (r) { return r.count >= r.total; }).length;
   if (questReposCountEl) questReposCountEl.textContent = reposDone + ' / ' + repos.length;
   if (questRepoEl) questRepoEl.innerHTML = repos.map(function (r) {
-    return (r.count >= r.total ? '✓ ' : '') + r.label + ' ' + r.count + ' / ' + r.total;
+    let line = (r.count >= r.total ? '✓ ' : '') + r.label + ' ' + r.count + ' / ' + r.total;
+    if (r.id === 'pronouns') {
+      const pc = pronounCatCounts();
+      line += '<br>' + PRON_CATS.map(function (c, i) {
+        return '<span style="opacity:.75">&nbsp;&nbsp;· ' + c.label + ' ' + pc[i] + ' / 100</span>';
+      }).join('<br>');
+    }
+    return line;
   }).join('<br>');
   // SECURE THE FUTURE: the habitat rebuild. Bank lines show the
   // highest single-depository bank per kind (see maxWaterBank above);
