@@ -6736,20 +6736,22 @@ function renderFlashcards() {
 // question still unanswered in the bank — the header shows
 // "Question N of <deck size>" — and the player keeps hitting Next
 // until the deck is done. Score at the end, no known-marking, no persistence.
-// Only Conjugation (tense) and Dictation (tab) still have a choice
-// screen — they pick WHAT to practise. The contrast stations (Ser vs.
-// estar, Saber vs. conocer, Por vs. para) and Practice run the full
-// mixed deck straight from the station, no choice: choosing one of
-// the two verbs defeats the point of distinguishing them, and there
-// is no fixed quiz length any more.
-function toolHasChoice(id) { return id === 'conjugation' || id === 'dictation'; }
+// Only Conjugation (tense), Dictation (tab) and Pronouns (category)
+// still have a choice screen — they pick WHAT to practise. The
+// contrast stations (Ser vs. estar, Saber vs. conocer, Por vs. para)
+// and Practice run the full mixed deck straight from the station,
+// no choice: choosing one of the two verbs defeats the point of
+// distinguishing them, and there is no fixed quiz length any more.
+// (Pronouns categories are focus areas, not a confusable pair —
+// picking one is focusing practice, not dodging a distinction.)
+function toolHasChoice(id) { return id === 'conjugation' || id === 'dictation' || id === 'pronouns'; }
 let qz = { qs: [], qi: 0, score: 0, answered: false };
 function runQuiz(qs) { qz = { qs: shuf(qs), qi: 0, score: 0, answered: false }; renderQuiz(); }
 function renderQuiz() {
   if (qz.qi >= qz.qs.length) {
     // End of the full deck. Choice stations (conjugation tense,
-    // dictation tab) offer a new focus; the mixed stations have no
-    // focus to choose, so they just close.
+    // dictation tab, pronouns category) offer a new focus; the mixed
+    // stations have no focus to choose, so they just close.
     if (toolHasChoice(toolId)) {
       toolBody.innerHTML = '<div class="big">Score: ' + qz.score + ' / ' + qz.qs.length + '</div><div class="sub">Nice work — pick a new focus below, or close the panel to keep walking.</div><div style="margin-top:14px;"><button class="ctl2" id="qz-restart">Choose focus</button></div>';
       document.getElementById('qz-restart').addEventListener('click', function () { renderTool(toolId); });
@@ -6975,8 +6977,8 @@ function buildSycoQs() {
 }
 function buildPronQs() {
   // All 700 verbatim pronoun questions (7 categories x 100). Same
-  // pattern as buildSerQs/buildSycoQs: no category filter (the ship
-  // station runs Mixed across all seven categories), reveal always
+  // pattern as buildSerQs/buildSycoQs: the station offers a category
+  // picker (or Mixed across all seven categories), reveal always
   // shows translation + rule note. Two choices only — the correct
   // pronoun and the one-dimension-off distractor from the web tool.
   // (Round 18: Hear ES/EN + Say-it in the panel audio row; both Hears
@@ -7015,19 +7017,22 @@ function renderTool(id) {
   else if (id === 'dictation') showChoice('dictation');
   else if (id === 'serestar') startChoiceRun('serestar', 'Mixed');
   else if (id === 'saberconocer') startChoiceRun('saberconocer', 'Mixed');
-  else if (id === 'pronouns') startChoiceRun('pronouns', 'Mixed');
+  else if (id === 'pronouns') showChoice('pronouns');
   else if (id === 'porpara') startChoiceRun('porpara', 'Mixed');
 }
-// Choice screens (Nov 7): only Conjugation (tense) and Dictation (tab)
-// still ask first — they pick WHAT to practise. The contrast stations
-// (Ser vs. estar, Saber vs. conocer, Por vs. para), Pronouns and
-// Practice skip this entirely and run the full mixed deck straight
+// Choice screens (Nov 7): Conjugation (tense), Dictation (tab) and
+// Pronouns (category) ask first — they pick WHAT to practise. The
+// contrast stations (Ser vs. estar, Saber vs. conocer, Por vs. para)
+// and Practice skip this entirely and run the full mixed deck straight
 // from renderTool — no verb choice (choosing one side defeats the
 // point of distinguishing them) and no quiz length. A run ends back
 // here for the choice stations (the end-screen button calls
 // renderTool, which routes back here); the mixed stations close
 // instead. Audio gating applies per question after the choice,
 // exactly as before.
+// Pronouns category picker (Nov 7): choice-screen label -> the
+// category key buildPronQs puts on each question (q.verb).
+const PRON_CHOICE_KEY = { 'Gustar-type': 'gustar', 'Direct object': 'direct', 'Reflexive': 'reflexive', 'Indirect object': 'indirect', 'After prepositions': 'prepositional', 'Possessive': 'possessive', 'Demonstrative': 'demonstrative' };
 function showChoice(id) {
   qz = { qs: [], qi: 0, score: 0, answered: false };
   stopToolListening(false);
@@ -7036,6 +7041,7 @@ function showChoice(id) {
   let head = '', btns = [];
   if (id === 'conjugation') { head = '<div class="big">Pick a tense</div><div class="sub">All the questions in that tense — keep hitting Next until the deck is done. Forms you already know are skipped.</div>'; btns = ['Present', 'Preterite', 'Future', 'Mixed']; }
   else if (id === 'dictation') { head = '<div class="big">Pick a tab</div><div class="sub">All the items from that tab — keep hitting Next until the deck is done. Items you already know are skipped.</div>'; btns = ['Vocab', 'Verbs', 'Modismos']; }
+  else if (id === 'pronouns') { head = '<div class="big">Pick a category</div><div class="sub">All the questions in that category — keep hitting Next until the deck is done. Sentences you already know are skipped.</div>'; btns = ['Gustar-type', 'Direct object', 'Reflexive', 'Indirect object', 'After prepositions', 'Possessive', 'Demonstrative', 'Mixed']; }
   let html = head + '<div style="margin-top:12px;">';
   btns.forEach(function (b) { html += '<button class="ctl2 qz-focus" data-f="' + b + '">' + b + '</button>'; });
   html += '</div>';
@@ -7048,12 +7054,13 @@ function startChoiceRun(id, choice) {
   // Full deck, no length cap (Nov 7): the contrast stations always run
   // Mixed (choice is 'Mixed' from renderTool), so both verbs are in
   // the deck together — the player distinguishes them, never pre-picks
-  // one. Practice runs its whole unanswered pool.
+  // one. Pronouns takes a category choice (or Mixed for all seven).
+  // Practice runs its whole unanswered pool.
   let qs = [];
   if (id === 'conjugation') qs = buildConjQs(choice);
   else if (id === 'serestar') qs = buildSerQs().filter(function (q) { return !prog.serestar.has(q.sid); });
   else if (id === 'saberconocer') qs = buildSycoQs().filter(function (q) { return !prog.saberconocer.has(q.sid); });
-  else if (id === 'pronouns') qs = buildPronQs().filter(function (q) { return !prog.pronouns.has(q.sid); });
+  else if (id === 'pronouns') qs = buildPronQs().filter(function (q) { return (choice === 'Mixed' || q.verb === PRON_CHOICE_KEY[choice]) && !prog.pronouns.has(q.sid); });
   else if (id === 'porpara') qs = buildPorParaQs().filter(function (q) { return !prog.porpara.has(q.sid); });
   else if (id === 'dictation') qs = buildDictQs(choice);
   else if (id === 'practice') qs = buildPracticeQs();
