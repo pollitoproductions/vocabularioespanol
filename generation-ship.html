@@ -6699,13 +6699,31 @@ function renderFlashcards() {
   }
 }
 // ---------- Quiz engine (Practice, Conjugation, Dictation, Ser vs. estar) ----------
-// 10 questions, score at the end, no known-marking, no persistence.
+// Full deck, no fixed length (Nov 7, Brant): the station runs every
+// question still unanswered in the bank — the header shows
+// "Question N of <deck size>" — and the player keeps hitting Next
+// until the deck is done. Score at the end, no known-marking, no persistence.
+// Only Conjugation (tense) and Dictation (tab) still have a choice
+// screen — they pick WHAT to practise. The contrast stations (Ser vs.
+// estar, Saber vs. conocer, Por vs. para) and Practice run the full
+// mixed deck straight from the station, no choice: choosing one of
+// the two verbs defeats the point of distinguishing them, and there
+// is no fixed quiz length any more.
+function toolHasChoice(id) { return id === 'conjugation' || id === 'dictation'; }
 let qz = { qs: [], qi: 0, score: 0, answered: false };
-function runQuiz(qs, count) { qz = { qs: shuf(qs).slice(0, count || 10), qi: 0, score: 0, answered: false }; renderQuiz(); }
+function runQuiz(qs) { qz = { qs: shuf(qs), qi: 0, score: 0, answered: false }; renderQuiz(); }
 function renderQuiz() {
   if (qz.qi >= qz.qs.length) {
-    toolBody.innerHTML = '<div class="big">Score: ' + qz.score + ' / ' + qz.qs.length + '</div><div class="sub">Nice work — pick a new focus below, or close the panel to keep walking.</div><div style="margin-top:14px;"><button class="ctl2" id="qz-restart">Choose focus</button></div>';
-    document.getElementById('qz-restart').addEventListener('click', function () { renderTool(toolId); });
+    // End of the full deck. Choice stations (conjugation tense,
+    // dictation tab) offer a new focus; the mixed stations have no
+    // focus to choose, so they just close.
+    if (toolHasChoice(toolId)) {
+      toolBody.innerHTML = '<div class="big">Score: ' + qz.score + ' / ' + qz.qs.length + '</div><div class="sub">Nice work — pick a new focus below, or close the panel to keep walking.</div><div style="margin-top:14px;"><button class="ctl2" id="qz-restart">Choose focus</button></div>';
+      document.getElementById('qz-restart').addEventListener('click', function () { renderTool(toolId); });
+    } else {
+      toolBody.innerHTML = '<div class="big">Score: ' + qz.score + ' / ' + qz.qs.length + '</div><div class="sub">You\u2019ve answered all the questions in this station.</div><div style="margin-top:14px;"><button class="ctl2" id="qz-restart">Close</button></div>';
+      document.getElementById('qz-restart').addEventListener('click', function () { closeTool(); });
+    }
     setToolFeedback('');
     setToolAudio(null);
     return;
@@ -6959,32 +6977,32 @@ function renderTool(id) {
   setToolFeedback('');
   if (id === 'cognates') { fc = { kind: 'cog', filter: 'all', deck: shuf(TOOL_COG), pos: 0, flipped: false }; renderFlashcards(); }
   else if (id === 'idioms') { fc = { kind: 'idiom', filter: 'all', deck: shuf(TOOL_IDIOMS), pos: 0, flipped: false }; renderFlashcards(); }
-  else if (id === 'practice') showChoice('practice');
+  else if (id === 'practice') startChoiceRun('practice');
   else if (id === 'conjugation') showChoice('conjugation');
   else if (id === 'dictation') showChoice('dictation');
-  else if (id === 'serestar') showChoice('serestar');
-  else if (id === 'saberconocer') showChoice('saberconocer');
-  else if (id === 'pronouns') showChoice('pronouns');
-  else if (id === 'porpara') showChoice('porpara');
+  else if (id === 'serestar') startChoiceRun('serestar', 'Mixed');
+  else if (id === 'saberconocer') startChoiceRun('saberconocer', 'Mixed');
+  else if (id === 'pronouns') startChoiceRun('pronouns', 'Mixed');
+  else if (id === 'porpara') startChoiceRun('porpara', 'Mixed');
 }
-// Round 30 choice screens: no quiz station auto-starts 10 random
-// questions any more. Each quiz station shows a focus choice first
-// (website-style), runs in the chosen focus, and returns here at run
-// end (the end-screen button calls renderTool, which routes back here).
-// Audio gating applies per question after the choice, exactly as before.
+// Choice screens (Nov 7): only Conjugation (tense) and Dictation (tab)
+// still ask first — they pick WHAT to practise. The contrast stations
+// (Ser vs. estar, Saber vs. conocer, Por vs. para), Pronouns and
+// Practice skip this entirely and run the full mixed deck straight
+// from renderTool — no verb choice (choosing one side defeats the
+// point of distinguishing them) and no quiz length. A run ends back
+// here for the choice stations (the end-screen button calls
+// renderTool, which routes back here); the mixed stations close
+// instead. Audio gating applies per question after the choice,
+// exactly as before.
 function showChoice(id) {
   qz = { qs: [], qi: 0, score: 0, answered: false };
   stopToolListening(false);
   setToolAudio(null);
   setToolFeedback('');
   let head = '', btns = [];
-  if (id === 'conjugation') { head = '<div class="big">Pick a tense</div><div class="sub">Then 10 questions in that tense. Forms you already know are skipped.</div>'; btns = ['Present', 'Preterite', 'Future', 'Mixed']; }
-  else if (id === 'serestar') { head = '<div class="big">Pick a verb</div><div class="sub">Then 10 questions with that verb. Sentences you already know are skipped.</div>'; btns = ['Ser', 'Estar', 'Mixed']; }
-  else if (id === 'saberconocer') { head = '<div class="big">Pick a verb</div><div class="sub">Then 10 questions with that verb. Sentences you already know are skipped.</div>'; btns = ['Saber', 'Conocer', 'Mixed']; }
-  else if (id === 'pronouns') { head = '<div class="big">Pronouns</div><div class="sub">Then 10 questions from all seven categories. Sentences you already know are skipped.</div>'; btns = ['Mixed']; }
-  else if (id === 'porpara') { head = '<div class="big">Por vs. para</div><div class="sub">Then 10 questions — por or para. Sentences you already know are skipped.</div>'; btns = ['Mixed']; }
-  else if (id === 'dictation') { head = '<div class="big">Pick a tab</div><div class="sub">Then 10 items from that tab. Items you already know are skipped.</div>'; btns = ['Vocab', 'Verbs', 'Modismos']; }
-  else if (id === 'practice') { head = '<div class="big">How many questions?</div><div class="sub">Words you already know are skipped.</div>'; btns = ['10', '20', '50']; }
+  if (id === 'conjugation') { head = '<div class="big">Pick a tense</div><div class="sub">All the questions in that tense — keep hitting Next until the deck is done. Forms you already know are skipped.</div>'; btns = ['Present', 'Preterite', 'Future', 'Mixed']; }
+  else if (id === 'dictation') { head = '<div class="big">Pick a tab</div><div class="sub">All the items from that tab — keep hitting Next until the deck is done. Items you already know are skipped.</div>'; btns = ['Vocab', 'Verbs', 'Modismos']; }
   let html = head + '<div style="margin-top:12px;">';
   btns.forEach(function (b) { html += '<button class="ctl2 qz-focus" data-f="' + b + '">' + b + '</button>'; });
   html += '</div>';
@@ -6994,21 +7012,30 @@ function showChoice(id) {
   });
 }
 function startChoiceRun(id, choice) {
-  let qs = [], count = 10;
+  // Full deck, no length cap (Nov 7): the contrast stations always run
+  // Mixed (choice is 'Mixed' from renderTool), so both verbs are in
+  // the deck together — the player distinguishes them, never pre-picks
+  // one. Practice runs its whole unanswered pool.
+  let qs = [];
   if (id === 'conjugation') qs = buildConjQs(choice);
-  else if (id === 'serestar') qs = buildSerQs().filter(function (q) { return (choice === 'Mixed' || q.verb === choice.toLowerCase()) && !prog.serestar.has(q.sid); });
-  else if (id === 'saberconocer') qs = buildSycoQs().filter(function (q) { return (choice === 'Mixed' || q.verb === choice.toLowerCase()) && !prog.saberconocer.has(q.sid); });
+  else if (id === 'serestar') qs = buildSerQs().filter(function (q) { return !prog.serestar.has(q.sid); });
+  else if (id === 'saberconocer') qs = buildSycoQs().filter(function (q) { return !prog.saberconocer.has(q.sid); });
   else if (id === 'pronouns') qs = buildPronQs().filter(function (q) { return !prog.pronouns.has(q.sid); });
   else if (id === 'porpara') qs = buildPorParaQs().filter(function (q) { return !prog.porpara.has(q.sid); });
   else if (id === 'dictation') qs = buildDictQs(choice);
-  else if (id === 'practice') { qs = buildPracticeQs(); count = parseInt(choice, 10) || 10; }
+  else if (id === 'practice') qs = buildPracticeQs();
   if (!qs.length) {
     setToolAudio(null);
-    toolBody.innerHTML = '<div class="big">All mastered in this focus!</div><div class="sub">Review them at the mezzanine terminal.</div><div style="margin-top:14px;"><button class="ctl2" id="qz-back-choice">Choose another focus</button></div>';
-    document.getElementById('qz-back-choice').addEventListener('click', function () { showChoice(id); });
+    if (toolHasChoice(id)) {
+      toolBody.innerHTML = '<div class="big">All mastered in this focus!</div><div class="sub">Review them at the mezzanine terminal.</div><div style="margin-top:14px;"><button class="ctl2" id="qz-back-choice">Choose another focus</button></div>';
+      document.getElementById('qz-back-choice').addEventListener('click', function () { showChoice(id); });
+    } else {
+      toolBody.innerHTML = '<div class="big">All mastered in this station!</div><div class="sub">You\u2019ve answered every question here. Review them at the mezzanine terminal.</div><div style="margin-top:14px;"><button class="ctl2" id="qz-back-choice">Close</button></div>';
+      document.getElementById('qz-back-choice').addEventListener('click', function () { closeTool(); });
+    }
     return;
   }
-  runQuiz(qs, count);
+  runQuiz(qs);
 }
 
 
