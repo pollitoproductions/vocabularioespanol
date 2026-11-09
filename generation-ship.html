@@ -1494,9 +1494,12 @@ function makeEmojiSprite(emoji, scale) {
   const ctx = c.getContext('2d');
   // Round 35: 200px font let the glyph touch (and, on iOS Apple Color
   // Emoji, exceed) the canvas edges, so the emoji read as cut off.
-  // 150px leaves a clear margin on all sides so every glyph renders
-  // completely on every platform.
-  ctx.font = '150px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+  // 150px fixed most glyphs, but the wide right-arrow (➡️) still
+  // clipped on iOS, where Apple Color Emoji renders it larger than
+  // the desktop font. 120px leaves a wide margin on all sides (the
+  // arrow measures ~133px on a 256px canvas, ~60px margins) so every
+  // glyph renders completely on every platform.
+  ctx.font = '120px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText(emoji, 128, 132);
   const tex = new THREE.CanvasTexture(c);
@@ -5310,17 +5313,23 @@ function updateInteriorState(a, z, dz) {
   const inObsArc = (an >= OBS_A0 && an <= OBS_A1) || (an >= OPP_OBS_A0 && an <= OPP_OBS_A1);
   const onRampSlope = inObsArc && ((z > 60 && z < 80) || (z > 120 && z < 140)) && lv.l2 > 0.001 && lv.l2 < 0.999;
   if (!onRampSlope) {
-    if (z > 141 || z < 59) {
-      interiorExitHold = 0;
-      interiorDescending = false;
-    } else if (interiorDescending && lv.l2 <= 0.001 && lv.l1 > 0.9) {
-      // Moving away is a DIRECTION, not a position: dz > 0 at z >= 140
-      // (or dz < 0 at z <= 60) means the player is leaving the bottom
-      // for the open interior, even if they have not yet crossed 141.
-      // The arrival frame's dz > 0 resets the hold; a player who then
-      // stops rebuilds it over the next two frames and exits.
-      const movingAway = (z >= 140 && dz > 0) || (z <= 60 && dz < 0);
-      if (movingAway) {
+    // Round 36: the exit check must come FIRST. The old order checked
+    // z > 141 / z < 59 first and only cleared the descending flag, so a
+    // player who descended and kept walking past the bottom never
+    // exited: inObsInterior stayed true, the eye snapped back to the
+    // interior level (138.3), and they were "put back on top of the
+    // deck". At the bottom after a descent, the player has exited —
+    // whether they stop or keep walking along the gallery/landing.
+    if (interiorDescending && lv.l2 <= 0.001 && lv.l1 > 0.9) {
+      // Moving back toward the ramp means the player is heading back up,
+      // not exiting — reset the hold. (The old movingAway test had the
+      // direction backwards: dz > 0 at z >= 140 is walking AWAY from
+      // the ramp along the gallery deck, not back to the interior, so
+      // it kept resetting the hold and the exit never fired.)
+      // Staircase 2 bottom is z = 140 (ramp below it, dz < 0 heads back);
+      // staircase 1 bottom is z = 60 (ramp above it, dz > 0 heads back).
+      const movingBackToRamp = (z >= 140 && dz < 0) || (z <= 60 && dz > 0);
+      if (movingBackToRamp) {
         interiorExitHold = 0;
       } else {
         interiorExitHold++;
@@ -5331,6 +5340,9 @@ function updateInteriorState(a, z, dz) {
           return;
         }
       }
+    } else if (z > 141 || z < 59) {
+      interiorExitHold = 0;
+      interiorDescending = false;
     } else {
       interiorExitHold = 0;
       interiorDescending = false;
