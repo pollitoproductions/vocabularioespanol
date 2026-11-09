@@ -1986,8 +1986,11 @@ const cropBeds = [];
     // each sign sits on the APPROACH-side face and faces the walker
     // heading for that sector — both faces name what is through the
     // door in Brant's words (Nov 5): on the agriculture face (z -0.9,
-    // facing -Z) TO REVIEW TERMINALS; on the technology face (z +0.9,
-    // facing +Z) TO LEARNING TERMINALS. Round 40 (Brant Nov 9): the pi/2
+    // facing -Z) TO REVIEW TERMINALS - OBS DECK; on the technology
+    // face (z +0.9, facing +Z) TO LEARNING TERMINALS. Round 41
+    // (Brant Nov 9): the review signs now say the terminals are on
+    // the observation deck, so walkers heading that way know to go
+    // up the stairs. Round 40 (Brant Nov 9): the pi/2
     // residential-approach exception is gone — both its faces were wrong
     // (texts shifted by one), so all four doorways now read the same.
     // No sector labels remain. The previous mounting had them
@@ -2006,7 +2009,7 @@ const cropBeds = [];
     // LEARNING TERMINALS into agriculture. Agriculture face: TO REVIEW
     // TERMINALS. Single-sided, one plate per face. No sector labels
     // remain anywhere (Nov 5).
-    mountAxialSign('TO REVIEW TERMINALS', '#ffd76a', 5.5, d, 148, -0.9, -1, false);
+    mountAxialSign('TO REVIEW TERMINALS - OBS DECK', '#ffd76a', 5.5, d, 148, -0.9, -1, false);
     mountAxialSign('TO LEARNING TERMINALS', '#39d97a', 5.5, d, 148, 0.9, 1, false);
   }
 }
@@ -3468,23 +3471,25 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
 // (see checkTerminal), with a per-terminal deck gate so a terminal
 // never fires from the wrong level (obs terminals only inObsInterior).
 const REVIEW_TERMINALS_POS = [
-  // Observation deck (radius 140, interior): TWO (Round 33) — moved up
-  // from below to spread terminals to the deck and declutter the main
-  // deck, where the exploration terminals already crowd it.
+  // Observation deck (radius 140, interior): FOUR (Rounds 33 + 41) —
+  // moved up from below to spread terminals to the deck and declutter
+  // the main deck, where the exploration terminals already crowd it.
+  // The two Round 41 moves sit deeper into the deck toward the sun
+  // end (z 180/200), 80-100 m past the stair-side pair at z 100, one
+  // per stair arc, so the player meets one soon after arriving and
+  // another while exploring toward the sun screen.
   { deck: 'obs', angle: 4.70, z: 100 },  // gallery-side obs deck (was the mezzanine terminal at z 108)
   { deck: 'obs', angle: 1.56, z: 100 },  // opposite-side interior (was a main-deck terminal at angle 1.20, z 180)
-  // Main deck (radius 160): six left (one moved to the obs deck) —
-  // still spread around the hull, neighbours ~143 m apart, no pairs.
-  // Each z threads clear of the blocked zones (quarters rows, mess /
-  // lounge, promenade walls, education arch, gallery arc) and the
-  // industrial cell doorways (workshop 2.8/z 170, classroom 4.5/z 260,
-  // medical 5.5/z 100); the 4.79 terminal sits at z 200, past the
-  // gallery's z 40..160 span, so it is not under the gallery floor.
+  { deck: 'obs', angle: 4.70, z: 200 },  // gallery arc, sun end (Round 41; was main-deck terminal at angle 4.79, z 200)
+  { deck: 'obs', angle: 1.56, z: 180 },  // opposite arc, sun end (Round 41; was main-deck terminal at angle 2.09, z 180)
+  // Main deck (radius 160): four left (four moved to the obs deck) —
+  // still spread around the hull, no pairs. Each z threads clear of
+  // the blocked zones (quarters rows, mess / lounge, promenade walls,
+  // education arch, gallery arc) and the industrial cell doorways
+  // (workshop 2.8/z 170, classroom 4.5/z 260, medical 5.5/z 100).
   { deck: 'main', angle: 0.30, z: 220 },  // even step 1 (edu, open deck)
-  { deck: 'main', angle: 2.09, z: 180 },  // even step 3 (gap between mess hall and education arch)
   { deck: 'main', angle: 2.99, z: 300 },  // even step 4 (edu, open deck)
   { deck: 'main', angle: 3.89, z: 140 },  // even step 5 (tech, open deck; moved 40 m from z 100 — it shared ground with the 5pi/4 exploration terminal, and the REVIEW button could hang on after departing)
-  { deck: 'main', angle: 4.79, z: 200 },  // even step 6 (past the gallery span; clear of classroom doorway)
   { deck: 'main', angle: 5.68, z: 280 },  // even step 7 (edu, open deck)
 ];
 for (const tp of REVIEW_TERMINALS_POS) {
@@ -3638,6 +3643,10 @@ for (const et of EXPLORATION_TERMINALS) {
 }
 function explorationDist2() {
   if (mode !== 'walk') return Infinity;
+  // Round 41: deck gate — exploration terminals stand on the main
+  // deck; a player in the interior or on the gallery deck above one
+  // must not get the DEPART prompt. (The old code had no gate at all.)
+  if (playerDeck() !== 'main') return Infinity;
   let best = Infinity;
   for (const et of EXPLORATION_TERMINALS) {
     const tang = Math.abs(angDiff(playerAngle, et.angle)) * 160;
@@ -6969,19 +6978,37 @@ const REVIEW_DIST = 8; // metres: walk-up range for review terminals (doubled fr
 let reviewOpen = false, terminalNear = false;
 const btnTerminal = document.getElementById('btn-terminal');
 const reviewPanel = document.getElementById('reviewPanel');
+// Round 41 (Brant Nov 9): the deck the player is actually standing on.
+// A terminal on another deck must never prompt — Brant: the REVIEW /
+// DEPART button fired for a terminal on the deck below. Decks are main
+// (160), gallery/mezz (150), obs (140). The walk model derives height
+// from position (interiorLevels), so the deck follows from the same
+// levels plus the interior state: inObsInterior (including a descent,
+// until the exit settles at the bottom) is the obs deck; l2 >= 0.9 is
+// physically on the obs deck (Round 34 belt & braces); l1 >= 0.9 is the
+// gallery / opposite landing; anything else is the main deck. Mid-ramp
+// (l2 strictly between 0 and 1, l1 = 1) reads as 'mezz', so no terminal
+// fires on the stairs themselves — the prompt appears at the top of
+// the climb, not halfway up.
+function playerDeck() {
+  if (inObsInterior) return 'obs';
+  const lv = interiorLevels(playerAngle, playerZ);
+  if (lv.l2 >= 0.9) return 'obs';
+  if (lv.l1 >= 0.9) return 'mezz';
+  return 'main';
+}
 function terminalDist2() {
   if (mode !== 'walk' || toolOpen || reviewOpen) return Infinity;
-  const gf = galleryFactor(playerAngle, playerZ);
-  // Round 34: obs terminals also fire when the player is physically on
-  // the obs deck (l2 high) even if inObsInterior is momentarily off,
-  // so the REVIEW prompt cannot go missing up there. (The state fix
-  // above is the real cure — this is belt and braces.)
-  const onObsDeck = interiorLevels(playerAngle, playerZ).l2 >= 0.9;
+  // Round 41: deck gate — a review terminal only fires from its own
+  // deck. The old gallery-factor skips only covered the gallery arc
+  // (and never the opposite landing), so a main-deck terminal below
+  // the player in the interior fired the REVIEW prompt. The Round 34
+  // belt & braces survives inside playerDeck(): l2 >= 0.9 still reads
+  // as the obs deck even if inObsInterior is momentarily off.
+  const pd = playerDeck();
   let best = Infinity;
   for (const tp of REVIEW_TERMINALS_POS) {
-    if (tp.deck === 'mezz' && gf < 0.9) continue;
-    if (tp.deck === 'main' && gf >= 0.9) continue;
-    if (tp.deck === 'obs' && !inObsInterior && !onObsDeck) continue;
+    if (tp.deck !== pd) continue;
     const rr = tp.deck === 'main' ? 160 : (tp.deck === 'mezz' ? 150 : 140);
     const tang = Math.abs(angDiff(playerAngle, tp.angle)) * rr;
     const dz = playerZ - tp.z;
@@ -7031,6 +7058,11 @@ const btnDeposit = document.getElementById('btn-deposit');
 let depositNear = null;
 function depositDist2(d) {
   if (mode !== 'walk' || toolOpen || reviewOpen) return Infinity;
+  // Round 41: deck gate — depositories stand on the main deck; the
+  // metal depositories sit below the open interior, so without this
+  // the DEPOSIT prompt fired from the deck above. (Same bug class as
+  // the terminal prompts Brant reported; same one-line gate.)
+  if (playerDeck() !== 'main') return Infinity;
   const tang = Math.abs(angDiff(playerAngle, d.angle)) * RADIUS;
   const dz = playerZ - d.z;
   return tang * tang + dz * dz;
