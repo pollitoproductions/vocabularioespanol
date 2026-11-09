@@ -1492,9 +1492,13 @@ function makeEmojiSprite(emoji, scale) {
   const c = document.createElement('canvas');
   c.width = 256; c.height = 256;
   const ctx = c.getContext('2d');
-  ctx.font = '200px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+  // Round 35: 200px font let the glyph touch (and, on iOS Apple Color
+  // Emoji, exceed) the canvas edges, so the emoji read as cut off.
+  // 150px leaves a clear margin on all sides so every glyph renders
+  // completely on every platform.
+  ctx.font = '150px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(emoji, 128, 138);
+  ctx.fillText(emoji, 128, 132);
   const tex = new THREE.CanvasTexture(c);
   const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
   const sp = new THREE.Sprite(mat);
