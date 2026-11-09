@@ -1183,6 +1183,17 @@ const BULK_DOORS = [0, Math.PI / 2, Math.PI, 3 * Math.PI / 2];
 // box can ever block a doorway, a stair, a quarters door or the mess.
 const GALLERY_A0 = 4.45, GALLERY_A1 = 4.95;
 const GALLERY_EDGES = [GALLERY_A0, GALLERY_A1];
+// Observation deck (Round 31): a raised deck in the empty interior
+// space above the gallery hall, reached by two staircases from the
+// gallery upper deck. Deck top at radius 140 (10 m above the gallery
+// deck), z 80 ... 120, angles 4.55 ... 4.85. Staircases climb gallery
+// deck (150) -> obs deck (140) over z 60 ... 80 and z 120 ... 140.
+// Walk model: obsDeckFactor() mirrors galleryFactor() (1 on the deck,
+// smooth ramps over the stairs, hard step at the side edges) and
+// updateWalk() adds 10 * obsDeckFactor to the eye height.
+const OBS_A0 = 4.55, OBS_A1 = 4.85;
+const OBS_EDGES = [OBS_A0, OBS_A1];
+const OBS_Z0 = 80, OBS_Z1 = 120, OBS_R = 140;
 function habitatBlocked(a, z) {
   const near = (ang, half) => Math.abs(angDiff(a, ang)) < half;
   if (near(1.15, 0.18) && z > 48 && z < 168) return true;   // tech quarters row
@@ -2052,17 +2063,25 @@ const cropBeds = [];
   }
   // Stair towers: 10 steps each, full-height cheek walls on both sides.
   // Zone A (z 40 ... 60) climbs ground -> deck; zone B (z 140 ... 160)
-  // descends deck -> ground. Step tops: A 159 ... 150, B 151 ... 160.
+  // descends deck -> ground. Round 31: steps share one textured
+  // material (tech-interior, same as the gallery back wall) instead of
+  // a new flat material per step, and each step top now follows the
+  // smoothstep walk ramp (galleryFactor) at the step's centre z — the
+  // old linear tops (A 159 ... 150, B 151 ... 160) dipped below the
+  // smooth ramp mid-flight, so the camera clipped into the steps and
+  // the (front-face-only) boxes read as see-through while climbing.
+  const stepMat = new THREE.MeshStandardMaterial({ color: 0x4a5560, roughness: 0.85 });
+  applyGameTexture(stepMat, 'https://pollitoproductions.github.io/Vocabulario-Espanol/tech-interior.jpg', 1, 1);
   for (const [zBase, ascending] of [[40, true], [140, false]]) {
     for (let k = 0; k < SEG; k++) {
       const ac = GALLERY_A0 + ((k + 0.5) / SEG) * (GALLERY_A1 - GALLERY_A0);
       const rad = new THREE.Vector3(Math.cos(ac), Math.sin(ac), 0);
       for (let j = 0; j < 10; j++) {
-        const top = ascending ? 159 - j : 151 + j;
-        const step = new THREE.Mesh(new THREE.BoxGeometry(segW, 1, 2.2),
-          new THREE.MeshStandardMaterial({ color: 0x4a5560, roughness: 0.85 }));
+        const zc = zBase + 1 + 2 * j;
+        const top = ascending ? 160 - 10 * sstep(40, 60, zc) : 150 + 10 * sstep(140, 160, zc);
+        const step = new THREE.Mesh(new THREE.BoxGeometry(segW, 1, 2.2), stepMat);
         step.position.copy(rad).multiplyScalar(top - 0.5);
-        step.position.z = zBase + 1 + 2 * j;
+        step.position.z = zc;
         step.quaternion.copy(basisQuat(rad));
         shipInterior.add(step);
       }
@@ -2098,6 +2117,105 @@ const cropBeds = [];
     }
     shipInterior.add(tgrp);
   }
+}
+// ---------- Round 31: observation deck above the gallery ----------
+// A raised deck in the empty interior space above the gallery hall,
+// reached by two staircases from the gallery upper deck. Deck top at
+// radius 140 (10 m above the gallery deck), z 80 ... 120, angles
+// 4.55 ... 4.85 — high enough to see out across the cylinder interior.
+// Architecture mirrors the gallery: segmented deck planks, railed side
+// edges (posts + top/mid rails, open so the view stays clear), enclosed
+// stair towers with full-height cheek walls, support columns down to
+// the gallery deck, and a mounted sign. Walk model: obsDeckFactor()
+// (below, next to galleryFactor) is 1 on the deck and ramps over the
+// stairs; updateWalk() adds 10 * obsDeckFactor to the eye height and
+// cancels tangential moves across the obs side edges, so the railings
+// are solid. The deck is a separate structure above the gallery — the
+// gallery platform itself is untouched.
+{
+  const OSEG = 6;
+  const obsSegW = (OBS_A1 - OBS_A0) / OSEG * 140.4 + 0.6;
+  const obsDeckMat = new THREE.MeshStandardMaterial({ color: 0x39424e, roughness: 0.85 });
+  applyGameTexture(obsDeckMat, 'https://pollitoproductions.github.io/Vocabulario-Espanol/deck-floor.jpg', 4, 4);
+  const obsRailMat = new THREE.MeshStandardMaterial({ color: 0x8a97a5, roughness: 0.5, metalness: 0.5 });
+  const obsPillarMat = new THREE.MeshStandardMaterial({ color: 0x4a5560, roughness: 0.8, metalness: 0.3 });
+  const obsStepMat = new THREE.MeshStandardMaterial({ color: 0x4a5560, roughness: 0.85 });
+  applyGameTexture(obsStepMat, 'https://pollitoproductions.github.io/Vocabulario-Espanol/tech-interior.jpg', 1, 1);
+  // Deck planks at radius 140 (top surface), z 80 ... 120.
+  for (let k = 0; k < OSEG; k++) {
+    const ac = OBS_A0 + ((k + 0.5) / OSEG) * (OBS_A1 - OBS_A0);
+    const rad = new THREE.Vector3(Math.cos(ac), Math.sin(ac), 0);
+    const plank = new THREE.Mesh(new THREE.BoxGeometry(obsSegW, 0.8, OBS_Z1 - OBS_Z0), obsDeckMat);
+    plank.position.copy(rad).multiplyScalar(140.4);
+    plank.position.z = (OBS_Z0 + OBS_Z1) / 2;
+    plank.quaternion.copy(basisQuat(rad));
+    shipInterior.add(plank);
+  }
+  // Side railings along both obs edges: posts + top and mid rails,
+  // hard edge — open rails, so the view out stays clear.
+  for (const edge of [OBS_A0, OBS_A1]) {
+    const erad = new THREE.Vector3(Math.cos(edge), Math.sin(edge), 0);
+    for (let rz = OBS_Z0; rz <= OBS_Z1; rz += 10) {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.1, 0.3), obsRailMat);
+      post.position.copy(erad).multiplyScalar(139.45);
+      post.position.z = rz;
+      post.quaternion.copy(basisQuat(erad));
+      shipInterior.add(post);
+    }
+    for (let k = 0; k < 4; k++) {
+      const rz = OBS_Z0 + 5 + k * 10;
+      for (const [rr, th] of [[138.9, 0.15], [139.45, 0.12]]) {
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(th, th, 10), obsRailMat);
+        rail.position.copy(erad).multiplyScalar(rr);
+        rail.position.z = rz;
+        rail.quaternion.copy(basisQuat(erad));
+        shipInterior.add(rail);
+      }
+    }
+  }
+  // Support columns from the gallery deck (150) up to the obs deck
+  // underside (140.8): corners + mid-span, clear of the gallery tables.
+  for (const [ca, cz] of [[OBS_A0, 85], [OBS_A1, 85], [OBS_A0, 115], [OBS_A1, 115], [OBS_A0, 100], [OBS_A1, 100]]) {
+    const crad = new THREE.Vector3(Math.cos(ca), Math.sin(ca), 0);
+    const col = new THREE.Mesh(new THREE.BoxGeometry(0.9, 9.2, 0.9), obsPillarMat);
+    col.position.copy(crad).multiplyScalar(145.4);
+    col.position.z = cz;
+    col.quaternion.copy(basisQuat(crad));
+    shipInterior.add(col);
+  }
+  // Two staircases from the gallery deck (150) up to the obs deck
+  // (140): 10 steps each, 2 m run and 1 m rise per step, with
+  // full-height cheek walls on both sides. Staircase 1 (z 60 ... 80)
+  // climbs gallery -> deck; staircase 2 (z 120 ... 140) climbs the
+  // same way from the other end. Step tops follow the smoothstep obs
+  // ramp at each step's centre z (same fix as the gallery stairs), so
+  // the camera never clips into a step while climbing.
+  for (const [zBase, ascending] of [[60, true], [120, false]]) {
+    for (let k = 0; k < OSEG; k++) {
+      const ac = OBS_A0 + ((k + 0.5) / OSEG) * (OBS_A1 - OBS_A0);
+      const rad = new THREE.Vector3(Math.cos(ac), Math.sin(ac), 0);
+      for (let j = 0; j < 10; j++) {
+        const zc = zBase + 1 + 2 * j;
+        const top = ascending ? 150 - 10 * sstep(60, 80, zc) : 140 + 10 * sstep(120, 140, zc);
+        const step = new THREE.Mesh(new THREE.BoxGeometry(obsSegW, 1, 2.2), obsStepMat);
+        step.position.copy(rad).multiplyScalar(top - 0.5);
+        step.position.z = zc;
+        step.quaternion.copy(basisQuat(rad));
+        shipInterior.add(step);
+      }
+    }
+    for (const edge of [OBS_A0, OBS_A1]) {
+      const erad = new THREE.Vector3(Math.cos(edge), Math.sin(edge), 0);
+      const cheek = new THREE.Mesh(new THREE.BoxGeometry(0.6, 10, 20), obsPillarMat);
+      cheek.position.copy(erad).multiplyScalar(145);
+      cheek.position.z = zBase + 10;
+      cheek.quaternion.copy(basisQuat(erad));
+      shipInterior.add(cheek);
+    }
+  }
+  // Observation deck sign, mounted on the front edge so it reads from
+  // the gallery deck below.
+  mountTangentialSign('OBSERVATION DECK', '#59d6ff', 5, OBS_A0 - 0.003, 139, 100);
 }
 // ---------- Round 30 realism — industrial-half dressing ----------
 // The far side of the industrial half (away from the promenade at
@@ -4839,6 +4957,17 @@ function galleryFactor(a, z) {
   const aF = (an >= GALLERY_A0 && an <= GALLERY_A1) ? 1 : 0;
   return zF * aF;
 }
+// Observation deck walk level: smooth factor 0 (gallery deck) ... 1
+// (observation deck). Stair ramps run z 60...80 and 120...140; the
+// side edges are a HARD step, and updateWalk() cancels any tangential
+// move that would cross a side edge inside the obs footprint, so the
+// railings are genuinely solid. Mirrors galleryFactor().
+function obsDeckFactor(a, z) {
+  const an = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  const zF = sstep(60, 80, z) * (1 - sstep(120, 140, z));
+  const aF = (an >= OBS_A0 && an <= OBS_A1) ? 1 : 0;
+  return zF * aF;
+}
 
 // ---------- Docked: first person on the inner surface, carried by the spin ----------
 function updateWalk(dt) {
@@ -4868,7 +4997,7 @@ function updateWalk(dt) {
   const spd = WALK_SPEED * (running ? RUN_MULT : 1);
 
   // Eye radius for this frame's movement (recomputed after moving, below).
-  playerEyeR = (RADIUS - EYE) - 10 * galleryFactor(playerAngle, playerZ);
+  playerEyeR = (RADIUS - EYE) - 10 * galleryFactor(playerAngle, playerZ) - 10 * obsDeckFactor(playerAngle, playerZ);
 
   const phi = playerAngle + cylAngle;
   const radial = new THREE.Vector3(Math.cos(phi), Math.sin(phi), 0);
@@ -4891,13 +5020,19 @@ function updateWalk(dt) {
   const anNext = anNow + tangDisp;
   const crossesGalleryEdge = playerZ >= 40 && playerZ <= 160 &&
     GALLERY_EDGES.some((e) => (anNow < e && anNext >= e) || (anNow > e && anNext <= e));
-  if (!crossesGalleryEdge) playerAngle += tangDisp;
+  // Observation deck side walls are solid too: inside the obs footprint
+  // (z 60 ... 140), a tangential move that would cross either obs edge
+  // is cancelled, so the walker slides along the railing instead of
+  // stepping off the observation deck or its stairs.
+  const crossesObsEdge = playerZ >= 60 && playerZ <= 140 &&
+    OBS_EDGES.some((e) => (anNow < e && anNext >= e) || (anNow > e && anNext <= e));
+  if (!crossesGalleryEdge && !crossesObsEdge) playerAngle += tangDisp;
 
   // Eye radius at the new position, then the bulkhead: solid at z = 0
   // except at the four entrance doorways. The player may walk right up
   // to the wall (1 m) and slide along it to a doorway; only a doorway
   // angle lets the player cross to the other half.
-  playerEyeR = (RADIUS - EYE) - 10 * galleryFactor(playerAngle, playerZ);
+  playerEyeR = (RADIUS - EYE) - 10 * galleryFactor(playerAngle, playerZ) - 10 * obsDeckFactor(playerAngle, playerZ);
   const inBulkDoor = BULK_DOORS.some((d) => Math.abs(angDiff(playerAngle, d)) * playerEyeR < 7);
   if (!inBulkDoor) {
     if (playerZ > 0) playerZ = Math.max(1.0, playerZ);
