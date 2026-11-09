@@ -5281,6 +5281,22 @@ function walkEyeR(a, z, dz) {
   if (inObsInterior && !interiorDescending) return (RADIUS - EYE) - 20;
   return (RADIUS - EYE) - 10 * lv.l1 - 10 * lv.l2;
 }
+// Round 37: the sun screen is visible from the foot of the obs
+// stairs, not only once aboard the deck. Round 33 gated it to
+// inObsInterior so the first level keeps its paneled +Z wall; but
+// the new-journey spawn stands at the stair foot looking up, and
+// the sightline threads the stairwell opening in the ceiling shell
+// (openings at z 60...80 / 120...140 in both obs arcs). The screen
+// still only renders — the shell occludes it from anywhere the
+// sightline does not pass an opening, so the first-level wall view
+// is unchanged. On the ramp l2 > 0, at the top inObsInterior takes
+// over, so there is no pop while climbing.
+function atObsStairFoot() {
+  const an = ((playerAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  const inArc = (an >= OBS_A0 && an <= OBS_A1) || (an >= OPP_OBS_A0 && an <= OPP_OBS_A1);
+  if (!inArc) return false;
+  return (playerZ >= 55 && playerZ <= 82) || (playerZ >= 118 && playerZ <= 145);
+}
 // Interior state: stepping fully onto an obs deck (either side) puts
 // the player up in the interior; a descent that reaches the bottom
 // (gallery/landing level) brings them back out.
@@ -5439,8 +5455,12 @@ function updateWalk(dt) {
   // Round 33: the giant sun screen only shows up in the interior.
   // From the first level / residential sector the +Z end is the normal
   // wall (restored above); the screen appears once the player is up
-  // in the interior and hides again on the way back down.
-  if (obsSunGroup) obsSunGroup.visible = inObsInterior;
+  // in the interior and hides again on the way back down. Round 37:
+  // it also shows from the foot of the obs stairs (atObsStairFoot),
+  // so the new-journey spawn there looks up at the sun through the
+  // stairwell opening; the ceiling shell still occludes it from
+  // anywhere else on the first level.
+  if (obsSunGroup) obsSunGroup.visible = inObsInterior || atObsStairFoot();
   // Round 34: sun parallax — the screen used to read as a flat picture
   // on the wall because the sun never moved relative to the frame. Now
   // the sun disc + corona shift with the player's position (ship
