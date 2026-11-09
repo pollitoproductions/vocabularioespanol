@@ -1026,6 +1026,7 @@ applyGameTexture(capInMat, 'https://pollitoproductions.github.io/Vocabulario-Esp
 // follow inObsInterior — it only shows up in the interior, never from
 // the first level (where the restored +Z wall shows instead).
 let obsSunGroup = null;
+let obsSunDisc = null, obsSunCorona = null, obsScreenTex = null; // Round 34: parallax refs
 // ---------- Round 32: giant observation screen (sun window) ----------
 // The +Z end wall is a GIANT window/screen projecting the outside — a
 // realistic sun-in-space view, NOT a live render of the outside 3D
@@ -1058,6 +1059,8 @@ let obsSunGroup = null;
   }
   const screenTex = new THREE.CanvasTexture(sc);
   screenTex.colorSpace = THREE.SRGBColorSpace;
+  screenTex.wrapS = THREE.RepeatWrapping; screenTex.wrapT = THREE.RepeatWrapping; // Round 34: parallax offset wraps
+  obsScreenTex = screenTex;
   const screenMat = new THREE.MeshBasicMaterial({ map: screenTex, side: THREE.DoubleSide });
   const screen = new THREE.Mesh(new THREE.CircleGeometry(RADIUS, 64), screenMat);
   screen.position.z = LENGTH / 2 - 2;
@@ -1072,6 +1075,7 @@ let obsSunGroup = null;
   sunDisc.rotation.y = Math.PI;
   sunDisc.name = 'obsSunDisc';
   obsSunGroup.add(sunDisc);
+  obsSunDisc = sunDisc; // Round 34: parallax ref
   new THREE.TextureLoader().load('https://pollitoproductions.github.io/Vocabulario-Espanol/star.jpg', function (tex) {
     tex.colorSpace = THREE.SRGBColorSpace;
     sunDiscMat.map = tex;
@@ -1086,6 +1090,7 @@ let obsSunGroup = null;
   sunCorona.scale.set(230, 230, 1);
   sunCorona.name = 'obsSunCorona';
   obsSunGroup.add(sunCorona);
+  obsSunCorona = sunCorona; // Round 34: parallax ref
   // Window frame: a ring around the screen edge so it reads as a
   // giant viewport, not a bare disc.
   const frameMat = new THREE.MeshStandardMaterial({ color: 0x8a97a5, roughness: 0.45, metalness: 0.6 });
@@ -2008,14 +2013,76 @@ const cropBeds = [];
 // Industrial enclosure: a ceiling shell overhead (radius 140) across the
 // whole industrial half, so from inside it you can no longer see across
 // the tube to the far side. Columns carry it; light strips line it.
+// Round 34: the shell has rectangular STAIRWELL HOLES where the four
+// upper staircases pass through it (gallery-side obs stairs + opposite
+// upper stairs, z 60...80 and 120...140, angles 4.55...4.85 and
+// 1.41...1.71). The hole is the exit down out of the deck — it stays
+// OPEN (Brant: do not close it), and it must be visible so the player
+// can see down the stairs and walk toward it. The shell is built from
+// segments (full cylinders outside the stair z-ranges; arc segments
+// with gaps at the stairwell angles inside them) instead of one
+// continuous cylinder. A glowing rim frames each opening so it reads
+// as an obvious exit, not a hidden gap.
 {
-  const ceilGeo = new THREE.CylinderGeometry(140, 140, 320, 48, 1, true);
-  ceilGeo.rotateX(Math.PI / 2);
-  const ceilMat = new THREE.MeshStandardMaterial({ color: 0x878f99, roughness: 0.9, side: THREE.DoubleSide });
-  applyGameTexture(ceilMat, 'https://pollitoproductions.github.io/Vocabulario-Espanol/ceiling-panels.jpg', 24, 8); // Round 30: paneled ceiling (flat dark stays the fallback)
-  const ceil = new THREE.Mesh(ceilGeo, ceilMat);
-  ceil.position.z = 160;
-  shipInterior.add(ceil);
+  function ceilMatFor(rx, ry) {
+    const m = new THREE.MeshStandardMaterial({ color: 0x878f99, roughness: 0.9, side: THREE.DoubleSide });
+    applyGameTexture(m, 'https://pollitoproductions.github.io/Vocabulario-Espanol/ceiling-panels.jpg', rx, ry); // Round 30: paneled ceiling (flat dark stays the fallback)
+    return m;
+  }
+  // Arc segments that KEEP the shell (the complement of the stairwell
+  // angles). CylinderGeometry theta maps to ship-frame angle as
+  // theta = phi + PI/2 (after rotateX(PI/2)).
+  const CEIL_KEEP = [[0, 1.41], [1.71, 4.55], [4.85, Math.PI * 2]];
+  function ceilSeg(zC, len, a0, a1) {
+    const span = a1 - a0;
+    const mat = ceilMatFor(24 * span / (Math.PI * 2), len / 40);
+    const g = new THREE.CylinderGeometry(140, 140, len, 24, 1, true, a0 + Math.PI / 2, span);
+    g.rotateX(Math.PI / 2);
+    const m = new THREE.Mesh(g, mat);
+    m.position.z = zC;
+    shipInterior.add(m);
+  }
+  function ceilFull(zC, len) {
+    const mat = ceilMatFor(24, len / 40);
+    const g = new THREE.CylinderGeometry(140, 140, len, 48, 1, true);
+    g.rotateX(Math.PI / 2);
+    const m = new THREE.Mesh(g, mat);
+    m.position.z = zC;
+    shipInterior.add(m);
+  }
+  ceilFull(30, 60);    // z 0...60
+  for (const [a0, a1] of CEIL_KEEP) ceilSeg(70, 20, a0, a1);   // z 60...80, holes at stairwells
+  ceilFull(100, 40);   // z 80...120
+  for (const [a0, a1] of CEIL_KEEP) ceilSeg(130, 20, a0, a1);  // z 120...140, holes at stairwells
+  ceilFull(230, 180);  // z 140...320
+  // Glowing rims around each stairwell opening so the exit is obvious.
+  // Bars sit astride the shell surface (radius 140) at the opening
+  // edges: axial bars along z at the two angle edges, tangential bars
+  // along the angle at the two z edges. Cyan, unlit, so they read in
+  // the dim interior.
+  const rimMat = new THREE.MeshBasicMaterial({ color: 0x59d6ff });
+  for (const [za, zb] of [[60, 80], [120, 140]]) {
+    for (const [aa, ab] of [[OBS_A0, OBS_A1], [OPP_OBS_A0, OPP_OBS_A1]]) {
+      const midA = (aa + ab) / 2, midZ = (za + zb) / 2;
+      const arcLen = (ab - aa) * 140, zLen = zb - za;
+      for (const edge of [aa, ab]) {
+        const erad = new THREE.Vector3(Math.cos(edge), Math.sin(edge), 0);
+        const bar = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, zLen), rimMat);
+        bar.position.copy(erad).multiplyScalar(140);
+        bar.position.z = midZ;
+        bar.quaternion.copy(basisQuat(erad));
+        shipInterior.add(bar);
+      }
+      for (const edge of [za, zb]) {
+        const arad = new THREE.Vector3(Math.cos(midA), Math.sin(midA), 0);
+        const bar = new THREE.Mesh(new THREE.BoxGeometry(arcLen, 0.4, 0.4), rimMat);
+        bar.position.copy(arad).multiplyScalar(140);
+        bar.position.z = edge;
+        bar.quaternion.copy(basisQuat(arad));
+        shipInterior.add(bar);
+      }
+    }
+  }
   const colMat = new THREE.MeshStandardMaterial({ color: 0x4a5560, roughness: 0.8, metalness: 0.3 });
   for (const ca of [0, Math.PI / 2, Math.PI, 3 * Math.PI / 2]) {
     for (const cz of [60, 120, 180, 240, 300]) {
@@ -4050,6 +4117,7 @@ let playerEyeR = RADIUS - EYE; // eye radius above the deck; drops 10 m on the g
 // capturePosition / restoreSavedPosition) so a resume restores them.
 let inObsInterior = false;
 let interiorDescending = false;
+let interiorExitHold = 0; // Round 34: frames settled at a ramp bottom before exiting
 const keys = {};
 const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 let pointerLocked = false;
@@ -5216,10 +5284,53 @@ function updateInteriorState(a, z, dz) {
     return;
   }
   if (isDescendingInterior(a, z, dz)) interiorDescending = true;
-  if (interiorDescending && lv.l2 <= 0.001 && lv.l1 > 0.9) {
-    inObsInterior = false;
-    interiorDescending = false;
-    return;
+  // Round 34: walking off the deck into the open interior is NOT a
+  // descent. The old code treated any axial move through a ramp zone
+  // as a descent, so walking off the deck edge (staying at radius
+  // 140) fired the exit below at the ramp bottom and dropped the eye
+  // to main-deck level while the player was still up at radius 140 —
+  // the "hole in the floor" the player fell through. A descent is
+  // only real on a ramp slope (in an obs arc, z 60...80 or 120...140,
+  // l2 strictly between 0 and 1). Off a slope the player is not
+  // descending, so the flag clears and the eye stays locked at the
+  // interior level. The exit also needs the player to have SETTLED at
+  // the ramp bottom (hold >= 4 calls = two full frames, since
+  // updateWalk calls this twice per frame): the before-move call
+  // passes dz=0, so a single frame must not fire it — the player may
+  // be about to walk away into the open interior. Moving clearly past
+  // the bottom (z > 141 or z < 59) cancels the exit. A mere pass
+  // through the bottom resets the hold but does NOT clear the
+  // descending flag, so a player who overshoots the bottom by a step
+  // and then stops can still exit.
+  const an = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  const inObsArc = (an >= OBS_A0 && an <= OBS_A1) || (an >= OPP_OBS_A0 && an <= OPP_OBS_A1);
+  const onRampSlope = inObsArc && ((z > 60 && z < 80) || (z > 120 && z < 140)) && lv.l2 > 0.001 && lv.l2 < 0.999;
+  if (!onRampSlope) {
+    if (z > 141 || z < 59) {
+      interiorExitHold = 0;
+      interiorDescending = false;
+    } else if (interiorDescending && lv.l2 <= 0.001 && lv.l1 > 0.9) {
+      // Moving away is a DIRECTION, not a position: dz > 0 at z >= 140
+      // (or dz < 0 at z <= 60) means the player is leaving the bottom
+      // for the open interior, even if they have not yet crossed 141.
+      // The arrival frame's dz > 0 resets the hold; a player who then
+      // stops rebuilds it over the next two frames and exits.
+      const movingAway = (z >= 140 && dz > 0) || (z <= 60 && dz < 0);
+      if (movingAway) {
+        interiorExitHold = 0;
+      } else {
+        interiorExitHold++;
+        if (interiorExitHold >= 4) {
+          inObsInterior = false;
+          interiorDescending = false;
+          interiorExitHold = 0;
+          return;
+        }
+      }
+    } else {
+      interiorExitHold = 0;
+      interiorDescending = false;
+    }
   }
   if (lv.l2 >= 0.999) interiorDescending = false;
 }
@@ -5314,6 +5425,27 @@ function updateWalk(dt) {
   // wall (restored above); the screen appears once the player is up
   // in the interior and hides again on the way back down.
   if (obsSunGroup) obsSunGroup.visible = inObsInterior;
+  // Round 34: sun parallax — the screen used to read as a flat picture
+  // on the wall because the sun never moved relative to the frame. Now
+  // the sun disc + corona shift with the player's position (ship
+  // frame, so the spin does not move them), and the starfield shifts
+  // less — differential parallax, so the sun feels like a real view
+  // through the window at a distance, not a painting. The sun is the
+  // most distant layer, so it moves least in absolute terms but most
+  // relative to the frame: it follows the player's lateral position
+  // (up to ~35 m on the screen), while the stars shift only ~11 m.
+  // The frame stays fixed. Only when in the interior (the screen is
+  // hidden from the first level).
+  if (inObsInterior && obsSunDisc && obsSunCorona && obsScreenTex) {
+    const px = playerEyeR * Math.cos(playerAngle), py = playerEyeR * Math.sin(playerAngle);
+    obsSunDisc.position.x = px * 0.25; obsSunDisc.position.y = py * 0.25;
+    obsSunCorona.position.x = px * 0.25; obsSunCorona.position.y = py * 0.25;
+    // Starfield shifts the same direction but less (farther layer).
+    // Screen faces -Z (rotation.y = PI), so its local +x is world -x:
+    // the x texture offset flips sign to match the sun's world shift.
+    obsScreenTex.offset.x = (px * 0.08) / 320;
+    obsScreenTex.offset.y = -(py * 0.08) / 320;
+  }
   const inBulkDoor = !inObsInterior && BULK_DOORS.some((d) => Math.abs(angDiff(playerAngle, d)) * playerEyeR < 7);
   if (!inBulkDoor) {
     if (playerZ > 0) playerZ = Math.max(1.0, playerZ);
@@ -6793,11 +6925,16 @@ const reviewPanel = document.getElementById('reviewPanel');
 function terminalDist2() {
   if (mode !== 'walk' || toolOpen || reviewOpen) return Infinity;
   const gf = galleryFactor(playerAngle, playerZ);
+  // Round 34: obs terminals also fire when the player is physically on
+  // the obs deck (l2 high) even if inObsInterior is momentarily off,
+  // so the REVIEW prompt cannot go missing up there. (The state fix
+  // above is the real cure — this is belt and braces.)
+  const onObsDeck = interiorLevels(playerAngle, playerZ).l2 >= 0.9;
   let best = Infinity;
   for (const tp of REVIEW_TERMINALS_POS) {
     if (tp.deck === 'mezz' && gf < 0.9) continue;
     if (tp.deck === 'main' && gf >= 0.9) continue;
-    if (tp.deck === 'obs' && !inObsInterior) continue;
+    if (tp.deck === 'obs' && !inObsInterior && !onObsDeck) continue;
     const rr = tp.deck === 'main' ? 160 : (tp.deck === 'mezz' ? 150 : 140);
     const tang = Math.abs(angDiff(playerAngle, tp.angle)) * rr;
     const dz = playerZ - tp.z;
