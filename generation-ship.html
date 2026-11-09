@@ -989,16 +989,15 @@ for (const [zC, mat] of [[-LENGTH / 4, agriHullMat], [LENGTH / 4, chromeHullMat]
   shipInterior.add(mesh);
 }
 
-// Structural rings + central spine.
+// Structural rings. (Round 33: the central spine bar was removed at
+// Brant's call — it ran straight through the middle of the ship along
+// the axis. It was purely decorative; nothing depended on it.)
 const ringMat = new THREE.MeshStandardMaterial({ color: 0x2e343b, roughness: 0.6, metalness: 0.3 });
 for (let i = 0; i <= slices; i++) {
   const ring = new THREE.Mesh(new THREE.TorusGeometry(RADIUS - 0.4, 1.1, 8, 64), ringMat);
   ring.position.z = -LENGTH / 2 + i * sliceLen;
   shipInterior.add(ring);
 }
-const spineGeo = new THREE.CylinderGeometry(2, 2, LENGTH, 10);
-spineGeo.rotateX(Math.PI / 2);
-shipInterior.add(new THREE.Mesh(spineGeo, ringMat));
 
 // Interior end caps (seen from inside). The -Z (aft) cap stays paneled.
 // The +Z (forward) cap is GONE (Round 32): that end wall is replaced by
@@ -1013,6 +1012,20 @@ applyGameTexture(capInMat, 'https://pollitoproductions.github.io/Vocabulario-Esp
   cap.rotation.y = Math.PI;
   shipInterior.add(cap);
 }
+// Round 33: the +Z end-cap wall is BACK (Round 32 removed it, so the
+// giant sun screen showed from the first level / residential sector).
+// From the first level the +Z end is a normal paneled wall again; the
+// sun screen only shows up in the interior (obsSunGroup visibility,
+// set in updateWalk from inObsInterior).
+{
+  const capPlus = new THREE.Mesh(new THREE.CircleGeometry(RADIUS, 48), capInMat);
+  capPlus.position.z = LENGTH / 2;
+  shipInterior.add(capPlus);
+}
+// Round 33: the sun screen lives in obsSunGroup so its visibility can
+// follow inObsInterior — it only shows up in the interior, never from
+// the first level (where the restored +Z wall shows instead).
+let obsSunGroup = null;
 // ---------- Round 32: giant observation screen (sun window) ----------
 // The +Z end wall is a GIANT window/screen projecting the outside — a
 // realistic sun-in-space view, NOT a live render of the outside 3D
@@ -1025,6 +1038,7 @@ applyGameTexture(capInMat, 'https://pollitoproductions.github.io/Vocabulario-Esp
 // end of the mothership faces the sun. The star itself is untouched
 // (position, 8 km death / 11 km warning unchanged).
 {
+  obsSunGroup = new THREE.Group();
   // Space backdrop: procedural canvas, dark sky + stars.
   const sc = document.createElement('canvas');
   sc.width = sc.height = 1024;
@@ -1049,7 +1063,7 @@ applyGameTexture(capInMat, 'https://pollitoproductions.github.io/Vocabulario-Esp
   screen.position.z = LENGTH / 2 - 2;
   screen.rotation.y = Math.PI; // face -Z, into the interior
   screen.name = 'obsSunScreen';
-  shipInterior.add(screen);
+  obsSunGroup.add(screen);
   // Sun disc: reuses the ship's star.jpg (same texture as the live
   // star). Warm fallback until it loads.
   const sunDiscMat = new THREE.MeshBasicMaterial({ color: 0xffe9a8, side: THREE.DoubleSide });
@@ -1057,7 +1071,7 @@ applyGameTexture(capInMat, 'https://pollitoproductions.github.io/Vocabulario-Esp
   sunDisc.position.set(0, 0, LENGTH / 2 - 3);
   sunDisc.rotation.y = Math.PI;
   sunDisc.name = 'obsSunDisc';
-  shipInterior.add(sunDisc);
+  obsSunGroup.add(sunDisc);
   new THREE.TextureLoader().load('https://pollitoproductions.github.io/Vocabulario-Espanol/star.jpg', function (tex) {
     tex.colorSpace = THREE.SRGBColorSpace;
     sunDiscMat.map = tex;
@@ -1071,14 +1085,15 @@ applyGameTexture(capInMat, 'https://pollitoproductions.github.io/Vocabulario-Esp
   sunCorona.position.set(0, 0, LENGTH / 2 - 4);
   sunCorona.scale.set(230, 230, 1);
   sunCorona.name = 'obsSunCorona';
-  shipInterior.add(sunCorona);
+  obsSunGroup.add(sunCorona);
   // Window frame: a ring around the screen edge so it reads as a
   // giant viewport, not a bare disc.
   const frameMat = new THREE.MeshStandardMaterial({ color: 0x8a97a5, roughness: 0.45, metalness: 0.6 });
   const frame = new THREE.Mesh(new THREE.TorusGeometry(RADIUS - 2, 2.5, 12, 64), frameMat);
   frame.position.z = LENGTH / 2 - 2;
   frame.name = 'obsSunFrame';
-  shipInterior.add(frame);
+  obsSunGroup.add(frame);
+  shipInterior.add(obsSunGroup);
 }
 
 // Exterior hull + caps (offset slightly outward to avoid coplanar faces).
@@ -2147,7 +2162,8 @@ const cropBeds = [];
       shipInterior.add(rail);
     }
   }
-  // Stair towers: 10 steps each, full-height cheek walls on both sides.
+  // Stair towers: 10 steps each, open sides (Round 33: cheek walls
+  // removed for clear sightlines up to the window / down a deck).
   // Zone A (z 40 ... 60) climbs ground -> deck; zone B (z 140 ... 160)
   // descends deck -> ground. Round 31: steps share one textured
   // material (tech-interior, same as the gallery back wall) instead of
@@ -2172,14 +2188,10 @@ const cropBeds = [];
         shipInterior.add(step);
       }
     }
-    for (const edge of [GALLERY_A0, GALLERY_A1]) {
-      const erad = new THREE.Vector3(Math.cos(edge), Math.sin(edge), 0);
-      const cheek = new THREE.Mesh(new THREE.BoxGeometry(0.6, 10, 20), pillarMat);
-      cheek.position.copy(erad).multiplyScalar(155);
-      cheek.position.z = zBase + 10;
-      cheek.quaternion.copy(basisQuat(erad));
-      shipInterior.add(cheek);
-    }
+    // Round 33: cheek walls removed — the full-height walls enclosed the
+    // stairwell and blocked the view up the stairs to the window and
+    // down to the next deck. The stairs are open now; edge blocking in
+    // updateWalk() still keeps the walker from stepping off sideways.
   }
   // Gallery signs, mounted: hall name on the back wall (facing the deck),
   // section name on the podium side wall at deck level.
@@ -2270,8 +2282,9 @@ const cropBeds = [];
     shipInterior.add(col);
   }
   // Two staircases from the gallery deck (150) up to the obs deck
-  // (140): 10 steps each, 2 m run and 1 m rise per step, with
-  // full-height cheek walls on both sides. Staircase 1 (z 60 ... 80)
+  // (140): 10 steps each, 2 m run and 1 m rise per step, open sides
+  // (Round 33: cheek walls removed for clear sightlines). Staircase 1
+  // (z 60 ... 80)
   // climbs gallery -> deck; staircase 2 (z 120 ... 140) climbs the
   // same way from the other end. Step tops follow the smoothstep obs
   // ramp at each step's centre z (same fix as the gallery stairs), so
@@ -2290,18 +2303,15 @@ const cropBeds = [];
         shipInterior.add(step);
       }
     }
-    for (const edge of [OBS_A0, OBS_A1]) {
-      const erad = new THREE.Vector3(Math.cos(edge), Math.sin(edge), 0);
-      const cheek = new THREE.Mesh(new THREE.BoxGeometry(0.6, 10, 20), obsPillarMat);
-      cheek.position.copy(erad).multiplyScalar(145);
-      cheek.position.z = zBase + 10;
-      cheek.quaternion.copy(basisQuat(erad));
-      shipInterior.add(cheek);
-    }
+    // Round 33: cheek walls removed (see gallery stairs) — open
+    // stairwell, clear sightline up to the sun screen and down to the
+    // gallery deck.
   }
   // Observation deck sign, mounted on the front edge so it reads from
-  // the gallery deck below.
-  mountTangentialSign('OBSERVATION DECK', '#59d6ff', 5, OBS_A0 - 0.003, 139, 100);
+  // the gallery deck below. Round 33: radius 141.5 (below the interior
+  // floor) — at 139 it floated at chest height in the interior walk
+  // path and the player walked straight through it.
+  mountTangentialSign('OBSERVATION DECK', '#59d6ff', 5, OBS_A0 - 0.003, 141.5, 100);
 }
 // ---------- Round 32: opposite-side entry (mirrors the gallery + obs stairs) ----------
 // An identical entry point on the opposite side of the cylinder (arc
@@ -2355,14 +2365,7 @@ const cropBeds = [];
         shipInterior.add(step);
       }
     }
-    for (const edge of [OPP_A0, OPP_A1]) {
-      const erad = new THREE.Vector3(Math.cos(edge), Math.sin(edge), 0);
-      const cheek = new THREE.Mesh(new THREE.BoxGeometry(0.6, 10, 20), oppPillarMat);
-      cheek.position.copy(erad).multiplyScalar(155);
-      cheek.position.z = zBase + 10;
-      cheek.quaternion.copy(basisQuat(erad));
-      shipInterior.add(cheek);
-    }
+    // Round 33: cheek walls removed (see gallery stairs) — open stairwell.
   }
   // Upper staircases: landing (150) -> interior (140), 10 steps each.
   for (const [zBase, ascending] of [[60, true], [120, false]]) {
@@ -2379,16 +2382,11 @@ const cropBeds = [];
         shipInterior.add(step);
       }
     }
-    for (const edge of [OPP_OBS_A0, OPP_OBS_A1]) {
-      const erad = new THREE.Vector3(Math.cos(edge), Math.sin(edge), 0);
-      const cheek = new THREE.Mesh(new THREE.BoxGeometry(0.6, 10, 20), oppPillarMat);
-      cheek.position.copy(erad).multiplyScalar(145);
-      cheek.position.z = zBase + 10;
-      cheek.quaternion.copy(basisQuat(erad));
-      shipInterior.add(cheek);
-    }
+    // Round 33: cheek walls removed (see gallery stairs) — open stairwell.
   }
-  mountTangentialSign('TO OBSERVATION DECK', '#59d6ff', 5, OPP_A0 - 0.003, 149, 100);
+  // Round 33: radius 151.5 (below the landing) — at 149 it floated at
+  // chest height on the landing and the player walked through it.
+  mountTangentialSign('TO OBSERVATION DECK', '#59d6ff', 5, OPP_A0 - 0.003, 151.5, 100);
 }
 // ---------- Round 30 realism — industrial-half dressing ----------
 // The far side of the industrial half (away from the promenade at
@@ -3396,22 +3394,25 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
 // beacon pillar is 6 m (not 14): from the 150 deck a 14 m pillar would poke
 // through the industrial ceiling shell at radius 140, while 6 m tops out at
 // radius 141.3, clear by 1.3 m (from the 160 main deck it tops out near
-// radius 151, further still from the shell). NOT stations: no STATIONS
-// entries, no tools — proximity opens the ONE shared review panel
+// radius 151, further still from the shell). An obs-deck terminal's 6 m
+// beam tops out at radius 134, in open interior space. NOT stations: no
+// STATIONS entries, no tools — proximity opens the ONE shared review panel
 // (see checkTerminal), with a per-terminal deck gate so a terminal
-// never fires from the wrong level.
+// never fires from the wrong level (obs terminals only inObsInterior).
 const REVIEW_TERMINALS_POS = [
-  // Mezzanine upper deck (radius 150): ONE kept (centre line).
-  { deck: 'mezz', angle: 4.70, z: 108 },  // centre line, kept (clear of the z 100/120 tables)
-  // Main deck (radius 160): seven spread EVENLY around the hull at
-  // 0.8976 rad (51.4°) steps — neighbours ~143 m apart, no pairs.
+  // Observation deck (radius 140, interior): TWO (Round 33) — moved up
+  // from below to spread terminals to the deck and declutter the main
+  // deck, where the exploration terminals already crowd it.
+  { deck: 'obs', angle: 4.70, z: 100 },  // gallery-side obs deck (was the mezzanine terminal at z 108)
+  { deck: 'obs', angle: 1.56, z: 100 },  // opposite-side interior (was a main-deck terminal at angle 1.20, z 180)
+  // Main deck (radius 160): six left (one moved to the obs deck) —
+  // still spread around the hull, neighbours ~143 m apart, no pairs.
   // Each z threads clear of the blocked zones (quarters rows, mess /
   // lounge, promenade walls, education arch, gallery arc) and the
   // industrial cell doorways (workshop 2.8/z 170, classroom 4.5/z 260,
   // medical 5.5/z 100); the 4.79 terminal sits at z 200, past the
   // gallery's z 40..160 span, so it is not under the gallery floor.
   { deck: 'main', angle: 0.30, z: 220 },  // even step 1 (edu, open deck)
-  { deck: 'main', angle: 1.20, z: 180 },  // even step 2 (gap between the quarters rows)
   { deck: 'main', angle: 2.09, z: 180 },  // even step 3 (gap between mess hall and education arch)
   { deck: 'main', angle: 2.99, z: 300 },  // even step 4 (edu, open deck)
   { deck: 'main', angle: 3.89, z: 140 },  // even step 5 (tech, open deck; moved 40 m from z 100 — it shared ground with the 5pi/4 exploration terminal, and the REVIEW button could hang on after departing)
@@ -3446,7 +3447,7 @@ for (const tp of REVIEW_TERMINALS_POS) {
   const tSign = makeMountedSign('REVIEW TERMINAL', '#ffd76a', 5.5);
   tSign.position.set(-3.6, 4.6, 0);
   tgrp.add(tSign);
-  tgrp.position.copy(trad).multiplyScalar(tp.deck === 'main' ? 160 : 150);
+  tgrp.position.copy(trad).multiplyScalar(tp.deck === 'main' ? 160 : (tp.deck === 'mezz' ? 150 : 140));
   tgrp.position.z = tp.z;
   tgrp.quaternion.copy(basisQuat(trad));
   shipInterior.add(tgrp);
@@ -3454,7 +3455,10 @@ for (const tp of REVIEW_TERMINALS_POS) {
 // ---------- Depositories + rebuild (Brant Nov 7) ----------
 // Eight glowing consoles where the player deposits WATER and METAL in
 // person. Four WATER depositories in the agriculture ring (negative z),
-// four METAL depositories in the residential half (positive z), each in
+// staggered in z (Round 33: -80/-110/-120/-90 — they were all on one
+// ring at z -100, clustered with the exploration terminals and the
+// practice station), four METAL depositories in the residential half
+// (positive z), each in
 // a clear gap — no station, review terminal, exploration terminal,
 // crop bed, orchard, or neighborhood in the way (placements checked
 // against every list before they were written). Depositing a depository's
@@ -3465,10 +3469,10 @@ for (const tp of REVIEW_TERMINALS_POS) {
 // crops hidden) and neighborhoods start unbuilt (hidden, walk-through);
 // each appears only when regrown or rebuilt.
 const DEPOSITORIES = [
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 0.30, z: -100, bank: 0, cost: 250, emoji: '💧' },
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 1.87, z: -100, bank: 0, cost: 250, emoji: '💧' },
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 3.44, z: -100, bank: 0, cost: 250, emoji: '💧' },
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 5.01, z: -100, bank: 0, cost: 250, emoji: '💧' },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 0.30, z: -80, bank: 0, cost: 250, emoji: '💧' },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 1.87, z: -110, bank: 0, cost: 250, emoji: '💧' },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 3.44, z: -120, bank: 0, cost: 250, emoji: '💧' },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 5.01, z: -90, bank: 0, cost: 250, emoji: '💧' },
   { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 0.77, z: 200, bank: 0, cost: 250, emoji: '🏠' },
   { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 2.25, z: 200, bank: 0, cost: 250, emoji: '🏠' },
   { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 4.02, z: 200, bank: 0, cost: 250, emoji: '🏠' },
@@ -5290,7 +5294,11 @@ function updateWalk(dt) {
   // continuous ceiling shell. On a descent the edges stay solid so the
   // player cannot step off the stairs sideways.
   const inInteriorFree = inObsInterior && !interiorDescending;
-  if (!inInteriorFree && !crossesGalleryEdge && !crossesObsEdge && !crossesOppEdge && !crossesOppObsEdge) playerAngle += tangDisp;
+  // Round 33 fix: the old condition (!inInteriorFree && ...) blocked ALL
+  // tangential movement while in the interior, so the player could only
+  // move along z and never walk around the cylinder. Free in the
+  // interior (no edge blocking); edge checks only when not free.
+  if (inInteriorFree || (!crossesGalleryEdge && !crossesObsEdge && !crossesOppEdge && !crossesOppObsEdge)) playerAngle += tangDisp;
 
   // Eye radius at the new position (dz is this frame's axial movement),
   // then the bulkhead: solid at z = 0 except at the four entrance
@@ -5301,6 +5309,11 @@ function updateWalk(dt) {
   // with no doorway exception while inObsInterior.
   updateInteriorState(playerAngle, playerZ, playerZ - oldZ);
   playerEyeR = walkEyeR(playerAngle, playerZ, playerZ - oldZ);
+  // Round 33: the giant sun screen only shows up in the interior.
+  // From the first level / residential sector the +Z end is the normal
+  // wall (restored above); the screen appears once the player is up
+  // in the interior and hides again on the way back down.
+  if (obsSunGroup) obsSunGroup.visible = inObsInterior;
   const inBulkDoor = !inObsInterior && BULK_DOORS.some((d) => Math.abs(angDiff(playerAngle, d)) * playerEyeR < 7);
   if (!inBulkDoor) {
     if (playerZ > 0) playerZ = Math.max(1.0, playerZ);
@@ -6784,7 +6797,8 @@ function terminalDist2() {
   for (const tp of REVIEW_TERMINALS_POS) {
     if (tp.deck === 'mezz' && gf < 0.9) continue;
     if (tp.deck === 'main' && gf >= 0.9) continue;
-    const rr = tp.deck === 'main' ? 160 : 150;
+    if (tp.deck === 'obs' && !inObsInterior) continue;
+    const rr = tp.deck === 'main' ? 160 : (tp.deck === 'mezz' ? 150 : 140);
     const tang = Math.abs(angDiff(playerAngle, tp.angle)) * rr;
     const dz = playerZ - tp.z;
     const d2 = tang * tang + dz * dz;
