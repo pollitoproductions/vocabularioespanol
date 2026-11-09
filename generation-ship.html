@@ -8313,6 +8313,24 @@ btnTitleResume.addEventListener('pointerdown', function (e) {
   hideTitle();
   if (mode === 'walk') announceBoarding(); // resumed aboard — greet back (a flight restore stays silent)
 });
+// Round 37: new-player spawn — bottom of the observation-deck stairs
+// (gallery arc, staircase 1), looking up the stairs toward the sun
+// screen. Only a fresh journey starts here: both Begin paths call
+// placeAtObservationStairs() after resetProgress(). A save always
+// restores its stored position (applySave / restoreSavedPosition —
+// untouched), and the docked standard spawn (angle 0, z 40) stays for
+// returnAboard / crash retry / a save without pos.
+// Spawn: angle 4.65 (in the obs arc 4.55-4.85, 10 m clear of the
+// structural column at 3PI/2, z 60), z 60 (foot of staircase 1:
+// gallery level, eye 148.3), yaw 0 (facing +z, up the stairs toward
+// the sun end), pitch 0.45 (looking up the stair slope; the sightline
+// clears the steps, crosses radius 140 inside the stairwell hole at
+// z ~77, and lands on the sun disc at z 318).
+function placeAtObservationStairs() {
+  playerAngle = 4.65; playerZ = 60; yaw = 0; pitch = 0.45;
+  inObsInterior = false; interiorDescending = false; interiorExitHold = 0;
+  jumpH = 0; jumpV = 0;
+}
 document.getElementById('btn-title-begin').addEventListener('pointerdown', function (e) {
   e.preventDefault(); e.target.blur();
   const s = readSave();
@@ -8322,6 +8340,7 @@ document.getElementById('btn-title-begin').addEventListener('pointerdown', funct
   } else {
     try { window.localStorage.removeItem(SAVE_KEY); } catch (err) {}
     resetProgress();
+    placeAtObservationStairs(); // Round 37: fresh journey starts at the observation stairs
     hideTitle();
     announceBoarding(); // a new journey starts aboard
   }
@@ -8334,6 +8353,7 @@ document.getElementById('btn-title-confirm').addEventListener('pointerdown', fun
   e.preventDefault(); e.target.blur();
   try { window.localStorage.removeItem(SAVE_KEY); } catch (err) {}
   resetProgress();
+  placeAtObservationStairs(); // Round 37: confirmed fresh journey starts at the observation stairs
   titleMainBtns.style.display = 'flex';
   titleConfirm.style.display = 'none';
   hideTitle();
