@@ -1000,14 +1000,85 @@ const spineGeo = new THREE.CylinderGeometry(2, 2, LENGTH, 10);
 spineGeo.rotateX(Math.PI / 2);
 shipInterior.add(new THREE.Mesh(spineGeo, ringMat));
 
-// Interior end caps (seen from inside).
+// Interior end caps (seen from inside). The -Z (aft) cap stays paneled.
+// The +Z (forward) cap is GONE (Round 32): that end wall is replaced by
+// the giant observation screen below — the end of the ship that faces
+// the sun. The exterior +Z cap (capOutMat) stays, so the ship still
+// reads correctly from outside.
 const capInMat = new THREE.MeshStandardMaterial({ color: 0x878f99, roughness: 0.9, metalness: 0.2, side: THREE.DoubleSide });
 applyGameTexture(capInMat, 'https://pollitoproductions.github.io/Vocabulario-Espanol/hull-panels.jpg', 16, 16); // paneled end caps
-for (const s of [1, -1]) {
+{
   const cap = new THREE.Mesh(new THREE.CircleGeometry(RADIUS, 48), capInMat);
-  cap.position.z = s * LENGTH / 2;
-  if (s < 0) cap.rotation.y = Math.PI;
+  cap.position.z = -LENGTH / 2;
+  cap.rotation.y = Math.PI;
   shipInterior.add(cap);
+}
+// ---------- Round 32: giant observation screen (sun window) ----------
+// The +Z end wall is a GIANT window/screen projecting the outside — a
+// realistic sun-in-space view, NOT a live render of the outside 3D
+// world. It fills the whole end wall (radius 160 disc at z +318) so it
+// is the focal point of the observation area. The sun itself reuses the
+// ship's star.jpg texture (async load, warm fallback); the space
+// backdrop is a procedural canvas (dark + stars, no new file); the
+// corona reuses makeStarGlowTexture. The +Z end is the sun end: the
+// star sits ~30 km out at (22611, 11306, 16151), strongly +Z, so this
+// end of the mothership faces the sun. The star itself is untouched
+// (position, 8 km death / 11 km warning unchanged).
+{
+  // Space backdrop: procedural canvas, dark sky + stars.
+  const sc = document.createElement('canvas');
+  sc.width = sc.height = 1024;
+  const sg = sc.getContext('2d');
+  const sgrad = sg.createRadialGradient(512, 512, 60, 512, 512, 720);
+  sgrad.addColorStop(0, '#0a1220');
+  sgrad.addColorStop(0.6, '#05070d');
+  sgrad.addColorStop(1, '#020308');
+  sg.fillStyle = sgrad;
+  sg.fillRect(0, 0, 1024, 1024);
+  for (let i = 0; i < 420; i++) {
+    const sx = Math.random() * 1024, sy = Math.random() * 1024;
+    const sr = Math.random() * 1.6 + 0.4;
+    const sa = 0.35 + Math.random() * 0.65;
+    sg.fillStyle = 'rgba(255,255,255,' + sa.toFixed(2) + ')';
+    sg.beginPath(); sg.arc(sx, sy, sr, 0, Math.PI * 2); sg.fill();
+  }
+  const screenTex = new THREE.CanvasTexture(sc);
+  screenTex.colorSpace = THREE.SRGBColorSpace;
+  const screenMat = new THREE.MeshBasicMaterial({ map: screenTex, side: THREE.DoubleSide });
+  const screen = new THREE.Mesh(new THREE.CircleGeometry(RADIUS, 64), screenMat);
+  screen.position.z = LENGTH / 2 - 2;
+  screen.rotation.y = Math.PI; // face -Z, into the interior
+  screen.name = 'obsSunScreen';
+  shipInterior.add(screen);
+  // Sun disc: reuses the ship's star.jpg (same texture as the live
+  // star). Warm fallback until it loads.
+  const sunDiscMat = new THREE.MeshBasicMaterial({ color: 0xffe9a8, side: THREE.DoubleSide });
+  const sunDisc = new THREE.Mesh(new THREE.CircleGeometry(46, 48), sunDiscMat);
+  sunDisc.position.set(0, 0, LENGTH / 2 - 3);
+  sunDisc.rotation.y = Math.PI;
+  sunDisc.name = 'obsSunDisc';
+  shipInterior.add(sunDisc);
+  new THREE.TextureLoader().load('https://pollitoproductions.github.io/Vocabulario-Espanol/star.jpg', function (tex) {
+    tex.colorSpace = THREE.SRGBColorSpace;
+    sunDiscMat.map = tex;
+    sunDiscMat.color.set(0xffffff);
+    sunDiscMat.needsUpdate = true;
+  });
+  // Corona glow around the sun disc (same procedural texture as the
+  // live star's glow). Sprites always face the camera; on the spin
+  // axis, so the ship's spin does not move it.
+  const sunCorona = new THREE.Sprite(new THREE.SpriteMaterial({ map: makeStarGlowTexture(), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+  sunCorona.position.set(0, 0, LENGTH / 2 - 4);
+  sunCorona.scale.set(230, 230, 1);
+  sunCorona.name = 'obsSunCorona';
+  shipInterior.add(sunCorona);
+  // Window frame: a ring around the screen edge so it reads as a
+  // giant viewport, not a bare disc.
+  const frameMat = new THREE.MeshStandardMaterial({ color: 0x8a97a5, roughness: 0.45, metalness: 0.6 });
+  const frame = new THREE.Mesh(new THREE.TorusGeometry(RADIUS - 2, 2.5, 12, 64), frameMat);
+  frame.position.z = LENGTH / 2 - 2;
+  frame.name = 'obsSunFrame';
+  shipInterior.add(frame);
 }
 
 // Exterior hull + caps (offset slightly outward to avoid coplanar faces).
@@ -1194,6 +1265,19 @@ const GALLERY_EDGES = [GALLERY_A0, GALLERY_A1];
 const OBS_A0 = 4.55, OBS_A1 = 4.85;
 const OBS_EDGES = [OBS_A0, OBS_A1];
 const OBS_Z0 = 80, OBS_Z1 = 120, OBS_R = 140;
+// Opposite-side entry (Round 32): an identical stair entry on the
+// opposite side of the cylinder (arc centred ~1.56 rad, opposite the
+// gallery arc centred 4.70), with the same stair setup — lower stairs
+// main deck (160) -> landing (150), upper stairs landing -> interior
+// (140). Arc 1.35 ... 1.80 clears the tech quarters row (ends 1.33)
+// and the mess hall (starts 1.83); no residential block sits in it,
+// so all 16 neighborhoods stay.
+const OPP_A0 = 1.35, OPP_A1 = 1.80;
+const OPP_EDGES = [OPP_A0, OPP_A1];
+// Opposite upper arc (mirrors OBS 4.55 ... 4.85, width 0.30, centred
+// 1.56): the upper stairs to the interior on the opposite side.
+const OPP_OBS_A0 = 1.41, OPP_OBS_A1 = 1.71;
+const OPP_OBS_EDGES = [OPP_OBS_A0, OPP_OBS_A1];
 function habitatBlocked(a, z) {
   const near = (ang, half) => Math.abs(angDiff(a, ang)) < half;
   if (near(1.15, 0.18) && z > 48 && z < 168) return true;   // tech quarters row
@@ -1217,7 +1301,9 @@ for (let i = 0; i < 14; i++) {
     const clearBulk = BULK_DOORS.every((d) => Math.abs(angDiff(a, d)) > 0.15 || Math.abs(z) > 25);
     const inGalleryArc = a > GALLERY_A0 - 0.2 && a < GALLERY_A1 + 0.2;
     const clearGallery = !inGalleryArc || !(z > 35 && z < 165);
-    clear = clearBulk && clearGallery && !habitatBlocked(a, z);
+    const inOppArc = a > OPP_A0 - 0.2 && a < OPP_A1 + 0.2;
+    const clearOpp = !inOppArc || !(z > 35 && z < 165);
+    clear = clearBulk && clearGallery && clearOpp && !habitatBlocked(a, z);
   }
   if (!clear) continue;
   const w = 6 + Math.random() * 10, h = 4 + Math.random() * 8, d = 6 + Math.random() * 10;
@@ -2216,6 +2302,93 @@ const cropBeds = [];
   // Observation deck sign, mounted on the front edge so it reads from
   // the gallery deck below.
   mountTangentialSign('OBSERVATION DECK', '#59d6ff', 5, OBS_A0 - 0.003, 139, 100);
+}
+// ---------- Round 32: opposite-side entry (mirrors the gallery + obs stairs) ----------
+// An identical entry point on the opposite side of the cylinder (arc
+// 1.35 ... 1.80, centred ~1.56, opposite the gallery arc centred 4.70),
+// with the same stair setup: a podium + landing deck at radius 150
+// (z 60 ... 140), lower stair towers main deck (160) -> landing (150)
+// at z 40 ... 60 and z 140 ... 160, and upper staircases landing (150)
+// -> interior (140) at z 60 ... 80 and z 120 ... 140. Step tops follow
+// the smoothstep ramps (same fix as the gallery / obs stairs), so the
+// camera never clips into a step. Walk model: oppFactor() /
+// oppObsFactor() (next to galleryFactor / obsDeckFactor). No
+// residential block sits in this arc, so all 16 neighborhoods stay.
+{
+  const OSEG2 = 8;
+  const oppSegW = (OPP_A1 - OPP_A0) / OSEG2 * 155.4 + 0.6;
+  const oppObsSegW = (OPP_OBS_A1 - OPP_OBS_A0) / OSEG2 * 140.4 + 0.6;
+  const oppPodiumMat = new THREE.MeshStandardMaterial({ color: 0x39424e, roughness: 0.85 });
+  const oppDeckMat = new THREE.MeshStandardMaterial({ color: 0x39424e, roughness: 0.85 });
+  const oppStepMat = new THREE.MeshStandardMaterial({ color: 0x4a5560, roughness: 0.85 });
+  applyGameTexture(oppStepMat, 'https://pollitoproductions.github.io/Vocabulario-Espanol/tech-interior.jpg', 1, 1);
+  const oppObsStepMat = new THREE.MeshStandardMaterial({ color: 0x4a5560, roughness: 0.85 });
+  applyGameTexture(oppObsStepMat, 'https://pollitoproductions.github.io/Vocabulario-Espanol/tech-interior.jpg', 1, 1);
+  const oppPillarMat = new THREE.MeshStandardMaterial({ color: 0x4a5560, roughness: 0.8, metalness: 0.3 });
+  // Podium base + landing deck at radius 150, z 60 ... 140.
+  for (let k = 0; k < OSEG2; k++) {
+    const ac = OPP_A0 + ((k + 0.5) / OSEG2) * (OPP_A1 - OPP_A0);
+    const rad = new THREE.Vector3(Math.cos(ac), Math.sin(ac), 0);
+    const podium = new THREE.Mesh(new THREE.BoxGeometry(oppSegW, 9.2, 80), oppPodiumMat);
+    podium.position.copy(rad).multiplyScalar(155.4);
+    podium.position.z = 100;
+    podium.quaternion.copy(basisQuat(rad));
+    shipInterior.add(podium);
+    const plank = new THREE.Mesh(new THREE.BoxGeometry(oppSegW, 0.8, 80), oppDeckMat);
+    plank.position.copy(rad).multiplyScalar(150.4);
+    plank.position.z = 100;
+    plank.quaternion.copy(basisQuat(rad));
+    shipInterior.add(plank);
+  }
+  // Lower stair towers: 10 steps each, main deck (160) -> landing (150).
+  for (const [zBase, ascending] of [[40, true], [140, false]]) {
+    for (let k = 0; k < OSEG2; k++) {
+      const ac = OPP_A0 + ((k + 0.5) / OSEG2) * (OPP_A1 - OPP_A0);
+      const rad = new THREE.Vector3(Math.cos(ac), Math.sin(ac), 0);
+      for (let j = 0; j < 10; j++) {
+        const zc = zBase + 1 + 2 * j;
+        const top = ascending ? 160 - 10 * sstep(40, 60, zc) : 150 + 10 * sstep(140, 160, zc);
+        const step = new THREE.Mesh(new THREE.BoxGeometry(oppSegW, 1, 2.2), oppStepMat);
+        step.position.copy(rad).multiplyScalar(top - 0.5);
+        step.position.z = zc;
+        step.quaternion.copy(basisQuat(rad));
+        shipInterior.add(step);
+      }
+    }
+    for (const edge of [OPP_A0, OPP_A1]) {
+      const erad = new THREE.Vector3(Math.cos(edge), Math.sin(edge), 0);
+      const cheek = new THREE.Mesh(new THREE.BoxGeometry(0.6, 10, 20), oppPillarMat);
+      cheek.position.copy(erad).multiplyScalar(155);
+      cheek.position.z = zBase + 10;
+      cheek.quaternion.copy(basisQuat(erad));
+      shipInterior.add(cheek);
+    }
+  }
+  // Upper staircases: landing (150) -> interior (140), 10 steps each.
+  for (const [zBase, ascending] of [[60, true], [120, false]]) {
+    for (let k = 0; k < OSEG2; k++) {
+      const ac = OPP_OBS_A0 + ((k + 0.5) / OSEG2) * (OPP_OBS_A1 - OPP_OBS_A0);
+      const rad = new THREE.Vector3(Math.cos(ac), Math.sin(ac), 0);
+      for (let j = 0; j < 10; j++) {
+        const zc = zBase + 1 + 2 * j;
+        const top = ascending ? 150 - 10 * sstep(60, 80, zc) : 140 + 10 * sstep(120, 140, zc);
+        const step = new THREE.Mesh(new THREE.BoxGeometry(oppObsSegW, 1, 2.2), oppObsStepMat);
+        step.position.copy(rad).multiplyScalar(top - 0.5);
+        step.position.z = zc;
+        step.quaternion.copy(basisQuat(rad));
+        shipInterior.add(step);
+      }
+    }
+    for (const edge of [OPP_OBS_A0, OPP_OBS_A1]) {
+      const erad = new THREE.Vector3(Math.cos(edge), Math.sin(edge), 0);
+      const cheek = new THREE.Mesh(new THREE.BoxGeometry(0.6, 10, 20), oppPillarMat);
+      cheek.position.copy(erad).multiplyScalar(145);
+      cheek.position.z = zBase + 10;
+      cheek.quaternion.copy(basisQuat(erad));
+      shipInterior.add(cheek);
+    }
+  }
+  mountTangentialSign('TO OBSERVATION DECK', '#59d6ff', 5, OPP_A0 - 0.003, 149, 100);
 }
 // ---------- Round 30 realism — industrial-half dressing ----------
 // The far side of the industrial half (away from the promenade at
@@ -3863,6 +4036,16 @@ function applyCellVisibility() {
 let cylAngle = 0;
 let playerAngle = 0, playerZ = 40, yaw = 0, pitch = 0;
 let playerEyeR = RADIUS - EYE; // eye radius above the deck; drops 10 m on the gallery
+// Observation interior (Round 32): once the player climbs the obs stairs
+// (either side) onto the observation deck they are "up in the interior"
+// (radius 140) and can walk the big interior space inside the ceiling
+// shell (industrial half, z 1 ... 300, any angle) without descending.
+// interiorDescending tracks a stair descent in progress so the player
+// walks down smoothly and does not drop when merely crossing a ramp
+// bottom at height. Both are saved with the position (see
+// capturePosition / restoreSavedPosition) so a resume restores them.
+let inObsInterior = false;
+let interiorDescending = false;
 const keys = {};
 const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 let pointerLocked = false;
@@ -4968,6 +5151,74 @@ function obsDeckFactor(a, z) {
   const aF = (an >= OBS_A0 && an <= OBS_A1) ? 1 : 0;
   return zF * aF;
 }
+// Opposite-side entry walk levels (Round 32): mirrors galleryFactor /
+// obsDeckFactor for the opposite arc (1.35 ... 1.80 / 1.41 ... 1.71).
+// oppFactor is 1 on the opposite landing, ramps over the lower stairs;
+// oppObsFactor is 1 at the top of the opposite upper stairs (the
+// interior entry), ramps over the upper stairs.
+function oppFactor(a, z) {
+  const an = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  const zF = sstep(40, 60, z) * (1 - sstep(140, 160, z));
+  const aF = (an >= OPP_A0 && an <= OPP_A1) ? 1 : 0;
+  return zF * aF;
+}
+function oppObsFactor(a, z) {
+  const an = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  const zF = sstep(60, 80, z) * (1 - sstep(120, 140, z));
+  const aF = (an >= OPP_OBS_A0 && an <= OPP_OBS_A1) ? 1 : 0;
+  return zF * aF;
+}
+// Interior level (Round 32): raw factor levels — landing (gallery /
+// opp) lifts 10 m, obs deck (either side) lifts another 10 m. The
+// arcs are disjoint, so at most one of each pair is nonzero.
+function interiorLevels(a, z) {
+  return {
+    l1: galleryFactor(a, z) + oppFactor(a, z),
+    l2: obsDeckFactor(a, z) + oppObsFactor(a, z)
+  };
+}
+// Descending a stair ramp: on an obs ramp (z 60...80 or 120...140, in
+// either obs arc) and moving down it — staircase 1 down is z
+// decreasing, staircase 2 down is z increasing. Tangential movement
+// (dz 0) is not a descent, so walking at height across a ramp bottom
+// does not drop the player.
+function isDescendingInterior(a, z, dz) {
+  if (dz === 0) return false;
+  const an = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  const inArc = (an >= OBS_A0 && an <= OBS_A1) || (an >= OPP_OBS_A0 && an <= OPP_OBS_A1);
+  if (!inArc) return false;
+  if (z >= 60 && z <= 80) return dz < 0;
+  if (z >= 120 && z <= 140) return dz > 0;
+  return false;
+}
+// Eye radius for walking. While inObsInterior the player stays at the
+// interior level (radius 140) — except while descending a ramp, where
+// the raw factors rule so the player walks down smoothly. While a
+// descent is in progress (interiorDescending) the raw factors also
+// rule, so stopping mid-ramp leaves the player on the stairs at the
+// ramp height instead of jumping back up to the top.
+function walkEyeR(a, z, dz) {
+  const lv = interiorLevels(a, z);
+  if (inObsInterior && !interiorDescending) return (RADIUS - EYE) - 20;
+  return (RADIUS - EYE) - 10 * lv.l1 - 10 * lv.l2;
+}
+// Interior state: stepping fully onto an obs deck (either side) puts
+// the player up in the interior; a descent that reaches the bottom
+// (gallery/landing level) brings them back out.
+function updateInteriorState(a, z, dz) {
+  const lv = interiorLevels(a, z);
+  if (!inObsInterior) {
+    if (lv.l2 >= 0.999) { inObsInterior = true; interiorDescending = false; }
+    return;
+  }
+  if (isDescendingInterior(a, z, dz)) interiorDescending = true;
+  if (interiorDescending && lv.l2 <= 0.001 && lv.l1 > 0.9) {
+    inObsInterior = false;
+    interiorDescending = false;
+    return;
+  }
+  if (lv.l2 >= 0.999) interiorDescending = false;
+}
 
 // ---------- Docked: first person on the inner surface, carried by the spin ----------
 function updateWalk(dt) {
@@ -4997,7 +5248,9 @@ function updateWalk(dt) {
   const spd = WALK_SPEED * (running ? RUN_MULT : 1);
 
   // Eye radius for this frame's movement (recomputed after moving, below).
-  playerEyeR = (RADIUS - EYE) - 10 * galleryFactor(playerAngle, playerZ) - 10 * obsDeckFactor(playerAngle, playerZ);
+  // Interior state first (no movement yet, so dz is 0).
+  updateInteriorState(playerAngle, playerZ, 0);
+  playerEyeR = walkEyeR(playerAngle, playerZ, 0);
 
   const phi = playerAngle + cylAngle;
   const radial = new THREE.Vector3(Math.cos(phi), Math.sin(phi), 0);
@@ -5026,14 +5279,29 @@ function updateWalk(dt) {
   // stepping off the observation deck or its stairs.
   const crossesObsEdge = playerZ >= 60 && playerZ <= 140 &&
     OBS_EDGES.some((e) => (anNow < e && anNext >= e) || (anNow > e && anNext <= e));
-  if (!crossesGalleryEdge && !crossesObsEdge) playerAngle += tangDisp;
+  // Opposite-side entry edges are solid too (same pattern): the landing
+  // edges (z 40 ... 160) and the upper-stair edges (z 60 ... 140).
+  const crossesOppEdge = playerZ >= 40 && playerZ <= 160 &&
+    OPP_EDGES.some((e) => (anNow < e && anNext >= e) || (anNow > e && anNext <= e));
+  const crossesOppObsEdge = playerZ >= 60 && playerZ <= 140 &&
+    OPP_OBS_EDGES.some((e) => (anNow < e && anNext >= e) || (anNow > e && anNext <= e));
+  // In the open interior (up high, not on a stair descent) the player
+  // walks the big space freely — no edge blocking, the floor is the
+  // continuous ceiling shell. On a descent the edges stay solid so the
+  // player cannot step off the stairs sideways.
+  const inInteriorFree = inObsInterior && !interiorDescending;
+  if (!inInteriorFree && !crossesGalleryEdge && !crossesObsEdge && !crossesOppEdge && !crossesOppObsEdge) playerAngle += tangDisp;
 
-  // Eye radius at the new position, then the bulkhead: solid at z = 0
-  // except at the four entrance doorways. The player may walk right up
-  // to the wall (1 m) and slide along it to a doorway; only a doorway
-  // angle lets the player cross to the other half.
-  playerEyeR = (RADIUS - EYE) - 10 * galleryFactor(playerAngle, playerZ) - 10 * obsDeckFactor(playerAngle, playerZ);
-  const inBulkDoor = BULK_DOORS.some((d) => Math.abs(angDiff(playerAngle, d)) * playerEyeR < 7);
+  // Eye radius at the new position (dz is this frame's axial movement),
+  // then the bulkhead: solid at z = 0 except at the four entrance
+  // doorways. The player may walk right up to the wall (1 m) and slide
+  // along it to a doorway; only a doorway angle lets the player cross
+  // to the other half. Up in the interior there is no floor in the
+  // agriculture half (no ceiling shell there), so z = 0 stays solid
+  // with no doorway exception while inObsInterior.
+  updateInteriorState(playerAngle, playerZ, playerZ - oldZ);
+  playerEyeR = walkEyeR(playerAngle, playerZ, playerZ - oldZ);
+  const inBulkDoor = !inObsInterior && BULK_DOORS.some((d) => Math.abs(angDiff(playerAngle, d)) * playerEyeR < 7);
   if (!inBulkDoor) {
     if (playerZ > 0) playerZ = Math.max(1.0, playerZ);
     else if (playerZ < 0) playerZ = Math.min(-1.0, playerZ);
@@ -7613,7 +7881,7 @@ function capturePosition() {
       qx: shuttle.quaternion.x, qy: shuttle.quaternion.y, qz: shuttle.quaternion.z, qw: shuttle.quaternion.w };
   }
   if (driveState === 'DOCKED' && playerAngle === 0 && playerZ === 40) return { mode: 'docked' };
-  return { mode: 'walk', angle: playerAngle, z: playerZ, yaw: yaw, pitch: pitch };
+  return { mode: 'walk', angle: playerAngle, z: playerZ, yaw: yaw, pitch: pitch, interior: inObsInterior };
 }
 // Validate a stored position; anything malformed degrades to null (docked
 // fallback) and never rejects the save itself.
@@ -7626,7 +7894,7 @@ function validPos(p) {
   }
   if (p.mode === 'walk') {
     if (![p.angle, p.z, p.yaw, p.pitch].every(Number.isFinite)) return null;
-    return { mode: 'walk', angle: p.angle, z: p.z, yaw: p.yaw, pitch: p.pitch };
+    return { mode: 'walk', angle: p.angle, z: p.z, yaw: p.yaw, pitch: p.pitch, interior: p.interior === true };
   }
   return null;
 }
@@ -7670,6 +7938,7 @@ function restoreSavedPosition(pos) {
   mode = 'walk'; driveState = 'DOCKED'; dockArmed = true;
   shuttle.visible = false; shuttleVel.set(0, 0, 0);
   playerAngle = pos.angle; playerZ = pos.z; yaw = pos.yaw; pitch = pos.pitch;
+  inObsInterior = pos.interior === true; interiorDescending = false;
   btnMode.textContent = 'DEPART'; btnMode.style.display = '';
   btnJump.style.visibility = 'visible';
   hideNav(); updateHint();
