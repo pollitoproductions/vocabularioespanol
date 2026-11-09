@@ -7957,6 +7957,15 @@ function animate() {
   if (!collectOpen && !toolOpen && !titleOpen && !reviewOpen) {
     cylAngle += OMEGA * dt;                        // cylinder spin
     ship.rotation.z = cylAngle;
+    // Round 38: the sun disc on the observation screen counter-rotates
+    // with the ship so the star appears to spin from the player's
+    // perspective through the window. The disc faces -Z (rotation.y =
+    // PI), so with Euler order XYZ its world in-plane angle is
+    // cylAngle - rotation.z = 0: the disc is inertially fixed like the
+    // real star, and the rotating player sees it turn at the ship's
+    // rate (OMEGA, 1.37 RPM). Parallax (position) is untouched, and it
+    // freezes with the ship spin when a prompt is open (same block).
+    if (obsSunDisc) obsSunDisc.rotation.z = cylAngle;
     // The port aura breathes gently so the docking point stays findable.
     portLight.intensity = 1.4 + Math.sin(clock.elapsedTime * 2.2) * 0.35;
     const bp = 0.24 + Math.sin(clock.elapsedTime * 1.8) * 0.08;
@@ -8333,22 +8342,27 @@ btnTitleResume.addEventListener('pointerdown', function (e) {
   hideTitle();
   if (mode === 'walk') announceBoarding(); // resumed aboard — greet back (a flight restore stays silent)
 });
-// Round 37: new-player spawn — bottom of the observation-deck stairs
-// (gallery arc, staircase 1), looking up the stairs toward the sun
-// screen. Only a fresh journey starts here: both Begin paths call
+// Round 38: new-player spawn — TOP of the observation-deck stairs
+// (gallery arc, staircase 1), looking toward the sun screen. Only a
+// fresh journey starts here: both Begin paths call
 // placeAtObservationStairs() after resetProgress(). A save always
 // restores its stored position (applySave / restoreSavedPosition —
 // untouched), and the docked standard spawn (angle 0, z 40) stays for
 // returnAboard / crash retry / a save without pos.
-// Spawn: angle 4.65 (in the obs arc 4.55-4.85, 10 m clear of the
-// structural column at 3PI/2, z 60), z 60 (foot of staircase 1:
-// gallery level, eye 148.3), yaw 0 (facing +z, up the stairs toward
-// the sun end), pitch 0.45 (looking up the stair slope; the sightline
-// clears the steps, crosses radius 140 inside the stairwell hole at
-// z ~77, and lands on the sun disc at z 318).
+// Spawn: angle 4.65 (in the obs arc 4.55-4.85, clear of the structural
+// columns at 3PI/2, z 60/120), z 85 (top of staircase 1: obs deck,
+// eye 138.3, past the ramp top at z 80 and clear of the stairwell
+// hole at z 60-80), yaw 0 (facing +z, toward the sun screen at z
+// +318), pitch 0.45 (centers the sun disc; the parallax-shifted disc
+// sits ~24 deg above the axial horizontal from here).
+// inObsInterior = true: the player starts IN the interior, so the sun
+// screen is visible on the very first frame. Walking down the stairs
+// (toward -z) descends to the gallery deck and heads through
+// residential toward the bulkhead (z=0) and the agricultural sector
+// beyond — the guided path Brant asked for.
 function placeAtObservationStairs() {
-  playerAngle = 4.65; playerZ = 60; yaw = 0; pitch = 0.45;
-  inObsInterior = false; interiorDescending = false; interiorExitHold = 0;
+  playerAngle = 4.65; playerZ = 85; yaw = 0; pitch = 0.45;
+  inObsInterior = true; interiorDescending = false; interiorExitHold = 0;
   jumpH = 0; jumpV = 0;
 }
 document.getElementById('btn-title-begin').addEventListener('pointerdown', function (e) {
