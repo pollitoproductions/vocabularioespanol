@@ -1986,10 +1986,11 @@ const cropBeds = [];
     // each sign sits on the APPROACH-side face and faces the walker
     // heading for that sector — both faces name what is through the
     // door in Brant's words (Nov 5): on the agriculture face (z -0.9,
-    // facing -Z) TO REVIEW TERMINALS, or RESIDENTIAL ZONE at the
-    // residential approach; on the technology face (z +0.9, facing +Z)
-    // TO LEARNING TERMINALS, or TO REVIEW TERMINALS at the residential
-    // approach. No sector labels remain. The previous mounting had them
+    // facing -Z) TO REVIEW TERMINALS; on the technology face (z +0.9,
+    // facing +Z) TO LEARNING TERMINALS. Round 40 (Brant Nov 9): the pi/2
+    // residential-approach exception is gone — both its faces were wrong
+    // (texts shifted by one), so all four doorways now read the same.
+    // No sector labels remain. The previous mounting had them
     // backwards: each sign
     // faced only its own sector, so it read from the side you were
     // already standing on (Brant's screenshots). Single-sided, one
@@ -2002,20 +2003,11 @@ const cropBeds = [];
     // to the side (the offset signs floated on the wall, and at the
     // residential doorway the two offset signs landed on the same spot
     // and z-fought into one garbled plate). Industrial face: TO
-    // LEARNING TERMINALS into agriculture, TO REVIEW TERMINALS at the
-    // residential approach (pi/2), where the review terminals stand.
-    // Agriculture face: TO REVIEW TERMINALS everywhere except the
-    // residential approach, where RESIDENTIAL ZONE stands instead — the
-    // old floating sign over the approach (z 12) is gone; the label
-    // now lives above the doorway where it belongs. Single-sided, one
-    // plate per face. No sector labels remain anywhere (Nov 5).
-    if (d === Math.PI / 2) {
-      mountAxialSign('RESIDENTIAL ZONE', '#ffc27a', 5.5, d, 148, -0.9, -1, false);
-      mountAxialSign('TO REVIEW TERMINALS', '#ffd76a', 5.5, d, 148, 0.9, 1, false);
-    } else {
-      mountAxialSign('TO REVIEW TERMINALS', '#ffd76a', 5.5, d, 148, -0.9, -1, false);
-      mountAxialSign('TO LEARNING TERMINALS', '#39d97a', 5.5, d, 148, 0.9, 1, false);
-    }
+    // LEARNING TERMINALS into agriculture. Agriculture face: TO REVIEW
+    // TERMINALS. Single-sided, one plate per face. No sector labels
+    // remain anywhere (Nov 5).
+    mountAxialSign('TO REVIEW TERMINALS', '#ffd76a', 5.5, d, 148, -0.9, -1, false);
+    mountAxialSign('TO LEARNING TERMINALS', '#39d97a', 5.5, d, 148, 0.9, 1, false);
   }
 }
 // Industrial enclosure: a ceiling shell overhead (radius 140) across the
@@ -2559,10 +2551,11 @@ const cropBeds = [];
 // are emissive MeshBasicMaterial). Long tangential runs are segmented
 // (16 m) so they follow the deck curve instead of cutting through it;
 // the plaza is a small disc (sag 0.11 m) ringed with planters. A
-// The RESIDENTIAL ZONE sign stands above the main approach doorway
-// (bulkhead doorway at angle 1.5708, agriculture face), replacing the
-// INDUSTRIAL SECTOR sign there — it used to float over the approach
-// at z 12 (Brant: it looked like it was floating in the doorway).
+// Round 40 (Brant Nov 9): the RESIDENTIAL ZONE sign that stood above
+// the main approach doorway (bulkhead doorway at angle 1.5708,
+// agriculture face) is gone — both faces of that doorway were wrong
+// (texts shifted by one) and now read TO REVIEW TERMINALS /
+// TO LEARNING TERMINALS like the other doorways.
 // Nov 1 expansion: the city proper gains houses — four rows flanking
 // the main street and two side lanes, plus a second pair of cross
 // streets, a trades row (smithy, carpenter, tailor, baker), a
@@ -3522,6 +3515,16 @@ for (const tp of REVIEW_TERMINALS_POS) {
   const tSign = makeMountedSign('REVIEW TERMINAL', '#ffd76a', 5.5);
   tSign.position.set(-3.6, 4.6, 0);
   tgrp.add(tSign);
+  // Round 40 (Brant Nov 9): floating checklist marker above the terminal,
+  // same makeEmojiSprite pattern as the station/depository emojis (120px
+  // font, so it renders fully on iOS) — reads from across the room; the
+  // beacon beam is thin and translucent, so it never hides the glyph.
+  const tsp = makeEmojiSprite('📋', 3);
+  tsp.position.set(0, 7.5, 0);
+  tsp.userData.baseY = 7.5;
+  tsp.userData.phase = emojiSprites.length * 0.9;
+  tgrp.add(tsp);
+  emojiSprites.push(tsp);
   tgrp.position.copy(trad).multiplyScalar(tp.deck === 'main' ? 160 : (tp.deck === 'mezz' ? 150 : 140));
   tgrp.position.z = tp.z;
   tgrp.quaternion.copy(basisQuat(trad));
@@ -3625,7 +3628,9 @@ const DEPART_DIST = 8; // metres: walk-up range for any Exploration Terminal (do
 let departNear = false;
 for (const et of EXPLORATION_TERMINALS) {
   const erad = new THREE.Vector3(Math.cos(et.angle), Math.sin(et.angle), 0);
-  const econ = makeStationConsole('EXPLORATION TERMINAL', '#59d6ff', 6);
+  // Round 40 (Brant Nov 9): rocket marker above each exploration terminal,
+  // via makeStationConsole's emoji (same 120px makeEmojiSprite as stations).
+  const econ = makeStationConsole('EXPLORATION TERMINAL', '#59d6ff', 6, '🚀');
   econ.position.copy(erad).multiplyScalar(RADIUS);
   econ.position.z = et.z;
   econ.quaternion.copy(basisQuat(erad));
