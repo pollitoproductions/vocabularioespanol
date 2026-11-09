@@ -1026,7 +1026,7 @@ applyGameTexture(capInMat, 'https://pollitoproductions.github.io/Vocabulario-Esp
 // follow inObsInterior — it only shows up in the interior, never from
 // the first level (where the restored +Z wall shows instead).
 let obsSunGroup = null;
-let obsSunDisc = null, obsSunCorona = null, obsScreenTex = null; // Round 34: parallax refs
+let obsSunDisc = null, obsSunCorona = null, obsScreenTex = null, obsSunScreen = null; // Round 34: parallax refs (Round 39: screen ref for starfield spin)
 // ---------- Round 32: giant observation screen (sun window) ----------
 // The +Z end wall is a GIANT window/screen projecting the outside — a
 // realistic sun-in-space view, NOT a live render of the outside 3D
@@ -1066,6 +1066,7 @@ let obsSunDisc = null, obsSunCorona = null, obsScreenTex = null; // Round 34: pa
   screen.position.z = LENGTH / 2 - 2;
   screen.rotation.y = Math.PI; // face -Z, into the interior
   screen.name = 'obsSunScreen';
+  obsSunScreen = screen; // Round 39: starfield spin ref
   obsSunGroup.add(screen);
   // Sun disc: reuses the ship's star.jpg (same texture as the live
   // star). Warm fallback until it loads.
@@ -5281,21 +5282,26 @@ function walkEyeR(a, z, dz) {
   if (inObsInterior && !interiorDescending) return (RADIUS - EYE) - 20;
   return (RADIUS - EYE) - 10 * lv.l1 - 10 * lv.l2;
 }
-// Round 37: the sun screen is visible from the foot of the obs
-// stairs, not only once aboard the deck. Round 33 gated it to
-// inObsInterior so the first level keeps its paneled +Z wall; but
-// the new-journey spawn stands at the stair foot looking up, and
-// the sightline threads the stairwell opening in the ceiling shell
-// (openings at z 60...80 / 120...140 in both obs arcs). The screen
-// still only renders — the shell occludes it from anywhere the
-// sightline does not pass an opening, so the first-level wall view
-// is unchanged. On the ramp l2 > 0, at the top inObsInterior takes
-// over, so there is no pop while climbing.
+// Round 37: the sun screen was visible from the foot of the obs
+// stairs, not only once aboard the deck, so the new-journey spawn
+// there looked up at the sun through the stairwell opening. Round 39:
+// the spawn moved to the TOP of the stairs (Round 38), so the
+// exception is no longer needed at the foot — and Brant reports the
+// bottom deck (gallery deck) still looks like a window. The gate is
+// now l2 > 0: the player must actually be ON a stair ramp (above the
+// gallery deck), not standing on the gallery deck at the stair foot.
+// The bottom deck keeps its normal wall; the sun shows once the
+// player steps onto the stairs, and inObsInterior takes over at the
+// top, so there is no pop while climbing. (The main deck was never
+// the problem: l1 is 0.84..1 throughout the stair-foot z ranges, so
+// this could never fire there — Brant's "bottom deck" is the gallery
+// deck, radius 150.)
 function atObsStairFoot() {
   const an = ((playerAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
   const inArc = (an >= OBS_A0 && an <= OBS_A1) || (an >= OPP_OBS_A0 && an <= OPP_OBS_A1);
   if (!inArc) return false;
-  return (playerZ >= 55 && playerZ <= 82) || (playerZ >= 118 && playerZ <= 145);
+  if (!((playerZ >= 55 && playerZ <= 82) || (playerZ >= 118 && playerZ <= 145))) return false;
+  return interiorLevels(playerAngle, playerZ).l2 > 0.001;
 }
 // Interior state: stepping fully onto an obs deck (either side) puts
 // the player up in the interior; a descent that reaches the bottom
@@ -7966,6 +7972,16 @@ function animate() {
     // rate (OMEGA, 1.37 RPM). Parallax (position) is untouched, and it
     // freezes with the ship spin when a prompt is open (same block).
     if (obsSunDisc) obsSunDisc.rotation.z = cylAngle;
+    // Round 39: the starfield backdrop turns with the sun, same rate
+    // and sense (inertially fixed, so the rotating player sees sun +
+    // stars move together). The screen faces -Z like the disc, so the
+    // same rotation.z = cylAngle fixes it in inertial space. Parallax
+    // (texture offset) is untouched and composes with the spin. The
+    // physics: standing still the sky turns at OMEGA; walking against
+    // the spin at OMEGA the sky looks still (walking cancels the
+    // spin); walking with the spin it turns faster. The Round 38 sun
+    // fix already behaves this way — no change to the disc.
+    if (obsSunScreen) obsSunScreen.rotation.z = cylAngle;
     // The port aura breathes gently so the docking point stays findable.
     portLight.intensity = 1.4 + Math.sin(clock.elapsedTime * 2.2) * 0.35;
     const bp = 0.24 + Math.sin(clock.elapsedTime * 1.8) * 0.08;
