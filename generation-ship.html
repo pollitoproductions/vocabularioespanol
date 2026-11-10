@@ -459,15 +459,15 @@
     <div class="mHead">TOUCH</div>
     <div class="mBody">Left half: floating stick (push to its edge to run; in flight it turns + thrusts) &middot; right half: floating stick in STEER — hold it to turn and climb, no swiping (the LOOK/STEER button switches to LOOK mode, where the right side drags to look around; the camera stays where you leave it) &middot; DEPART at an Exploration Terminal — one inside each hull port, eight in all (docking is automatic within 100 m of any port) &middot; JUMP while walking aboard &middot; hold MINE within 100 m of any asteroid (about 3 seconds) &middot; hold BRAKE to stop in flight &middot; &#9776; ship menu &middot; the nav readout is always on while flying</div>
     <div class="mHead">LEARNING STATIONS</div>
-    <div class="mBody">The seven tool stations are walk-up consoles in the agriculture ring: walk up to a glowing ring and tap LEARN (or press Enter); Close or Escape returns you to walking. Every station speaks in Spanish and English and lets you practise saying it (ding on a correct answer). A station never blocks you &mdash; speaking is feedback only, except that spoken Spanish earns progress and +5 WATER / +5 METAL, the same reward as answering that question out in space. On Practice, Conjugation, Ser vs. estar, and Saber vs. conocer, the audio row stays hidden until you answer &mdash; answer first, then listen.</div>
+    <div class="mBody">The nine tool stations are walk-up consoles in the agriculture ring: walk up to a glowing ring and tap LEARN (or press Enter); Close or Escape returns you to walking. Every station speaks in Spanish and English and lets you practise saying it (ding on a correct answer). A station never blocks you &mdash; speaking is feedback only, except that spoken Spanish earns progress and +5 WATER / +5 METAL, the same reward as answering that question out in space. On Practice, Conjugation, Ser vs. estar, and Saber vs. conocer, the audio row stays hidden until you answer &mdash; answer first, then listen.</div>
     <div class="mHead">COLLECTING IN SPACE</div>
     <div class="mBody">Fly within 250 m of a floating word or exercise question to pause and pronounce it: words ask for the Spanish word; questions ask you to speak the answer (tap Show answer to peek &mdash; peeking never counts, only speaking does). Say it right to collect it for +5 WATER and +5 METAL; Leave (or Escape) flies on, and the item waits until you are 400 m clear. A gold arrow points to the nearest uncollected item &mdash; word or question &mdash; with a tag saying which; distant items show as small glow dots until their plates stream in.</div>
     <div class="mHead">REVIEW TERMINALS</div>
-    <div class="mBody">Eight gold review terminals stand around the industrial side &mdash; one on the mezzanine, seven on the main deck, spread evenly around the hull. Walk up and tap Review (or press Enter) to review everything you have already spoken, by tool, with Hear in both languages. Reviewing never changes progress.</div>
+    <div class="mBody">Two gold review terminals stand on the observation deck, one at the top of each stair entry. Walk up and tap Review (or press Enter) to review everything you have already spoken, by tool, with Hear in both languages. Reviewing never changes progress.</div>
     <div class="mHead">DEPOSITORIES</div>
-    <div class="mBody">Eight depositories rebuild the ship&rsquo;s city: four blue WATER depositories in the agriculture ring and four amber METAL depositories in the residential half. Walk up and tap DEPOSIT (or press Enter) to deposit material from your haul in person &mdash; 250 WATER regrows one crop bed in the farm, 250 METAL rebuilds one residential block (and its little gardens appear too, planted). Partial deposits bank toward the next build, so you can deposit what you have and come back later. Crop beds start ungrown and residential blocks start unbuilt — they appear only when you regrow or rebuild them.</div>
+    <div class="mBody">Two depositories rebuild the ship&rsquo;s city, both on the observation deck: one blue WATER depository and one amber METAL depository, at right angles from the review terminals &mdash; climb the stairs beside each one. Walk up and tap DEPOSIT (or press Enter) to deposit material from your haul in person &mdash; 250 WATER regrows one crop bed in the farm, 250 METAL rebuilds one residential block (and its little gardens appear too, planted). Partial deposits bank toward the next build, so you can deposit what you have and come back later. Crop beds start ungrown and residential blocks start unbuilt — they appear only when you regrow or rebuild them.</div>
     <div class="mHead">QUESTS</div>
-    <div class="mBody">Your quest is to rebuild the lost Spanish repositories &mdash; vocabulary, cognates, idioms, verbs, dictation, ser vs. estar, saber vs. conocer, and pronouns. The quest box (top left) shows what you have collected in each repository, with an arrow pointing to your next tutorial step, and celebrates each repository you finish &mdash; and all of them together. Quests guide; they never block &mdash; skip the tutorial anytime from the quest box.</div>
+    <div class="mBody">Your quest is to rebuild the lost Spanish repositories &mdash; vocabulary, cognates, idioms, verbs, dictation, ser vs. estar, saber vs. conocer, pronouns, and por vs. para. The quest box (top left) shows what you have collected in each repository, with an arrow pointing to your next tutorial step, and celebrates each repository you finish &mdash; and all of them together. Quests guide; they never block &mdash; skip the tutorial anytime from the quest box.</div>
     <div class="mHead">SAVING</div>
     <div class="mBody">SAVE JOURNEY in this menu saves at once; the game also saves after every collect, every mining yield, and every docking. GO TO HOME SCREEN saves, then returns to the title screen. Resuming restores your haul, your collected items, and your position &mdash; aboard or in flight.</div>
   </div>
@@ -1299,6 +1299,26 @@ const OPP_EDGES = [OPP_A0, OPP_A1];
 // 1.56): the upper stairs to the interior on the opposite side.
 const OPP_OBS_A0 = 1.41, OPP_OBS_A1 = 1.71;
 const OPP_OBS_EDGES = [OPP_OBS_A0, OPP_OBS_A1];
+// Round 43: depository stairs — WATER (angle ~0) and METAL (angle ~pi).
+// The depositories sit at 90 deg from the review terminals (angles 0 and
+// pi, z 100, on the observation deck). Their stairs mirror the opposite
+// entry: a landing (wider arc) + upper stairs (narrower arc). The arcs
+// are offset from 0/pi because the residential neighborhoods fill both
+// axes: the WATER landing [5.93, 6.27] is the clear gap between the
+// (5.9,70) crate stack / (5.9,150) gantry and the angle-0 column; the
+// METAL landing [3.56, 3.88] is the clear gap between the (3.5312,150)
+// garden and the (3.9,90) crate stack. The WATER stair centre (6.10) is
+// 26 m from its depository; the METAL stair centre (3.72) is 81 m from
+// its depository (the pi neighbourhood leaves no closer clear arc) —
+// the tutorial arrow routes via the stairs when the player is below deck.
+const WATER_A0 = 5.93, WATER_A1 = 6.27;
+const WATER_EDGES = [WATER_A0, WATER_A1];
+const WATER_OBS_A0 = 5.95, WATER_OBS_A1 = 6.25;
+const WATER_OBS_EDGES = [WATER_OBS_A0, WATER_OBS_A1];
+const METAL_A0 = 3.56, METAL_A1 = 3.88;
+const METAL_EDGES = [METAL_A0, METAL_A1];
+const METAL_OBS_A0 = 3.58, METAL_OBS_A1 = 3.86;
+const METAL_OBS_EDGES = [METAL_OBS_A0, METAL_OBS_A1];
 function habitatBlocked(a, z) {
   const near = (ang, half) => Math.abs(angDiff(a, ang)) < half;
   if (near(1.15, 0.18) && z > 48 && z < 168) return true;   // tech quarters row
@@ -1324,7 +1344,14 @@ for (let i = 0; i < 14; i++) {
     const clearGallery = !inGalleryArc || !(z > 35 && z < 165);
     const inOppArc = a > OPP_A0 - 0.2 && a < OPP_A1 + 0.2;
     const clearOpp = !inOppArc || !(z > 35 && z < 165);
-    clear = clearBulk && clearGallery && clearOpp && !habitatBlocked(a, z);
+    // Round 43: the depository stairs are real walkways too — no random
+    // box may ever land in either stair arc (WATER arc sits near 2pi,
+    // so the +0.2 margin runs past it; the range check still holds).
+    const inWaterArc = a > WATER_A0 - 0.2 && a < WATER_A1 + 0.2;
+    const clearWater = !inWaterArc || !(z > 35 && z < 165);
+    const inMetalArc = a > METAL_A0 - 0.2 && a < METAL_A1 + 0.2;
+    const clearMetal = !inMetalArc || !(z > 35 && z < 165);
+    clear = clearBulk && clearGallery && clearOpp && clearWater && clearMetal && !habitatBlocked(a, z);
   }
   if (!clear) continue;
   const w = 6 + Math.random() * 10, h = 4 + Math.random() * 8, d = 6 + Math.random() * 10;
@@ -1699,7 +1726,7 @@ const cropBeds = [];
   // soil box (always visible) plus a crops group (160 plants) that starts
   // HIDDEN (ungrown) and appears only when the bed is regrown with WATER
   // at a water depository. Recorded here so the depository section can
-  // assign each bed to its nearest water depository (4 beds each).
+  // assign each bed to the one water depository (all 16).
   function makeCropBed(fa, bi) {
     const radial = new THREE.Vector3(Math.cos(fa), Math.sin(fa), 0);
     const tang = new THREE.Vector3(-Math.sin(fa), Math.cos(fa), 0);
@@ -1738,7 +1765,7 @@ const cropBeds = [];
   for (const [bi, fa] of [1.2, 2.6, 4.0].entries()) makeCropBed(fa, bi);
   // Round 29 trees flanking the Greenhouse axis (angle 0.6): trunks +
   // canopies, 6 trees, tangential offsets clear of the doorway path
-  // (and of the Cognates console at angle 0.2618, z -120).
+  // (and of the Dictation console at angle 0.6109, z -160).
   const trunkGeo = new THREE.CylinderGeometry(0.3, 0.45, 3.5, 8);
   const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5d4037, roughness: 1 });
   const canopyGeo = mergeGeos(leafCross(4.6, 3.6, 0, [0, Math.PI / 3, 2 * Math.PI / 3]));
@@ -2016,10 +2043,11 @@ const cropBeds = [];
 // Industrial enclosure: a ceiling shell overhead (radius 140) across the
 // whole industrial half, so from inside it you can no longer see across
 // the tube to the far side. Columns carry it; light strips line it.
-// Round 34: the shell has rectangular STAIRWELL HOLES where the four
-// upper staircases pass through it (gallery-side obs stairs + opposite
-// upper stairs, z 60...80 and 120...140, angles 4.55...4.85 and
-// 1.41...1.71). The hole is the exit down out of the deck — it stays
+// Round 34: the shell has rectangular STAIRWELL HOLES where the eight
+// upper staircases pass through it (gallery-side obs stairs, opposite
+// upper stairs, and the two Round 43 depository stairs, z 60...80 and
+// 120...140, angles 4.55...4.85, 1.41...1.71, 5.95...6.25 and
+// 3.58...3.86). The hole is the exit down out of the deck — it stays
 // OPEN (Brant: do not close it), and it must be visible so the player
 // can see down the stairs and walk toward it. The shell is built from
 // segments (full cylinders outside the stair z-ranges; arc segments
@@ -2035,7 +2063,7 @@ const cropBeds = [];
   // Arc segments that KEEP the shell (the complement of the stairwell
   // angles). CylinderGeometry theta maps to ship-frame angle as
   // theta = phi + PI/2 (after rotateX(PI/2)).
-  const CEIL_KEEP = [[0, 1.41], [1.71, 4.55], [4.85, Math.PI * 2]];
+  const CEIL_KEEP = [[0, 1.41], [1.71, 3.58], [3.86, 4.55], [4.85, 5.95], [6.25, Math.PI * 2]];
   function ceilSeg(zC, len, a0, a1) {
     const span = a1 - a0;
     const mat = ceilMatFor(24 * span / (Math.PI * 2), len / 40);
@@ -2065,7 +2093,7 @@ const cropBeds = [];
   // the dim interior.
   const rimMat = new THREE.MeshBasicMaterial({ color: 0x59d6ff });
   for (const [za, zb] of [[60, 80], [120, 140]]) {
-    for (const [aa, ab] of [[OBS_A0, OBS_A1], [OPP_OBS_A0, OPP_OBS_A1]]) {
+    for (const [aa, ab] of [[OBS_A0, OBS_A1], [OPP_OBS_A0, OPP_OBS_A1], [WATER_OBS_A0, WATER_OBS_A1], [METAL_OBS_A0, METAL_OBS_A1]]) {
       const midA = (aa + ab) / 2, midZ = (za + zb) / 2;
       const arcLen = (ab - aa) * 140, zLen = zb - za;
       for (const edge of [aa, ab]) {
@@ -2457,6 +2485,84 @@ const cropBeds = [];
   // Round 33: radius 151.5 (below the landing) — at 149 it floated at
   // chest height on the landing and the player walked through it.
   mountTangentialSign('TO OBSERVATION DECK', '#59d6ff', 5, OPP_A0 - 0.003, 151.5, 100);
+}
+// ---------- Round 43: depository stairs (WATER + METAL) ----------
+// One stair entry per depository, mirroring the opposite-side entry:
+// a podium + landing deck at radius 150 (z 60 ... 140), lower stair
+// towers main deck (160) -> landing (150) at z 40 ... 60 and
+// z 140 ... 160, and upper staircases landing (150) -> interior (140)
+// at z 60 ... 80 and z 120 ... 140. Step tops follow the smoothstep
+// ramps, so the camera never clips into a step. Walk model:
+// waterFactor()/waterObsFactor() and metalFactor()/metalObsFactor()
+// (next to galleryFactor / obsDeckFactor). A sign under each landing
+// names the depository it serves.
+{
+  const DSEG = 8;
+  const depPodiumMat = new THREE.MeshStandardMaterial({ color: 0x39424e, roughness: 0.85 });
+  const depDeckMat = new THREE.MeshStandardMaterial({ color: 0x39424e, roughness: 0.85 });
+  const depStepMat = new THREE.MeshStandardMaterial({ color: 0x4a5560, roughness: 0.85 });
+  applyGameTexture(depStepMat, 'https://pollitoproductions.github.io/Vocabulario-Espanol/tech-interior.jpg', 1, 1);
+  const depObsStepMat = new THREE.MeshStandardMaterial({ color: 0x4a5560, roughness: 0.85 });
+  applyGameTexture(depObsStepMat, 'https://pollitoproductions.github.io/Vocabulario-Espanol/tech-interior.jpg', 1, 1);
+  for (const [LA0, LA1, OA0, OA1, signText, signCss] of [
+    [WATER_A0, WATER_A1, WATER_OBS_A0, WATER_OBS_A1, 'TO WATER DEPOSITORY', '#59d6ff'],
+    [METAL_A0, METAL_A1, METAL_OBS_A0, METAL_OBS_A1, 'TO METAL DEPOSITORY', '#e8a33d'],
+  ]) {
+    const landSegW = (LA1 - LA0) / DSEG * 155.4 + 0.6;
+    const obsSegW = (OA1 - OA0) / DSEG * 140.4 + 0.6;
+    // Podium base + landing deck at radius 150, z 60 ... 140.
+    for (let k = 0; k < DSEG; k++) {
+      const ac = LA0 + ((k + 0.5) / DSEG) * (LA1 - LA0);
+      const rad = new THREE.Vector3(Math.cos(ac), Math.sin(ac), 0);
+      const podium = new THREE.Mesh(new THREE.BoxGeometry(landSegW, 9.2, 80), depPodiumMat);
+      podium.position.copy(rad).multiplyScalar(155.4);
+      podium.position.z = 100;
+      podium.quaternion.copy(basisQuat(rad));
+      shipInterior.add(podium);
+      const plank = new THREE.Mesh(new THREE.BoxGeometry(landSegW, 0.8, 80), depDeckMat);
+      plank.position.copy(rad).multiplyScalar(150.4);
+      plank.position.z = 100;
+      plank.quaternion.copy(basisQuat(rad));
+      shipInterior.add(plank);
+    }
+    // Lower stair towers: 10 steps each, main deck (160) -> landing (150).
+    for (const [zBase, ascending] of [[40, true], [140, false]]) {
+      for (let k = 0; k < DSEG; k++) {
+        const ac = LA0 + ((k + 0.5) / DSEG) * (LA1 - LA0);
+        const rad = new THREE.Vector3(Math.cos(ac), Math.sin(ac), 0);
+        for (let j = 0; j < 10; j++) {
+          const zc = zBase + 1 + 2 * j;
+          const top = ascending ? 160 - 10 * sstep(40, 60, zc) : 150 + 10 * sstep(140, 160, zc);
+          const step = new THREE.Mesh(new THREE.BoxGeometry(landSegW, 1, 2.2), depStepMat);
+          step.position.copy(rad).multiplyScalar(top - 0.5);
+          step.position.z = zc;
+          step.quaternion.copy(basisQuat(rad));
+          shipInterior.add(step);
+        }
+      }
+      // Round 33: cheek walls removed (see gallery stairs) — open stairwell.
+    }
+    // Upper staircases: landing (150) -> interior (140), 10 steps each.
+    for (const [zBase, ascending] of [[60, true], [120, false]]) {
+      for (let k = 0; k < DSEG; k++) {
+        const ac = OA0 + ((k + 0.5) / DSEG) * (OA1 - OA0);
+        const rad = new THREE.Vector3(Math.cos(ac), Math.sin(ac), 0);
+        for (let j = 0; j < 10; j++) {
+          const zc = zBase + 1 + 2 * j;
+          const top = ascending ? 150 - 10 * sstep(60, 80, zc) : 140 + 10 * sstep(120, 140, zc);
+          const step = new THREE.Mesh(new THREE.BoxGeometry(obsSegW, 1, 2.2), depObsStepMat);
+          step.position.copy(rad).multiplyScalar(top - 0.5);
+          step.position.z = zc;
+          step.quaternion.copy(basisQuat(rad));
+          shipInterior.add(step);
+        }
+      }
+      // Round 33: cheek walls removed (see gallery stairs) — open stairwell.
+    }
+    // Radius 151.5 (below the landing) — at 149 it floated at chest
+    // height on the landing and the player walked through it.
+    mountTangentialSign(signText, signCss, 5, LA0 - 0.003, 151.5, 100);
+  }
 }
 // ---------- Round 30 realism — industrial-half dressing ----------
 // The far side of the industrial half (away from the promenade at
@@ -2872,14 +2978,14 @@ const cropBeds = [];
 const HOOD_CENTERS = [[0.55, 150], [0.625, 250], [2.725, 110], [2.375, 250], [3.425, 150], [3.775, 260], [5.175, 200], [5.525, 200], [4.35, 240], [4.25, 120], [6.0, 200], [0.2, 120], [0.2, 260], [3.1, 150], [3.1, 260], [0.9, 250]];
 const gardens = []; // { angle, z, group, solidIdx, hood (nearest neighborhood) } — little gardens that appear with their neighborhood, no separate cost
 const hoodParts = []; // { angle, z, group, solidIdx } — houses/shops/trees/lamps, assigned to nearest HOOD_CENTERS entry after the block
-const neighborhoods = []; // 16 entries: { angle, z, groups: [], solidIdxs: [], dep (4..7 metal), built }
+const neighborhoods = []; // 16 entries: { angle, z, groups: [], solidIdxs: [], dep (1 metal), built }
 for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0], z: HOOD_CENTERS[hi][1], groups: [], solidIdxs: [], dep: -1, built: false });
 
 // ---------- Nov 1: upper-half city fabric (round 30, updated) ----------
 // The residential pattern spreads across the whole upper half (everything
-// that is not agriculture): axial streets ring the half, seven town
-// squares sit centered on the seven main-deck review terminals (the
-// terminals themselves do not move), and sixteen neighborhoods fill the
+// that is not agriculture): axial streets ring the half, the fountain
+// plaza is the town centre (Round 43 removed the seven terminal squares
+// with their review terminals), and sixteen neighborhoods fill the
 // gaps between the existing city, the quarters row, the gallery, the
 // cell doorways, and the exploration terminals. The schoolhouse stays
 // the only school. The gallery platform and its stairs are left alone
@@ -3001,28 +3107,12 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
     const g = fillGroup(sa, 175, 0.12);
     fillBox(g, 6, 0.15, 270, fillStreetMat, 0, 0, 0);
   }
-  // Town squares: a plaza disc centered on each main-deck review terminal,
-  // with lamps and stalls around it. One square is tight: the (1.20,180)
-  // square sits in the gap between the quarters row and the existing city
-  // (its west lamps/stall would land inside a quarters unit, so they are
-  // omitted). The (3.89,100) square used to share ground with an exploration
-  // terminal, so its east lamps/stall were omitted; the review terminal has
-  // since moved to (3.89,140), and the full lamp/stall set is restored.
-  for (const [ta, tz] of [[0.30, 220], [1.20, 180], [2.09, 180], [2.99, 300], [3.89, 140], [4.79, 200], [5.68, 280]]) {
-    const g = fillGroup(ta, tz, 0.12);
-    const disc = new THREE.Mesh(new THREE.CylinderGeometry(10, 10, 0.2, 32), fillPlazaMat);
-    g.add(disc);
-  }
-  for (const [la, lz] of [[0.2437, 211], [0.2437, 229], [0.3563, 211], [0.3563, 229], [1.2562, 171], [1.2562, 189], [2.0337, 171], [2.0337, 189], [2.1462, 171], [2.1462, 189], [2.9338, 291], [2.9338, 309], [3.0463, 291], [3.0463, 309], [3.8337, 131], [3.8337, 149], [3.9463, 131], [3.9463, 149], [4.7337, 191], [4.7337, 209], [4.8463, 191], [4.8463, 209], [5.6237, 271], [5.6237, 289], [5.7363, 271], [5.7363, 289]]) fillLamp(la, lz);
-  [[0.225, 220], [0.375, 220], [1.275, 180], [2.015, 180], [2.165, 180], [2.915, 300], [3.065, 300], [3.815, 140], [3.965, 140], [4.715, 200], [4.865, 200], [5.605, 280], [5.755, 280]].forEach(([sa, sz], si) => {
-    const g = fillGroup(sa, sz, 0.4);
-    fillBox(g, 0.25, 2.2, 0.25, fillStallPostMat, -1.5, 0.7, 0);
-    fillBox(g, 0.25, 2.2, 0.25, fillStallPostMat, 1.5, 0.7, 0);
-    fillBox(g, 3.6, 0.15, 3, fillStallPostMat, 0, 1.9, 0);
-    fillBox(g, 3, 1, 0.6, fillBenchMat, 0, 0.1, 0.9);
-    fillBox(g, 3.6, 0.1, 1.0, fillStallMats[si % fillStallMats.length], 0, 1.6, 1.4);
-    addSolid(sa, 1.8, sz + 0.2, 1.7);
-  });
+  // Round 43: the town squares are gone. Each square was centred on a
+  // main-deck review terminal, and all six removed terminals took their
+  // squares with them (the seventh square's terminal had already moved
+  // to the observation deck in Round 41, so its square was orphaned
+  // too). The fountain plaza at (1.55, 180) — medallion, fountain,
+  // market stalls — is the town centre now and stays.
   // Neighborhoods: sixteen blocks, each a center lane with two house rows
   // facing it, a shop at each lane end (door toward the lane), gardens
   // and trees at the corners, and lamps along the lane. Houses keep the
@@ -3424,16 +3514,23 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
 // still stands: no posts, no calls; the mess and gallery approaches stay
 // clean open walk space.)
 {
+  // Round 43: stations respread fairly evenly around the ring (35/75/
+  // 113/165/195/235/275/315/355 deg — gaps 40/38/52/30/40/40/40/40/40;
+  // the 52/30 pair is forced by the crop-bed pinch at 2.6/2.75 rad).
+  // Every console stands 16+ m clear of the nearest crop bed / pipe
+  // and 25+ m clear of the nearest structural ring — nothing sits on
+  // the beds, pipes, or rings any more (the closest old station,
+  // Practice, stood 6.7 m from a ring; Por vs. para 11.9 m from a bed).
   const agriStations = [
-    { label: 'COGNATES', css: '#39d97a', angle: 0.2618, z: -120, emoji: '🔤' },
-    { label: 'DICTATION', css: '#9fd8ef', angle: 1.3090, z: -40, emoji: '🎧' },
-    { label: 'CONJUGATION', css: '#59d6ff', angle: 2.3562, z: -280, emoji: '🔄' },
-    { label: 'IDIOMS', css: '#ffc27a', angle: 3.4034, z: -170, emoji: '💬' },
-    { label: 'PRACTICE', css: '#e8a33d', angle: 4.4506, z: -100, emoji: '✏️' },
-    { label: 'SER VS. ESTAR', css: '#d0a0ff', angle: 5.4978, z: -200, emoji: '⚖️' },
-    { label: 'SABER VS. CONOCER', css: '#5b8cff', angle: 1.8326, z: -160, emoji: '🧠' },
-    { label: 'PRONOUNS', css: '#ff6b9d', angle: 6.0214, z: -160, emoji: '👤' },
-    { label: 'POR VS. PARA', css: '#aeea00', angle: 4.9742, z: -150, emoji: '➡️' },
+    { label: 'COGNATES', css: '#39d97a', angle: 1.3090, z: -140, emoji: '🔤' },
+    { label: 'DICTATION', css: '#9fd8ef', angle: 0.6109, z: -160, emoji: '🎧' },
+    { label: 'CONJUGATION', css: '#59d6ff', angle: 2.8798, z: -295, emoji: '🔄' },
+    { label: 'IDIOMS', css: '#ffc27a', angle: 3.4034, z: -80, emoji: '💬' },
+    { label: 'PRACTICE', css: '#e8a33d', angle: 4.1015, z: -240, emoji: '✏️' },
+    { label: 'SER VS. ESTAR', css: '#d0a0ff', angle: 5.4978, z: -180, emoji: '⚖️' },
+    { label: 'SABER VS. CONOCER', css: '#5b8cff', angle: 1.9722, z: -180, emoji: '🧠' },
+    { label: 'PRONOUNS', css: '#ff6b9d', angle: 6.1959, z: -60, emoji: '👤' },
+    { label: 'POR VS. PARA', css: '#aeea00', angle: 4.7997, z: -140, emoji: '➡️' },
   ];
   for (const s of agriStations) {
     const rad = new THREE.Vector3(Math.cos(s.angle), Math.sin(s.angle), 0);
@@ -3444,53 +3541,21 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
     shipInterior.add(con);
   }
 }
-// Round 30 review terminals (EIGHT), respread Oct 31 (Brant: the old
-// layout clustered — pairs shared angles with big empty arcs between):
-// ONE remains on the gallery upper deck (the mezzanine in technology,
-// radius 150) and seven on the industrial main deck (radius 160),
-// spread EVENLY around the hull at 51.4° (0.8976 rad) steps, so
-// neighbours sit ~143 m apart with no pairs and no empty arcs.
-// The kept mezzanine terminal is the centre line (z 108, clear of
-// both stair zones 40..60/140..160, the three centre tables at angle
-// 4.70 z 80/100/120, the back wall 4.95 and the railing 4.45).
-// Main-deck seven sit outside the promenade band and the gallery arc,
-// clear of crates, gantries, cabinets, cell doorways, bulkhead
-// doorways, houses, mess tables and city props (clearances checked
-// against the blocked zones: quarters rows, mess/lounge, promenade
-// walls, education arch, gallery arc, and the three industrial cell
-// doorways; the 4.79 terminal sits at z 200, past the gallery's
-// z 40..160 span, so it is not under the gallery floor); nearest
-// same-deck pair is ~143 m apart. Same
+// Round 43 review terminals (TWO — Brant Nov 10: only the two at the
+// top of the stairs are needed). One per stair entry, right at the top
+// of the stairs on the observation deck (radius 140, interior). The
+// other six are gone, and their town squares went with them. Same
 // pedestal/screen/sign pattern as station consoles, but gold, and each
-// beacon pillar is 6 m (not 14): from the 150 deck a 14 m pillar would poke
-// through the industrial ceiling shell at radius 140, while 6 m tops out at
-// radius 141.3, clear by 1.3 m (from the 160 main deck it tops out near
-// radius 151, further still from the shell). An obs-deck terminal's 6 m
-// beam tops out at radius 134, in open interior space. NOT stations: no
-// STATIONS entries, no tools — proximity opens the ONE shared review panel
+// beacon pillar is 6 m (not 14): an obs-deck terminal's 6 m beam tops
+// out at radius 134, in open interior space. NOT stations: no STATIONS
+// entries, no tools — proximity opens the ONE shared review panel
 // (see checkTerminal), with a per-terminal deck gate so a terminal
 // never fires from the wrong level (obs terminals only inObsInterior).
 const REVIEW_TERMINALS_POS = [
-  // Observation deck (radius 140, interior): FOUR (Rounds 33 + 41) —
-  // moved up from below to spread terminals to the deck and declutter
-  // the main deck, where the exploration terminals already crowd it.
-  // The two Round 41 moves sit deeper into the deck toward the sun
-  // end (z 180/200), 80-100 m past the stair-side pair at z 100, one
-  // per stair arc, so the player meets one soon after arriving and
-  // another while exploring toward the sun screen.
+  // Observation deck (radius 140, interior): TWO (Round 43) — one per
+  // stair entry, right at the top of the stairs.
   { deck: 'obs', angle: 4.70, z: 100 },  // gallery-side obs deck (was the mezzanine terminal at z 108)
   { deck: 'obs', angle: 1.56, z: 100 },  // opposite-side interior (was a main-deck terminal at angle 1.20, z 180)
-  { deck: 'obs', angle: 4.70, z: 200 },  // gallery arc, sun end (Round 41; was main-deck terminal at angle 4.79, z 200)
-  { deck: 'obs', angle: 1.56, z: 180 },  // opposite arc, sun end (Round 41; was main-deck terminal at angle 2.09, z 180)
-  // Main deck (radius 160): four left (four moved to the obs deck) —
-  // still spread around the hull, no pairs. Each z threads clear of
-  // the blocked zones (quarters rows, mess / lounge, promenade walls,
-  // education arch, gallery arc) and the industrial cell doorways
-  // (workshop 2.8/z 170, classroom 4.5/z 260, medical 5.5/z 100).
-  { deck: 'main', angle: 0.30, z: 220 },  // even step 1 (edu, open deck)
-  { deck: 'main', angle: 2.99, z: 300 },  // even step 4 (edu, open deck)
-  { deck: 'main', angle: 3.89, z: 140 },  // even step 5 (tech, open deck; moved 40 m from z 100 — it shared ground with the 5pi/4 exploration terminal, and the REVIEW button could hang on after departing)
-  { deck: 'main', angle: 5.68, z: 280 },  // even step 7 (edu, open deck)
 ];
 for (const tp of REVIEW_TERMINALS_POS) {
   const trad = new THREE.Vector3(Math.cos(tp.angle), Math.sin(tp.angle), 0);
@@ -3535,44 +3600,37 @@ for (const tp of REVIEW_TERMINALS_POS) {
   tgrp.quaternion.copy(basisQuat(trad));
   shipInterior.add(tgrp);
 }
-// ---------- Depositories + rebuild (Brant Nov 7) ----------
-// Eight glowing consoles where the player deposits WATER and METAL in
-// person. Four WATER depositories in the agriculture ring (negative z),
-// staggered in z (Round 33: -80/-110/-120/-90 — they were all on one
-// ring at z -100, clustered with the exploration terminals and the
-// practice station), four METAL depositories in the residential half
-// (positive z), each in
-// a clear gap — no station, review terminal, exploration terminal,
-// crop bed, orchard, or neighborhood in the way (placements checked
-// against every list before they were written). Depositing a depository's
+// ---------- Depositories + rebuild (Brant Nov 7; Round 43: two) ----------
+// Two glowing consoles where the player deposits WATER and METAL in
+// person, both ON the observation deck (radius 140, the interior
+// surface the player walks on up there) at 90 degrees from the review
+// terminals: WATER at angle 0, METAL at angle pi, both z 100. Each has
+// its own staircase from the main deck (WATER stairs centred 6.10,
+// METAL stairs centred 3.72 — the nearest clear arcs, since the
+// residential neighborhoods fill both axes). Depositing a depository's
 // full cost regrows the next ungrown crop bed (250 WATER) or rebuilds
-// the next unbuilt residential block (250 METAL) nearest to it: each water
-// depository regrows 4 crop beds, each metal depository rebuilds 4
-// neighborhoods (gardens included). Crop beds start ungrown (bare soil,
-// crops hidden) and neighborhoods start unbuilt (hidden, walk-through);
-// each appears only when regrown or rebuilt.
+// the next unbuilt residential block (250 METAL) nearest to it: the one
+// water depository regrows all 16 crop beds, the one metal depository
+// rebuilds all 16 neighborhoods (gardens included). Crop beds start
+// ungrown (bare soil, crops hidden) and neighborhoods start unbuilt
+// (hidden, walk-through); each appears only when regrown or rebuilt.
+// The 14 m beacon tops out at radius 126, in open interior space.
 const DEPOSITORIES = [
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 0.30, z: -80, bank: 0, cost: 250, emoji: '💧' },
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 1.87, z: -110, bank: 0, cost: 250, emoji: '💧' },
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 3.44, z: -120, bank: 0, cost: 250, emoji: '💧' },
-  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 5.01, z: -90, bank: 0, cost: 250, emoji: '💧' },
-  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 0.77, z: 200, bank: 0, cost: 250, emoji: '🏠' },
-  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 2.25, z: 200, bank: 0, cost: 250, emoji: '🏠' },
-  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 4.02, z: 200, bank: 0, cost: 250, emoji: '🏠' },
-  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: 5.40, z: 200, bank: 0, cost: 250, emoji: '🏠' },
+  { kind: 'water', label: 'WATER', css: '#59d6ff', angle: 0, z: 100, radius: 140, bank: 0, cost: 250, emoji: '💧' },
+  { kind: 'metal', label: 'METAL', css: '#e8a33d', angle: Math.PI, z: 100, radius: 140, bank: 0, cost: 250, emoji: '🏠' },
 ];
 for (const d of DEPOSITORIES) {
   const rad = new THREE.Vector3(Math.cos(d.angle), Math.sin(d.angle), 0);
   const con = makeStationConsole(d.label + ' DEPOSITORY', d.css, 14, d.emoji);
-  con.position.copy(rad).multiplyScalar(RADIUS);
+  con.position.copy(rad).multiplyScalar(d.radius || RADIUS);
   con.position.z = d.z;
   con.quaternion.copy(basisQuat(rad));
   shipInterior.add(con);
 }
-// Assign each crop bed to its nearest water depository and each
-// neighborhood to its nearest metal depository (tangential + axial
-// distance), 4 crop beds and 4 neighborhoods per depository. Greedy by
-// distance so every depository gets its nearest available items.
+// Assign each crop bed to the one water depository and each
+// neighborhood to the one metal depository (all 16 each). Greedy by
+// distance (kept from the eight-depository layout; with one per kind
+// it assigns everything to it).
 (function assignDepositories() {
   function assign(items, depIdxs, cap) {
     const pairs = [];
@@ -3594,8 +3652,8 @@ for (const d of DEPOSITORIES) {
       items[i].dep = depIdxs[j];
     }
   }
-  assign(cropBeds, [0, 1, 2, 3], 4);
-  assign(neighborhoods, [4, 5, 6, 7], 4);
+  assign(cropBeds, [0], 16);
+  assign(neighborhoods, [1], 16);
 })();
 
 // Round 30 gated DEPART (Brant: no more accidental ejects), now EIGHT
@@ -4713,8 +4771,9 @@ if (btnTutDone) btnTutDone.addEventListener('pointerdown', function (e) {
 // at, and once the tutorial is done. Runs every frame from the main
 // loop, since the bearing changes as you turn.
 const _questTmp = new THREE.Vector3();
-function questLocalToWorld(angle, z, out) {
-  const x = Math.cos(angle) * RADIUS, y = Math.sin(angle) * RADIUS;
+function questLocalToWorld(angle, z, out, radius) {
+  const rr = radius || RADIUS;
+  const x = Math.cos(angle) * rr, y = Math.sin(angle) * rr;
   const c = Math.cos(cylAngle), s = Math.sin(cylAngle);
   out.set(x * c - y * s, x * s + y * c, z);
   return out;
@@ -4723,7 +4782,7 @@ function nearestDepository(kind) {
   let best = null, bestD = Infinity;
   for (const d of DEPOSITORIES) {
     if (d.kind !== kind) continue;
-    const w = questLocalToWorld(d.angle, d.z, new THREE.Vector3());
+    const w = questLocalToWorld(d.angle, d.z, new THREE.Vector3(), d.radius || RADIUS);
     const dist = camera.position.distanceTo(w);
     if (dist < bestD) { bestD = dist; best = d; }
   }
@@ -4732,11 +4791,38 @@ function nearestDepository(kind) {
 function nearestDepositoryAny() {
   let best = null, bestD = Infinity;
   for (const d of DEPOSITORIES) {
-    const w = questLocalToWorld(d.angle, d.z, new THREE.Vector3());
+    const w = questLocalToWorld(d.angle, d.z, new THREE.Vector3(), d.radius || RADIUS);
     const dist = camera.position.distanceTo(w);
     if (dist < bestD) { bestD = dist; best = d; }
   }
   return best;
+}
+// Round 43: the depositories stand on the observation deck, each with
+// its own stairs from the main deck (WATER stairs centred angle 6.10,
+// METAL stairs centred 3.72; lower-tower feet at z 40 and z 160).
+// The tutorial arrow routes via the stairs: while the player is below
+// deck it points at the foot of the target depository's stairs (the
+// nearer foot), so the arrow leads them UP; once aboard the deck it
+// points at the depository itself (radius 140).
+const DEP_STAIRS = { water: { angle: 6.10, feet: [40, 160] }, metal: { angle: 3.72, feet: [40, 160] } };
+function depStairFoot(dep) {
+  const st = DEP_STAIRS[dep.kind];
+  if (!st) return null;
+  let best = null, bestD2 = Infinity;
+  for (const fz of st.feet) {
+    const tang = Math.abs(angDiff(playerAngle, st.angle)) * RADIUS;
+    const dz = playerZ - fz;
+    const d2 = tang * tang + dz * dz;
+    if (d2 < bestD2) { bestD2 = d2; best = { angle: st.angle, z: fz }; }
+  }
+  return best;
+}
+function depArrowTarget(dep) {
+  if (playerDeck() !== 'obs') {
+    const foot = depStairFoot(dep);
+    if (foot) return questLocalToWorld(foot.angle, foot.z, _questTmp);
+  }
+  return questLocalToWorld(dep.angle, dep.z, _questTmp, dep.radius || RADIUS);
 }
 function updateQuestArrow() {
   if (!questArrowLineEl || !questArrowEl || !questArrowLabelEl) return;
@@ -4769,14 +4855,14 @@ function updateQuestArrow() {
     const dep = nearestDepositoryAny();
     if (!dep) { questArrowLineEl.style.display = 'none'; return; }
     if (depositDist2(dep) < STATION_DIST * STATION_DIST) { questArrowLineEl.style.display = 'none'; return; }
-    target = questLocalToWorld(dep.angle, dep.z, _questTmp); label = (dep.kind === 'water' ? 'Water' : 'Metal') + ' depository';
+    target = depArrowTarget(dep); label = (dep.kind === 'water' ? 'Water' : 'Metal') + ' depository' + (playerDeck() !== 'obs' ? ' stairs' : '');
   } else if (questStep === 6) {
     // Second deposit: nearest depository of the kind NOT yet deposited.
     const kind = depKindDone('water') ? 'metal' : 'water';
     const dep = nearestDepository(kind);
     if (!dep) { questArrowLineEl.style.display = 'none'; return; }
     if (depositDist2(dep) < STATION_DIST * STATION_DIST) { questArrowLineEl.style.display = 'none'; return; }
-    target = questLocalToWorld(dep.angle, dep.z, _questTmp); label = (kind === 'water' ? 'Water' : 'Metal') + ' depository';
+    target = depArrowTarget(dep); label = (kind === 'water' ? 'Water' : 'Metal') + ' depository' + (playerDeck() !== 'obs' ? ' stairs' : '');
   } else { questArrowLineEl.style.display = 'none'; return; }
   if (!target) { questArrowLineEl.style.display = 'none'; return; }
   const toT = target.clone().sub(camera.position);
@@ -5262,13 +5348,43 @@ function oppObsFactor(a, z) {
   const aF = (an >= OPP_OBS_A0 && an <= OPP_OBS_A1) ? 1 : 0;
   return zF * aF;
 }
+// Depository stairs walk levels (Round 43): mirror oppFactor /
+// oppObsFactor for the WATER arc (5.93 ... 6.27 / 5.95 ... 6.25) and
+// the METAL arc (3.56 ... 3.88 / 3.58 ... 3.86). waterFactor /
+// metalFactor is 1 on the landing, ramping over the lower stairs;
+// waterObsFactor / metalObsFactor is 1 at the top of the upper stairs
+// (the interior entry), ramping over the upper stairs.
+function waterFactor(a, z) {
+  const an = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  const zF = sstep(40, 60, z) * (1 - sstep(140, 160, z));
+  const aF = (an >= WATER_A0 && an <= WATER_A1) ? 1 : 0;
+  return zF * aF;
+}
+function waterObsFactor(a, z) {
+  const an = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  const zF = sstep(60, 80, z) * (1 - sstep(120, 140, z));
+  const aF = (an >= WATER_OBS_A0 && an <= WATER_OBS_A1) ? 1 : 0;
+  return zF * aF;
+}
+function metalFactor(a, z) {
+  const an = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  const zF = sstep(40, 60, z) * (1 - sstep(140, 160, z));
+  const aF = (an >= METAL_A0 && an <= METAL_A1) ? 1 : 0;
+  return zF * aF;
+}
+function metalObsFactor(a, z) {
+  const an = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  const zF = sstep(60, 80, z) * (1 - sstep(120, 140, z));
+  const aF = (an >= METAL_OBS_A0 && an <= METAL_OBS_A1) ? 1 : 0;
+  return zF * aF;
+}
 // Interior level (Round 32): raw factor levels — landing (gallery /
-// opp) lifts 10 m, obs deck (either side) lifts another 10 m. The
-// arcs are disjoint, so at most one of each pair is nonzero.
+// opp / water / metal) lifts 10 m, obs deck (any side) lifts another
+// 10 m. The arcs are disjoint, so at most one of each pair is nonzero.
 function interiorLevels(a, z) {
   return {
-    l1: galleryFactor(a, z) + oppFactor(a, z),
-    l2: obsDeckFactor(a, z) + oppObsFactor(a, z)
+    l1: galleryFactor(a, z) + oppFactor(a, z) + waterFactor(a, z) + metalFactor(a, z),
+    l2: obsDeckFactor(a, z) + oppObsFactor(a, z) + waterObsFactor(a, z) + metalObsFactor(a, z)
   };
 }
 // Descending a stair ramp: on an obs ramp (z 60...80 or 120...140, in
@@ -5279,7 +5395,7 @@ function interiorLevels(a, z) {
 function isDescendingInterior(a, z, dz) {
   if (dz === 0) return false;
   const an = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-  const inArc = (an >= OBS_A0 && an <= OBS_A1) || (an >= OPP_OBS_A0 && an <= OPP_OBS_A1);
+  const inArc = (an >= OBS_A0 && an <= OBS_A1) || (an >= OPP_OBS_A0 && an <= OPP_OBS_A1) || (an >= WATER_OBS_A0 && an <= WATER_OBS_A1) || (an >= METAL_OBS_A0 && an <= METAL_OBS_A1);
   if (!inArc) return false;
   if (z >= 60 && z <= 80) return dz < 0;
   if (z >= 120 && z <= 140) return dz > 0;
@@ -5312,7 +5428,7 @@ function walkEyeR(a, z, dz) {
 // deck, radius 150.)
 function atObsStairFoot() {
   const an = ((playerAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-  const inArc = (an >= OBS_A0 && an <= OBS_A1) || (an >= OPP_OBS_A0 && an <= OPP_OBS_A1);
+  const inArc = (an >= OBS_A0 && an <= OBS_A1) || (an >= OPP_OBS_A0 && an <= OPP_OBS_A1) || (an >= WATER_OBS_A0 && an <= WATER_OBS_A1) || (an >= METAL_OBS_A0 && an <= METAL_OBS_A1);
   if (!inArc) return false;
   if (!((playerZ >= 55 && playerZ <= 82) || (playerZ >= 118 && playerZ <= 145))) return false;
   return interiorLevels(playerAngle, playerZ).l2 > 0.001;
@@ -5346,7 +5462,7 @@ function updateInteriorState(a, z, dz) {
   // descending flag, so a player who overshoots the bottom by a step
   // and then stops can still exit.
   const an = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-  const inObsArc = (an >= OBS_A0 && an <= OBS_A1) || (an >= OPP_OBS_A0 && an <= OPP_OBS_A1);
+  const inObsArc = (an >= OBS_A0 && an <= OBS_A1) || (an >= OPP_OBS_A0 && an <= OPP_OBS_A1) || (an >= WATER_OBS_A0 && an <= WATER_OBS_A1) || (an >= METAL_OBS_A0 && an <= METAL_OBS_A1);
   const onRampSlope = inObsArc && ((z > 60 && z < 80) || (z > 120 && z < 140)) && lv.l2 > 0.001 && lv.l2 < 0.999;
   if (!onRampSlope) {
     // Round 36: the exit check must come FIRST. The old order checked
@@ -5452,6 +5568,16 @@ function updateWalk(dt) {
     OPP_EDGES.some((e) => (anNow < e && anNext >= e) || (anNow > e && anNext <= e));
   const crossesOppObsEdge = playerZ >= 60 && playerZ <= 140 &&
     OPP_OBS_EDGES.some((e) => (anNow < e && anNext >= e) || (anNow > e && anNext <= e));
+  // Depository stairs side walls are solid too (same pattern): the
+  // landing edges (z 40 ... 160) and the upper-stair edges (z 60 ... 140).
+  const crossesWaterEdge = playerZ >= 40 && playerZ <= 160 &&
+    WATER_EDGES.some((e) => (anNow < e && anNext >= e) || (anNow > e && anNext <= e));
+  const crossesWaterObsEdge = playerZ >= 60 && playerZ <= 140 &&
+    WATER_OBS_EDGES.some((e) => (anNow < e && anNext >= e) || (anNow > e && anNext <= e));
+  const crossesMetalEdge = playerZ >= 40 && playerZ <= 160 &&
+    METAL_EDGES.some((e) => (anNow < e && anNext >= e) || (anNow > e && anNext <= e));
+  const crossesMetalObsEdge = playerZ >= 60 && playerZ <= 140 &&
+    METAL_OBS_EDGES.some((e) => (anNow < e && anNext >= e) || (anNow > e && anNext <= e));
   // In the open interior (up high, not on a stair descent) the player
   // walks the big space freely — no edge blocking, the floor is the
   // continuous ceiling shell. On a descent the edges stay solid so the
@@ -5461,7 +5587,7 @@ function updateWalk(dt) {
   // tangential movement while in the interior, so the player could only
   // move along z and never walk around the cylinder. Free in the
   // interior (no edge blocking); edge checks only when not free.
-  if (inInteriorFree || (!crossesGalleryEdge && !crossesObsEdge && !crossesOppEdge && !crossesOppObsEdge)) playerAngle += tangDisp;
+  if (inInteriorFree || (!crossesGalleryEdge && !crossesObsEdge && !crossesOppEdge && !crossesOppObsEdge && !crossesWaterEdge && !crossesWaterObsEdge && !crossesMetalEdge && !crossesMetalObsEdge)) playerAngle += tangDisp;
 
   // Eye radius at the new position (dz is this frame's axial movement),
   // then the bulkhead: solid at z = 0 except at the four entrance
@@ -6872,16 +6998,18 @@ btnToolSay.addEventListener('click', function () {
 // offset 15 degrees from the bulkhead doorway angles. kind 'ext' for all:
 // plain 8 m walk-up proximity; the old gallery gate in stationDist2 no
 // longer applies to any station (no station has zone 'gallery' now).
+// Round 43: stations respread fairly evenly (see agriStations above
+// for the clearance audit — 16+ m from beds/pipes, 25+ m from rings).
 const STATIONS = [
-  { id: 'cognates', title: 'COGNATES', kind: 'ext', zone: 'agri', angle: 0.2618, z: -120 },
-  { id: 'practice', title: 'PRACTICE', kind: 'ext', zone: 'agri', angle: 4.4506, z: -100 },
-  { id: 'conjugation', title: 'CONJUGATION', kind: 'ext', zone: 'agri', angle: 2.3562, z: -280 },
-  { id: 'dictation', title: 'DICTATION', kind: 'ext', zone: 'agri', angle: 1.3090, z: -40 },
-  { id: 'idioms', title: 'IDIOMS', kind: 'ext', zone: 'agri', angle: 3.4034, z: -170 },
-  { id: 'serestar', title: 'SER VS. ESTAR', kind: 'ext', zone: 'agri', angle: 5.4978, z: -200 },
-  { id: 'saberconocer', title: 'SABER VS. CONOCER', kind: 'ext', zone: 'agri', angle: 1.8326, z: -160 },
-  { id: 'pronouns', title: 'PRONOUNS', kind: 'ext', zone: 'agri', angle: 6.0214, z: -160 },
-  { id: 'porpara', title: 'POR VS. PARA', kind: 'ext', zone: 'agri', angle: 4.9742, z: -150 },
+  { id: 'cognates', title: 'COGNATES', kind: 'ext', zone: 'agri', angle: 1.3090, z: -140 },
+  { id: 'practice', title: 'PRACTICE', kind: 'ext', zone: 'agri', angle: 4.1015, z: -240 },
+  { id: 'conjugation', title: 'CONJUGATION', kind: 'ext', zone: 'agri', angle: 2.8798, z: -295 },
+  { id: 'dictation', title: 'DICTATION', kind: 'ext', zone: 'agri', angle: 0.6109, z: -160 },
+  { id: 'idioms', title: 'IDIOMS', kind: 'ext', zone: 'agri', angle: 3.4034, z: -80 },
+  { id: 'serestar', title: 'SER VS. ESTAR', kind: 'ext', zone: 'agri', angle: 5.4978, z: -180 },
+  { id: 'saberconocer', title: 'SABER VS. CONOCER', kind: 'ext', zone: 'agri', angle: 1.9722, z: -180 },
+  { id: 'pronouns', title: 'PRONOUNS', kind: 'ext', zone: 'agri', angle: 6.1959, z: -60 },
+  { id: 'porpara', title: 'POR VS. PARA', kind: 'ext', zone: 'agri', angle: 4.7997, z: -140 },
 ];
 const STATION_DIST = 8; // metres: walk-up range for every station (doubled from 4)
 function stationDist2(st) {
@@ -7058,12 +7186,12 @@ const btnDeposit = document.getElementById('btn-deposit');
 let depositNear = null;
 function depositDist2(d) {
   if (mode !== 'walk' || toolOpen || reviewOpen) return Infinity;
-  // Round 41: deck gate — depositories stand on the main deck; the
-  // metal depositories sit below the open interior, so without this
-  // the DEPOSIT prompt fired from the deck above. (Same bug class as
-  // the terminal prompts Brant reported; same one-line gate.)
-  if (playerDeck() !== 'main') return Infinity;
-  const tang = Math.abs(angDiff(playerAngle, d.angle)) * RADIUS;
+  // Round 43: deck gate — both depositories stand on the observation
+  // deck (radius 140); without this the DEPOSIT prompt would fire
+  // from the main deck below. (Same bug class as the terminal prompts
+  // Brant reported; same one-line gate, flipped to the obs deck.)
+  if (playerDeck() !== 'obs') return Infinity;
+  const tang = Math.abs(angDiff(playerAngle, d.angle)) * (d.radius || RADIUS);
   const dz = playerZ - d.z;
   return tang * tang + dz * dz;
 }
@@ -8062,7 +8190,7 @@ function animate() {
 // freeCrashUsed: bool, progress: { cognates, idioms, practice, conjugation,
 // dictation, serestar, saberconocer, pronouns: per-item identifier arrays },
 // pos: { mode: 'walk'|'flight'|'docked', ... } }, tutorial: quest step 0-6 (7 = done)
-// Depositories: depBank: [8 banked amounts 0..800; banks banked under the old 800 cost load intact and spend down at the new 250 cost], cropsGrown: [16 booleans],
+// Depositories: depBank: [2 banked amounts (water, metal); an old 8-entry save migrates by summing each kind's four banks, and banks spend down at the new 250 cost], cropsGrown: [16 booleans],
 // hoodsBuilt: [16 booleans]. Old saves without these keys load as banked 0 /
 // all ungrown and unbuilt (construction resets; haul and collected progress
 // preserved). An old gardensBuilt key, if present, is ignored — gardens now
@@ -8204,8 +8332,19 @@ function readSave() {
     if (!Array.isArray(s.words) || !Array.isArray(s.mined)) return null;
     const words = s.words.filter(function (i) { return Number.isInteger(i) && i >= 0 && i < wordTiles.length; });
     const mined = s.mined.filter(function (i) { return Number.isInteger(i) && i >= 0 && i < auraAsteroids.length; });
-    const depBank = (Array.isArray(s.depBank) ? s.depBank : []).map(function (v) { return (Number.isFinite(v) && v >= 0 && v <= 800) ? Math.floor(v) : 0; }); // <= 800: banks banked under the old cost load intact; tryBuild spends them down at 250
-    while (depBank.length < 8) depBank.push(0);
+    // Round 43: two depositories now (was eight). An old 8-entry save
+    // migrates by summing each kind's banks into the one depository of
+    // that kind (old order: water 0..3, metal 4..7); a 2-entry save
+    // loads as-is. Each old entry is validated to 0..800 first (the old
+    // per-bank cap; an out-of-range entry is discarded to 0, as before);
+    // the summed total is NOT re-capped — tryBuild spends it
+    // down at 250 per build, so banked material is never discarded.
+    let depBank = (Array.isArray(s.depBank) ? s.depBank : []).map(function (v) { return (Number.isFinite(v) && v >= 0 && v <= 800) ? Math.floor(v) : 0; });
+    if (depBank.length === 8) {
+      depBank = [depBank[0] + depBank[1] + depBank[2] + depBank[3], depBank[4] + depBank[5] + depBank[6] + depBank[7]];
+    }
+    while (depBank.length < DEPOSITORIES.length) depBank.push(0);
+    depBank = depBank.slice(0, DEPOSITORIES.length);
     const cropsGrown = (Array.isArray(s.cropsGrown) ? s.cropsGrown : []).map(function (v) { return v === true; });
     while (cropsGrown.length < 16) cropsGrown.push(false);
     const hoodsBuilt = (Array.isArray(s.hoodsBuilt) ? s.hoodsBuilt : []).map(function (v) { return v === true; });
