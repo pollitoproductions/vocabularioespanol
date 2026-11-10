@@ -1246,23 +1246,38 @@ function angDiff(a, b) { let d = a - b; return Math.atan2(Math.sin(d), Math.cos(
 // thin or walk-between. A 0.5 m margin keeps the eye off the wall face.
 const SOLID = [];
 const SOLID_MARGIN = 0.5;
-function addSolid(angle, halfTangM, zCenter, halfAxM) {
+// Round 44: solids are height-aware. A solid is a box standing on the
+// main deck (radius 160); its top sits at radius topR (160 minus its
+// height). The old code was a flat 2D check, so a 6 m house on the main
+// deck also blocked the landing (radius 150) and the observation deck
+// (radius 140) directly above it — the phantom wall that hung the player
+// up on the opposite stairs (city houses at 1.34...1.66, z 70...150, tops
+// at radius 154, blocked the landing above them). Now a solid only blocks
+// a walker whose feet are at or below its top: feet radius = playerEyeR
+// + EYE. Columns keep the default topR 140 (deck-to-roof: they block at
+// every level). Callers pass the structure's top radius; the default
+// preserves the old behaviour for anything not updated.
+function addSolid(angle, halfTangM, zCenter, halfAxM, topR) {
   const idx = SOLID.length;
-  SOLID.push([angle, (halfTangM + SOLID_MARGIN) / RADIUS, zCenter - halfAxM - SOLID_MARGIN, zCenter + halfAxM + SOLID_MARGIN, true]);
+  SOLID.push([angle, (halfTangM + SOLID_MARGIN) / RADIUS, zCenter - halfAxM - SOLID_MARGIN, zCenter + halfAxM + SOLID_MARGIN, true, (topR === undefined ? 140 : topR)]);
   return idx;
 }
 function solidBlocked(a, z) {
+  const feetR = playerEyeR + EYE;
   for (let i = 0; i < SOLID.length; i++) {
     const s = SOLID[i];
     if (!s[4]) continue; // unbuilt garden/neighborhood: hidden and walk-through
+    if (feetR < s[5]) continue; // feet above the solid's top: walk over it
     if (Math.abs(angDiff(a, s[0])) < s[1] && z >= s[2] && z <= s[3]) return true;
   }
   return false;
 }
 function solidHit(a, z) {
+  const feetR = playerEyeR + EYE;
   for (let i = 0; i < SOLID.length; i++) {
     const s = SOLID[i];
     if (!s[4]) continue; // unbuilt garden/neighborhood: hidden and walk-through
+    if (feetR < s[5]) continue; // feet above the solid's top: walk over it
     if (Math.abs(angDiff(a, s[0])) < s[1] && z >= s[2] && z <= s[3]) return s;
   }
   return null;
@@ -1299,25 +1314,27 @@ const OPP_EDGES = [OPP_A0, OPP_A1];
 // 1.56): the upper stairs to the interior on the opposite side.
 const OPP_OBS_A0 = 1.41, OPP_OBS_A1 = 1.71;
 const OPP_OBS_EDGES = [OPP_OBS_A0, OPP_OBS_A1];
-// Round 43: depository stairs — WATER (angle ~0) and METAL (angle ~pi).
+// Round 44: depository stairs MOVED to the depositories (Brant Nov 10).
 // The depositories sit at 90 deg from the review terminals (angles 0 and
-// pi, z 100, on the observation deck). Their stairs mirror the opposite
-// entry: a landing (wider arc) + upper stairs (narrower arc). The arcs
-// are offset from 0/pi because the residential neighborhoods fill both
-// axes: the WATER landing [5.93, 6.27] is the clear gap between the
-// (5.9,70) crate stack / (5.9,150) gantry and the angle-0 column; the
-// METAL landing [3.56, 3.88] is the clear gap between the (3.5312,150)
-// garden and the (3.9,90) crate stack. The WATER stair centre (6.10) is
-// 26 m from its depository; the METAL stair centre (3.72) is 81 m from
-// its depository (the pi neighbourhood leaves no closer clear arc) —
-// the tutorial arrow routes via the stairs when the player is below deck.
-const WATER_A0 = 5.93, WATER_A1 = 6.27;
+// pi, z 100, on the observation deck). Each depository now has a SINGLE
+// staircase (z 40...80: lower tower 40...60, upper stairs 60...80, landing
+// 60...80) whose top lands ~26 m from its depository — the way the review
+// terminals sit ~20 m past their stair tops. No residential block moved:
+// a single staircase at z 40...80 clears every neighbourhood part (the
+// (0.2,120) and (3.1,150) blocks' parts all sit at z >= 92). The arcs are
+// offset ~0.15 rad from 0/pi so the z-60 structural column sits just
+// outside the arc (centre lines 19.5 m clear of the nearest column) —
+// the WATER landing [6.06, 6.26] centre 6.16, the METAL landing [2.92,
+// 3.12] centre 3.02. Both footprints are solid-free in z 40...80 (verified
+// against the solid list); the tutorial arrow routes via the stairs when
+// the player is below deck.
+const WATER_A0 = 6.06, WATER_A1 = 6.26;
 const WATER_EDGES = [WATER_A0, WATER_A1];
-const WATER_OBS_A0 = 5.95, WATER_OBS_A1 = 6.25;
+const WATER_OBS_A0 = 6.08, WATER_OBS_A1 = 6.24;
 const WATER_OBS_EDGES = [WATER_OBS_A0, WATER_OBS_A1];
-const METAL_A0 = 3.56, METAL_A1 = 3.88;
+const METAL_A0 = 2.92, METAL_A1 = 3.12;
 const METAL_EDGES = [METAL_A0, METAL_A1];
-const METAL_OBS_A0 = 3.58, METAL_OBS_A1 = 3.86;
+const METAL_OBS_A0 = 2.94, METAL_OBS_A1 = 3.10;
 const METAL_OBS_EDGES = [METAL_OBS_A0, METAL_OBS_A1];
 function habitatBlocked(a, z) {
   const near = (ang, half) => Math.abs(angDiff(a, ang)) < half;
@@ -1344,13 +1361,14 @@ for (let i = 0; i < 14; i++) {
     const clearGallery = !inGalleryArc || !(z > 35 && z < 165);
     const inOppArc = a > OPP_A0 - 0.2 && a < OPP_A1 + 0.2;
     const clearOpp = !inOppArc || !(z > 35 && z < 165);
-    // Round 43: the depository stairs are real walkways too — no random
-    // box may ever land in either stair arc (WATER arc sits near 2pi,
-    // so the +0.2 margin runs past it; the range check still holds).
-    const inWaterArc = a > WATER_A0 - 0.2 && a < WATER_A1 + 0.2;
-    const clearWater = !inWaterArc || !(z > 35 && z < 165);
+    // Round 44: the depository stairs are single staircases (z 40...80)
+    // — no random box may ever land in either stair arc. The WATER arc
+    // sits near 2pi, so the +0.2 margin wraps past it: the second clause
+    // catches angles just past 0.
+    const inWaterArc = (a > WATER_A0 - 0.2 && a < WATER_A1 + 0.2) || a < WATER_A1 + 0.2 - Math.PI * 2;
+    const clearWater = !inWaterArc || !(z > 35 && z < 85);
     const inMetalArc = a > METAL_A0 - 0.2 && a < METAL_A1 + 0.2;
-    const clearMetal = !inMetalArc || !(z > 35 && z < 165);
+    const clearMetal = !inMetalArc || !(z > 35 && z < 85);
     clear = clearBulk && clearGallery && clearOpp && clearWater && clearMetal && !habitatBlocked(a, z);
   }
   if (!clear) continue;
@@ -1364,7 +1382,7 @@ for (let i = 0; i < 14; i++) {
   m.position.z = z;
   m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), radial.clone().negate());
   shipInterior.add(m);
-  addSolid(a, Math.hypot(w, d) / 2, z, Math.hypot(w, d) / 2);
+  addSolid(a, Math.hypot(w, d) / 2, z, Math.hypot(w, d) / 2, RADIUS - h); // box top at radius 160-h: never blocks a walker above it
 }
 
 
@@ -2063,7 +2081,14 @@ const cropBeds = [];
   // Arc segments that KEEP the shell (the complement of the stairwell
   // angles). CylinderGeometry theta maps to ship-frame angle as
   // theta = phi + PI/2 (after rotateX(PI/2)).
-  const CEIL_KEEP = [[0, 1.41], [1.71, 3.58], [3.86, 4.55], [4.85, 5.95], [6.25, Math.PI * 2]];
+  // Round 44: the stairwell holes differ by band now. The z 60...80 band
+  // has four holes (gallery + opposite + the two single depository
+  // staircases); the z 120...140 band has only two (gallery + opposite —
+  // the depository stairs are single, so there is no second stairwell
+  // there and the shell stays solid). The old WATER/METAL holes
+  // ([5.95, 6.25] / [3.58, 3.86]) are filled in with the old stairs.
+  const CEIL_KEEP_60 = [[0, 1.41], [1.71, 2.94], [3.10, 4.55], [4.85, 6.08], [6.24, Math.PI * 2]];
+  const CEIL_KEEP_120 = [[0, 1.41], [1.71, 4.55], [4.85, Math.PI * 2]];
   function ceilSeg(zC, len, a0, a1) {
     const span = a1 - a0;
     const mat = ceilMatFor(24 * span / (Math.PI * 2), len / 40);
@@ -2082,9 +2107,9 @@ const cropBeds = [];
     shipInterior.add(m);
   }
   ceilFull(30, 60);    // z 0...60
-  for (const [a0, a1] of CEIL_KEEP) ceilSeg(70, 20, a0, a1);   // z 60...80, holes at stairwells
+  for (const [a0, a1] of CEIL_KEEP_60) ceilSeg(70, 20, a0, a1);   // z 60...80, holes at stairwells
   ceilFull(100, 40);   // z 80...120
-  for (const [a0, a1] of CEIL_KEEP) ceilSeg(130, 20, a0, a1);  // z 120...140, holes at stairwells
+  for (const [a0, a1] of CEIL_KEEP_120) ceilSeg(130, 20, a0, a1);  // z 120...140, holes at stairwells (gallery + opposite only)
   ceilFull(230, 180);  // z 140...320
   // Glowing rims around each stairwell opening so the exit is obvious.
   // Bars sit astride the shell surface (radius 140) at the opening
@@ -2092,8 +2117,8 @@ const cropBeds = [];
   // along the angle at the two z edges. Cyan, unlit, so they read in
   // the dim interior.
   const rimMat = new THREE.MeshBasicMaterial({ color: 0x59d6ff });
-  for (const [za, zb] of [[60, 80], [120, 140]]) {
-    for (const [aa, ab] of [[OBS_A0, OBS_A1], [OPP_OBS_A0, OPP_OBS_A1], [WATER_OBS_A0, WATER_OBS_A1], [METAL_OBS_A0, METAL_OBS_A1]]) {
+  for (const [za, zb, arcs] of [[60, 80, [[OBS_A0, OBS_A1], [OPP_OBS_A0, OPP_OBS_A1], [WATER_OBS_A0, WATER_OBS_A1], [METAL_OBS_A0, METAL_OBS_A1]]], [120, 140, [[OBS_A0, OBS_A1], [OPP_OBS_A0, OPP_OBS_A1]]]]) {
+    for (const [aa, ab] of arcs) {
       const midA = (aa + ab) / 2, midZ = (za + zb) / 2;
       const arcLen = (ab - aa) * 140, zLen = zb - za;
       for (const edge of [aa, ab]) {
@@ -2486,13 +2511,13 @@ const cropBeds = [];
   // chest height on the landing and the player walked through it.
   mountTangentialSign('TO OBSERVATION DECK', '#59d6ff', 5, OPP_A0 - 0.003, 151.5, 100);
 }
-// ---------- Round 43: depository stairs (WATER + METAL) ----------
-// One stair entry per depository, mirroring the opposite-side entry:
-// a podium + landing deck at radius 150 (z 60 ... 140), lower stair
-// towers main deck (160) -> landing (150) at z 40 ... 60 and
-// z 140 ... 160, and upper staircases landing (150) -> interior (140)
-// at z 60 ... 80 and z 120 ... 140. Step tops follow the smoothstep
-// ramps, so the camera never clips into a step. Walk model:
+// ---------- Round 44: depository stairs (WATER + METAL) ----------
+// One SINGLE staircase per depository, right at the depository (Brant
+// Nov 10 — the Round 43 stairs sat 26 m / 81 m away). A podium +
+// landing deck at radius 150 (z 60 ... 80), a lower stair tower main
+// deck (160) -> landing (150) at z 40 ... 60, and an upper staircase
+// landing (150) -> interior (140) at z 60 ... 80. Step tops follow the
+// smoothstep ramps, so the camera never clips into a step. Walk model:
 // waterFactor()/waterObsFactor() and metalFactor()/metalObsFactor()
 // (next to galleryFactor / obsDeckFactor). A sign under each landing
 // names the depository it serves.
@@ -2510,23 +2535,24 @@ const cropBeds = [];
   ]) {
     const landSegW = (LA1 - LA0) / DSEG * 155.4 + 0.6;
     const obsSegW = (OA1 - OA0) / DSEG * 140.4 + 0.6;
-    // Podium base + landing deck at radius 150, z 60 ... 140.
+    // Podium base + landing deck at radius 150, z 60 ... 80.
     for (let k = 0; k < DSEG; k++) {
       const ac = LA0 + ((k + 0.5) / DSEG) * (LA1 - LA0);
       const rad = new THREE.Vector3(Math.cos(ac), Math.sin(ac), 0);
-      const podium = new THREE.Mesh(new THREE.BoxGeometry(landSegW, 9.2, 80), depPodiumMat);
+      const podium = new THREE.Mesh(new THREE.BoxGeometry(landSegW, 9.2, 20), depPodiumMat);
       podium.position.copy(rad).multiplyScalar(155.4);
-      podium.position.z = 100;
+      podium.position.z = 70;
       podium.quaternion.copy(basisQuat(rad));
       shipInterior.add(podium);
-      const plank = new THREE.Mesh(new THREE.BoxGeometry(landSegW, 0.8, 80), depDeckMat);
+      const plank = new THREE.Mesh(new THREE.BoxGeometry(landSegW, 0.8, 20), depDeckMat);
       plank.position.copy(rad).multiplyScalar(150.4);
-      plank.position.z = 100;
+      plank.position.z = 70;
       plank.quaternion.copy(basisQuat(rad));
       shipInterior.add(plank);
     }
-    // Lower stair towers: 10 steps each, main deck (160) -> landing (150).
-    for (const [zBase, ascending] of [[40, true], [140, false]]) {
+    // Lower stair tower: 10 steps, main deck (160) -> landing (150).
+    // Round 44: single staircase — staircase 1 only.
+    for (const [zBase, ascending] of [[40, true]]) {
       for (let k = 0; k < DSEG; k++) {
         const ac = LA0 + ((k + 0.5) / DSEG) * (LA1 - LA0);
         const rad = new THREE.Vector3(Math.cos(ac), Math.sin(ac), 0);
@@ -2542,8 +2568,9 @@ const cropBeds = [];
       }
       // Round 33: cheek walls removed (see gallery stairs) — open stairwell.
     }
-    // Upper staircases: landing (150) -> interior (140), 10 steps each.
-    for (const [zBase, ascending] of [[60, true], [120, false]]) {
+    // Upper staircase: landing (150) -> interior (140), 10 steps.
+    // Round 44: single staircase — staircase 1 only.
+    for (const [zBase, ascending] of [[60, true]]) {
       for (let k = 0; k < DSEG; k++) {
         const ac = OA0 + ((k + 0.5) / DSEG) * (OA1 - OA0);
         const rad = new THREE.Vector3(Math.cos(ac), Math.sin(ac), 0);
@@ -2561,7 +2588,7 @@ const cropBeds = [];
     }
     // Radius 151.5 (below the landing) — at 149 it floated at chest
     // height on the landing and the player walked through it.
-    mountTangentialSign(signText, signCss, 5, LA0 - 0.003, 151.5, 100);
+    mountTangentialSign(signText, signCss, 5, LA0 - 0.003, 151.5, 70); // Round 44: landing now spans z 60...80
   }
 }
 // ---------- Round 30 realism — industrial-half dressing ----------
@@ -2578,7 +2605,7 @@ const cropBeds = [];
   const coolStripMat = new THREE.MeshBasicMaterial({ color: 0xcfe8ff });
   // Overhead ceiling conduits (radius 141, just below the 140 shell):
   // tech span z 40...280 + edu span z 200...320, four angles.
-  for (const ca of [0.3, 3.0, 3.9, 5.9]) {
+  for (const ca of [0.3, 3.3, 3.9, 5.9]) { // Round 44: the 3.0 conduit crossed the new METAL stairwell ([2.92, 3.12]); moved to 3.3
     const radial = new THREE.Vector3(Math.cos(ca), Math.sin(ca), 0);
     const tech = new THREE.Mesh(pipeGeo, pipeMat);
     tech.position.copy(radial).multiplyScalar(141);
@@ -2593,7 +2620,7 @@ const cropBeds = [];
     shipInterior.add(edu);
   }
   // Crate stacks on the far side: two on deck + one stacked on top.
-  for (const [ca, cz] of [[3.1, 60], [3.1, 180], [3.9, 90], [3.9, 240], [5.9, 70], [5.9, 220], [0.3, 120], [0.3, 260]]) {
+  for (const [ca, cz] of [[3.5, 60], [3.1, 180], [3.9, 90], [3.9, 240], [5.9, 70], [5.9, 220], [0.3, 120], [0.3, 260]]) { // Round 44: the (3.1,60) stack sat in the new METAL stairwell; moved to 3.5
     const radial = new THREE.Vector3(Math.cos(ca), Math.sin(ca), 0);
     const tang = new THREE.Vector3(-Math.sin(ca), Math.cos(ca), 0);
     for (const to of [-0.8, 0.8]) {
@@ -2738,7 +2765,7 @@ const cropBeds = [];
     cityBox(g, 3.6, 0.15, 3, cityPostMat, 0, 1.9, 0);
     cityBox(g, 3, 1, 0.6, cityBenchMat, 0, 0.1, 0.9);
     cityBox(g, 3.6, 0.1, 1.0, stallMats[si], 0, 1.6, 1.4);
-    addSolid(sa, 1.8, sz + 0.2, 1.7);
+    addSolid(sa, 1.8, sz + 0.2, 1.7, 158); // stall top ~2.2 m
   });
   // Planters ringing the plaza.
   for (const [pa, pz] of [[1.45, 172], [1.65, 172], [1.45, 188], [1.65, 188]]) {
@@ -2804,9 +2831,13 @@ const cropBeds = [];
     cityBox(g, 0.15, 2.2, 1.2, houseDoorMat, face * 4.08, 0.7, 0);
     cityBox(g, 0.12, 1.0, 2.6, warmWinMat, face * 4.06, 2.6, 0);
     cityBox(g, 0.2, 0.2, 0.2, cityLampMat, face * 4.1, 2.2, 0);
-    addSolid(angle, 4, z, 4);
+    addSolid(angle, 4, z, 4, 154); // house roof ~5.9 m
   }
-  for (const z of [70, 90, 130, 150, 220, 240, 270]) {
+  // Round 44: no houses at z 150 — that row sat directly in the lower
+  // tower of the opposite staircase 2 (z 140...160), and a player walking
+  // down staircase 2 walked into the houses at (1.44/1.56/1.66, 150).
+  // The gap is the stairwell opening.
+  for (const z of [70, 90, 130, 220, 240, 270]) {
     house(1.34, z, 1);
     house(1.44, z, 1);
     house(1.56, z, -1);
@@ -2840,7 +2871,7 @@ const cropBeds = [];
     cityBox(g, 1.8, 0.15, 4.5, awnMat, face * 3.9, 3.2, 0);
     cityBox(g, 0.15, 2.2, 1.2, houseDoorMat, face * 3.08, 0.7, 0);
     cityBox(g, 0.12, 1.0, 2.0, warmWinMat, face * 3.06, 2.4, 0);
-    addSolid(angle + face * 0.9 / RADIUS, 3.9, z, 3);
+    addSolid(angle + face * 0.9 / RADIUS, 3.9, z, 3, 154); // shop roof ~4.1 m
     prop(g, face);
   }
   function smithyProp(g, face) {
@@ -2881,7 +2912,7 @@ const cropBeds = [];
     cityBox(g, 1.4, 2.4, 0.15, houseDoorMat, 0, 0.8, -5.08);
     cityBox(g, 2.0, 1.0, 0.12, warmWinMat, -3, 3.1, -5.06);
     cityBox(g, 2.0, 1.0, 0.12, warmWinMat, 3, 3.1, -5.06);
-    addSolid(1.5, 6, 297, 5);
+    addSolid(1.5, 6, 297, 5, 148); // school tower ~11.7 m
   }
   // Fenced garden plots behind the outer rows.
   const cropMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 });
@@ -2942,7 +2973,7 @@ const cropBeds = [];
     g.add(slide);
     cityBox(g, 0.2, 2.4, 0.2, cityPostMat, 2.7, 0.8, 2.0);
     cityBox(g, 0.2, 2.4, 0.2, cityPostMat, 3.7, 0.8, 2.0);
-    addSolid(1.727, 2.71, 285, 2.25);
+    addSolid(1.727, 2.71, 285, 2.25, 158); // playground posts ~2.4 m
   }
   // Fountain in the plaza medallion.
   {
@@ -2956,7 +2987,7 @@ const cropBeds = [];
     const fountWater = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.3, 0.1, 16), fountWaterMat);
     fountWater.position.set(0, 0.45, 0);
     g.add(fountWater);
-    addSolid(1.55, 2.6, 180, 2.6);
+    addSolid(1.55, 2.6, 180, 2.6, 158); // fountain bowl ~2.4 m
     const fountPost = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 1.6, 10), fountStoneMat);
     fountPost.position.set(0, 1.3, 0);
     g.add(fountPost);
@@ -3127,7 +3158,7 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
     fillBox(g, 0.15, 2.2, 1.2, fillDoorMat, face * 4.08, 0.7, 0);
     fillBox(g, 0.12, 1.0, 2.6, fillWinMat, face * 4.06, 2.6, 0);
     fillBox(g, 0.2, 0.2, 0.2, fillLampMat, face * 4.1, 2.2, 0);
-    const sIdx = addSolid(angle, 4, z, 4);
+    const sIdx = addSolid(angle, 4, z, 4, 154); // house roof ~5.9 m
     g.visible = false; SOLID[sIdx][4] = false; // unbuilt: hidden + walk-through until a depository raises it
     hoodParts.push({ angle: angle, z: z, group: g, solidIdx: sIdx });
     return g;
@@ -3139,7 +3170,7 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
     fillBox(g, 1.2, 2.2, 0.15, fillDoorMat, 0, 0.7, faceZ * 3.08);
     fillBox(g, 2.0, 1.0, 0.12, fillWinMat, 0, 2.4, faceZ * 3.06);
     fillBox(g, 3.5, 0.15, 0.5, fillBenchMat, 0, -0.325, faceZ * 4.2);
-    const sIdx = addSolid(angle, 3, z + faceZ * 0.9, 3.9);
+    const sIdx = addSolid(angle, 3, z + faceZ * 0.9, 3.9, 156); // shop roof ~4.1 m
     g.visible = false; SOLID[sIdx][4] = false; // unbuilt: hidden + walk-through until a depository raises it
     hoodParts.push({ angle: angle, z: z, group: g, solidIdx: sIdx });
     return g;
@@ -3152,7 +3183,7 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
     fillBox(g, 0.15, 0.8, 6, fillBenchMat, 3, 0, 0);
     fillBox(g, 5, 0.5, 1.2, fillCropMat, 0, -0.15, -1.5);
     fillBox(g, 5, 0.5, 1.2, fillCropMat, 0, -0.15, 1.5);
-    const sIdx = addSolid(angle, 3, z, 3);
+    const sIdx = addSolid(angle, 3, z, 3, 159); // garden fence ~0.8 m
     g.visible = false; SOLID[sIdx][4] = false; // unbuilt: hidden + walk-through until a depository raises it
     gardens.push({ angle: angle, z: z, group: g, solidIdx: sIdx, hood: -1 });
     return g;
@@ -3290,7 +3321,7 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
     const stoop = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.4, 2.5),
       new THREE.MeshStandardMaterial({ color: 0x5a5f66, roughness: 0.9 }));
     stoop.position.set(doorSide * 8.2, -2.3, 0);
-    addSolid(angle, 7, z, 6);
+    addSolid(angle, 7, z, 6, 155); // quarters roof ~5.4 m
     grp.add(stoop);
     shipInterior.add(grp);
   }
@@ -3420,8 +3451,8 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
     lintel.quaternion.copy(basisQuat(arad));
     shipInterior.add(lintel);
     mountAxialSign('EDUCATION ZONE', '#e8a33d', 5, 2.05, RADIUS - 4.2, 204.3, -1);
-    addSolid(2.05 - 6 / RADIUS, 0.4, 205, 0.4);
-    addSolid(2.05 + 6 / RADIUS, 0.4, 205, 0.4);
+    addSolid(2.05 - 6 / RADIUS, 0.4, 205, 0.4, 156); // arch post 4 m
+    addSolid(2.05 + 6 / RADIUS, 0.4, 205, 0.4, 156); // arch post 4 m
   }
   // Agriculture path: benches + sheds, fields untouched and open.
   for (const bz of [-240, -180, -120]) {
@@ -3441,7 +3472,7 @@ for (let hi = 0; hi < 16; hi++) neighborhoods.push({ angle: HOOD_CENTERS[hi][0],
     shed.position.z = sz;
     shed.quaternion.copy(basisQuat(srad));
     shipInterior.add(shed);
-    addSolid(2.2, 4.5, sz, 4.5);
+    addSolid(2.2, 4.5, sz, 4.5, 156); // shed 4 m tall
   }
   // Warm point lights over the mess and the quarters row (living light;
   // work areas keep the existing cool strips). Emissive-only elsewhere.
@@ -4797,14 +4828,13 @@ function nearestDepositoryAny() {
   }
   return best;
 }
-// Round 43: the depositories stand on the observation deck, each with
-// its own stairs from the main deck (WATER stairs centred angle 6.10,
-// METAL stairs centred 3.72; lower-tower feet at z 40 and z 160).
-// The tutorial arrow routes via the stairs: while the player is below
-// deck it points at the foot of the target depository's stairs (the
-// nearer foot), so the arrow leads them UP; once aboard the deck it
-// points at the depository itself (radius 140).
-const DEP_STAIRS = { water: { angle: 6.10, feet: [40, 160] }, metal: { angle: 3.72, feet: [40, 160] } };
+// Round 44: the depositories stand on the observation deck, each with a
+// single staircase from the main deck (WATER stairs centred angle 6.16,
+// METAL stairs centred 3.02; one foot at z 40 each). The tutorial arrow
+// routes via the stairs: while the player is below deck it points at the
+// foot of the target depository's stairs, so the arrow leads them UP;
+// once aboard the deck it points at the depository itself (radius 140).
+const DEP_STAIRS = { water: { angle: 6.16, feet: [40] }, metal: { angle: 3.02, feet: [40] } };
 function depStairFoot(dep) {
   const st = DEP_STAIRS[dep.kind];
   if (!st) return null;
@@ -5348,33 +5378,34 @@ function oppObsFactor(a, z) {
   const aF = (an >= OPP_OBS_A0 && an <= OPP_OBS_A1) ? 1 : 0;
   return zF * aF;
 }
-// Depository stairs walk levels (Round 43): mirror oppFactor /
-// oppObsFactor for the WATER arc (5.93 ... 6.27 / 5.95 ... 6.25) and
-// the METAL arc (3.56 ... 3.88 / 3.58 ... 3.86). waterFactor /
-// metalFactor is 1 on the landing, ramping over the lower stairs;
-// waterObsFactor / metalObsFactor is 1 at the top of the upper stairs
-// (the interior entry), ramping over the upper stairs.
+// Depository stairs walk levels (Round 44: single staircases, z 40...80).
+// waterFactor / metalFactor is 1 on the landing (z 60...80), ramping over
+// the lower stairs (40...60) and down past the stair top (80...100 —
+// above z 80 the player is in the interior, so the landing level no
+// longer matters); waterObsFactor / metalObsFactor is 1 at the top of the
+// upper stairs (the interior entry), ramping over the upper stairs
+// (60...80). There is no second staircase, so no 120...140 term.
 function waterFactor(a, z) {
   const an = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-  const zF = sstep(40, 60, z) * (1 - sstep(140, 160, z));
+  const zF = sstep(40, 60, z) * (1 - sstep(80, 100, z));
   const aF = (an >= WATER_A0 && an <= WATER_A1) ? 1 : 0;
   return zF * aF;
 }
 function waterObsFactor(a, z) {
   const an = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-  const zF = sstep(60, 80, z) * (1 - sstep(120, 140, z));
+  const zF = sstep(60, 80, z);
   const aF = (an >= WATER_OBS_A0 && an <= WATER_OBS_A1) ? 1 : 0;
   return zF * aF;
 }
 function metalFactor(a, z) {
   const an = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-  const zF = sstep(40, 60, z) * (1 - sstep(140, 160, z));
+  const zF = sstep(40, 60, z) * (1 - sstep(80, 100, z));
   const aF = (an >= METAL_A0 && an <= METAL_A1) ? 1 : 0;
   return zF * aF;
 }
 function metalObsFactor(a, z) {
   const an = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-  const zF = sstep(60, 80, z) * (1 - sstep(120, 140, z));
+  const zF = sstep(60, 80, z);
   const aF = (an >= METAL_OBS_A0 && an <= METAL_OBS_A1) ? 1 : 0;
   return zF * aF;
 }
@@ -5392,13 +5423,18 @@ function interiorLevels(a, z) {
 // decreasing, staircase 2 down is z increasing. Tangential movement
 // (dz 0) is not a descent, so walking at height across a ramp bottom
 // does not drop the player.
+// Round 44: the z 120...140 branch is for the two-staircase entries
+// (gallery + opposite) only. The depository stairs are single: a player
+// walking the open interior at z 120...140 in a depository arc is NOT
+// descending, and treating it as one would dip the eye to the landing
+// level mid-deck.
 function isDescendingInterior(a, z, dz) {
   if (dz === 0) return false;
   const an = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
   const inArc = (an >= OBS_A0 && an <= OBS_A1) || (an >= OPP_OBS_A0 && an <= OPP_OBS_A1) || (an >= WATER_OBS_A0 && an <= WATER_OBS_A1) || (an >= METAL_OBS_A0 && an <= METAL_OBS_A1);
-  if (!inArc) return false;
-  if (z >= 60 && z <= 80) return dz < 0;
-  if (z >= 120 && z <= 140) return dz > 0;
+  const inArcTwo = (an >= OBS_A0 && an <= OBS_A1) || (an >= OPP_OBS_A0 && an <= OPP_OBS_A1);
+  if (z >= 60 && z <= 80) return inArc && dz < 0;
+  if (z >= 120 && z <= 140) return inArcTwo && dz > 0;
   return false;
 }
 // Eye radius for walking. While inObsInterior the player stays at the
@@ -5429,9 +5465,15 @@ function walkEyeR(a, z, dz) {
 function atObsStairFoot() {
   const an = ((playerAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
   const inArc = (an >= OBS_A0 && an <= OBS_A1) || (an >= OPP_OBS_A0 && an <= OPP_OBS_A1) || (an >= WATER_OBS_A0 && an <= WATER_OBS_A1) || (an >= METAL_OBS_A0 && an <= METAL_OBS_A1);
-  if (!inArc) return false;
-  if (!((playerZ >= 55 && playerZ <= 82) || (playerZ >= 118 && playerZ <= 145))) return false;
-  return interiorLevels(playerAngle, playerZ).l2 > 0.001;
+  const inArcTwo = (an >= OBS_A0 && an <= OBS_A1) || (an >= OPP_OBS_A0 && an <= OPP_OBS_A1);
+  // Round 44: the z 118...145 branch is for the two-staircase entries
+  // only. The depository stairs are single, so a player on the main deck
+  // at z 118...145 in a depository arc is not on a ramp at all — and with
+  // the single-staircase l2 (1 for all z >= 80) the l2 gate alone would
+  // wrongly show the sun there (the Round 39 bottom-deck window bug).
+  if (playerZ >= 55 && playerZ <= 82) return inArc && interiorLevels(playerAngle, playerZ).l2 > 0.001;
+  if (playerZ >= 118 && playerZ <= 145) return inArcTwo && interiorLevels(playerAngle, playerZ).l2 > 0.001;
+  return false;
 }
 // Interior state: stepping fully onto an obs deck (either side) puts
 // the player up in the interior; a descent that reaches the bottom
