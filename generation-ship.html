@@ -8395,26 +8395,33 @@ btnTitleResume.addEventListener('pointerdown', function (e) {
   hideTitle();
   if (mode === 'walk') announceBoarding(); // resumed aboard — greet back (a flight restore stays silent)
 });
-// Round 38: new-player spawn — TOP of the observation-deck stairs
-// (gallery arc, staircase 1), looking toward the sun screen. Only a
+// Round 42: new-player spawn — TOP of the observation-deck stairs
+// (OPPOSITE arc, staircase 1), looking toward the sun screen. Only a
 // fresh journey starts here: both Begin paths call
 // placeAtObservationStairs() after resetProgress(). A save always
 // restores its stored position (applySave / restoreSavedPosition —
 // untouched), and the docked standard spawn (angle 0, z 40) stays for
 // returnAboard / crash retry / a save without pos.
-// Spawn: angle 4.65 (in the obs arc 4.55-4.85, clear of the structural
-// columns at 3PI/2, z 60/120), z 85 (top of staircase 1: obs deck,
-// eye 138.3, past the ramp top at z 80 and clear of the stairwell
-// hole at z 60-80), yaw 0 (facing +z, toward the sun screen at z
-// +318), pitch 0.45 (centers the sun disc; the parallax-shifted disc
-// sits ~24 deg above the axial horizontal from here).
+// Spawn: angle 1.52 (in the opp obs arc 1.41-1.71, clear of the
+// structural column at PI/2, z 60/120 — the arc centre 1.56 sits
+// almost on the column axis, only ~0.55 m clear of its blocked zone
+// at the ramp foot, so the spawn is offset 0.05 rad toward the lower
+// edge, mirroring the gallery spawn's 4.65 offset from 3PI/2; 1.52
+// also lands the descent nearly on the main-street line (1.5)), z 85
+// (top of staircase 1: interior, eye 138.3, past the ramp top at
+// z 80 and clear of the stairwell hole at z 60-80), yaw 0 (facing
+// +z, toward the sun screen at z +318), pitch 0.45 (centers the sun
+// disc; the parallax-shifted disc sits ~24 deg above the axial
+// horizontal from here).
 // inObsInterior = true: the player starts IN the interior, so the sun
 // screen is visible on the very first frame. Walking down the stairs
-// (toward -z) descends to the gallery deck and heads through
+// (toward -z) descends to the opposite landing and heads through
 // residential toward the bulkhead (z=0) and the agricultural sector
-// beyond — the guided path Brant asked for.
+// beyond; walking +z from the landing foot follows the main street
+// (angle 1.5) straight to the fountain plaza town center at
+// (1.55, 180) — the route Brant asked for.
 function placeAtObservationStairs() {
-  playerAngle = 4.65; playerZ = 85; yaw = 0; pitch = 0.45;
+  playerAngle = 1.52; playerZ = 85; yaw = 0; pitch = 0.45;
   inObsInterior = true; interiorDescending = false; interiorExitHold = 0;
   jumpH = 0; jumpV = 0;
 }
