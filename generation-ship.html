@@ -1314,27 +1314,29 @@ const OPP_EDGES = [OPP_A0, OPP_A1];
 // 1.56): the upper stairs to the interior on the opposite side.
 const OPP_OBS_A0 = 1.41, OPP_OBS_A1 = 1.71;
 const OPP_OBS_EDGES = [OPP_OBS_A0, OPP_OBS_A1];
-// Round 44: depository stairs MOVED to the depositories (Brant Nov 10).
-// The depositories sit at 90 deg from the review terminals (angles 0 and
-// pi, z 100, on the observation deck). Each depository now has a SINGLE
-// staircase (z 40...80: lower tower 40...60, upper stairs 60...80, landing
-// 60...80) whose top lands ~26 m from its depository — the way the review
+// Round 45: depository stairs CENTRED on their depositories (Brant
+// Nov 10 — the Round 44 stairs sat ~0.12 rad off to the side, so the
+// depositories read as "to the left" from the top of the stairs). Each
+// depository has a SINGLE staircase (z 40...80: lower tower 40...60,
+// upper stairs 60...80, landing 60...80) whose centreline runs straight
+// at its depository, 20 m past the ramp top — the way the review
 // terminals sit ~20 m past their stair tops. No residential block moved:
 // a single staircase at z 40...80 clears every neighbourhood part (the
-// (0.2,120) and (3.1,150) blocks' parts all sit at z >= 92). The arcs are
-// offset ~0.15 rad from 0/pi so the z-60 structural column sits just
-// outside the arc (centre lines 19.5 m clear of the nearest column) —
-// the WATER landing [6.06, 6.26] centre 6.16, the METAL landing [2.92,
-// 3.12] centre 3.02. Both footprints are solid-free in z 40...80 (verified
-// against the solid list); the tutorial arrow routes via the stairs when
-// the player is below deck.
-const WATER_A0 = 6.06, WATER_A1 = 6.26;
-const WATER_EDGES = [WATER_A0, WATER_A1];
-const WATER_OBS_A0 = 6.08, WATER_OBS_A1 = 6.24;
-const WATER_OBS_EDGES = [WATER_OBS_A0, WATER_OBS_A1];
-const METAL_A0 = 2.92, METAL_A1 = 3.12;
+// (0.2,120) and (3.1,150) blocks' parts all sit at z >= 92). The WATER
+// arc straddles angle 0 ([-0.10, 0.10] landing, [-0.08, 0.08] upper), so
+// the walk model uses arcContains() (wrap-safe) for it and the edge
+// check is membership-based (WATER_EDGES dropped, now unused); the
+// METAL arc is centred on pi ([pi-0.10, pi+0.10] landing, [pi-0.08,
+// pi+0.08] upper) and never wraps. The two z-60 structural columns
+// that stood on the centrelines moved to z 140 (see the column loop).
+// Both footprints are solid-free in z 40...80 (verified against the
+// solid list); the tutorial arrow routes via the stairs when the player
+// is below deck.
+const WATER_A0 = -0.1, WATER_A1 = 0.1;
+const WATER_OBS_A0 = -0.08, WATER_OBS_A1 = 0.08;
+const METAL_A0 = Math.PI - 0.1, METAL_A1 = Math.PI + 0.1;
 const METAL_EDGES = [METAL_A0, METAL_A1];
-const METAL_OBS_A0 = 2.94, METAL_OBS_A1 = 3.10;
+const METAL_OBS_A0 = Math.PI - 0.08, METAL_OBS_A1 = Math.PI + 0.08;
 const METAL_OBS_EDGES = [METAL_OBS_A0, METAL_OBS_A1];
 function habitatBlocked(a, z) {
   const near = (ang, half) => Math.abs(angDiff(a, ang)) < half;
@@ -1361,11 +1363,11 @@ for (let i = 0; i < 14; i++) {
     const clearGallery = !inGalleryArc || !(z > 35 && z < 165);
     const inOppArc = a > OPP_A0 - 0.2 && a < OPP_A1 + 0.2;
     const clearOpp = !inOppArc || !(z > 35 && z < 165);
-    // Round 44: the depository stairs are single staircases (z 40...80)
+    // Round 45: the depository stairs are single staircases (z 40...80)
     // — no random box may ever land in either stair arc. The WATER arc
-    // sits near 2pi, so the +0.2 margin wraps past it: the second clause
-    // catches angles just past 0.
-    const inWaterArc = (a > WATER_A0 - 0.2 && a < WATER_A1 + 0.2) || a < WATER_A1 + 0.2 - Math.PI * 2;
+    // straddles 0, so the +0.2 margin wraps both ways: the first clause
+    // catches angles just past 0, the second catches angles just below 2pi.
+    const inWaterArc = (a > WATER_A0 - 0.2 && a < WATER_A1 + 0.2) || a > WATER_A0 - 0.2 + Math.PI * 2;
     const clearWater = !inWaterArc || !(z > 35 && z < 85);
     const inMetalArc = a > METAL_A0 - 0.2 && a < METAL_A1 + 0.2;
     const clearMetal = !inMetalArc || !(z > 35 && z < 85);
@@ -2087,7 +2089,7 @@ const cropBeds = [];
   // the depository stairs are single, so there is no second stairwell
   // there and the shell stays solid). The old WATER/METAL holes
   // ([5.95, 6.25] / [3.58, 3.86]) are filled in with the old stairs.
-  const CEIL_KEEP_60 = [[0, 1.41], [1.71, 2.94], [3.10, 4.55], [4.85, 6.08], [6.24, Math.PI * 2]];
+  const CEIL_KEEP_60 = [[0.08, 1.41], [1.71, 3.0616], [3.2216, 4.55], [4.85, 6.2032]]; // Round 45: holes at the centred WATER ([-0.08, 0.08] -> [0, 0.08] + [6.2032, 2pi)) and METAL ([3.0616, 3.2216]) upper-stair arcs
   const CEIL_KEEP_120 = [[0, 1.41], [1.71, 4.55], [4.85, Math.PI * 2]];
   function ceilSeg(zC, len, a0, a1) {
     const span = a1 - a0;
@@ -2141,7 +2143,11 @@ const cropBeds = [];
   }
   const colMat = new THREE.MeshStandardMaterial({ color: 0x4a5560, roughness: 0.8, metalness: 0.3 });
   for (const ca of [0, Math.PI / 2, Math.PI, 3 * Math.PI / 2]) {
-    for (const cz of [60, 120, 180, 240, 300]) {
+    // Round 45: the (0, 60) and (pi, 60) columns stood on the centred
+    // WATER / METAL stair centrelines — moved to z 140 (40 m past the
+    // depositories, clear of every route); all other columns unchanged.
+    const zList = (ca === 0 || ca === Math.PI) ? [140, 120, 180, 240, 300] : [60, 120, 180, 240, 300];
+    for (const cz of zList) {
       const crad = new THREE.Vector3(Math.cos(ca), Math.sin(ca), 0);
       const col = new THREE.Mesh(new THREE.BoxGeometry(1.2, 20, 1.2), colMat);
       col.position.copy(crad).multiplyScalar(150);
@@ -2520,7 +2526,10 @@ const cropBeds = [];
 // smoothstep ramps, so the camera never clips into a step. Walk model:
 // waterFactor()/waterObsFactor() and metalFactor()/metalObsFactor()
 // (next to galleryFactor / obsDeckFactor). A sign under each landing
-// names the depository it serves.
+// names the depository it serves. Round 45: the arcs are centred on
+// their depositories (WATER on angle 0, METAL on pi) — the WATER arc
+// straddles 0, so its segment angles run negative; cos/sin handle that,
+// and the walk model is wrap-safe (arcContains / membership edges).
 {
   const DSEG = 8;
   const depPodiumMat = new THREE.MeshStandardMaterial({ color: 0x39424e, roughness: 0.85 });
@@ -2605,7 +2614,7 @@ const cropBeds = [];
   const coolStripMat = new THREE.MeshBasicMaterial({ color: 0xcfe8ff });
   // Overhead ceiling conduits (radius 141, just below the 140 shell):
   // tech span z 40...280 + edu span z 200...320, four angles.
-  for (const ca of [0.3, 3.3, 3.9, 5.9]) { // Round 44: the 3.0 conduit crossed the new METAL stairwell ([2.92, 3.12]); moved to 3.3
+  for (const ca of [0.3, 3.3, 3.9, 5.9]) { // Round 44: the 3.0 conduit crossed the METAL stairwell; moved to 3.3 — still clear of the centred [3.04, 3.24] arc (Round 45)
     const radial = new THREE.Vector3(Math.cos(ca), Math.sin(ca), 0);
     const tech = new THREE.Mesh(pipeGeo, pipeMat);
     tech.position.copy(radial).multiplyScalar(141);
@@ -4828,13 +4837,13 @@ function nearestDepositoryAny() {
   }
   return best;
 }
-// Round 44: the depositories stand on the observation deck, each with a
-// single staircase from the main deck (WATER stairs centred angle 6.16,
-// METAL stairs centred 3.02; one foot at z 40 each). The tutorial arrow
+// Round 45: the depositories stand on the observation deck, each with a
+// single staircase from the main deck (WATER stairs centred angle 0,
+// METAL stairs centred pi; one foot at z 40 each). The tutorial arrow
 // routes via the stairs: while the player is below deck it points at the
 // foot of the target depository's stairs, so the arrow leads them UP;
 // once aboard the deck it points at the depository itself (radius 140).
-const DEP_STAIRS = { water: { angle: 6.16, feet: [40] }, metal: { angle: 3.02, feet: [40] } };
+const DEP_STAIRS = { water: { angle: 0, feet: [40] }, metal: { angle: Math.PI, feet: [40] } };
 function depStairFoot(dep) {
   const st = DEP_STAIRS[dep.kind];
   if (!st) return null;
@@ -5385,16 +5394,25 @@ function oppObsFactor(a, z) {
 // longer matters); waterObsFactor / metalObsFactor is 1 at the top of the
 // upper stairs (the interior entry), ramping over the upper stairs
 // (60...80). There is no second staircase, so no 120...140 term.
+// Round 45: the WATER arc straddles angle 0 ([-0.10, 0.10]), so a plain
+// an >= A0 && an <= A1 check misses the [6.18, 2pi) half. arcContains
+// normalizes the angle and wraps a negative A0. (METAL is centred on pi
+// and never wraps, so its plain checks stay.)
+function arcContains(a, a0, a1) {
+  const an = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  if (a0 >= 0) return an >= a0 && an <= a1;
+  return an >= a0 + Math.PI * 2 || an <= a1;
+}
 function waterFactor(a, z) {
   const an = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
   const zF = sstep(40, 60, z) * (1 - sstep(80, 100, z));
-  const aF = (an >= WATER_A0 && an <= WATER_A1) ? 1 : 0;
+  const aF = arcContains(an, WATER_A0, WATER_A1) ? 1 : 0;
   return zF * aF;
 }
 function waterObsFactor(a, z) {
   const an = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
   const zF = sstep(60, 80, z);
-  const aF = (an >= WATER_OBS_A0 && an <= WATER_OBS_A1) ? 1 : 0;
+  const aF = arcContains(an, WATER_OBS_A0, WATER_OBS_A1) ? 1 : 0;
   return zF * aF;
 }
 function metalFactor(a, z) {
@@ -5431,7 +5449,7 @@ function interiorLevels(a, z) {
 function isDescendingInterior(a, z, dz) {
   if (dz === 0) return false;
   const an = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-  const inArc = (an >= OBS_A0 && an <= OBS_A1) || (an >= OPP_OBS_A0 && an <= OPP_OBS_A1) || (an >= WATER_OBS_A0 && an <= WATER_OBS_A1) || (an >= METAL_OBS_A0 && an <= METAL_OBS_A1);
+  const inArc = (an >= OBS_A0 && an <= OBS_A1) || (an >= OPP_OBS_A0 && an <= OPP_OBS_A1) || arcContains(an, WATER_OBS_A0, WATER_OBS_A1) || (an >= METAL_OBS_A0 && an <= METAL_OBS_A1);
   const inArcTwo = (an >= OBS_A0 && an <= OBS_A1) || (an >= OPP_OBS_A0 && an <= OPP_OBS_A1);
   if (z >= 60 && z <= 80) return inArc && dz < 0;
   if (z >= 120 && z <= 140) return inArcTwo && dz > 0;
@@ -5464,7 +5482,7 @@ function walkEyeR(a, z, dz) {
 // deck, radius 150.)
 function atObsStairFoot() {
   const an = ((playerAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-  const inArc = (an >= OBS_A0 && an <= OBS_A1) || (an >= OPP_OBS_A0 && an <= OPP_OBS_A1) || (an >= WATER_OBS_A0 && an <= WATER_OBS_A1) || (an >= METAL_OBS_A0 && an <= METAL_OBS_A1);
+  const inArc = (an >= OBS_A0 && an <= OBS_A1) || (an >= OPP_OBS_A0 && an <= OPP_OBS_A1) || arcContains(an, WATER_OBS_A0, WATER_OBS_A1) || (an >= METAL_OBS_A0 && an <= METAL_OBS_A1);
   const inArcTwo = (an >= OBS_A0 && an <= OBS_A1) || (an >= OPP_OBS_A0 && an <= OPP_OBS_A1);
   // Round 44: the z 118...145 branch is for the two-staircase entries
   // only. The depository stairs are single, so a player on the main deck
@@ -5504,7 +5522,7 @@ function updateInteriorState(a, z, dz) {
   // descending flag, so a player who overshoots the bottom by a step
   // and then stops can still exit.
   const an = ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-  const inObsArc = (an >= OBS_A0 && an <= OBS_A1) || (an >= OPP_OBS_A0 && an <= OPP_OBS_A1) || (an >= WATER_OBS_A0 && an <= WATER_OBS_A1) || (an >= METAL_OBS_A0 && an <= METAL_OBS_A1);
+  const inObsArc = (an >= OBS_A0 && an <= OBS_A1) || (an >= OPP_OBS_A0 && an <= OPP_OBS_A1) || arcContains(an, WATER_OBS_A0, WATER_OBS_A1) || (an >= METAL_OBS_A0 && an <= METAL_OBS_A1);
   const onRampSlope = inObsArc && ((z > 60 && z < 80) || (z > 120 && z < 140)) && lv.l2 > 0.001 && lv.l2 < 0.999;
   if (!onRampSlope) {
     // Round 36: the exit check must come FIRST. The old order checked
@@ -5612,10 +5630,14 @@ function updateWalk(dt) {
     OPP_OBS_EDGES.some((e) => (anNow < e && anNext >= e) || (anNow > e && anNext <= e));
   // Depository stairs side walls are solid too (same pattern): the
   // landing edges (z 40 ... 160) and the upper-stair edges (z 60 ... 140).
+  // Round 45: the WATER arc straddles angle 0, so the linear edge
+  // comparison misses the wrap side (a move from 6.25 to 6.05 crosses
+  // the -0.10 edge without tripping either comparison). Membership
+  // (inside before, outside after, or the reverse) is wrap-safe.
   const crossesWaterEdge = playerZ >= 40 && playerZ <= 160 &&
-    WATER_EDGES.some((e) => (anNow < e && anNext >= e) || (anNow > e && anNext <= e));
+    (arcContains(anNow, WATER_A0, WATER_A1) !== arcContains(anNext, WATER_A0, WATER_A1));
   const crossesWaterObsEdge = playerZ >= 60 && playerZ <= 140 &&
-    WATER_OBS_EDGES.some((e) => (anNow < e && anNext >= e) || (anNow > e && anNext <= e));
+    (arcContains(anNow, WATER_OBS_A0, WATER_OBS_A1) !== arcContains(anNext, WATER_OBS_A0, WATER_OBS_A1));
   const crossesMetalEdge = playerZ >= 40 && playerZ <= 160 &&
     METAL_EDGES.some((e) => (anNow < e && anNext >= e) || (anNow > e && anNext <= e));
   const crossesMetalObsEdge = playerZ >= 60 && playerZ <= 140 &&
@@ -5860,6 +5882,7 @@ function updateFlight(dt) {
       if (mineTarget.type === 'comet') { water += WATER_YIELD; hint.textContent = '+' + WATER_YIELD + ' WATER collected'; }
       else { metal += METAL_YIELD; hint.textContent = '+' + METAL_YIELD + ' METAL collected'; }
       saveGame(); // mining yield saves the journey
+      try { updateQuestUI(); } catch (e) {} // Round 45: the haul line only refreshed while walking — mining in flight never redrew it
       if (mineTimer) clearTimeout(mineTimer);
       mineTimer = setTimeout(updateHint, 3000);
       mineProgress = 0; mineTarget = null;
@@ -6608,6 +6631,17 @@ document.getElementById('btn-collect-leave').addEventListener('pointerdown', fun
 document.getElementById('btn-collect-continue').addEventListener('click', function () {
   closeCollect(true);
 });
+// Round 45: tap outside the card closes the space card too — only when
+// the tap lands on the panel itself (e.target === collectPanel); taps on
+// the card or anything inside it do not close. State-aware: if the
+// recognition screen is showing, the item is already collected, so it
+// closes like Continue flying (true); otherwise it closes like Leave it
+// (false — tile suppressed until flown clear).
+collectPanel.addEventListener('pointerdown', function (e) {
+  if (e.target !== collectPanel) return;
+  const recog = document.getElementById('collectRecognition').style.display === 'block';
+  closeCollect(recog);
+});
 // LOOK/STEER toggle: pointerdown (not click) so it fires mid-steer.
 // Switches drag between looking (camera) and steering (ship) in flight;
 // the label and .on state show the current mode. No key binding.
@@ -7128,6 +7162,13 @@ function closeTool() {
 }
 document.getElementById('btn-tool-close').addEventListener('pointerdown', function (e) {
   e.preventDefault(); e.target.blur(); closeTool();
+});
+// Round 45: tap outside the card closes the station too — only when the
+// tap lands on the panel itself (e.target === toolPanel); taps on the
+// card or anything inside it have the card/child as the target and do
+// not close. Station tool panel only.
+toolPanel.addEventListener('pointerdown', function (e) {
+  if (e.target === toolPanel) closeTool();
 });
 // ---------- Round 30 review terminals (EIGHT) ----------
 // Gold consoles spread across the industrial half: one on the gallery
