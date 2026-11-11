@@ -23,6 +23,7 @@ html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-a
 .hudBtn:hover{background:rgba(0,0,0,.75)}
 .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,4,28,.82);z-index:5;padding:12px}
 .overlay.hidden{display:none}
+.hidden{display:none}
 .card{background:#fff7ed;color:#1f2937;border-radius:16px;padding:20px 22px;max-width:560px;width:100%;max-height:94vh;max-height:94dvh;overflow-y:auto;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.5)}
 .card h2{margin:0 0 6px;font-size:1.6rem;color:#c2410c}
 .card p{margin:6px 0}
@@ -36,19 +37,32 @@ html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-a
 .btn.link{background:none;color:#2563eb;text-decoration:underline;font-size:.95rem;min-width:0;padding:6px}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 #quizTarget{font-size:2.4rem;font-weight:800;color:#111827;margin:10px 0;line-height:1.15}
+#quizStep{font-weight:700;color:#c2410c;font-size:.95rem;margin:2px 0}
+#quizChoices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.choiceBtn{background:#fff;border:2px solid #f97316;border-radius:12px;padding:14px 10px;font-size:1.15rem;font-weight:700;color:#1f2937;cursor:pointer;min-height:56px;line-height:1.2}
+.choiceBtn:hover{background:#ffedd5}
+.choiceBtn.correct{background:#dcfce7;border-color:#16a34a;color:#166534}
+.choiceBtn.wrong{background:#fee2e2;border-color:#dc2626;color:#991b1b;opacity:.55}
+.choiceBtn:disabled{cursor:not-allowed}
 #quizPrompt{font-size:1.05rem;color:#4b5563}
 #quizTitle{font-weight:800;color:#c2410c;font-size:1.15rem}
 #quizCount{color:#6b7280;font-size:.95rem}
 .feedback{font-size:1.1rem;font-weight:700;min-height:1.4em;margin:8px 0}
 .feedback.ok{color:#16a34a}
 .feedback.bad{color:#dc2626}
+.tagline{font-size:1.15rem;color:#c2410c;font-weight:800;margin:2px 0 8px}
 #levelGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:12px 0}
-.lvlBtn{background:#fff;border:2px solid #f97316;border-radius:12px;padding:10px 4px;cursor:pointer;color:#1f2937}
+.lvlBtn{background:#fff;border:2px solid #f97316;border-radius:14px;padding:8px 6px;cursor:pointer;color:#1f2937;box-shadow:0 1px 3px rgba(0,0,0,.15)}
 .lvlBtn:hover{background:#ffedd5}
 .lvlBtn.locked{opacity:.45;cursor:not-allowed;background:#e5e7eb;border-color:#9ca3af}
-.lvlBtn .n{font-size:1.4rem;font-weight:800}
-.lvlBtn .t{font-size:.8rem;color:#4b5563}
-.lvlBtn .b{font-size:.8rem;font-weight:700;color:#c2410c}
+.lvlBtn.done{border-color:#16a34a;background:#f0fdf4}
+.lvlBtn .n{font-size:1.5rem;font-weight:800;color:#c2410c}
+.lvlBtn .t{font-size:.85rem;color:#1f2937;font-weight:700}
+.lvlBtn .b{font-size:.85rem;font-weight:800;color:#c2410c}
+.resetBtn{background:#f3f4f6;color:#4b5563;border:2px solid #9ca3af;font-size:.9rem;min-width:0;padding:6px 14px;margin:2px 0}
+.resetBtn:hover{background:#e5e7eb}
+#resetConfirm{background:#fef3c7;border:2px solid #f59e0b;border-radius:12px;padding:10px 12px;margin:8px 0}
+#resetConfirm p{margin:6px 0}
 #winWords{text-align:left;max-height:180px;overflow-y:auto;margin:10px auto;display:inline-block}
 #winWords div{padding:2px 0}
 #flash{position:absolute;inset:0;background:rgba(220,38,38,.45);opacity:0;pointer-events:none;z-index:4}
@@ -59,9 +73,22 @@ html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-a
 .volRow input[type=range]{vertical-align:middle;width:120px;accent-color:#f97316}
 .homeLink{display:inline-block;margin-top:6px;color:#2563eb;font-weight:700}
 .small{font-size:.85rem;color:#6b7280}
+@media (max-height:480px){
+  #menu .tagline{display:none}
+  #menu .menuDesc{display:none}
+  #menu .small{display:none}
+  #menu .card h2{font-size:1.3rem;margin-bottom:2px}
+  #menu .card{padding:12px 16px}
+  #menu .lvlBtn{padding:8px 4px}
+  #menu .lvlBtn .n{font-size:1.3rem}
+  #menu .lvlBtn .t{font-size:.8rem}
+  #menu .lvlBtn .b{font-size:.8rem}
+  #levelGrid{gap:6px;margin:8px 0}
+}
 @media (max-width:600px){
   h1{font-size:1.5rem}
   #quizTarget{font-size:1.8rem}
+  .choiceBtn{font-size:1.05rem;padding:12px 8px;min-height:52px}
   .card{padding:14px 16px}
   .card h2{font-size:1.35rem}
   .card p{margin:4px 0}
@@ -92,10 +119,15 @@ html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-a
     <div id="menu" class="overlay">
       <div class="card">
         <h2>🐔 Spanish Dash</h2>
-        <p><b>Jump, run, and say it in Spanish!</b></p>
-        <p>Tap, click, or press <b>Space</b> to jump over spikes and gaps — and land on the orange platforms to hop over trouble. At each checkpoint the game stops and asks you to <b>say a Spanish word out loud</b>. Say it right to keep running. Get it wrong? No problem — try again as many times as you like!</p>
+        <p class="tagline">Run. Jump. Say it in Spanish!</p>
+        <p class="menuDesc">Tap, click, or <b>Space</b> to jump. At each checkpoint, pick the right answer, then <b>say it out loud</b>. Wrong pick? Back to the last checkpoint!</p>
         <div id="levelGrid"></div>
-        <p class="small">Levels 1–2: Cognates &nbsp;·&nbsp; Levels 3–4: Practice the words &nbsp;·&nbsp; Levels 5–6: Present tense &nbsp;·&nbsp; Levels 7–8: Possessive pronouns &nbsp;·&nbsp; Levels 9–10: Ser vs. estar<br>10 words per level. Your best % is saved on this device. A microphone is needed — you must say each word out loud to continue.</p>
+        <p class="small">L1–2 Cognates &nbsp;·&nbsp; L3–4 Practice &nbsp;·&nbsp; L5–6 Present tense &nbsp;·&nbsp; L7–8 Possessives &nbsp;·&nbsp; L9–10 Ser vs. estar<br>25 questions per level, fresh every run. A microphone is needed.</p>
+        <p style="margin:4px 0"><button class="btn resetBtn" id="btnReset" type="button">Reset progress</button></p>
+        <div id="resetConfirm" class="hidden">
+          <p><b>Are you sure?</b> This clears all best scores and unlocked levels.</p>
+          <p><button class="btn" id="btnResetYes" type="button">Yes, reset</button> <button class="btn alt" id="btnResetNo" type="button">No, keep them</button></p>
+        </div>
         <p><a class="homeLink" href="index.html">← Back to Pollito Productions</a></p>
       </div>
     </div>
@@ -103,10 +135,12 @@ html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-a
     <div id="quiz" class="overlay hidden">
       <div class="card">
         <div id="quizTitle">Checkpoint 1</div>
-        <div id="quizCount">Word 1 of 2</div>
-        <p id="quizPrompt">Say this word:</p>
+        <div id="quizCount">Word 1 of 5</div>
+        <div id="quizStep">Step 1 of 2 · Choose</div>
+        <p id="quizPrompt">Which Spanish phrase means "the cat"?</p>
         <div id="quizTarget">hotel</div>
-        <div>
+        <div id="quizChoices"></div>
+        <div id="quizSpeak">
           <button class="btn alt" id="quizHear" type="button">🔊 Hear it</button>
           <button class="btn say" id="quizSay" type="button">🎤 Say it</button>
         </div>
@@ -120,7 +154,7 @@ html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-a
         <h2>Paused</h2>
         <div class="howto">
           <b>How to play</b>
-          <p>Tap, click, or press <b>Space</b> to jump. Dodge spikes, blocks, and gaps — land on the orange platforms to hop over trouble. At each checkpoint, <b>say the Spanish word out loud</b> to keep running. If it hears you wrong, just try again as many times as you like — a wrong guess never sends you back.</p>
+          <p>Tap, click, or press <b>Space</b> to jump. Dodge spikes, blocks, and gaps — land on the orange platforms to hop over trouble. At each checkpoint, <b>pick the right answer from 4 choices, then say it out loud in Spanish</b> to keep running. Pick the wrong answer and you go back to the last checkpoint. If the game mishears you when you speak, just try again as many times as you like.</p>
         </div>
         <div class="volRow">
           <label>Music <input id="volMusic" type="range" min="0" max="100" value="100"></label>
@@ -147,7 +181,15 @@ html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-a
 </div>
 <script>
 "use strict";
-var GAME_DATA = {"levels": [{"level": 1, "type": "cognate", "title": "Cognates", "words": ["actor", "agenda", "animal", "area", "aroma", "artificial", "atlas", "base", "canal", "capital"]}, {"level": 2, "type": "cognate", "title": "Cognates", "words": ["central", "chocolate", "civil", "club", "color", "crisis", "criminal", "cultural", "digital", "diploma"]}, {"level": 3, "type": "practice", "title": "Practice the words", "words": ["el gato", "el perro", "la casa", "el libro", "la escuela", "la manzana", "la leche", "el agua", "la madre", "el padre"]}, {"level": 4, "type": "practice", "title": "Practice the words", "words": ["la hermana", "el hermano", "la familia", "el caballo", "la puerta", "la ventana", "hablar", "comer", "beber", "vivir"]}, {"level": 5, "type": "conjugation", "title": "Present tense", "items": [{"verb": "abrazar", "subj": 0, "form": "abrazo"}, {"verb": "aplaudir", "subj": 1, "form": "aplaudes"}, {"verb": "avanzar", "subj": 2, "form": "avanza"}, {"verb": "ayudar", "subj": 3, "form": "ayudamos"}, {"verb": "besar", "subj": 4, "form": "besan"}, {"verb": "boxear", "subj": 0, "form": "boxeo"}, {"verb": "buscar", "subj": 1, "form": "buscas"}, {"verb": "caminar", "subj": 2, "form": "camina"}, {"verb": "celebrar", "subj": 3, "form": "celebramos"}, {"verb": "conversar", "subj": 4, "form": "conversan"}]}, {"level": 6, "type": "conjugation", "title": "Present tense", "items": [{"verb": "dejar", "subj": 0, "form": "dejo"}, {"verb": "desarrollar", "subj": 1, "form": "desarrollas"}, {"verb": "desbloquear", "subj": 2, "form": "desbloquea"}, {"verb": "diseñar", "subj": 3, "form": "diseñamos"}, {"verb": "entrenar", "subj": 4, "form": "entrenan"}, {"verb": "escalar", "subj": 0, "form": "escalo"}, {"verb": "escuchar", "subj": 1, "form": "escuchas"}, {"verb": "esquiar", "subj": 2, "form": "esquía"}, {"verb": "explorar", "subj": 3, "form": "exploramos"}, {"verb": "ganar", "subj": 4, "form": "ganan"}]}, {"level": 7, "type": "possessive", "title": "Possessive pronouns", "words": ["mi casa", "mi libro", "tu perro", "tu casa", "su libro", "su casa", "nuestro perro", "nuestra casa", "nuestro libro", "nuestra escuela"]}, {"level": 8, "type": "possessive", "title": "Possessive pronouns", "words": ["mis libros", "mis amigos", "tus libros", "tus amigas", "sus casas", "sus libros", "nuestros amigos", "nuestras casas", "mis gatos", "tus perros"]}, {"level": 9, "type": "serestar", "title": "Ser vs. estar", "items": [{"display": "Ella ___ profesora.", "target": "Ella es profesora."}, {"display": "Ellos ___ estudiantes.", "target": "Ellos son estudiantes."}, {"display": "Nosotros ___ estudiantes.", "target": "Nosotros somos estudiantes."}, {"display": "Tú ___ muy simpático.", "target": "Tú eres muy simpático."}, {"display": "Yo ___ profesor.", "target": "Yo soy profesor."}, {"display": "Él ___ de Perú.", "target": "Él es de Perú."}, {"display": "Ellos ___ de Perú.", "target": "Ellos son de Perú."}, {"display": "Nosotros ___ de Argentina.", "target": "Nosotros somos de Argentina."}, {"display": "Tú ___ de Colombia.", "target": "Tú eres de Colombia."}, {"display": "Yo ___ de Argentina.", "target": "Yo soy de Argentina."}]}, {"level": 10, "type": "serestar", "title": "Ser vs. estar", "items": [{"display": "Mi madre ___ en casa.", "target": "Mi madre está en casa."}, {"display": "Los libros ___ en la escuela.", "target": "Los libros están en la escuela."}, {"display": "Nosotros ___ en la escuela.", "target": "Nosotros estamos en la escuela."}, {"display": "Tú ___ en la tienda.", "target": "Tú estás en la tienda."}, {"display": "Yo ___ en casa.", "target": "Yo estoy en casa."}, {"display": "Ella ___ enferma.", "target": "Ella está enferma."}, {"display": "Ellos ___ enfermos.", "target": "Ellos están enfermos."}, {"display": "Nosotros ___ cansados.", "target": "Nosotros estamos cansados."}, {"display": "Tú ___ enfermo.", "target": "Tú estás enfermo."}, {"display": "Yo ___ cansado.", "target": "Yo estoy cansado."}]}]};
+/* Full question pools — each run draws 25 fresh items per level (no repeats), so replaying a level gives a different mix. */
+var COG_POOL=["actor","agenda","animal","area","aroma","artificial","atlas","base","canal","capital","central","chocolate","civil","club","color","crisis","criminal","cultural","digital","diploma","director","doctor","drama","editor","enigma","error","exterior","familiar","favor","festival","final","formal","gala","general","global","honor","hospital","hotel","humor","idea","ideal","imperial","individual","industrial","informal","interior","internet","legal","liberal","literal","local","manual","material","matrimonial","mental","metal","mineral","moral","mosquito","musical","natural","naval","noble","normal","occidental","original","oval","panorama","personal","pizza","plaza","plural","popular","principal","radio","regular","ritual","rival","rumor","simple","social","solar","solo","sofa","taco","taxi","television","terror","total","tropical","universal","verbal","vertical","video","visible","visual","vital","vocal","yoga","panda","piano","sandwich","plan","control","information","station","education","nation","action","attention","description","celebration","conversation","invitation","operation","production","translation","communication","organization","imagination","condition","tradition","ambition","emotion","function","position","solution","creation","inspiration","observation","participation","presentation","protection","university","community","possibility","opportunity","activity","reality","society","quality","curiosity","electricity","identity","necessity","personality","probability","security","sincerity","authority","capacity","creativity","dignity","famous","nervous","delicious","curious","generous","mysterious","precious","ambitious","furious","glorious","serious","anxious","envious","fabulous","fantastic","romantic","public","artistic","classic","domestic","electric","exotic","heroic","historic","ironic","logical","magic","music","pacific","plastic","poetic","scientific","specific","strategic","symbolic","tragic","academic","automatic","finally","probably","directly","quickly","carefully","easily","exactly","generally","honestly","immediately","naturally","normally","important","different","elegant","intelligent","patient","excellent","urgent","constant","distant","innocent","recent","present","absent","brilliant","abundant","apparent","competent","convenient","vocabulary","necessary","secretary","dictionary","anniversary","commentary","extraordinary","imaginary","legendary","literary","artist","pianist","guitarist","violinist","vocalist","dentist","tourist","specialist","optimist","pessimist","culture","literature","structure","nature","adventure","architecture","posture","temperature","photo","photograph","pharmacy","philosophy","theater","theory","thesis","athlete","author","avenue","bank","bicycle","camera","circle","class","coffee","concert","conference","congress","consonant","continent","contract","copy","correct","cost","course","illegal","telephone","restaurant","medicine","family","planet","universe","constellation","experience","patience","identification","special","to abandon","to absorb","to accept","to accompany","to accuse","to act","to activate","to adapt","to admire","to admit","to adopt","to adore","to affirm","to analyze","to announce","to anticipate","to applaud","to apply","to appreciate","to argue","to arrest","to articulate","to associate","to assume","to attack","to attract","to authorize","to advance","to baptize","to block","to calculate","to cancel","to capture","to celebrate","to censor","to centralize","to characterize","to circulate","to cite","to clarify","to classify","to collaborate","to collect","to combine","to communicate","to compare","to compete","to complete","to compose","to comprehend","to concentrate","to conclude","to condemn","to confess","to confirm","to connect","to conquer","to conserve","to consider","to consist","to consult","to contact","to contain","to continue","to contribute","to control","to convert","to cooperate","to coordinate","to copy","to study","to visit","to program","to present","to pause","to prepare","to protect","to publish","to vote","to use","to utilize","to verify","to practice","to prefer","to pass","to permit","to prove","to receive","to recognize","to recommend","to recover","to reduce","to reform","to register","to regulate","to relax","to repair","to repeat","to represent","to reserve","to resist","to resolve","to respect","to respond","to restore","to result","to reveal","to sacrifice","to satisfy","to save","to select","to separate","to serve","to survive","to tolerate","to transform","to debate","to decide","to declare","to dedicate","to define","to depend","to describe","to desert","to destroy","to detail","to detect","to determine","to diagnose","to dialogue","to dictate","to discuss","to distinguish","to divide","to dominate","to donate","to dramatize","to edit","to educate","to elevate","to eliminate","to emphasize","to encounter","to enter","to escape","to establish","to estimate","to evaluate","to examine","to exceed","to excite","to exist","to expand","to experiment","to explain","to explore","to export","to expose","to express","to extend","to fabricate","to facilitate","to fascinate","to finance","to formulate","to fortify","to function","to generate","to harmonize","to hospitalize","to identify","to ignore","to illuminate","to imagine","to imitate","to import","to impress","to include","to indicate","to inform","to initiate","to innovate","to insist","to inspect","to inspire","to install","to insult","to integrate","to interest","to interpret","to interrupt","to intervene","to introduce","to invent","to invite","to invoke","to justify","to organize"];
+var PRAC_POOL=[["abajo","down"],["la abeja","the bee"],["la abogada","lawyer"],["el abogado","lawyer"],["abrazar","to hug"],["la abuela","the grandmother"],["el abuelo","the grandfather"],["el acantilado","the cliff"],["el actor","actor"],["la actriz","actress"],["el acuerdo","the agreement"],["el adulto","adult"],["el agente de viajes","travel agent"],["la agente de viajes","travel agent"],["el agua","the water"],["el aguacate","the avocado"],["el águila","the eagle"],["el águila real","the golden eagle"],["el ajedrez","chess"],["el ajo","the garlic"],["el alcalde","mayor"],["la alcaldesa","mayor"],["el alce","the moose"],["las algas","the algae"],["el amanecer","the sunrise"],["el amarillo","yellow"],["la amiga","friend"],["el amigo","friend"],["la amistad","friendship"],["el amor","love"],["el anfitrión","host"],["el anillo","the ring"],["el anochecer","the dusk"],["los anteojos","glasses"],["el anuncio","the announcement"],["aplaudir","to applaud"],["el aprendiz","apprentice"],["la aprendiz","apprentice"],["el arándano","the blueberry"],["la árbitra","referee"],["la árbitra de fútbol","soccer referee"],["el árbitro","referee"],["el árbitro de fútbol","soccer referee"],["el árbol","the tree"],["el arbusto","the bush"],["el arce","the maple tree"],["el arcoíris","the rainbow"],["la ardilla","the squirrel"],["Argentina","Argentina"],["la arquitecta","architect"],["el arquitecto","architect"],["arriba","up"],["el arroyo","the stream"],["el arroz","the rice"],["el artista","the artist"],["la artista","artist"],["el astronauta","the astronaut"],["la astronauta","astronaut"],["el atardecer","the sunset"],["el atleta","athlete"],["la atleta","athlete"],["los audífonos","the headphones"],["el autobús","the bus"],["avanzar","to move forward"],["el ave","the bird"],["el avión","the airplane"],["ayudar","to help"],["el azul","blue"],["el bailarín","dancer"],["la bailarina","dancer"],["la ballena","the whale"],["el baloncesto","basketball"],["el banco","the bank"],["la bandera","the flag"],["la bandera blanca","the white flag"],["la bañera","the bathtub"],["el baño","the bathroom"],["la banquera","banker"],["el banquero","banker"],["la barba","the beard"],["el barco","the ship"],["el barista","barista"],["la barista","barista"],["el barrio","the neighborhood"],["el barro","the mud"],["el basquetbolista","basketball player"],["la basquetbolista","basketball player"],["la basura","the trash"],["la batería","the battery"],["el baterista","drummer"],["la baterista","drummer"],["la baya","the berry"],["el bebé","the baby"],["beber","to drink"],["el béisbol","baseball"],["la bellota","the acorn"],["besar","to kiss"],["la bibliotecaria","librarian"],["el bibliotecario","librarian"],["la bicicleta","the bicycle"],["el billete","the bill"],["la bióloga","biologist"],["el biólogo","biologist"],["el bisonte","the bison"],["el blanco","white"],["la boca","the mouth"],["el boleto","the ticket"],["Bolivia","Bolivia"],["el bolso","the purse"],["la bombera","the firefighter"],["la bombera voluntaria","volunteer firefighter"],["el bombero","firefighter"],["el bombero voluntario","volunteer firefighter"],["la bombilla","the light bulb"],["el bosque","the forest"],["la botella","the bottle"],["boxear","to box"],["el boxeo","boxing"],["el brillo","the sparkle"],["la brisa","the breeze"],["el brócoli","the broccoli"],["el brote","the sprout"],["la brújula","the compass"],["la bufanda","the scarf"],["el búho","the owl"],["el burrito","the burrito"],["buscar","to search"],["el buzón","the mailbox"],["el caballo","the horse"],["la cabaña","the cabin"],["el cabello","the hair"],["la cabra","the goat"],["el cactus","the cactus"],["la cafetería","the café"],["el caimán","the alligator"],["la caja","the box"],["la caja de herramientas","the toolbox"],["la cajera","cashier"],["el cajero","cashier"],["el calcetín","the sock"],["el calendario","the calendar"],["el calor","the heat"],["la cama","the bed"],["la cámara","the camera"],["el camarón","the shrimp"],["caminar","to walk"],["el camino","the mountain path"],["la camisa","the shirt"],["el camote","the sweet potato"],["el campamento","the campsite"],["la campana","the bell"],["el campeón","champion"],["la campeona","champion"],["el campista","camper"],["la campista","camper"],["el campo","the field"],["la caña","the reed"],["la canasta","the basket"],["el cangrejo","the crab"],["el cantante","singer"],["la cantante","singer"],["el capitán","captain"],["la capitana","captain"],["el caracol","the snail"],["el cariño","the affection"],["la carne","the meat"],["la carnicera","butcher"],["el carnicero","butcher"],["la carpa","the carp"],["la carpintera","carpenter"],["el carpintero","carpenter"],["la carrera","the race"],["la carretera","the road"],["el carrito","the cart"],["el carro","the car"],["la carta","the card"],["la cartera","mail carrier"],["el cartero","mail carrier"],["la casa","the house"],["la cascada","the waterfall"],["el castor","the beaver"],["la cebolla","the onion"],["el cedro","the cedar"],["celebrar","to celebrate"],["el centro","the center"],["el cepillo de dientes","the toothbrush"],["el cerdo","the pig"],["el cerebro","the brain"],["la cereza","the cherry"],["la cerradura","the lock"],["la chaqueta","the jacket"],["el charco","the puddle"],["Chile","Chile"],["el chile","the pepper"],["el chocolate","the chocolate"],["el ciclismo","cycling"],["el ciclista","cyclist"],["la ciclista","cyclist"],["el cielo","the sky"],["cien","one hundred"],["la científica","scientist"],["el científico","scientist"],["el ciervo","the deer"],["la cima","the summit"],["cinco","five"],["el círculo","the circle"],["la cirujana","surgeon"],["el cirujano","surgeon"],["el cisne","the swan"],["la ciudad","the city"],["la ciudadana","citizen"],["el ciudadano","citizen"],["el claro","the clearing"],["la clienta","customer"],["el cliente","customer"],["el clip","the paper clip"],["la cocinera","cook"],["la cocinera de restaurante","restaurant cook"],["el cocinero","the cook"],["el cocinero de restaurante","restaurant cook"],["el coco","the coconut"],["el cocodrilo","the crocodile"],["el cohete","the rocket"],["la colina","the hill"],["Colombia","Colombia"],["el combate","the fight"],["comer","to eat"],["el cometa","the comet"],["la comida","the food"],["la compañera","classmate / companion"],["la compañera de clase","classmate"],["la compañera de equipo","teammate"],["la compañera de trabajo","coworker"],["el compañero","classmate / companion"],["el compañero de clase","classmate"],["el compañero de equipo","teammate"],["el compañero de trabajo","coworker"],["la computadora","the computer"],["la comunidad","community"],["la concha","the shell"],["el conductor","driver"],["la conductora","driver"],["el conejo","the rabbit"],["la confianza","trust/confidence"],["el conserje","janitor / concierge"],["la conserje","janitor / concierge"],["la constelación","the constellation"],["el contador","accountant"],["la contadora","accountant"],["conversar","to have a conversation"],["el copo de nieve","the snowflake"],["el corazón","the heart"],["el corazón roto","the broken heart"],["correr","to run"],["correr una carrera","to run a race"],["correr una maratón","to run a marathon"],["la corriente","the current"],["la corteza","the bark"],["Costa Rica","Costa Rica"],["la costumbre","custom/habit"],["la costurera","seamstress"],["el costurero","the sewing basket"],["creer","to believe"],["el crepúsculo","the twilight"],["el cuaderno","the notebook"],["el cuadrado","the square"],["cuatro","four"],["Cuba","Cuba"],["la cuchara","the spoon"],["el cuchillo","the knife"],["la cueva","the cave"],["la cumbre","the mountain summit"],["el cumpleaños","the birthday"],["la curita","the bandage"],["el dado","the die"],["dar","to give"],["de nuevo","again"],["decidir","to decide"],["decir","to say"],["dejar","to leave / to let"],["el delfín","the dolphin"],["el dentista","dentist"],["la dentista","dentist"],["el dentista infantil","pediatric dentist"],["la dentista infantil","pediatric dentist"],["derecha","right"],["desarrollar","to develop"],["el desarrollo","development"],["el desayuno","breakfast"],["desbloquear","to unlock"],["el desfiladero","the gorge"],["despedirse","to say goodbye"],["el destello","the glimmer"],["el destornillador","the screwdriver"],["el detective","detective"],["la detective","detective"],["el día","the day"],["el diamante","the diamond"],["el diente","the tooth"],["el diente de león","the dandelion"],["diez","ten"],["el dinero","the money"],["el director","director"],["el director de cine","film director"],["el director de escuela","school principal"],["la directora","director"],["la directora de cine","film director"],["la directora de escuela","school principal"],["diseñar","to design"],["diseñar gráficos","to design graphics"],["diseñar sitios web","to design websites"],["el diseño","design"],["el diseño gráfico","graphic design"],["el diseño web","web design"],["el DJ","DJ"],["la DJ","DJ"],["el doctor","doctor"],["la doctora","doctor"],["la dona","the doughnut"],["dormir","to sleep"],["dos","two"],["la ducha","the shower"],["la duda","the doubt"],["la dueña","owner"],["la dueña de casa","homemaker"],["el dueño","owner"],["el dulce","the candy"],["el durazno","the peach"],["Ecuador","Ecuador"],["el edificio","the building"],["el editor","editor"],["la editora","editor"],["el electricista","electrician"],["la electricista","electrician"],["el elefante","the elephant"],["la empleada","employee"],["el empleado","employee"],["el enchufe","the plug"],["encontrar","to find"],["la enemiga","enemy"],["el enemigo","enemy"],["la enfermedad","the illness"],["la enfermera","the nurse"],["el enfermero","nurse"],["la ensalada","the salad"],["el entrenamiento","training"],["el entrenamiento personal","personal training"],["entrenar","to train"],["entrenar personalmente","to train personally"],["el equipo","team"],["el erizo","the hedgehog"],["el error","the mistake"],["la escalada","climbing"],["escalar","to climb"],["el escarabajo","the beetle"],["la escarcha","the frost"],["la escoba","the broom"],["escribir","to write"],["el escritor","writer"],["la escritora","writer"],["escuchar","to listen"],["la escuela","the school"],["el esfuerzo","effort"],["España","Spain"],["el espectador","spectator"],["la espectadora","spectator"],["la espera","the wait"],["la esponja","the sponge"],["la esposa","wife"],["el esposo","husband"],["el esquí","skiing"],["esquiar","to ski"],["esquiar en la nieve","to ski in the snow"],["el estadio","the stadium"],["los Estados Unidos","the United States"],["el estanque","the pond"],["estar","to be"],["la estrella","the star"],["la estrella fugaz","the shooting star"],["el estudiante","student"],["la estudiante","the student"],["la estudiante universitaria","college student"],["el estudiante universitario","college student"],["la etiqueta","the label"],["el excursionista","hiker"],["la excursionista","hiker"],["el éxito","the success"],["la experiencia","experience"],["el experimento","the experiment"],["la experta","expert"],["el experto","expert"],["la exploración","exploration"],["explorar","to explore"],["la extraña","stranger"],["la extranjera","foreigner"],["el extranjero","foreigner"],["el extraño","stranger"],["la familia","the family"],["la fanática","fan"],["el fanático","fan"],["la felicidad","happiness"],["la filósofa","philosopher"],["el filósofo","philosopher"],["la física","physics"],["el físico","physicist"],["el flamenco","the flamingo"],["la flor","the flower"],["la flor tropical","the tropical flower"],["el florista","florist"],["la florista","florist"],["la foca","the seal"],["la fogata","the campfire"],["la fotógrafa","photographer"],["la fotógrafa de bodas","wedding photographer"],["el fotógrafo","photographer"],["el fotógrafo de bodas","wedding photographer"],["la fresa","the strawberry"],["el frío","the cold"],["el fuego","the fire"],["la fuerza","the strength"],["el fútbol","soccer"],["el fútbol americano","American football"],["el futbolista","soccer player"],["la futbolista","soccer player"],["la galaxia","the galaxy"],["la galleta","the cookie"],["la gallina","the hen"],["ganar","to win"],["la gasolina","the gasoline"],["el gato","the cat"],["la gente","people"],["la geóloga","geologist"],["el geólogo","geologist"],["el gerente","manager"],["la gerente","manager"],["el girasol","the sunflower"],["el glaciar","the glacier"],["el globo","the balloon"],["la gorra","the cap"],["el gorrión","the sparrow"],["la graduada","graduate"],["el graduado","graduate"],["el granizo","the hail"],["la granjera","the farmer"],["el granjero","farmer"],["el grillo","the cricket"],["el gris","gray"],["el grupo","group"],["el guante","the glove"],["el guardia","guard"],["la guardia","guard"],["el guardia de seguridad","security guard"],["la guardia de seguridad","security guard"],["la guarida","the den"],["Guatemala","Guatemala"],["el guía","guide"],["la guía","guide"],["Guinea Ecuatorial","Equatorial Guinea"],["el guiso","the stew"],["la guitarra","the guitar"],["el guitarrista","guitarist"],["la guitarrista","guitarist"],["el gusano","the worm"],["gustar","to like"],["hablar","to speak"],["hacer","to do / to make"],["el halcón","the falcon"],["la hamburguesa","the hamburger"],["el hámster","the hamster"],["la helada","the freeze"],["el helado","the ice cream"],["el helecho","the fern"],["la hermana","the sister"],["el hermano","the brother"],["el héroe","hero"],["la heroína","heroine"],["el hielo","the ice"],["la hierba","the grass"],["la hija","the daughter"],["el hijo","the son"],["el historiador","historian"],["la historiadora","historian"],["el hogar","the home"],["la hoja","the leaf"],["la hoja seca","the dry leaf"],["el hombre","the man"],["Honduras","Honduras"],["el hongo","the mushroom"],["la hormiga","the ant"],["el hospital","the hospital"],["el hotel","the hotel"],["el huevo","the egg"],["la idea","the idea"],["la identificación","the identification"],["la iglesia","the church"],["el ilustrador","illustrator"],["la ilustradora","illustrator"],["la impresora","the printer"],["la ingeniera","engineer"],["el ingeniero","engineer"],["Internet","the Internet"],["el intérprete","interpreter"],["la intérprete","interpreter"],["el inventor","inventor"],["la inventora","inventor"],["la investigación","research"],["investigar","to research"],["la invitada","guest"],["el invitado","guest"],["ir","to go"],["izquierda","left"],["el jabalí","the wild boar"],["el jabón","the soap"],["el jardín","the garden"],["la jardinera","gardener"],["el jardinero","gardener"],["la jefa","boss"],["el jefe","boss"],["la jirafa","the giraffe"],["el joven","young man"],["la joven","young woman"],["la joyera","jeweler"],["el joyero","jeweler"],["el juego","the game"],["el juez","judge"],["la jueza","judge"],["jugar","to play"],["jugar al tenis","to play tennis"],["jugar videojuegos","to play video games"],["el jugo","the juice"],["el junco","the reed"],["el kiwi","the kiwi"],["el koala","the koala"],["el lagarto","the lizard"],["el lago","the lake"],["el lapicero","the pen"],["el lápiz","the pencil"],["la lavanda","the lavender"],["la leche","the milk"],["la lechuga","the lettuce"],["leer","to read"],["la lengua","the tongue"],["los lentes","the glasses"],["el león","the lion"],["la libélula","the dragonfly"],["la libertad","freedom"],["la librera","bookseller"],["el librero","bookseller"],["el libro","the book"],["los libros","the books"],["el líder","leader"],["la líder","leader"],["el limón","the lemon"],["limpiar","to clean"],["la limpieza","cleaning"],["la linterna","the flashlight"],["el liquen","the lichen"],["la llama","the llama"],["la llamada","the call"],["llamar","to call"],["la llave","the key"],["llegar","to arrive"],["llevar","to carry / to wear"],["la lluvia","the rain"],["el lobo","the wolf"],["el loto","the lotus"],["el lugar","the place"],["la luna","the moon"],["la luz","the light"],["la madera","the wood"],["la madre","the mother"],["la madriguera","the burrow"],["el maestro","the teacher"],["la maga","magician"],["el mago","magician"],["el maíz","the corn"],["la maleta","the suitcase"],["el maletín","the briefcase"],["la maleza","the weed"],["el mango","the mango"],["la manzana","the apple"],["el mapa","the map"],["el mapache","the raccoon"],["el maquillaje","makeup"],["maquillar","to apply makeup"],["la maratón","the marathon"],["la margarita","the daisy"],["la marinera","sailor"],["el marinero","sailor"],["la mariposa","the butterfly"],["la mariquita","the ladybug"],["la marmota","the marmot"],["el marrón","brown"],["el martillo","the hammer"],["más","plus"],["la matemática","mathematician"],["el matemático","mathematician"],["el matrimonio","the marriage"],["la mecánica","mechanic"],["el mecánico","the mechanic"],["la medalla","the medal"],["la medicina","the medicine"],["el médico","the doctor"],["la medida","the measurement"],["menos","minus"],["el mensaje","the message"],["la mensajera","messenger"],["el mensajero","messenger"],["la menta","the mint"],["el mentor","mentor"],["la mentora","mentor"],["la mesera","server"],["la mesera del restaurante","waitress"],["el mesero","waiter"],["la meta","the finish line"],["el meteorito","the meteorite"],["el metro","the subway"],["México","Mexico"],["la mezquita","the mosque"],["el micrófono","the microphone"],["el microscopio","the microscope"],["la miel","the honey"],["el mineral","the mineral"],["la mochila","the backpack"],["el modelo","model"],["la modelo","model"],["la moneda","the coin"],["el mono","the monkey"],["la montaña","the mountain"],["la montaña rusa","the roller coaster"],["montar en bicicleta","to ride a bicycle"],["la mora","the blackberry"],["el morado","purple"],["la mosca","the fly"],["el mosquito","the mosquito"],["la moto","the motorcycle"],["la mujer","the woman"],["la multitud","crowd"],["el mundo","the world"],["el murciélago","the bat"],["el musgo","the moss"],["la música","the music"],["la música callejera","street music"],["el músico","musician"],["el músico callejero","street musician"],["el músico de jazz","jazz musician"],["nadar","to swim"],["nadar en los Juegos Olímpicos","to swim in the Olympic Games"],["nadar en una piscina","to swim in a pool"],["el naranja","orange"],["la naranja","the orange"],["la nariz","the nose"],["la natación","swimming"],["la natación olímpica","Olympic swimming"],["necesitar","to need"],["el negro","black"],["el nenúfar","the water lily"],["la nevada","the snowfall"],["Nicaragua","Nicaragua"],["el nido","the nest"],["la niebla","the fog"],["la nieta","granddaughter"],["el nieto","grandson"],["la nieve","the snow"],["la niña","the girl"],["el niño","the boy"],["la noche","the night"],["la nota","the note"],["la novia","girlfriend"],["el novio","boyfriend"],["la nube","the cloud"],["nueve","nine"],["la nuez","the walnut"],["la nutria","the otter"],["el objetivo","the target"],["ocho","eight"],["la oferta","the offer"],["los ojos","the eyes"],["la ola","the wave"],["la oportunidad","opportunity"],["la oración","the prayer"],["la oreja","the ear"],["la orilla","the shore"],["la orilla del río","the riverbank"],["la oruga","the caterpillar"],["la oscuridad","the darkness"],["el oso","the bear"],["el otoño","fall"],["la oveja","the sheep"],["la paciencia","patience"],["el padre","the father"],["el paisajista","landscaper"],["la paisajista","landscaper"],["el pájaro","the bird"],["la paleta","the lollipop"],["la palma","the palm tree"],["la palmera","the palm"],["las palomitas","the popcorn"],["el pan","the bread"],["la panadera","baker"],["el panadero","baker"],["Panamá","Panama"],["el panda","the panda"],["el panquecito","the cupcake"],["los pantalones","the pants"],["la papa","the potato"],["el papel higiénico","the toilet paper"],["Paraguay","Paraguay"],["la paramédica","paramedic"],["el paramédico","paramedic"],["la pareja","the couple"],["el partido de tenis","the tennis match"],["la pasajera","passenger"],["el pasajero","passenger"],["el pasaporte","the passport"],["pasar","to pass / to happen"],["la pasión","the passion"],["la pasta","the pasta"],["el pastel","the cake"],["el pastel de cumpleaños","the birthday cake"],["el patinaje","skating"],["patinar","to skate"],["patinar en patineta","to skateboard"],["la patineta","the skateboard"],["el pato","the duck"],["pausar","to pause"],["la payasa","clown"],["el payaso","clown"],["la paz","peace"],["la película","the movie"],["la peluquera","hairstylist"],["el peluquero","hairstylist"],["la pendiente","the slope"],["el pensamiento","the thought"],["pensar","to think"],["la pera","the pear"],["perder","to lose"],["la pérdida","the loss"],["el periodista","journalist"],["la periodista","journalist"],["el perrito caliente","the hot dog"],["el perro","the dog"],["la persona","the person"],["Perú","Peru"],["la pesca","fishing"],["el pescador","fisherman"],["la pescadora","fisherwoman"],["pescar","to fish"],["el pétalo","the petal"],["el pez","the fish"],["el pez de colores","the colorful fish"],["el pez tropical","the tropical fish"],["el pianista","pianist"],["la pianista","pianist"],["el piano","the piano"],["el pico","the peak"],["la piedra","the stone"],["el piloto","pilot"],["la piloto","pilot"],["el piloto de avión","airplane pilot"],["la piloto de avión","airplane pilot"],["el pin","the pin"],["la piña","the pineapple"],["el pingüino","the penguin"],["el pino","the pine"],["el pintor","painter"],["el pintor de casas","house painter"],["la pintora","painter"],["la pintora de casas","house painter"],["la pizza","the pizza"],["el planeta","the planet"],["la planta","the plant"],["la planta de interior","the houseplant"],["el plátano","the banana"],["el plato","the plate"],["la playa","the beach"],["la plomera","plumber"],["el plomero","plumber"],["la pluma","the feather"],["poder","to be able to"],["el poeta","poet"],["la poeta","poet"],["el policía","the police officer"],["la policía","police officer"],["la polilla","the moth"],["el pollo","the chicken"],["poner","to put"],["el prado","the meadow"],["el precio","the price"],["la pregunta","the question"],["la presentación","presentation"],["presentar","to present"],["la presidenta","president"],["el presidente","president"],["el pretzel","the pretzel"],["la princesa","princess"],["el príncipe","prince"],["el principiante","beginner"],["la principiante","beginner"],["el productor","producer"],["la productora","producer"],["el profesor","teacher"],["el profesor de español","Spanish teacher"],["el profesor de música","music teacher"],["la profesora","teacher"],["la profesora de español","Spanish teacher"],["la profesora de música","music teacher"],["la programación","programming"],["programar","to program"],["la psicóloga","psychologist"],["el psicólogo","psychologist"],["el público","audience"],["el puente","the bridge"],["la puerta","the door"],["Puerto Rico","Puerto Rico"],["el pulgar","the thumb"],["el pulpo","the octopus"],["el puma","the puma"],["querer","to want"],["el queso","the cheese"],["la química","chemist"],["el químico","chemist"],["la rabia","the anger"],["la raíz","the root"],["la rana","the frog"],["el ratón","the mouse"],["el rayo","the lightning"],["la razón","reason"],["el recepcionista","receptionist"],["la recepcionista","receptionist"],["el recepcionista de hotel","hotel receptionist"],["la recepcionista de hotel","hotel receptionist"],["el refugio","the shelter"],["el regalo","the gift"],["la regla","the ruler"],["la reina","queen"],["el reloj","the watch"],["el reloj despertador","the alarm clock"],["repartir","to deliver"],["el reparto","delivery"],["República Dominicana","Dominican Republic"],["el resplandor","the glow"],["la respuesta","the answer"],["el restaurante","the restaurant"],["retroceder","to rewind"],["el rey","king"],["el río","the river"],["la risa","the laughter"],["el rival","rival"],["la rival","rival"],["el roble","the oak"],["la roca","the rock"],["el rojo","red"],["el rompecabezas","the puzzle"],["la ropa","the clothes"],["el rosa","pink"],["la rosa","the rose"],["la rueda de la fortuna","the Ferris wheel"],["saber","to know"],["la sal","the salt"],["la salida","the exit"],["salir","to leave / to go out"],["el salmón","the salmon"],["el saltamontes","the grasshopper"],["saludar","to greet"],["El Salvador","El Salvador"],["la sandía","the watermelon"],["el sándwich","the sandwich"],["el sastre","tailor"],["el satélite","the satellite"],["el sauce","the willow"],["la secretaria","secretary"],["el secretario","secretary"],["seis","six"],["el semáforo","the traffic light"],["la semilla","the seed"],["la señal","the signal"],["el sendero","the trail"],["el señor","man / sir"],["la señora","woman / Mrs."],["ser","to be"],["la serpiente","the snake"],["siete","seven"],["el silencio","the silence"],["la silla","the chair"],["el sofá","the sofa"],["el sol","the sun"],["el soldado","soldier"],["la soldado","soldier"],["el sonido","the sound"],["la sonrisa","the smile"],["la sopa","the soup"],["la sorpresa","the surprise"],["el surfista","surfer"],["la surfista","surfer"],["el taco","the taco"],["el tallo","the stem"],["el tambor","the drum"],["la tarjeta","the card"],["el taxi","the taxi"],["el taxista","taxi driver"],["la taxista","taxi driver"],["la taza","the cup"],["el té de burbujas","bubble tea"],["el teclado","the keyboard"],["la técnica","technician"],["el técnico","technician"],["la telaraña","the spiderweb"],["el teléfono","the phone"],["el telescopio","the telescope"],["la televisión","the television"],["la temperatura","the temperature"],["el tenedor","the fork"],["tener","to have"],["el tenis","tennis"],["el tenista","tennis player"],["la tenista","tennis player"],["el terapeuta","therapist"],["la terapeuta","therapist"],["la tetera","the teapot"],["el tiburón","the shark"],["el tiempo","time"],["la tienda","the store"],["la tienda departamental","the department store"],["la tierra","the earth"],["la Tierra","the Earth"],["el tigre","the tiger"],["las tijeras","the scissors"],["el tocino","the bacon"],["el tomate","the tomato"],["la tormenta","the storm"],["el tornado","the tornado"],["la tortuga","the turtle"],["trabajar","to work"],["trabajar con herramientas","to work with tools"],["el trabajo","work"],["el traductor","translator"],["la traductora","translator"],["el tranvía","the streetcar / tram"],["el trébol","the clover"],["el tren","the train"],["tres","three"],["el triángulo","the triangle"],["el trigo","the wheat"],["el trineo","the sled"],["la tristeza","the sadness"],["el trofeo","the trophy"],["la trompeta","the trumpet"],["el tronco","the log"],["la trucha","the trout"],["el tulipán","the tulip"],["el turista","tourist"],["la turista","tourist"],["el unicornio","the unicorn"],["el universo","the universe"],["uno","one"],["Uruguay","Uruguay"],["la uva","the grape"],["la vaca","the cow"],["el valle","the valley"],["el vapor","the steam"],["el vaso","the glass"],["la vecina","neighbor"],["el vecino","neighbor"],["el velero","the sailboat"],["vender","to sell"],["vender boletos","to sell tickets"],["Venezuela","Venezuela"],["venir","to come"],["la venta","the sale"],["la venta de boletos","ticket sales"],["la ventana","the window"],["ver","to see"],["la verdad","truth"],["el verde","green"],["el vestido","the dress"],["la veterinaria","veterinarian"],["el veterinario","veterinarian"],["la victoria","victory"],["el videojuego","the video game"],["el vidrio","the glass"],["el viento","the wind"],["el viento fuerte","the strong wind"],["la villana","villain"],["el villano","villain"],["el violín","the violin"],["el violinista","violinist"],["la violinista","violinist"],["el visitante","visitor"],["la visitante","visitor"],["vivir","to live"],["el voleibol","volleyball"],["la voluntaria","volunteer"],["el voluntario","volunteer"],["la voz","the voice"],["la zanahoria","the carrot"],["la zapatera","shoemaker"],["el zapatero","shoemaker"],["el zapato","the shoe"],["el zorro","the fox"]];
+var VERB_POOL=[["abrazar","to hug",["abrazo","abrazas","abraza","abrazamos","abrazan"]],["aplaudir","to applaud",["aplaudo","aplaudes","aplaude","aplaudimos","aplauden"]],["avanzar","to move forward",["avanzo","avanzas","avanza","avanzamos","avanzan"]],["ayudar","to help",["ayudo","ayudas","ayuda","ayudamos","ayudan"]],["besar","to kiss",["beso","besas","besa","besamos","besan"]],["boxear","to box",["boxeo","boxeas","boxea","boxeamos","boxean"]],["buscar","to search",["busco","buscas","busca","buscamos","buscan"]],["caminar","to walk",["camino","caminas","camina","caminamos","caminan"]],["celebrar","to celebrate",["celebro","celebras","celebra","celebramos","celebran"]],["conversar","to have a conversation",["converso","conversas","conversa","conversamos","conversan"]],["dejar","to leave / to let",["dejo","dejas","deja","dejamos","dejan"]],["desarrollar","to develop",["desarrollo","desarrollas","desarrolla","desarrollamos","desarrollan"]],["desbloquear","to unlock",["desbloqueo","desbloqueas","desbloquea","desbloqueamos","desbloquean"]],["diseñar","to design",["diseño","diseñas","diseña","diseñamos","diseñan"]],["entrenar","to train",["entreno","entrenas","entrena","entrenamos","entrenan"]],["escalar","to climb",["escalo","escalas","escala","escalamos","escalan"]],["escuchar","to listen",["escucho","escuchas","escucha","escuchamos","escuchan"]],["esquiar","to ski",["esquío","esquías","esquía","esquiamos","esquían"]],["explorar","to explore",["exploro","exploras","explora","exploramos","exploran"]],["ganar","to win",["gano","ganas","gana","ganamos","ganan"]],["hablar","to speak",["hablo","hablas","habla","hablamos","hablan"]],["investigar","to research",["investigo","investigas","investiga","investigamos","investigan"]],["limpiar","to clean",["limpio","limpias","limpia","limpiamos","limpian"]],["llamar","to call",["llamo","llamas","llama","llamamos","llaman"]],["llegar","to arrive",["llego","llegas","llega","llegamos","llegan"]],["llevar","to carry / to wear",["llevo","llevas","lleva","llevamos","llevan"]],["maquillar","to apply makeup",["maquillo","maquillas","maquilla","maquillamos","maquillan"]],["nadar","to swim",["nado","nadas","nada","nadamos","nadan"]],["necesitar","to need",["necesito","necesitas","necesita","necesitamos","necesitan"]],["pasar","to pass / to happen",["paso","pasas","pasa","pasamos","pasan"]],["patinar","to skate",["patino","patinas","patina","patinamos","patinan"]],["pausar","to pause",["pauso","pausas","pausa","pausamos","pausan"]],["pescar","to fish",["pesco","pescas","pesca","pescamos","pescan"]],["presentar","to present",["presento","presentas","presenta","presentamos","presentan"]],["programar","to program",["programo","programas","programa","programamos","programan"]],["saludar","to greet",["saludo","saludas","saluda","saludamos","saludan"]],["trabajar","to work",["trabajo","trabajas","trabaja","trabajamos","trabajan"]],["beber","to drink",["bebo","bebes","bebe","bebemos","beben"]],["comer","to eat",["como","comes","come","comemos","comen"]],["correr","to run",["corro","corres","corre","corremos","corren"]],["retroceder","to rewind",["retrocedo","retrocedes","retrocede","retrocedemos","retroceden"]],["vender","to sell",["vendo","vendes","vende","vendemos","venden"]],["decidir","to decide",["decido","decides","decide","decidimos","deciden"]],["escribir","to write",["escribo","escribes","escribe","escribimos","escriben"]],["repartir","to deliver",["reparto","repartes","reparte","repartimos","reparten"]],["vivir","to live",["vivo","vives","vive","vivimos","viven"]],["creer","to believe",["creo","crees","cree","creemos","creen"]],["leer","to read",["leo","lees","lee","leemos","leen"]],["pensar","to think",["pienso","piensas","piensa","pensamos","piensan"]],["perder","to lose",["pierdo","pierdes","pierde","perdemos","pierden"]],["querer","to want",["quiero","quieres","quiere","queremos","quieren"]],["encontrar","to find",["encuentro","encuentras","encuentra","encontramos","encuentran"]],["dormir","to sleep",["duermo","duermes","duerme","dormimos","duermen"]],["poder","to be able to",["puedo","puedes","puede","podemos","pueden"]],["jugar","to play",["juego","juegas","juega","jugamos","juegan"]],["ser","to be",["soy","eres","es","somos","son"]],["estar","to be",["estoy","estás","está","estamos","están"]],["ir","to go",["voy","vas","va","vamos","van"]],["tener","to have",["tengo","tienes","tiene","tenemos","tienen"]],["hacer","to do / to make",["hago","haces","hace","hacemos","hacen"]],["decir","to say",["digo","dices","dice","decimos","dicen"]],["venir","to come",["vengo","vienes","viene","venimos","vienen"]],["poner","to put",["pongo","pones","pone","ponemos","ponen"]],["salir","to leave / to go out",["salgo","sales","sale","salimos","salen"]],["saber","to know",["sé","sabes","sabe","sabemos","saben"]],["dar","to give",["doy","das","da","damos","dan"]],["ver","to see",["veo","ves","ve","vemos","ven"]],["estudiar","to study",["estudio","estudias","estudia","estudiamos","estudian"]],["bailar","to dance",["bailo","bailas","baila","bailamos","bailan"]],["cantar","to sing",["canto","cantas","canta","cantamos","cantan"]],["cocinar","to cook",["cocino","cocinas","cocina","cocinamos","cocinan"]],["comprar","to buy",["compro","compras","compra","compramos","compran"]],["mirar","to look",["miro","miras","mira","miramos","miran"]],["tocar","to play an instrument",["toco","tocas","toca","tocamos","tocan"]],["pagar","to pay",["pago","pagas","paga","pagamos","pagan"]],["sacar","to take out",["saco","sacas","saca","sacamos","sacan"]],["esperar","to wait",["espero","esperas","espera","esperamos","esperan"]],["olvidar","to forget",["olvido","olvidas","olvida","olvidamos","olvidan"]],["terminar","to finish",["termino","terminas","termina","terminamos","terminan"]],["tomar","to take",["tomo","tomas","toma","tomamos","toman"]],["viajar","to travel",["viajo","viajas","viaja","viajamos","viajan"]],["entrar","to enter",["entro","entras","entra","entramos","entran"]],["preguntar","to ask",["pregunto","preguntas","pregunta","preguntamos","preguntan"]],["contestar","to answer",["contesto","contestas","contesta","contestamos","contestan"]],["practicar","to practice",["practico","practicas","practica","practicamos","practican"]],["explicar","to explain",["explico","explicas","explica","explicamos","explican"]],["aprender","to learn",["aprendo","aprendes","aprende","aprendemos","aprenden"]],["comprender","to understand",["comprendo","comprendes","comprende","comprendemos","comprenden"]],["abrir","to open",["abro","abres","abre","abrimos","abren"]],["recibir","to receive",["recibo","recibes","recibe","recibimos","reciben"]],["asistir","to attend",["asisto","asistes","asiste","asistimos","asisten"]],["subir","to go up",["subo","subes","sube","subimos","suben"]],["empezar","to begin",["empiezo","empiezas","empieza","empezamos","empiezan"]],["entender","to understand",["entiendo","entiendes","entiende","entendemos","entienden"]],["cerrar","to close",["cierro","cierras","cierra","cerramos","cierran"]],["preferir","to prefer",["prefiero","prefieres","prefiere","preferimos","prefieren"]],["contar","to count",["cuento","cuentas","cuenta","contamos","cuentan"]],["volver","to return",["vuelvo","vuelves","vuelve","volvemos","vuelven"]],["pedir","to ask for",["pido","pides","pide","pedimos","piden"]],["servir","to serve",["sirvo","sirves","sirve","servimos","sirven"]],["seguir","to follow",["sigo","sigues","sigue","seguimos","siguen"]],["recordar","to remember",["recuerdo","recuerdas","recuerda","recordamos","recuerdan"]],["comenzar","to begin",["comienzo","comienzas","comienza","comenzamos","comienzan"]],["almorzar","to eat lunch",["almuerzo","almuerzas","almuerza","almorzamos","almuerzan"]],["costar","to cost",["cuesto","cuestas","cuesta","costamos","cuestan"]],["probar","to try",["pruebo","pruebas","prueba","probamos","prueban"]],["mentir","to lie",["miento","mientes","miente","mentimos","mienten"]],["morir","to die",["muero","mueres","muere","morimos","mueren"]],["andar","to walk",["ando","andas","anda","andamos","andan"]],["traer","to bring",["traigo","traes","trae","traemos","traen"]],["conocer","to know",["conozco","conoces","conoce","conocemos","conocen"]],["oír","to hear",["oigo","oyes","oye","oímos","oyen"]],["caer","to fall",["caigo","caes","cae","caemos","caen"]]];
+var POSS_POOL=[["mi gato","my cat"],["tu gato","your cat"],["su gato","his/her cat"],["nuestro gato","our cat"],["mis gatos","my cats"],["tus gatos","your cats"],["sus gatos","his/her cats"],["nuestros gatos","our cats"],["mi perro","my dog"],["tu perro","your dog"],["su perro","his/her dog"],["nuestro perro","our dog"],["mis perros","my dogs"],["tus perros","your dogs"],["sus perros","his/her dogs"],["nuestros perros","our dogs"],["mi libro","my book"],["tu libro","your book"],["su libro","his/her book"],["nuestro libro","our book"],["mis libros","my books"],["tus libros","your books"],["sus libros","his/her books"],["nuestros libros","our books"],["mi caballo","my horse"],["tu caballo","your horse"],["su caballo","his/her horse"],["nuestro caballo","our horse"],["mis caballos","my horses"],["tus caballos","your horses"],["sus caballos","his/her horses"],["nuestros caballos","our horses"],["mi pájaro","my bird"],["tu pájaro","your bird"],["su pájaro","his/her bird"],["nuestro pájaro","our bird"],["mis pájaros","my birds"],["tus pájaros","your birds"],["sus pájaros","his/her birds"],["nuestros pájaros","our birds"],["mi pez","my fish"],["tu pez","your fish"],["su pez","his/her fish"],["nuestro pez","our fish"],["mis peces","my fish"],["tus peces","your fish"],["sus peces","his/her fish"],["nuestros peces","our fish"],["mi carro","my car"],["tu carro","your car"],["su carro","his/her car"],["nuestro carro","our car"],["mis carros","my cars"],["tus carros","your cars"],["sus carros","his/her cars"],["nuestros carros","our cars"],["mi barco","my ship"],["tu barco","your ship"],["su barco","his/her ship"],["nuestro barco","our ship"],["mis barcos","my ships"],["tus barcos","your ships"],["sus barcos","his/her ships"],["nuestros barcos","our ships"],["mi avión","my airplane"],["tu avión","your airplane"],["su avión","his/her airplane"],["nuestro avión","our airplane"],["mis aviones","my airplanes"],["tus aviones","your airplanes"],["sus aviones","his/her airplanes"],["nuestros aviones","our airplanes"],["mi tren","my train"],["tu tren","your train"],["su tren","his/her train"],["nuestro tren","our train"],["mis trenes","my trains"],["tus trenes","your trains"],["sus trenes","his/her trains"],["nuestros trenes","our trains"],["mi árbol","my tree"],["tu árbol","your tree"],["su árbol","his/her tree"],["nuestro árbol","our tree"],["mis árboles","my trees"],["tus árboles","your trees"],["sus árboles","his/her trees"],["nuestros árboles","our trees"],["mi teléfono","my phone"],["tu teléfono","your phone"],["su teléfono","his/her phone"],["nuestro teléfono","our phone"],["mis teléfonos","my phones"],["tus teléfonos","your phones"],["sus teléfonos","his/her phones"],["nuestros teléfonos","our phones"],["mi reloj","my watch"],["tu reloj","your watch"],["su reloj","his/her watch"],["nuestro reloj","our watch"],["mis relojes","my watches"],["tus relojes","your watches"],["sus relojes","his/her watches"],["nuestros relojes","our watches"],["mi zapato","my shoe"],["tu zapato","your shoe"],["su zapato","his/her shoe"],["nuestro zapato","our shoe"],["mis zapatos","my shoes"],["tus zapatos","your shoes"],["sus zapatos","his/her shoes"],["nuestros zapatos","our shoes"],["mi lápiz","my pencil"],["tu lápiz","your pencil"],["su lápiz","his/her pencil"],["nuestro lápiz","our pencil"],["mis lápices","my pencils"],["tus lápices","your pencils"],["sus lápices","his/her pencils"],["nuestros lápices","our pencils"],["mi cuaderno","my notebook"],["tu cuaderno","your notebook"],["su cuaderno","his/her notebook"],["nuestro cuaderno","our notebook"],["mis cuadernos","my notebooks"],["tus cuadernos","your notebooks"],["sus cuadernos","his/her notebooks"],["nuestros cuadernos","our notebooks"],["mi jardín","my garden"],["tu jardín","your garden"],["su jardín","his/her garden"],["nuestro jardín","our garden"],["mis jardines","my gardens"],["tus jardines","your gardens"],["sus jardines","his/her gardens"],["nuestros jardines","our gardens"],["mi río","my river"],["tu río","your river"],["su río","his/her river"],["nuestro río","our river"],["mis ríos","my rivers"],["tus ríos","your rivers"],["sus ríos","his/her rivers"],["nuestros ríos","our rivers"],["mi lago","my lake"],["tu lago","your lake"],["su lago","his/her lake"],["nuestro lago","our lake"],["mis lagos","my lakes"],["tus lagos","your lakes"],["sus lagos","his/her lakes"],["nuestros lagos","our lakes"],["mi puente","my bridge"],["tu puente","your bridge"],["su puente","his/her bridge"],["nuestro puente","our bridge"],["mis puentes","my bridges"],["tus puentes","your bridges"],["sus puentes","his/her bridges"],["nuestros puentes","our bridges"],["mi edificio","my building"],["tu edificio","your building"],["su edificio","his/her building"],["nuestro edificio","our building"],["mis edificios","my buildings"],["tus edificios","your buildings"],["sus edificios","his/her buildings"],["nuestros edificios","our buildings"],["mi restaurante","my restaurant"],["tu restaurante","your restaurant"],["su restaurante","his/her restaurant"],["nuestro restaurante","our restaurant"],["mis restaurantes","my restaurants"],["tus restaurantes","your restaurants"],["sus restaurantes","his/her restaurants"],["nuestros restaurantes","our restaurants"],["mi hospital","my hospital"],["tu hospital","your hospital"],["su hospital","his/her hospital"],["nuestro hospital","our hospital"],["mis hospitales","my hospitals"],["tus hospitales","your hospitals"],["sus hospitales","his/her hospitals"],["nuestros hospitales","our hospitals"],["mi hotel","my hotel"],["tu hotel","your hotel"],["su hotel","his/her hotel"],["nuestro hotel","our hotel"],["mis hoteles","my hotels"],["tus hoteles","your hotels"],["sus hoteles","his/her hotels"],["nuestros hoteles","our hotels"],["mi bosque","my forest"],["tu bosque","your forest"],["su bosque","his/her forest"],["nuestro bosque","our forest"],["mis bosques","my forests"],["tus bosques","your forests"],["sus bosques","his/her forests"],["nuestros bosques","our forests"],["mi casa","my house"],["tu casa","your house"],["su casa","his/her house"],["nuestra casa","our house"],["mis casas","my houses"],["tus casas","your houses"],["sus casas","his/her houses"],["nuestras casas","our houses"],["mi escuela","my school"],["tu escuela","your school"],["su escuela","his/her school"],["nuestra escuela","our school"],["mis escuelas","my schools"],["tus escuelas","your schools"],["sus escuelas","his/her schools"],["nuestras escuelas","our schools"],["mi puerta","my door"],["tu puerta","your door"],["su puerta","his/her door"],["nuestra puerta","our door"],["mis puertas","my doors"],["tus puertas","your doors"],["sus puertas","his/her doors"],["nuestras puertas","our doors"],["mi ventana","my window"],["tu ventana","your window"],["su ventana","his/her window"],["nuestra ventana","our window"],["mis ventanas","my windows"],["tus ventanas","your windows"],["sus ventanas","his/her windows"],["nuestras ventanas","our windows"],["mi silla","my chair"],["tu silla","your chair"],["su silla","his/her chair"],["nuestra silla","our chair"],["mis sillas","my chairs"],["tus sillas","your chairs"],["sus sillas","his/her chairs"],["nuestras sillas","our chairs"],["mi cama","my bed"],["tu cama","your bed"],["su cama","his/her bed"],["nuestra cama","our bed"],["mis camas","my beds"],["tus camas","your beds"],["sus camas","his/her beds"],["nuestras camas","our beds"],["mi bicicleta","my bicycle"],["tu bicicleta","your bicycle"],["su bicicleta","his/her bicycle"],["nuestra bicicleta","our bicycle"],["mis bicicletas","my bicycles"],["tus bicicletas","your bicycles"],["sus bicicletas","his/her bicycles"],["nuestras bicicletas","our bicycles"],["mi manzana","my apple"],["tu manzana","your apple"],["su manzana","his/her apple"],["nuestra manzana","our apple"],["mis manzanas","my apples"],["tus manzanas","your apples"],["sus manzanas","his/her apples"],["nuestras manzanas","our apples"],["mi leche","my milk"],["tu leche","your milk"],["su leche","his/her milk"],["nuestra leche","our milk"],["mi flor","my flower"],["tu flor","your flower"],["su flor","his/her flower"],["nuestra flor","our flower"],["mis flores","my flowers"],["tus flores","your flowers"],["sus flores","his/her flowers"],["nuestras flores","our flowers"],["mi luna","my moon"],["tu luna","your moon"],["su luna","his/her moon"],["nuestra luna","our moon"],["mis lunas","my moons"],["tus lunas","your moons"],["sus lunas","his/her moons"],["nuestras lunas","our moons"],["mi estrella","my star"],["tu estrella","your star"],["su estrella","his/her star"],["nuestra estrella","our star"],["mis estrellas","my stars"],["tus estrellas","your stars"],["sus estrellas","his/her stars"],["nuestras estrellas","our stars"],["mi playa","my beach"],["tu playa","your beach"],["su playa","his/her beach"],["nuestra playa","our beach"],["mis playas","my beaches"],["tus playas","your beaches"],["sus playas","his/her beaches"],["nuestras playas","our beaches"],["mi montaña","my mountain"],["tu montaña","your mountain"],["su montaña","his/her mountain"],["nuestra montaña","our mountain"],["mis montañas","my mountains"],["tus montañas","your mountains"],["sus montañas","his/her mountains"],["nuestras montañas","our mountains"],["mi ciudad","my city"],["tu ciudad","your city"],["su ciudad","his/her city"],["nuestra ciudad","our city"],["mis ciudades","my cities"],["tus ciudades","your cities"],["sus ciudades","his/her cities"],["nuestras ciudades","our cities"],["mi familia","my family"],["tu familia","your family"],["su familia","his/her family"],["nuestra familia","our family"],["mis familias","my families"],["tus familias","your families"],["sus familias","his/her families"],["nuestras familias","our families"],["mi madre","my mother"],["tu madre","your mother"],["su madre","his/her mother"],["nuestra madre","our mother"],["mis madres","my mothers"],["tus madres","your mothers"],["sus madres","his/her mothers"],["nuestras madres","our mothers"],["mi hermana","my sister"],["tu hermana","your sister"],["su hermana","his/her sister"],["nuestra hermana","our sister"],["mis hermanas","my sisters"],["tus hermanas","your sisters"],["sus hermanas","his/her sisters"],["nuestras hermanas","our sisters"],["mi amiga","my friend"],["tu amiga","your friend"],["su amiga","his/her friend"],["nuestra amiga","our friend"],["mis amigas","my friends"],["tus amigas","your friends"],["sus amigas","his/her friends"],["nuestras amigas","our friends"],["mi profesora","my teacher"],["tu profesora","your teacher"],["su profesora","his/her teacher"],["nuestra profesora","our teacher"],["mis profesoras","my teachers"],["tus profesoras","your teachers"],["sus profesoras","his/her teachers"],["nuestras profesoras","our teachers"],["mi iglesia","my church"],["tu iglesia","your church"],["su iglesia","his/her church"],["nuestra iglesia","our church"],["mis iglesias","my churches"],["tus iglesias","your churches"],["sus iglesias","his/her churches"],["nuestras iglesias","our churches"],["mi tienda","my store"],["tu tienda","your store"],["su tienda","his/her store"],["nuestra tienda","our store"],["mis tiendas","my stores"],["tus tiendas","your stores"],["sus tiendas","his/her stores"],["nuestras tiendas","our stores"],["mi película","my movie"],["tu película","your movie"],["su película","his/her movie"],["nuestra película","our movie"],["mis películas","my movies"],["tus películas","your movies"],["sus películas","his/her movies"],["nuestras películas","our movies"]];
+var SER_POOL=[["Yo ___ profesor.","yo"],["Yo ___ de Argentina.","yo"],["Yo ___ alto.","yo"],["Yo ___ el hermano de Ana.","yo"],["Yo ___ joven.","yo"],["Yo ___ estudiante.","yo"],["Yo ___ de Chile.","yo"],["Yo ___ fuerte.","yo"],["Yo ___ médico.","yo"],["Yo ___ el dueño del perro.","yo"],["Tú ___ muy simpático.","tu"],["Tú ___ de Colombia.","tu"],["Tú ___ estudiante.","tu"],["Tú ___ alto.","tu"],["Tú ___ mi hermano.","tu"],["Tú ___ joven.","tu"],["Tú ___ el profesor de Ana.","tu"],["Tú ___ amable.","tu"],["Tú ___ el dueño del gato.","tu"],["Tú ___ fuerte.","tu"],["Ella ___ profesora.","el"],["Él ___ de Perú.","el"],["La casa ___ de madera.","el"],["___ la una.","el"],["La película ___ a las tres.","el"],["Él ___ muy listo; todo lo entiende.","el"],["Él ___ rico; tiene tres casas.","el"],["Nosotros ___ estudiantes.","nos"],["Nosotros ___ de Argentina.","nos"],["Nosotros ___ altos.","nos"],["Nosotros ___ los hermanos de Ana.","nos"],["Nosotros ___ jóvenes.","nos"],["Nosotros ___ los profesores.","nos"],["Nosotros ___ fuertes.","nos"],["Nosotros ___ los dueños del perro.","nos"],["Nosotros ___ de México.","nos"],["Nosotros ___ amigos.","nos"],["Ellos ___ estudiantes.","ellos"],["Ellos ___ de Perú.","ellos"],["Mis hermanos ___ altos.","ellos"],["Las casas ___ de madera.","ellos"],["___ las tres.","ellos"],["Los libros ___ nuevos.","ellos"],["Ellos ___ profesores.","ellos"],["Ustedes ___ muy amables.","ellos"],["Los perros ___ grandes.","ellos"],["Ellas ___ las hermanas de Luis.","ellos"]];
+var ESTAR_POOL=[["Yo ___ en casa.","yo"],["Yo ___ cansado.","yo"],["Yo ___ feliz.","yo"],["Yo ___ comiendo pan.","yo"],["Yo ___ enfermo.","yo"],["Yo ___ en la escuela.","yo"],["Yo ___ listo para salir.","yo"],["Yo ___ de pie.","yo"],["Yo ___ contento con el libro.","yo"],["Yo ___ en el jardín.","yo"],["Tú ___ en la tienda.","tu"],["Tú ___ enfermo.","tu"],["Tú ___ muy feliz.","tu"],["Tú ___ comiendo pizza.","tu"],["Tú ___ cansado.","tu"],["Tú ___ en casa.","tu"],["Tú ___ listo para la escuela.","tu"],["Tú ___ triste.","tu"],["Tú ___ en el hospital.","tu"],["Tú ___ nervioso.","tu"],["Mi madre ___ en casa.","el"],["Ella ___ enferma.","el"],["Ella ___ comiendo arroz.","el"],["La puerta ___ cerrada.","el"],["El perro ___ dormido.","el"],["Él ___ aburrido en clase.","el"],["La sopa ___ muy buena.","el"],["Él ___ listo para salir.","el"],["La pizza ___ rica.","el"],["Nosotros ___ en la escuela.","nos"],["Nosotros ___ cansados.","nos"],["Nosotros ___ muy felices.","nos"],["Nosotros ___ comiendo pizza.","nos"],["Nosotros ___ en casa.","nos"],["Nosotros ___ listos para salir.","nos"],["Nosotros ___ enfermos.","nos"],["Nosotros ___ en el jardín.","nos"],["Nosotros ___ contentos con el libro.","nos"],["Nosotros ___ de pie.","nos"],["Los libros ___ en la escuela.","ellos"],["Ellos ___ enfermos.","ellos"],["Ellas ___ muy felices.","ellos"],["Ellos ___ comiendo pan.","ellos"],["Las puertas ___ cerradas.","ellos"],["Las tiendas ___ abiertas.","ellos"],["Los perros ___ dormidos.","ellos"],["Ellos ___ listos para salir.","ellos"],["Mis padres ___ en casa.","ellos"],["Ustedes ___ en el restaurante.","ellos"]];
+var LEVEL_TYPE=["cognate","cognate","practice","practice","conjugation","conjugation","possessive","possessive","serestar","serestar"];
+var LEVEL_TITLES=["Cognates","Cognates","Practice the words","Practice the words","Present tense","Present tense","Possessive pronouns","Possessive pronouns","Ser vs. estar","Ser vs. estar"];
 </script>
 <script>
 /* ================= utils ================= */
@@ -182,25 +224,75 @@ function theme(){ return THEMES[level]||THEMES[1]; }
    Types: cognate/practice/possessive (display = target phrase),
    conjugation (display = "verb — subject", target = form),
    serestar (display = sentence with blank, target = completed sentence). */
+function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+var SER_DIST={
+  "soy":["estoy","eres","estás"], "estoy":["soy","eres","estás"],
+  "eres":["estás","soy","estoy"], "estás":["eres","soy","estoy"],
+  "es":["está","son","están"], "está":["es","son","están"],
+  "somos":["estamos","son","están"], "estamos":["somos","son","están"],
+  "son":["están","es","está"], "están":["son","es","está"]
+};
+function pickDistractors(pool, correct, n){
+  var out=[], seen={}; seen[correct]=1;
+  var p=shuffle(pool.slice());
+  for(var i=0;i<p.length&&out.length<n;i++){ if(!seen[p[i]]){ seen[p[i]]=1; out.push(p[i]); } }
+  return out;
+}
+/* Ser/estar forms by subject code (subj_code from serestar.html). */
+var SER_MAP={ser:{yo:"soy",tu:"eres",el:"es",nos:"somos",ellos:"son"},estar:{yo:"estoy",tu:"estás",el:"está",nos:"estamos",ellos:"están"}};
+/* Draw 25 fresh items for a level from the FULL pool (no repeats in a run).
+   Replaying a level re-draws, so the mix is different every time. */
 function levelWords(level){
-  var lv=GAME_DATA.levels[level-1], out=[];
-  if(lv.type==="conjugation"){
-    for(var j=0;j<lv.items.length;j++){
-      var e=lv.items[j];
-      out.push({target:e.form, prompt:"Say the form:", display:e.verb+" — "+SUBJ_NAME[e.subj], sub:e.verb+" — "+SUBJ_NAME[e.subj]});
+  var type=LEVEL_TYPE[level-1], out=[];
+  function idxs(n){ var a=[]; for(var i=0;i<n;i++) a.push(i); return shuffle(a); }
+  if(type==="cognate"){
+    var ci=idxs(COG_POOL.length).slice(0,25);
+    for(var a=0;a<ci.length;a++){
+      var w=COG_POOL[ci[a]];
+      out.push({target:w, choice:null, choices:null, qTarget:null, q:"", prompt:"Say this word:", display:w});
     }
-  } else if(lv.type==="serestar"){
-    for(var k=0;k<lv.items.length;k++){
-      var it=lv.items[k];
-      out.push({target:it.target, prompt:"Say the full sentence:", display:it.display, sub:it.display});
+  } else if(type==="practice"||type==="possessive"){
+    var pool=type==="practice"?PRAC_POOL:POSS_POOL;
+    var pi=idxs(pool.length).slice(0,25);
+    var allSp=pool.map(function(e){ return e[0]; });
+    for(var b=0;b<pi.length;b++){
+      var item=pool[pi[b]], sp=item[0], en=item[1];
+      var ch=pickDistractors(allSp, sp, 3); ch.push(sp); shuffle(ch);
+      out.push({target:sp, choice:sp, choices:ch, qTarget:null,
+        q:"Which Spanish phrase means \u201c"+en+"\u201d?",
+        prompt:"Say this phrase:", display:sp});
     }
-  } else {
-    var pr=lv.type==="cognate"?"Say this word:":"Say this phrase:";
-    for(var i=0;i<lv.words.length;i++) out.push({target:lv.words[i], prompt:pr, display:lv.words[i]});
+  } else if(type==="conjugation"){
+    // All 113 verbs x 5 subjects = 565 combos; draw 25 distinct combos.
+    var combos=[];
+    for(var v=0;v<VERB_POOL.length;v++) for(var sj=0;sj<5;sj++) combos.push([v,sj]);
+    shuffle(combos);
+    var take=combos.slice(0,25);
+    for(var c=0;c<take.length;c++){
+      var vb=VERB_POOL[take[c][0]], sub=take[c][1];
+      var form=vb[2][sub];
+      var ch2=pickDistractors(vb[2], form, 3); ch2.push(form); shuffle(ch2);
+      out.push({target:form, choice:form, choices:ch2, qTarget:null,
+        q:"Which form of \u201c"+vb[0]+"\u201d ("+vb[1]+") goes with "+SUBJ_NAME[sub]+"?",
+        prompt:"Say the form:", display:form, sub:vb[0]+" — "+SUBJ_NAME[sub]});
+    }
+  } else { // serestar
+    var kind=level===9?"ser":"estar";
+    var spool=kind==="ser"?SER_POOL:ESTAR_POOL;
+    var si=idxs(spool.length).slice(0,25);
+    for(var d=0;d<si.length;d++){
+      var sent=spool[si[d]][0], subj=spool[si[d]][1];
+      var f=SER_MAP[kind][subj];
+      var target=sent.replace("___", f);
+      var ch3=SER_DIST[f].slice(); ch3.push(f); shuffle(ch3);
+      out.push({target:target, choice:f, choices:ch3, qTarget:sent,
+        q:"Which word completes the sentence?",
+        prompt:"Say the full sentence:", display:target, sub:sent});
+    }
   }
   return out;
 }
-function levelTitle(n){ return GAME_DATA.levels[n-1].title; }
+function levelTitle(n){ return LEVEL_TITLES[n-1]; }
 
 /* ================= audio ================= */
 var audioCtx=null, masterGain=null, musicGain=null, sfxGain=null;
@@ -338,8 +430,8 @@ function speakSpanish(text){
 /* ================= level generation ================= */
 var W=960, H=540, GROUND_Y=H-84;
 var SPEED=320, GRAV=2600, JUMP_V=-880;
-function genLevel(level){
-  var rng=mulberry32(level*7919+13);
+function genLevel(level, seed){
+  var rng=mulberry32(seed!==undefined?seed:((Math.random()*4294967296)|0));
   var L=24000;
   var cps=[0.16,0.33,0.50,0.66,0.83].map(function(f){return Math.round(f*L);});
   var obstacles=[], gaps=[], platforms=[];
@@ -348,47 +440,60 @@ function genLevel(level){
     for(var i=0;i<cps.length;i++){ if(x1>cps[i]-280&&x0<cps[i]+280) return true; }
     return false;
   }
-  var dblChance=0.20+level*0.02;
-  var tallChance=level>=2?(0.15+level*0.03):0;
-  var density=0.90+level*0.005;
+  /* Difficulty ladder: d=0 at L1, 1 at L10; p = progress through the level (0..1).
+     Density, double-spike and tall-block rates, spacing and gap width all scale
+     with BOTH d and p, so L5 > L1, L10 > L5, and the end of a level is harder
+     than its start. Hardest sections stay clearable: max gap 120px (jump 217px),
+     tall block 80px (jump 149px), min flat gap ~295px between features. */
+  var d=(level-1)/9;
   var x=700;
   while(x<L-450){
-    x+=380+rng()*120;
+    var p=x/L;
+    var h=d*0.7+p*0.3; /* combined hardness for the feature mix */
+    var spacing=470-135*d-40*p;
+    x+=spacing+rng()*120;
     if(x>L-450) break;
+    var density=Math.min(0.98, 0.72+0.225*d+0.05*p);
     if(rng()>density) continue;
+    var dblChance=0.10+0.27*d+0.15*p;
+    var tallChance=(level>=2?0.05+0.225*d:0)+0.15*p;
     var t=rng(), w=0;
-    if(t<0.20){
+    var spikeT=0.20+0.06*h, blockT=spikeT+0.14+0.04*h, gapT=blockT+0.14;
+    var platSpikeT=gapT+0.17, platGapT=platSpikeT+0.12, stairT=platGapT+0.10+0.05*h;
+    if(t<spikeT){
       var dbl=rng()<dblChance;
       w=dbl?64:32;
       if(inSafe(x,x+w)) continue;
       obstacles.push({type:"spike",x:Math.round(x),w:w,h:30,base:GROUND_Y});
-    }else if(t<0.34){
+    }else if(t<blockT){
       var tall=rng()<tallChance;
       w=40;
       if(inSafe(x,x+w)) continue;
       obstacles.push({type:"block",x:Math.round(x),w:40,h:tall?80:40});
-    }else if(t<0.48){
-      w=70+Math.floor(rng()*40);
+    }else if(t<gapT){
+      w=70+Math.floor(27*d)+Math.floor(rng()*40);
+      if(w>120) w=120;
       if(inSafe(x,x+w)) continue;
       gaps.push({x:Math.round(x),w:w});
-    }else if(t<0.65){
+    }else if(t<platSpikeT){
       // platform over a ground spike: hop up to dodge it
       w=102;
       if(inSafe(x,x+w)) continue;
       var top=70+Math.floor(rng()*30);
       obstacles.push({type:"spike",x:Math.round(x+35),w:32,h:30,base:GROUND_Y});
       platforms.push({x:Math.round(x),w:w,h:top});
-    }else if(t<0.77){
+    }else if(t<platGapT){
       // platform spanning a gap: land on it instead of falling in
-      var gw=70+Math.floor(rng()*40);
+      var gw=70+Math.floor(27*d)+Math.floor(rng()*40);
+      if(gw>120) gw=120;
       w=gw+70;
       if(inSafe(x,x+w)) continue;
       var top2=60+Math.floor(rng()*30);
       gaps.push({x:Math.round(x+35),w:gw});
       platforms.push({x:Math.round(x),w:w,h:top2});
-    }else if(t<0.87){
+    }else if(t<stairT){
       // staircase over a pit: forgiving steps (110px wide, 100px edge gap, 38px rise)
-      var steps=2+Math.floor(rng()*2);
+      var steps=2+Math.floor(rng()*(2+d));
       var stepW=110, stepGap=100, stepRise=38;
       w=(steps-1)*(stepW+stepGap)+stepW;
       if(inSafe(x,x+w)) continue;
@@ -409,6 +514,8 @@ function genLevel(level){
   }
   return {L:L,finishX:L-300,cps:cps,obstacles:obstacles,gaps:gaps,platforms:platforms};
 }
+
+
 function groundSolidAt(lv,x){
   for(var i=0;i<lv.gaps.length;i++){ var g=lv.gaps[i]; if(x>=g.x&&x<g.x+g.w) return false; }
   return true;
@@ -445,7 +552,7 @@ function updateHUD(){
 }
 function startLevel(n){
   level=n; lv=genLevel(n); words=levelWords(n);
-  checkpoints=lv.cps.map(function(x,i){ return {x:x,index:i,passed:false,words:[words[i*2],words[i*2+1]]}; });
+  checkpoints=lv.cps.map(function(x,i){ return {x:x,index:i,passed:false,words:words.slice(i*5,i*5+5)}; });
   px=0; py=GROUND_Y-34; vy=0; onGround=true; rot=0; camX=0;
   attempts=0; bestPct=bestMap[n]||0; wordStatus={}; quizCp=-1;
   document.getElementById("menu").classList.add("hidden");
@@ -763,20 +870,92 @@ function draw(){
 var quizEl=document.getElementById("quiz"), quizTitle=document.getElementById("quizTitle"),
     quizCount=document.getElementById("quizCount"), quizPrompt=document.getElementById("quizPrompt"),
     quizTarget=document.getElementById("quizTarget"), quizFb=document.getElementById("quizFb"),
+    quizStepEl=document.getElementById("quizStep"), quizChoicesEl=document.getElementById("quizChoices"),
+    quizSpeakEl=document.getElementById("quizSpeak"),
     sayBtn=document.getElementById("quizSay"), hearBtn=document.getElementById("quizHear");
 var recog=null, listenTimer=null, listening=false, lastHeard="", userStopped=false;
+var quizStep="speak"; // "choose" | "speak"
 function setQuizFb(msg,cls){ quizFb.textContent=msg; quizFb.className="feedback"+(cls?" "+cls:""); }
 function currentWord(){ return quizWords[quizIdx]; }
+function renderChoices(w){
+  quizChoicesEl.innerHTML="";
+  for(var i=0;i<w.choices.length;i++){
+    (function(ch){
+      var b=document.createElement("button");
+      b.className="choiceBtn"; b.type="button"; b.textContent=ch;
+      b.addEventListener("click",function(){ pickChoice(ch,b); });
+      quizChoicesEl.appendChild(b);
+    })(w.choices[i]);
+  }
+}
+function pickChoice(ch, btn){
+  var w=currentWord();
+  if(quizStep!=="choose"||state!=="quiz") return;
+  if(ch===w.choice){
+    sfxCorrect();
+    btn.classList.add("correct");
+    var btns=quizChoicesEl.querySelectorAll("button");
+    for(var i=0;i<btns.length;i++) btns[i].disabled=true;
+    setQuizFb("✓ Correct!","ok");
+    setTimeout(function(){ if(state==="quiz"&&quizStep==="choose") showSpeakStep(); },700);
+  } else {
+    sfxWrong();
+    // Wrong 4-choice pick (L3-10 only — cognates have no choices, so this never
+    // runs for L1-2): a real consequence. Show the feedback, then send the
+    // player back to the last checkpoint they passed. respawn() already does
+    // exactly that: the current checkpoint is not passed yet, so the last
+    // passed one is the previous checkpoint — or the start at checkpoint 0.
+    var btns=quizChoicesEl.querySelectorAll("button");
+    for(var i=0;i<btns.length;i++) btns[i].disabled=true;
+    btn.classList.add("wrong");
+    setQuizFb("Not quite — back to the last checkpoint!","bad");
+    setTimeout(function(){
+      if(state!=="quiz") return;
+      closeQuiz();
+      respawn();
+    },1500);
+  }
+}
+function showSpeakStep(){
+  var w=currentWord();
+  quizStep="speak";
+  quizStepEl.textContent="Step 2 of 2 · Say it";
+  quizPrompt.textContent=w.prompt;
+  quizTarget.style.display="";
+  quizTarget.textContent=w.display;
+  quizChoicesEl.style.display="none";
+  quizSpeakEl.style.display="";
+  setQuizFb("","");
+  // Ser vs. estar: Hear would speak the completed sentence and reveal the answer (es vs. está), so hide it on those levels.
+  hearBtn.style.display=(LEVEL_TYPE[level-1]==="serestar")?"none":"";
+}
 function showQuizWord(){
   var w=currentWord();
   quizTitle.textContent="Checkpoint "+(quizCp+1)+" of 5";
-  quizCount.textContent="Word "+(quizIdx+1)+" of 2";
-  quizPrompt.textContent=w.prompt;
-  quizTarget.textContent=w.display;
+  quizCount.textContent="Word "+(quizIdx+1)+" of 5";
   setQuizFb("","");
   sayBtn.textContent="🎤 Say it"; sayBtn.classList.remove("listening");
-  // Ser vs. estar: Hear would speak the completed sentence and reveal the answer (es vs. está), so hide it on those levels.
-  hearBtn.style.display=(GAME_DATA.levels[level-1].type==="serestar")?"none":"";
+  if(w.choices){
+    // Step 1: choose from 4 (all levels except cognates)
+    quizStep="choose";
+    quizStepEl.textContent="Step 1 of 2 · Choose";
+    quizPrompt.textContent=w.q;
+    if(w.qTarget){ quizTarget.style.display=""; quizTarget.textContent=w.qTarget; }
+    else { quizTarget.style.display="none"; }
+    quizSpeakEl.style.display="none";
+    quizChoicesEl.style.display="";
+    renderChoices(w);
+  } else {
+    // Cognates: straight to speaking, no multiple choice
+    quizStep="speak";
+    quizStepEl.textContent="Say it";
+    quizPrompt.textContent=w.prompt;
+    quizTarget.style.display="";
+    quizTarget.textContent=w.display;
+    quizChoicesEl.style.display="none";
+    quizSpeakEl.style.display="";
+    hearBtn.style.display=(LEVEL_TYPE[level-1]==="serestar")?"none":"";
+  }
 }
 function openQuiz(cpIdx){
   quizCp=cpIdx; quizIdx=0; quizWords=checkpoints[cpIdx].words;
@@ -813,7 +992,7 @@ function scoreHeard(heard){
   var got=normSp(heard), want=normSp(w.target);
   if(got===want){
     sfxCorrect();
-    wordStatus[quizCp*2+quizIdx]="ok";
+    wordStatus[quizCp*5+quizIdx]="ok";
     setQuizFb("✓ Correct!","ok");
     setTimeout(function(){ if(state==="quiz") advanceQuiz(); },800);
   }else{
@@ -870,7 +1049,7 @@ function startListen(){
   }
   attempt();
 }
-hearBtn.addEventListener("click",function(){ if(GAME_DATA.levels[level-1].type==="serestar") return; var w=currentWord(); if(w) speakSpanish(w.target); });
+hearBtn.addEventListener("click",function(){ if(LEVEL_TYPE[level-1]==="serestar") return; var w=currentWord(); if(w) speakSpanish(w.target); });
 sayBtn.addEventListener("click",function(){ startListen(); });
 document.getElementById("quizQuit").addEventListener("click",function(){ closeQuiz(); showMenu(); });
 
@@ -880,10 +1059,10 @@ function buildMenu(){
   grid.innerHTML="";
   for(var n=1;n<=10;n++){
     var b=document.createElement("button");
-    b.className="lvlBtn"+(n<=unlocked?"":" locked");
-    b.type="button";
     var best=bestMap[n];
-    b.innerHTML='<div class="n">'+(n<=unlocked?n:"🔒")+'</div><div class="t">'+levelTitle(n)+'</div><div class="b">10 words'+(best!=null?(" · Best "+best+"%"):"")+'</div>';
+    b.className="lvlBtn"+(n<=unlocked?"":" locked")+(best===100?" done":"");
+    b.type="button";
+    b.innerHTML='<div class="n">'+(n<=unlocked?n:"🔒")+'</div><div class="t">'+levelTitle(n)+'</div><div class="b">'+(best!=null?("Best "+best+"%"+(best===100?" ★":"")):"")+'</div>';
     (function(nn,locked){
       b.addEventListener("click",function(){ if(!locked){ audioEnsure(); startLevel(nn); } });
     })(n,n>unlocked);
@@ -916,6 +1095,21 @@ document.getElementById("btnRestart").addEventListener("click",function(){
   document.getElementById("pauseOv").classList.add("hidden"); startLevel(level);
 });
 document.getElementById("btnQuit").addEventListener("click",function(){ showMenu(); });
+document.getElementById("btnReset").addEventListener("click",function(){
+  document.getElementById("btnReset").style.display="none";
+  document.getElementById("resetConfirm").classList.remove("hidden");
+});
+document.getElementById("btnResetNo").addEventListener("click",function(){
+  document.getElementById("resetConfirm").classList.add("hidden");
+  document.getElementById("btnReset").style.display="";
+});
+document.getElementById("btnResetYes").addEventListener("click",function(){
+  try{ localStorage.removeItem("spanishDash_best"); localStorage.removeItem("spanishDash_unlocked"); }catch(e){}
+  bestMap={}; unlocked=1;
+  document.getElementById("resetConfirm").classList.add("hidden");
+  document.getElementById("btnReset").style.display="";
+  buildMenu();
+});
 document.getElementById("btnPause").addEventListener("click",function(){
   if(state==="playing"){ state="paused"; document.getElementById("pauseOv").classList.remove("hidden"); }
   else if(state==="paused"){ document.getElementById("pauseOv").classList.add("hidden"); state="playing"; }
