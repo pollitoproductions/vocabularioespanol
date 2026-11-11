@@ -83,7 +83,7 @@ h1{margin:0;font-size:2rem}
         <p><b>Jump, run, and say it in Spanish!</b></p>
         <p>Tap, click, or press <b>Space</b> to jump over spikes and gaps — and land on the orange platforms to hop over trouble. At each checkpoint the game stops and asks you to <b>say a Spanish word out loud</b>. Say it right to keep running. Get it wrong and you crash back!</p>
         <div id="levelGrid"></div>
-        <p class="small">Levels 1–4: Cognates &nbsp;·&nbsp; Levels 5–9: Present tense &nbsp;·&nbsp; Level 10: Idioms<br>Your best % is saved on this device. A microphone is needed — you must say each word out loud to continue.</p>
+        <p class="small">Levels 1–2: Cognates &nbsp;·&nbsp; Levels 3–4: Practice the words &nbsp;·&nbsp; Levels 5–6: Present tense &nbsp;·&nbsp; Levels 7–8: Possessive pronouns &nbsp;·&nbsp; Levels 9–10: Ser vs. estar<br>10 words per level. Your best % is saved on this device. A microphone is needed — you must say each word out loud to continue.</p>
       </div>
     </div>
 
@@ -128,12 +128,17 @@ h1{margin:0;font-size:2rem}
 </div>
 <script>
 "use strict";
-var GAME_DATA = {"cog_levels": [["actor", "agenda", "animal", "area", "aroma", "artificial", "atlas", "bar", "base", "canal"], ["capital", "central", "chocolate", "civil", "club", "color", "crisis", "criminal", "cultural", "digital"], ["diploma", "director", "doctor", "drama", "editor", "enigma", "error", "exterior", "familiar", "favor"], ["festival", "final", "formal", "gala", "gas", "general", "global", "honor", "hospital", "hotel"]], "conj_levels": [[{"verb": "abrazar", "subj": 0, "form": "abrazo"}, {"verb": "aplaudir", "subj": 1, "form": "aplaudes"}, {"verb": "avanzar", "subj": 2, "form": "avanza"}, {"verb": "ayudar", "subj": 3, "form": "ayudamos"}, {"verb": "besar", "subj": 4, "form": "besan"}, {"verb": "boxear", "subj": 0, "form": "boxeo"}, {"verb": "buscar", "subj": 1, "form": "buscas"}, {"verb": "caminar", "subj": 2, "form": "camina"}, {"verb": "celebrar", "subj": 3, "form": "celebramos"}, {"verb": "conversar", "subj": 4, "form": "conversan"}], [{"verb": "dejar", "subj": 0, "form": "dejo"}, {"verb": "desarrollar", "subj": 1, "form": "desarrollas"}, {"verb": "desbloquear", "subj": 2, "form": "desbloquea"}, {"verb": "diseñar", "subj": 3, "form": "diseñamos"}, {"verb": "entrenar", "subj": 4, "form": "entrenan"}, {"verb": "escalar", "subj": 0, "form": "escalo"}, {"verb": "escuchar", "subj": 1, "form": "escuchas"}, {"verb": "esquiar", "subj": 2, "form": "esquía"}, {"verb": "explorar", "subj": 3, "form": "exploramos"}, {"verb": "ganar", "subj": 4, "form": "ganan"}], [{"verb": "hablar", "subj": 0, "form": "hablo"}, {"verb": "investigar", "subj": 1, "form": "investigas"}, {"verb": "limpiar", "subj": 2, "form": "limpia"}, {"verb": "llamar", "subj": 3, "form": "llamamos"}, {"verb": "llegar", "subj": 4, "form": "llegan"}, {"verb": "llevar", "subj": 0, "form": "llevo"}, {"verb": "maquillar", "subj": 1, "form": "maquillas"}, {"verb": "nadar", "subj": 2, "form": "nada"}, {"verb": "necesitar", "subj": 3, "form": "necesitamos"}, {"verb": "pasar", "subj": 4, "form": "pasan"}], [{"verb": "patinar", "subj": 0, "form": "patino"}, {"verb": "pausar", "subj": 1, "form": "pausas"}, {"verb": "pescar", "subj": 2, "form": "pesca"}, {"verb": "presentar", "subj": 3, "form": "presentamos"}, {"verb": "programar", "subj": 4, "form": "programan"}, {"verb": "saludar", "subj": 0, "form": "saludo"}, {"verb": "trabajar", "subj": 1, "form": "trabajas"}, {"verb": "beber", "subj": 2, "form": "bebe"}, {"verb": "comer", "subj": 3, "form": "comemos"}, {"verb": "correr", "subj": 4, "form": "corren"}], [{"verb": "retroceder", "subj": 0, "form": "retrocedo"}, {"verb": "vender", "subj": 1, "form": "vendes"}, {"verb": "decidir", "subj": 2, "form": "decide"}, {"verb": "escribir", "subj": 3, "form": "escribimos"}, {"verb": "repartir", "subj": 4, "form": "reparten"}, {"verb": "vivir", "subj": 0, "form": "vivo"}, {"verb": "creer", "subj": 1, "form": "crees"}, {"verb": "leer", "subj": 2, "form": "lee"}, {"verb": "pensar", "subj": 3, "form": "pensamos"}, {"verb": "perder", "subj": 4, "form": "pierden"}]], "idioms_L10": ["Tomar el pelo", "No tener ni idea", "Estar en las nubes", "Meter la pata", "Echar una mano", "Estar hecho polvo", "No pasa nada", "Ser pan comido", "Hablar por los codos", "Tirar la toalla"]};
+var GAME_DATA = {"levels": [{"level": 1, "type": "cognate", "title": "Cognates", "words": ["actor", "agenda", "animal", "area", "aroma", "artificial", "atlas", "base", "canal", "capital"]}, {"level": 2, "type": "cognate", "title": "Cognates", "words": ["central", "chocolate", "civil", "club", "color", "crisis", "criminal", "cultural", "digital", "diploma"]}, {"level": 3, "type": "practice", "title": "Practice the words", "words": ["el gato", "el perro", "la casa", "el libro", "la escuela", "la manzana", "la leche", "el agua", "la madre", "el padre"]}, {"level": 4, "type": "practice", "title": "Practice the words", "words": ["la hermana", "el hermano", "la familia", "el caballo", "la puerta", "la ventana", "hablar", "comer", "beber", "vivir"]}, {"level": 5, "type": "conjugation", "title": "Present tense", "items": [{"verb": "abrazar", "subj": 0, "form": "abrazo"}, {"verb": "aplaudir", "subj": 1, "form": "aplaudes"}, {"verb": "avanzar", "subj": 2, "form": "avanza"}, {"verb": "ayudar", "subj": 3, "form": "ayudamos"}, {"verb": "besar", "subj": 4, "form": "besan"}, {"verb": "boxear", "subj": 0, "form": "boxeo"}, {"verb": "buscar", "subj": 1, "form": "buscas"}, {"verb": "caminar", "subj": 2, "form": "camina"}, {"verb": "celebrar", "subj": 3, "form": "celebramos"}, {"verb": "conversar", "subj": 4, "form": "conversan"}]}, {"level": 6, "type": "conjugation", "title": "Present tense", "items": [{"verb": "dejar", "subj": 0, "form": "dejo"}, {"verb": "desarrollar", "subj": 1, "form": "desarrollas"}, {"verb": "desbloquear", "subj": 2, "form": "desbloquea"}, {"verb": "diseñar", "subj": 3, "form": "diseñamos"}, {"verb": "entrenar", "subj": 4, "form": "entrenan"}, {"verb": "escalar", "subj": 0, "form": "escalo"}, {"verb": "escuchar", "subj": 1, "form": "escuchas"}, {"verb": "esquiar", "subj": 2, "form": "esquía"}, {"verb": "explorar", "subj": 3, "form": "exploramos"}, {"verb": "ganar", "subj": 4, "form": "ganan"}]}, {"level": 7, "type": "possessive", "title": "Possessive pronouns", "words": ["mi casa", "mi libro", "tu perro", "tu casa", "su libro", "su casa", "nuestro perro", "nuestra casa", "nuestro libro", "nuestra escuela"]}, {"level": 8, "type": "possessive", "title": "Possessive pronouns", "words": ["mis libros", "mis amigos", "tus libros", "tus amigas", "sus casas", "sus libros", "nuestros amigos", "nuestras casas", "mis gatos", "tus perros"]}, {"level": 9, "type": "serestar", "title": "Ser vs. estar", "items": [{"display": "Ella ___ profesora.", "target": "Ella es profesora."}, {"display": "Ellos ___ estudiantes.", "target": "Ellos son estudiantes."}, {"display": "Nosotros ___ estudiantes.", "target": "Nosotros somos estudiantes."}, {"display": "Tú ___ muy simpático.", "target": "Tú eres muy simpático."}, {"display": "Yo ___ profesor.", "target": "Yo soy profesor."}, {"display": "Él ___ de Perú.", "target": "Él es de Perú."}, {"display": "Ellos ___ de Perú.", "target": "Ellos son de Perú."}, {"display": "Nosotros ___ de Argentina.", "target": "Nosotros somos de Argentina."}, {"display": "Tú ___ de Colombia.", "target": "Tú eres de Colombia."}, {"display": "Yo ___ de Argentina.", "target": "Yo soy de Argentina."}]}, {"level": 10, "type": "serestar", "title": "Ser vs. estar", "items": [{"display": "Mi madre ___ en casa.", "target": "Mi madre está en casa."}, {"display": "Los libros ___ en la escuela.", "target": "Los libros están en la escuela."}, {"display": "Nosotros ___ en la escuela.", "target": "Nosotros estamos en la escuela."}, {"display": "Tú ___ en la tienda.", "target": "Tú estás en la tienda."}, {"display": "Yo ___ en casa.", "target": "Yo estoy en casa."}, {"display": "Ella ___ enferma.", "target": "Ella está enferma."}, {"display": "Ellos ___ enfermos.", "target": "Ellos están enfermos."}, {"display": "Nosotros ___ cansados.", "target": "Nosotros estamos cansados."}, {"display": "Tú ___ enfermo.", "target": "Tú estás enfermo."}, {"display": "Yo ___ cansado.", "target": "Yo estoy cansado."}]}]};
 </script>
 <script>
 /* ================= utils ================= */
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 function clamp(v,a,b){return v<a?a:(v>b?b:v);}
+/* Deterministic per-slot pseudo-random 0..n-1 for any integer world slot k.
+   Used so every parallax feature's size/height is a fixed function of its WORLD
+   position — it never changes as it scrolls (the old code keyed heights off the
+   on-screen loop index, so each feature resized when the pattern wrapped). */
+function slotRand(k,n){ return Math.abs((k*2654435761)%n); }
 function normSp(s){return (s||"").toLowerCase().trim().replace(/[.,!?¡¿:;\"'()\-]/g,"").replace(/[áàä]/g,"a").replace(/[éèë]/g,"e").replace(/[íìï]/g,"i").replace(/[óòö]/g,"o").replace(/[úùü]/g,"u").replace(/ñ/g,"n");}
 var SUBJ_NAME=["yo","tú","él/ella","nosotros","ellos"];
 var LEVEL_THEME={1:"Meadow",2:"Desert",3:"Ocean",4:"Forest",5:"Sunset",6:"Night",7:"Volcano",8:"Ice",9:"Jungle",10:"Fiesta"};
@@ -154,24 +159,29 @@ var THEMES={
 function theme(){ return THEMES[level]||THEMES[1]; }
 
 
-/* Level words: 10 per level. Each entry {target, prompt, display} */
+/* Level words: 10 per level. Each entry {target, prompt, display} (+sub for review).
+   Types: cognate/practice/possessive (display = target phrase),
+   conjugation (display = "verb — subject", target = form),
+   serestar (display = sentence with blank, target = completed sentence). */
 function levelWords(level){
-  var out=[];
-  if(level<=4){
-    var arr=GAME_DATA.cog_levels[level-1];
-    for(var i=0;i<arr.length;i++) out.push({target:arr[i], prompt:"Say this word:", display:arr[i]});
-  } else if(level<=9){
-    var arr2=GAME_DATA.conj_levels[level-5];
-    for(var j=0;j<arr2.length;j++){
-      var e=arr2[j];
+  var lv=GAME_DATA.levels[level-1], out=[];
+  if(lv.type==="conjugation"){
+    for(var j=0;j<lv.items.length;j++){
+      var e=lv.items[j];
       out.push({target:e.form, prompt:"Say the form:", display:e.verb+" — "+SUBJ_NAME[e.subj], sub:e.verb+" — "+SUBJ_NAME[e.subj]});
     }
+  } else if(lv.type==="serestar"){
+    for(var k=0;k<lv.items.length;k++){
+      var it=lv.items[k];
+      out.push({target:it.target, prompt:"Say the full sentence:", display:it.display, sub:it.display});
+    }
   } else {
-    var arr3=GAME_DATA.idioms_L10;
-    for(var k=0;k<arr3.length;k++) out.push({target:arr3[k], prompt:"Say this phrase:", display:arr3[k]});
+    var pr=lv.type==="cognate"?"Say this word:":"Say this phrase:";
+    for(var i=0;i<lv.words.length;i++) out.push({target:lv.words[i], prompt:pr, display:lv.words[i]});
   }
   return out;
 }
+function levelTitle(n){ return GAME_DATA.levels[n-1].title; }
 
 /* ================= audio ================= */
 var audioCtx=null, masterGain=null, musicGain=null, sfxGain=null;
@@ -364,7 +374,7 @@ function genLevel(level){
     }
     x+=w;
   }
-  return {L:L,cps:cps,obstacles:obstacles,gaps:gaps,platforms:platforms};
+  return {L:L,finishX:L-300,cps:cps,obstacles:obstacles,gaps:gaps,platforms:platforms};
 }
 function groundSolidAt(lv,x){
   for(var i=0;i<lv.gaps.length;i++){ var g=lv.gaps[i]; if(x>=g.x&&x<g.x+g.w) return false; }
@@ -391,7 +401,7 @@ function saveBest(){
 }
 function pct(){ return lv?Math.min(100,Math.floor(px/lv.L*100)):0; }
 function updateHUD(){
-  document.getElementById("hudLevel").textContent="Level "+level+" — "+LEVEL_THEME[level];
+  document.getElementById("hudLevel").textContent="Level "+level+" — "+levelTitle(level)+" · "+LEVEL_THEME[level];
   var p=pct();
   document.getElementById("progBar").style.width=p+"%";
   document.getElementById("progPct").textContent=p+"%";
@@ -438,7 +448,7 @@ function winLevel(){
     html+="<div>✓ "+label+"</div>";
   }
   document.getElementById("winWords").innerHTML=html;
-  document.getElementById("winSub").textContent="You finished Level "+level+" — "+LEVEL_THEME[level]+"!";
+  document.getElementById("winSub").textContent="You finished Level "+level+" — "+levelTitle(level)+"!";
   document.getElementById("winBest").textContent="Best: 100% · Attempts: "+attempts;
   document.getElementById("btnNext").style.display=level<10?"":"none";
   document.getElementById("winOv").classList.remove("hidden");
@@ -514,8 +524,8 @@ function update(dt){
     var cp=checkpoints[k];
     if(!cp.passed&&px>=cp.x&&px-SPEED*dt<cp.x){ openQuiz(k); return; }
   }
-  // finish
-  if(px>=lv.L){ winLevel(); return; }
+  // finish (line sits 300px before the end of the track so its banner is fully on screen)
+  if(px>=lv.finishX){ winLevel(); return; }
   var p=pct();
   if(p!==lastPct){ lastPct=p; updateHUD(); }
 }
@@ -526,16 +536,18 @@ function drawDecor(th){
   if(!th.decor) return;
   if(th.decor==="trees"){
     ctx.fillStyle="rgba(0,0,0,.28)";
-    for(var t=0;t<10;t++){
-      var tx=((t*197+40)%W - camX*0.45)%W; if(tx<0) tx+=W;
-      var th2=40+((t*31)%50);
+    var tOff=camX*0.45, tK0=Math.floor((tOff-40)/197), tK1=Math.floor((tOff+W)/197);
+    for(var tk=tK0;tk<=tK1;tk++){
+      var tx=tk*197+40-tOff;
+      var th2=40+slotRand(tk,50);
       ctx.beginPath(); ctx.moveTo(tx-16,GROUND_Y); ctx.lineTo(tx,GROUND_Y-th2); ctx.lineTo(tx+16,GROUND_Y); ctx.closePath(); ctx.fill();
     }
   }else if(th.decor==="cactus"){
     ctx.fillStyle="#166534";
-    for(var c=0;c<6;c++){
-      var cx2=((c*269+120)%W - camX*0.45)%W; if(cx2<0) cx2+=W;
-      var ch2=44+((c*37)%36);
+    var cOff=camX*0.45, cK0=Math.floor((cOff-40)/269), cK1=Math.floor((cOff+W)/269);
+    for(var ck=cK0;ck<=cK1;ck++){
+      var cx2=ck*269+120-cOff;
+      var ch2=44+slotRand(ck,36);
       ctx.fillRect(cx2,GROUND_Y-ch2,14,ch2);
       ctx.fillRect(cx2-12,GROUND_Y-ch2+14,12,8);
       ctx.fillRect(cx2+14,GROUND_Y-ch2+24,12,8);
@@ -599,12 +611,13 @@ function draw(){
     ctx.fillStyle="#94a3b8";
     ctx.beginPath(); ctx.arc(W-152-camX*0.02,100,9,0,Math.PI*2); ctx.arc(W-128-camX*0.02,122,7,0,Math.PI*2); ctx.fill();
   }
-  // clouds
+  // clouds — position is a fixed function of the cloud's world slot (no popping on wrap)
   if(th.clouds){
     ctx.fillStyle="rgba(255,255,255,.75)";
-    for(var cl=0;cl<5;cl++){
-      var cx=((cl*311+80)%W - camX*0.15)%W; if(cx<0) cx+=W;
-      var cy=50+((cl*53)%110);
+    var clOff=camX*0.15, clK0=Math.floor((clOff-120)/311), clK1=Math.floor((clOff+W)/311);
+    for(var clk=clK0;clk<=clK1;clk++){
+      var cx=clk*311+80-clOff;
+      var cy=50+slotRand(clk,110);
       ctx.beginPath();
       ctx.ellipse(cx,cy,46,16,0,0,Math.PI*2);
       ctx.ellipse(cx+30,cy+6,34,12,0,0,Math.PI*2);
@@ -612,11 +625,13 @@ function draw(){
       ctx.fill();
     }
   }
-  // parallax mountains
+  // parallax mountains — height is a fixed function of the mountain's WORLD slot,
+  // so a mountain never changes height as it scrolls (no more resizing mid-screen)
   ctx.fillStyle=th.mtn;
-  for(var m=0;m<8;m++){
-    var mx=m*320 - (camX*0.3)%320 - 160;
-    ctx.beginPath(); ctx.moveTo(mx, GROUND_Y); ctx.lineTo(mx+110, GROUND_Y-150-(m%3)*40); ctx.lineTo(mx+220, GROUND_Y); ctx.closePath(); ctx.fill();
+  var mOff=camX*0.3, mK0=Math.floor((mOff-220)/320), mK1=Math.floor((mOff+W)/320);
+  for(var mk=mK0;mk<=mK1;mk++){
+    var mx=mk*320-mOff, mh=150+slotRand(mk,3)*40;
+    ctx.beginPath(); ctx.moveTo(mx, GROUND_Y); ctx.lineTo(mx+110, GROUND_Y-mh); ctx.lineTo(mx+220, GROUND_Y); ctx.closePath(); ctx.fill();
   }
   // theme decor (simple parallax shapes)
   drawDecor(th);
@@ -637,13 +652,14 @@ function draw(){
     for(var gx=Math.floor(x0/40)*40; gx<x1; gx+=40){ ctx.beginPath(); ctx.moveTo(gx,GROUND_Y+6); ctx.lineTo(gx,H); ctx.stroke(); }
   }
   if(!lv){ return; }
-  // finish line
-  var fx=lv.L-camX;
+  // finish line (300px before track end; text centered on the line so it can never run off the right edge)
+  var fx=lv.finishX-camX;
   if(fx>-20&&fx<W+20){
     ctx.fillStyle="#fff"; ctx.fillRect(fx-4,GROUND_Y-150,8,150);
     ctx.fillStyle="#22c55e";
     for(var cy=0; cy<5; cy++) for(var cx=0; cx<4; cx++){ if((cx+cy)%2===0) ctx.fillRect(fx+4+cx*12,GROUND_Y-150+cy*12,12,12); }
-    ctx.font="bold 18px sans-serif"; ctx.lineWidth=4; ctx.strokeStyle="rgba(0,0,0,.7)"; ctx.strokeText("FINISH",fx-28,GROUND_Y-160); ctx.fillStyle="#fff"; ctx.fillText("FINISH",fx-28,GROUND_Y-160);
+    ctx.font="bold 18px sans-serif"; ctx.lineWidth=4; ctx.strokeStyle="rgba(0,0,0,.7)";
+    ctx.textAlign="center"; ctx.strokeText("FINISH",fx,GROUND_Y-160); ctx.fillStyle="#fff"; ctx.fillText("FINISH",fx,GROUND_Y-160); ctx.textAlign="left";
   }
   // checkpoints
   for(var ci=0; ci<checkpoints.length; ci++){
@@ -830,7 +846,7 @@ function buildMenu(){
     b.className="lvlBtn"+(n<=unlocked?"":" locked");
     b.type="button";
     var best=bestMap[n];
-    b.innerHTML='<div class="n">'+(n<=unlocked?n:"🔒")+'</div><div class="t">'+LEVEL_THEME[n]+'</div><div class="b">'+(best!=null?("Best "+best+"%"):"—")+'</div>';
+    b.innerHTML='<div class="n">'+(n<=unlocked?n:"🔒")+'</div><div class="t">'+levelTitle(n)+'</div><div class="b">10 words'+(best!=null?(" · Best "+best+"%"):"")+'</div>';
     (function(nn,locked){
       b.addEventListener("click",function(){ if(!locked){ audioEnsure(); startLevel(nn); } });
     })(n,n>unlocked);
