@@ -62,7 +62,7 @@ ul.words{list-style:none;columns:2;column-gap:20px;margin:0 0 6px;padding:0}ul.w
 <h2>La herramienta de conjugación</h2>
 <div class="tool">
 <div><button class="dirbtn on" id="t-pres" type="button">Presente</button><button class="dirbtn" id="t-pret" type="button">Pretérito</button><button class="dirbtn" id="t-fut" type="button">Futuro</button><button class="dirbtn" id="t-mixed" type="button">Mixto</button></div>
-<div><button class="dirbtn on" id="f-all" type="button">Todos los verbos</button><button class="dirbtn" id="f-irr" type="button">Irregular only</button><button class="dirbtn" id="f-stem" type="button">Solo cambio de raíz</button></div>
+<div><button class="dirbtn on" id="f-all" type="button">Todos los verbos</button><button class="dirbtn" id="f-irr" type="button">Solo irregulares</button></div>
 <div><label class="chk"><input type="checkbox" id="exclude-vos" checked> Exclude vosotros</label></div>
 <div class="qarea"><b id="q-en"></b><span id="q-tense"></span></div>
 <div class="opts" id="q-opts"><button class="opt" id="opt0" type="button"></button><button class="opt" id="opt1" type="button"></button><button class="opt" id="opt2" type="button"></button><button class="opt" id="opt3" type="button"></button></div>
@@ -99,7 +99,8 @@ var qCount=document.getElementById('q-count'),sayBtn=document.getElementById('bt
 var hearEnBtn=document.getElementById('btn-hear-en'),optsDiv=document.getElementById('q-opts')
 var optBtns=[0,1,2,3].map(function(i){return document.getElementById('opt'+i);});
 function shuffleArr(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
-function buildPool(){pool=VERBS.filter(function(v){return focus==='all'||v[2]===focus;});shuffleArr(pool);pos=0;}
+var EN_IRR={"conversar":1,"dejar":1,"ganar":1,"hablar":1,"nadar":1,"beber":1,"comer":1,"correr":1,"retroceder":1,"vender":1,"escribir":1,"leer":1,"pensar":1,"perder":1,"encontrar":1,"dormir":1,"poder":1,"ser":1,"estar":1,"ir":1,"tener":1,"hacer":1,"decir":1,"venir":1,"poner":1,"salir":1,"saber":1,"dar":1,"ver":1,"cantar":1,"comprar":1,"pagar":1,"sacar":1,"olvidar":1,"tomar":1,"comprender":1,"subir":1,"empezar":1,"entender":1,"comenzar":1,"almorzar":1,"costar":1,"traer":1,"conocer":1,"oír":1,"caer":1};
+function buildPool(){pool=VERBS.filter(function(v){return focus==='all'||(focus==='irr'&&EN_IRR[v[0]]);});shuffleArr(pool);pos=0;}
 function setFeedback(msg,cls){var f=document.getElementById('feedback');f.textContent=msg;f.className='feedback'+(cls?' '+cls:'');}
 function showNote(){var txt='';if(q.tense==='fut'&&q.verb[8]){txt=q.verb[8];}else if(q.tense==='pret'&&q.subj===0&&q.verb[6]){txt=q.verb[6];}else if(q.tense==='pret'&&(q.subj===2||q.subj===4)&&q.verb[7]){txt=q.verb[7];}else if(q.tense==='pret'&&(q.verb[0]==='ser'||q.verb[0]==='ir')){txt=SERIR_NOTE;}if(txt){qNoteText.textContent=txt;qNote.style.display='block';}else{qNote.style.display='none';}}
 function newQuestion(){
@@ -133,7 +134,7 @@ qReveal.textContent=q.verb[0]+' — '+q.en+' = '+q.correct;qReveal.style.display
 showNote();sayBtn.classList.remove('sayoff');hearBtn.classList.remove('sayoff');
 }
 function setTense(m){stopListen();tenseMode=m;['pres','pret','fut','mixed'].forEach(function(k){document.getElementById('t-'+k).className=k===m?'dirbtn on':'dirbtn';});buildPool();newQuestion();}
-function setFocus(f){stopListen();focus=f;['all','irr','stem'].forEach(function(k){document.getElementById('f-'+k).className=k===f?'dirbtn on':'dirbtn';});buildPool();newQuestion();}
+function setFocus(f){stopListen();focus=f;['all','irr'].forEach(function(k){document.getElementById('f-'+k).className=k===f?'dirbtn on':'dirbtn';});buildPool();newQuestion();}
 optBtns.forEach(function(b,i){b.addEventListener('click',function(){answer(i);});});
 document.getElementById('btn-next').addEventListener('click',function(){newQuestion();});
 document.getElementById('btn-shuffle').addEventListener('click',function(){buildPool();newQuestion();});
@@ -143,7 +144,7 @@ document.getElementById('t-fut').addEventListener('click',function(){setTense('f
 document.getElementById('t-mixed').addEventListener('click',function(){setTense('mixed');});
 document.getElementById('f-all').addEventListener('click',function(){setFocus('all');});
 document.getElementById('f-irr').addEventListener('click',function(){setFocus('irr');});
-document.getElementById('f-stem').addEventListener('click',function(){setFocus('stem');});
+
 document.getElementById('exclude-vos').addEventListener('change',function(){excludeVos=this.checked;stopListen();buildPool();newQuestion();});
 function norm(s){return s.toLowerCase().trim().replace(/[.,;:!?¿¡"']/g,'').replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i').replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/\s+/g,' ');}
 function normEn(s){return norm(s).replace(/^to\s+/,'');}
