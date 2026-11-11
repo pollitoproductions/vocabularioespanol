@@ -75,6 +75,14 @@ html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-a
 .speakOpt{display:flex;align-items:center;justify-content:center;gap:8px;background:#ffedd5;border:2px solid #f97316;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:1rem;cursor:pointer;text-align:left}
 .speakOpt input[type=checkbox]{width:20px;height:20px;accent-color:#f97316;flex:0 0 auto}
 .speakOpt .speakNote{font-size:.85rem;color:#6b7280}
+.skinSec{margin:10px 0}
+.skinLabel{font-weight:800;color:#c2410c;margin-bottom:6px}
+#skinGrid{display:grid;grid-template-columns:repeat(9,1fr);gap:6px}
+.skinBtn{background:#fff;border:2px solid #e5e7eb;border-radius:10px;padding:3px 1px;cursor:pointer;min-width:0}
+.skinBtn:hover{background:#ffedd5}
+.skinBtn.sel{border-color:#f97316;background:#ffedd5;box-shadow:0 0 0 2px #f97316}
+.skinBtn .e{font-size:1.2rem;line-height:1.1}
+.skinBtn .n{font-size:.55rem;font-weight:700;color:#1f2937;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #quizHearRow{margin:4px 0}
 .homeLink{display:inline-block;margin-top:6px;color:#2563eb;font-weight:700}
 .small{font-size:.85rem;color:#6b7280}
@@ -82,6 +90,16 @@ html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-a
   #menu .tagline{display:none}
   #menu .menuDesc{display:none}
   #menu .small{display:none}
+  #menu .card{padding:12px 16px}
+  #levelGrid{margin:4px 0}
+  #menu .skinSec{margin:4px 0}
+  #menu .skinLabel{margin-bottom:4px}
+  #menu .speakOpt{margin:8px 0}
+  #menu .card h2{margin-bottom:2px}
+}
+@media (max-width:600px){
+  #menu .menuDesc{display:none}
+  #menu .speakNote{display:none}
 }
 @media (max-height:480px){
   #menu .tagline{display:none}
@@ -94,12 +112,23 @@ html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-a
   #menu .lvlBtn .n{font-size:1.3rem}
   #menu .lvlBtn .t{font-size:.8rem}
   #menu .lvlBtn .b{font-size:.8rem}
-  #levelGrid{gap:6px;margin:8px 0}
+  #levelGrid{gap:6px;margin:4px 0}
   #quiz .card{padding:10px 14px}
   #quiz .choiceBtn{min-height:44px;padding:8px}
   #quiz #quizTarget{font-size:1.5rem;margin:6px 0}
   #quiz .feedback{min-height:0;margin:4px 0}
   #quizHearRow .btn{padding:8px 14px;font-size:1rem}
+  #menu .skinSec{margin:4px 0}
+  #menu .skinLabel{display:none}
+  #menu .speakOpt{margin:6px 0}
+  #skinGrid{display:flex;overflow-x:auto;gap:4px}
+  #menu .skinBtn{flex:0 0 auto;width:52px;padding:3px 1px}
+  #menu .skinBtn .e{font-size:1.2rem}
+  #menu .skinBtn .n{display:none}
+  #menu .lvlBtn{padding:4px 2px}
+  #menu .lvlBtn .n{font-size:1.1rem}
+  #menu .lvlBtn .t{font-size:.7rem}
+  #menu .lvlBtn .b{font-size:.7rem}
 }
 @media (max-width:600px){
   h1{font-size:1.5rem}
@@ -139,6 +168,10 @@ html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-a
         <p class="menuDesc">Tap, click, or <b>Space</b> to jump. At each checkpoint, pick the right answer from 4 choices. Wrong pick? Back to the last checkpoint — except in the easy Cognates levels!</p>
         <div id="levelGrid"></div>
         <p class="small">L1–2 Cognates &nbsp;·&nbsp; L3–4 Practice &nbsp;·&nbsp; L5–6 Present tense &nbsp;·&nbsp; L7–8 Possessives &nbsp;·&nbsp; L9–10 Ser vs. estar<br>25 questions per level, fresh every run.</p>
+        <div class="skinSec">
+          <div class="skinLabel">Choose your character:</div>
+          <div id="skinGrid"></div>
+        </div>
         <label class="speakOpt"><input type="checkbox" id="chkSpeaking"> 🎤 <b>Speaking activities</b> — also say each answer out loud <span class="speakNote">(needs a microphone; off by default)</span></label>
         <p style="margin:4px 0"><button class="btn resetBtn" id="btnReset" type="button">Reset progress</button></p>
         <div id="resetConfirm" class="hidden">
@@ -562,6 +595,47 @@ function saveBest(){
     localStorage.setItem("spanishDash_unlocked",String(unlocked));
   }catch(e){}
 }
+
+/* ================= character skins ================= */
+/* The player sprite. Pollito (chicken) is the default; students pick their own. */
+var SKINS=[
+  {id:"pollito",name:"Pollito",emoji:"🐔"},
+  {id:"doughnut",name:"Doughnut",emoji:"🍩"},
+  {id:"whale",name:"Whale",emoji:"🐳"},
+  {id:"unicorn",name:"Unicorn",emoji:"🦄"},
+  {id:"tree",name:"Christmas tree",emoji:"🎄"},
+  {id:"snowman",name:"Snowman",emoji:"⛄"},
+  {id:"reindeer",name:"Reindeer",emoji:"🦌"},
+  {id:"cow",name:"Highland cow",emoji:"🐮"},
+  {id:"elf",name:"Elf",emoji:"🧝"},
+  {id:"present",name:"Present",emoji:"🎁"},
+  {id:"flower",name:"Flower",emoji:"🌸"},
+  {id:"snowflake",name:"Snowflake",emoji:"❄️"},
+  {id:"alien",name:"Alien",emoji:"👽"},
+  {id:"turtle",name:"Sea turtle",emoji:"🐢"},
+  {id:"frog",name:"Frog",emoji:"🐸"},
+  {id:"fox",name:"Fox",emoji:"🦊"},
+  {id:"panda",name:"Panda",emoji:"🐼"},
+  {id:"rocket",name:"Rocket",emoji:"🚀"}
+];
+function skinById(id){ for(var i=0;i<SKINS.length;i++){ if(SKINS[i].id===id) return SKINS[i]; } return SKINS[0]; }
+var skinId="pollito";
+try{ var _sk=localStorage.getItem("spanishDash_skin"); if(_sk) skinId=skinById(_sk).id; }catch(e){}
+function saveSkin(){ try{ localStorage.setItem("spanishDash_skin",skinId); }catch(e){} }
+function buildSkinGrid(){
+  var g=document.getElementById("skinGrid"); if(!g) return;
+  g.innerHTML="";
+  for(var i=0;i<SKINS.length;i++){
+    (function(sk){
+      var b=document.createElement("button");
+      b.type="button";
+      b.className="skinBtn"+(sk.id===skinId?" sel":"");
+      b.innerHTML='<div class="e">'+sk.emoji+'</div><div class="n">'+sk.name+'</div>';
+      b.addEventListener("click",function(){ skinId=sk.id; saveSkin(); buildSkinGrid(); });
+      g.appendChild(b);
+    })(SKINS[i]);
+  }
+}
 function pct(){ return lv?Math.min(100,Math.floor(px/lv.L*100)):0; }
 function updateHUDVis(){ document.getElementById("hud").style.display=(state==="playing")?"":"none"; }
 function updateHUD(){
@@ -864,27 +938,34 @@ function draw(){
       ctx.beginPath(); ctx.moveTo(ox+4,GROUND_Y-o.h+4); ctx.lineTo(ox+o.w-4,GROUND_Y-o.h+4); ctx.stroke();
     }
   }
-  // player (chicken cube)
+  // player (chosen skin; Pollito chicken cube is the default)
   var psx=px-camX;
   ctx.save();
   ctx.translate(psx+17, py+17);
   ctx.rotate(rot);
-  ctx.fillStyle="#ffd23f";
-  ctx.fillRect(-17,-17,34,34);
-  ctx.strokeStyle="#b45309"; ctx.lineWidth=2; ctx.strokeRect(-17,-17,34,34);
-  // comb
-  ctx.fillStyle="#dc2626";
-  ctx.beginPath(); ctx.arc(-6,-19,5,0,Math.PI*2); ctx.arc(2,-21,5,0,Math.PI*2); ctx.arc(9,-18,4,0,Math.PI*2); ctx.fill();
-  // eyes
-  ctx.fillStyle="#111827";
-  ctx.beginPath(); ctx.arc(2,-4,3,0,Math.PI*2); ctx.arc(11,-4,3,0,Math.PI*2); ctx.fill();
-  // beak
-  ctx.fillStyle="#f97316";
-  ctx.beginPath(); ctx.moveTo(17,0); ctx.lineTo(9,-4); ctx.lineTo(9,4); ctx.closePath(); ctx.fill();
-  // feet
-  ctx.fillStyle="#f97316";
-  var step=Math.floor(px/18)%2;
-  ctx.fillRect(-10,17,7,5); ctx.fillRect(4+(step?2:0),17,7,5);
+  if(skinId==="pollito"){
+    ctx.fillStyle="#ffd23f";
+    ctx.fillRect(-17,-17,34,34);
+    ctx.strokeStyle="#b45309"; ctx.lineWidth=2; ctx.strokeRect(-17,-17,34,34);
+    // comb
+    ctx.fillStyle="#dc2626";
+    ctx.beginPath(); ctx.arc(-6,-19,5,0,Math.PI*2); ctx.arc(2,-21,5,0,Math.PI*2); ctx.arc(9,-18,4,0,Math.PI*2); ctx.fill();
+    // eyes
+    ctx.fillStyle="#111827";
+    ctx.beginPath(); ctx.arc(2,-4,3,0,Math.PI*2); ctx.arc(11,-4,3,0,Math.PI*2); ctx.fill();
+    // beak
+    ctx.fillStyle="#f97316";
+    ctx.beginPath(); ctx.moveTo(17,0); ctx.lineTo(9,-4); ctx.lineTo(9,4); ctx.closePath(); ctx.fill();
+    // feet
+    ctx.fillStyle="#f97316";
+    var step=Math.floor(px/18)%2;
+    ctx.fillRect(-10,17,7,5); ctx.fillRect(4+(step?2:0),17,7,5);
+  } else {
+    var sk=skinById(skinId);
+    ctx.font="32px 'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif";
+    ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText(sk.emoji,0,1);
+  }
   ctx.restore();
 }
 </script>
@@ -1134,6 +1215,8 @@ if(chkSpeaking){
   chkSpeaking.checked=speakingOn;
   chkSpeaking.addEventListener("change",function(){ speakingOn=this.checked; saveSpeaking(); });
 }
+/* Skin picker (home menu): remembered, not cleared by Reset progress. */
+buildSkinGrid();
 document.getElementById("btnReset").addEventListener("click",function(){
   document.getElementById("btnReset").style.display="none";
   document.getElementById("resetConfirm").classList.remove("hidden");
