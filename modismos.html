@@ -46,16 +46,16 @@ ul.words{list-style:none;columns:2;column-gap:20px;margin:0 0 6px;padding:0}ul.w
 .feedback.ok{color:#1f5c3f;font-weight:700}
 .feedback.bad{color:#8a3b00}
 .say-listening{background:#d23c2e!important;color:#fff!important;border-color:#d23c2e!important;animation:pronpulse 1s infinite}
-@keyframes pronpulse{50%{opacity:.55}}.ad{margin:28px 0 0;min-height:100px}.adlabel{font-size:.62rem;letter-spacing:.12em;color:#bbbbbb;margin-bottom:4px}</style></head>
+@keyframes pronpulse{50%{opacity:.55}}.ad{margin:28px 0 0;min-height:100px}.adlabel{font-size:.62rem;letter-spacing:.12em;color:#bbbbbb;margin-bottom:4px}.langswitch{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}.langswitch-label{font-weight:700}.langbtn{padding:10px 16px;border:2px solid #000;border-radius:999px;background:#fff;color:#000;cursor:pointer;font:inherit}.langbtn.on{background:#f97316;border-color:#f97316;color:#fff}</style></head>
 <body><main>
 <a class="back" href="/">&larr; Back to home</a>
 <h1>Common expressions / Idioms (Modismos)</h1>
 <p class="lead">135 everyday Spanish expressions, with a flashcard tool that quizzes you in both directions: Spanish to English, or English to Spanish. Below the tool, a short guide to why idioms matter so much for fluency.</p>
 <h2>The flashcard tool</h2>
 <div class="tool">
-<div><button class="dirbtn on" id="dir-es" type="button">Spanish &rarr; English</button><button class="dirbtn" id="dir-en" type="button">English &rarr; Spanish</button></div>
+<div class="langswitch" role="group" aria-label="Language I'm learning"><span class="langswitch-label">I'm learning:</span><button type="button" class="langbtn on" id="lang-es">🇪🇸 Spanish</button><button type="button" class="langbtn" id="lang-en">🇬🇧 English</button></div>
 <div class="fcard" id="fcard" tabindex="0" role="button" aria-label="Flashcard, tap to flip"><b id="card-main"></b><span id="card-hint">Tap to flip</span></div>
-<div class="pron-row"><button class="btn alt" id="btn-hear-es" type="button" aria-label="Hear in Spanish">🔊 ES</button> <button class="btn alt" id="btn-hear-en" type="button" aria-label="Hear in English">🔊 EN</button> <button class="btn alt" id="btn-say" type="button">🎤 Say it</button></div>
+<div class="pron-row"><button class="btn alt" id="btn-hear-es" type="button" aria-label="Hear in Spanish">🔊 ES</button> <button class="btn alt" id="btn-hear-en" type="button" aria-label="Hear in English">🔊 EN</button> <button class="btn alt" id="btn-say" type="button" aria-label="Say it in Spanish">🎤 Say it in Spanish</button></div>
 <p class="feedback" id="feedback"></p>
 <p class="count" id="card-count"></p>
 <div class="ctl"><button class="btn alt" id="btn-flip" type="button">Flip</button> <button class="btn" id="btn-next" type="button">Next card</button> <button class="btn alt" id="btn-shuffle" type="button">Shuffle</button></div>
@@ -228,15 +228,15 @@ var IDIOMS=[
 var deck=[],idx=0,dir=0,flipped=false;
 var cardMain=document.getElementById('card-main'),cardHint=document.getElementById('card-hint'),cardCount=document.getElementById('card-count'),fcard=document.getElementById('fcard');
 function shuffle(){deck=IDIOMS.slice();for(var i=deck.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=deck[i];deck[i]=deck[j];deck[j]=t;}idx=0;}
-function show(){var p=deck[idx];flipped=false;cardMain.textContent=dir===0?p[0]:p[1];cardHint.textContent='Tap to flip';cardCount.textContent='Card '+(idx+1)+' of '+deck.length;}
-function flip(){var p=deck[idx];flipped=!flipped;cardMain.textContent=flipped?(dir===0?p[1]:p[0]):(dir===0?p[0]:p[1]);cardHint.textContent=flipped?'Tap to flip back':'Tap to flip';}
+function show(){var p=deck[idx];flipped=false;cardMain.textContent=dir===0?p[0]:p[1];cardHint.textContent='Tap to flip';cardCount.textContent='Card '+(idx+1)+' of '+deck.length;modSayLabel();}
+function flip(){var p=deck[idx];flipped=!flipped;cardMain.textContent=flipped?(dir===0?p[1]:p[0]):(dir===0?p[0]:p[1]);cardHint.textContent=flipped?'Tap to flip back':'Tap to flip';modSayLabel();}
 function next(){stopListen();setFeedback('');idx++;if(idx>=deck.length){shuffle();}show();}
-function setDir(d){stopListen();setFeedback('');dir=d;document.getElementById('dir-es').className=d===0?'dirbtn on':'dirbtn';document.getElementById('dir-en').className=d===1?'dirbtn on':'dirbtn';show();}
+function setDir(d){stopListen();setFeedback('');dir=d;document.getElementById('lang-es').className=d===0?'langbtn on':'langbtn';document.getElementById('lang-en').className=d===1?'langbtn on':'langbtn';show();}
 document.getElementById('btn-flip').addEventListener('click',flip);
 document.getElementById('btn-next').addEventListener('click',next);
 document.getElementById('btn-shuffle').addEventListener('click',function(){stopListen();setFeedback('');shuffle();show();});
-document.getElementById('dir-es').addEventListener('click',function(){setDir(0);});
-document.getElementById('dir-en').addEventListener('click',function(){setDir(1);});
+document.getElementById('lang-es').addEventListener('click',function(){setDir(0);});
+document.getElementById('lang-en').addEventListener('click',function(){setDir(1);});
 fcard.addEventListener('click',flip);
 fcard.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();flip();}});
 function norm(s){return s.toLowerCase().trim().replace(/[.,;:!?¿¡"']/g,'').replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i').replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/\s+/g,' ');}
@@ -244,7 +244,8 @@ function normEn(s){return norm(s.replace(/\([^)]*\)/g,' ')).replace(/^to\s+/,'')
 function enMatch(heard,want){var h=normEn(heard);if(h===normEn(want)){return true;}var parts=want.split(/[,;]/);for(var i=0;i<parts.length;i++){if(h===normEn(parts[i])){return true;}}return false;}
 var recog=null,listening=false;
 function setFeedback(msg,cls){var f=document.getElementById('feedback');f.textContent=msg;f.className='feedback'+(cls?' '+cls:'');}
-function stopListen(){if(recog){try{recog.abort();}catch(e){}}listening=false;var b=document.getElementById('btn-say');b.classList.remove('say-listening');b.textContent='🎤 Say it';}
+function modSayLabel(){var ss=(dir===0&&!flipped)||(dir===1&&flipped);var b=document.getElementById('btn-say');if(b){b.textContent=ss?'🎤 Say it in Spanish':'🎤 Say it in English';b.setAttribute('aria-label',ss?'Say it in Spanish':'Say it in English');}}
+function stopListen(){if(recog){try{recog.abort();}catch(e){}}listening=false;var b=document.getElementById('btn-say');b.classList.remove('say-listening');modSayLabel();}
 var _vCache=[];
 function _vLoad(){try{var v=speechSynthesis.getVoices();if(v&&v.length)_vCache=v;}catch(e){}}
 try{_vLoad();if('speechSynthesis' in window)speechSynthesis.addEventListener('voiceschanged',_vLoad);}catch(e){}

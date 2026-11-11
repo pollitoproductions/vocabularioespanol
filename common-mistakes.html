@@ -36,7 +36,7 @@ ul.links{list-style:none;margin:0;padding:0}
 ul.links li{padding:11px 0;border-bottom:1px solid #dddddd}
 ul.links li:last-child{border-bottom:0}
 ul.links span{display:block;font-size:.88rem;color:#333333}
-@media(max-width:520px){ul.words{columns:1}.keyboard-controls{grid-template-columns:1fr}}</style></head>
+@media(max-width:520px){ul.words{columns:1}.keyboard-controls{grid-template-columns:1fr}}.langswitch{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}.langswitch-label{font-weight:700}.langbtn{padding:10px 16px;border:2px solid #000;border-radius:999px;background:#fff;color:#000;cursor:pointer;font:inherit}.langbtn.on{background:#f97316;border-color:#f97316;color:#fff}</style></head>
 <body><main>
 <a class="back" href="/">&larr; Back to home</a>
 <style>
@@ -66,7 +66,7 @@ ul.links span{display:block;font-size:.88rem;color:#333333}
 <div class="tool">
 <h2>False friends practice</h2>
 <p id="tool-intro">100 Spanish words that look like English words — but mean something else. Each card shows what the word does NOT mean (the thing everyone assumes). Pick the real meaning.</p>
-<p><label><input type="checkbox" id="dir-toggle"> Estoy aprendiendo inglés — cambiar a palabras en inglés</label></p>
+<div class="langswitch" role="group" aria-label="Language I'm learning"><span class="langswitch-label">I'm learning:</span><button type="button" class="langbtn on" id="lang-es">🇪🇸 Spanish</button><button type="button" class="langbtn" id="lang-en">🇬🇧 English</button></div>
 <div class="qbox"><b id="q-sen"></b><span id="q-sub"></span><span id="q-not" class="not"></span></div>
 <div class="opts" id="opts"></div>
 <p class="feedback" id="feedback"></p>
@@ -137,6 +137,7 @@ $('tool-intro').textContent=dir===0?INTRO0:INTRO1;
 $('btn-next').textContent=dir===0?'Next card':'Siguiente tarjeta';
 $('btn-shuffle').textContent=dir===0?'Shuffle':'Mezclar';
 $('btn-hear').textContent=dir===0?'🔊 Hear it':'🔊 Escuchar';$('btn-say').textContent=dir===0?'🎤 Say it in Spanish':'🎤 Decir en inglés';$('say-privacy').textContent=dir===0?'Voice input is checked by your browser speech service. Nothing is stored.':'Tu voz se envía al servicio de voz de tu navegador para comprobarla; no se guarda.';
+var le=$('lang-es'),ln=$('lang-en');if(le)le.classList.toggle('on',dir===0);if(ln)ln.classList.toggle('on',dir===1);
 shuffleDeck();show();
 }
 var recog=null,listenTimer=null,lastTranscript="",listening=false;
@@ -183,7 +184,7 @@ $('btn-next').addEventListener('click',next);
 $('btn-shuffle').addEventListener('click',function(){shuffleDeck();show();});
 $('btn-hear').addEventListener('click',hearIt);
 $('btn-say').addEventListener('click',sayIt);
-$('dir-toggle').addEventListener('change',function(){setDir(this.checked?1:0);});
+$('lang-es').addEventListener('click',function(){setDir(0);});$('lang-en').addEventListener('click',function(){setDir(1);});
 shuffleDeck();show();
 </script>
 <h1>Common mistakes English speakers make in Spanish</h1>
