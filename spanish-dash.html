@@ -7,19 +7,20 @@
 <style>
 :root{--orange:#f97316;--dark:#111827;--cream:#fff7ed}
 *{box-sizing:border-box}
-html,body{margin:0;padding:0;background:#1a1033;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#fff}
-#wrap{max-width:960px;margin:0 auto;padding:10px}
-h1{margin:0;font-size:2rem}
-#topbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#241b4d;border:2px solid #3b2a6b;border-radius:12px;padding:8px 12px;margin-bottom:10px}
-#topbar .title{font-weight:800;font-size:1.25rem;color:#ffd23f}
-#topbar .lvl{font-weight:700;color:#fff}
-#progWrap{flex:1;min-width:140px;height:16px;background:#12082b;border-radius:8px;overflow:hidden;border:1px solid #4b3675}
-#progBar{height:100%;width:0%;background:linear-gradient(90deg,#f97316,#ffd23f);transition:width .15s linear}
-#progPct{font-weight:700;min-width:48px;text-align:right}
-#topbar button{background:#3b2a6b;color:#fff;border:1px solid #6b4fa1;border-radius:8px;padding:6px 10px;font-size:1rem;cursor:pointer}
-#topbar button:hover{background:#4b3675}
-#gameArea{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:14px;overflow:hidden;border:3px solid #3b2a6b}
+html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#fff;height:100%;overflow:hidden}
+#wrap{position:fixed;inset:0;background:#000}
+#gameArea{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(100vw,177.78vh);width:min(100dvw,177.78dvh);height:min(100vh,56.25vw);height:min(100dvh,56.25dvw);background:#000;overflow:hidden}
 #game{display:block;width:100%;height:100%;touch-action:none;cursor:pointer}
+#hud{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:8px;padding:8px 10px;background:linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,0));z-index:6;pointer-events:none}
+#hud>*{pointer-events:auto}
+#hud .lvl{font-weight:700;color:#fff;white-space:nowrap}
+#progWrap{flex:1;min-width:80px;height:14px;background:rgba(0,0,0,.5);border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.35)}
+#progBar{height:100%;width:0%;background:linear-gradient(90deg,#f97316,#ffd23f);transition:width .15s linear}
+#progPct{font-weight:700;min-width:44px;text-align:right;color:#fff}
+#hudAtt{font-weight:700;color:#fff;white-space:nowrap}
+#hud .lvl,#hud #progWrap,#hud #progPct,#hud #hudAtt{pointer-events:none}
+.hudBtn{background:rgba(0,0,0,.55);color:#fff;border:1px solid rgba(255,255,255,.45);border-radius:8px;padding:6px 10px;font-size:1.05rem;cursor:pointer;min-width:40px}
+.hudBtn:hover{background:rgba(0,0,0,.75)}
 .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,4,28,.82);z-index:5;padding:12px}
 .overlay.hidden{display:none}
 .card{background:#fff7ed;color:#1f2937;border-radius:16px;padding:20px 22px;max-width:560px;width:100%;max-height:94%;overflow-y:auto;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.5)}
@@ -51,7 +52,12 @@ h1{margin:0;font-size:2rem}
 #winWords{text-align:left;max-height:180px;overflow-y:auto;margin:10px auto;display:inline-block}
 #winWords div{padding:2px 0}
 #flash{position:absolute;inset:0;background:rgba(220,38,38,.45);opacity:0;pointer-events:none;z-index:4}
-.hint{text-align:center;color:#c4b5fd;font-size:.9rem;margin:8px 0 0}
+.howto{text-align:left;background:#ffedd5;border-radius:10px;padding:10px 12px;margin:10px 0;font-size:.95rem}
+.howto p{margin:4px 0}
+.volRow{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.volRow label{font-weight:700;font-size:.95rem;color:#1f2937}
+.volRow input[type=range]{vertical-align:middle;width:120px;accent-color:#f97316}
+.homeLink{display:inline-block;margin-top:6px;color:#2563eb;font-weight:700}
 .small{font-size:.85rem;color:#6b7280}
 @media (max-width:600px){
   h1{font-size:1.5rem}
@@ -63,27 +69,27 @@ h1{margin:0;font-size:2rem}
 </head>
 <body>
 <div id="wrap">
-  <div id="topbar">
-    <span class="title">🐔 Spanish Dash</span>
-    <span class="lvl" id="hudLevel">Level 1</span>
-    <div id="progWrap"><div id="progBar"></div></div>
-    <span id="progPct">0%</span>
-    <span id="hudAtt">Attempts: 0</span>
-    <button id="btnMusic" type="button" title="Music on/off">🎵</button>
-    <button id="btnSound" type="button" title="Sound on/off">🔊</button>
-    <button id="btnPause" type="button" title="Pause">⏸</button>
-  </div>
   <div id="gameArea">
     <canvas id="game" width="960" height="540"></canvas>
     <div id="flash"></div>
+    <div id="hud">
+      <button class="hudBtn" id="btnMute" type="button" title="Mute all sound">🔊</button>
+      <button class="hudBtn" id="btnPause" type="button" title="Pause / Menu">⏸</button>
+      <span class="lvl" id="hudLevel">Level 1</span>
+      <div id="progWrap"><div id="progBar"></div></div>
+      <span id="progPct">0%</span>
+      <span id="hudAtt">Attempts: 0</span>
+      <button class="hudBtn" id="btnFull" type="button" title="Full screen">⛶</button>
+    </div>
 
     <div id="menu" class="overlay">
       <div class="card">
         <h2>🐔 Spanish Dash</h2>
         <p><b>Jump, run, and say it in Spanish!</b></p>
-        <p>Tap, click, or press <b>Space</b> to jump over spikes and gaps — and land on the orange platforms to hop over trouble. At each checkpoint the game stops and asks you to <b>say a Spanish word out loud</b>. Say it right to keep running. Get it wrong and you crash back!</p>
+        <p>Tap, click, or press <b>Space</b> to jump over spikes and gaps — and land on the orange platforms to hop over trouble. At each checkpoint the game stops and asks you to <b>say a Spanish word out loud</b>. Say it right to keep running. Get it wrong? No problem — try again as many times as you like!</p>
         <div id="levelGrid"></div>
         <p class="small">Levels 1–2: Cognates &nbsp;·&nbsp; Levels 3–4: Practice the words &nbsp;·&nbsp; Levels 5–6: Present tense &nbsp;·&nbsp; Levels 7–8: Possessive pronouns &nbsp;·&nbsp; Levels 9–10: Ser vs. estar<br>10 words per level. Your best % is saved on this device. A microphone is needed — you must say each word out loud to continue.</p>
+        <p><a class="homeLink" href="index.html">← Back to Pollito Productions</a></p>
       </div>
     </div>
 
@@ -105,7 +111,14 @@ h1{margin:0;font-size:2rem}
     <div id="pauseOv" class="overlay hidden">
       <div class="card">
         <h2>Paused</h2>
-        <p>Take a breath, Pollito.</p>
+        <div class="howto">
+          <b>How to play</b>
+          <p>Tap, click, or press <b>Space</b> to jump. Dodge spikes, blocks, and gaps — land on the orange platforms to hop over trouble. At each checkpoint, <b>say the Spanish word out loud</b> to keep running. If it hears you wrong, just try again as many times as you like — a wrong guess never sends you back.</p>
+        </div>
+        <div class="volRow">
+          <label>Music <input id="volMusic" type="range" min="0" max="100" value="100"></label>
+          <label>Sound effects <input id="volSfx" type="range" min="0" max="100" value="100"></label>
+        </div>
         <button class="btn" id="btnResume" type="button">Resume</button>
         <button class="btn alt" id="btnRestart" type="button">Restart level</button>
         <button class="btn alt" id="btnQuit" type="button">Level select</button>
@@ -124,7 +137,6 @@ h1{margin:0;font-size:2rem}
       </div>
     </div>
   </div>
-  <p class="hint">Tap / click / Space to jump — hold to hop again on landing. Say the Spanish words out loud at checkpoints!</p>
 </div>
 <script>
 "use strict";
@@ -186,6 +198,27 @@ function levelTitle(n){ return GAME_DATA.levels[n-1].title; }
 /* ================= audio ================= */
 var audioCtx=null, masterGain=null, musicGain=null, sfxGain=null;
 var musicOn=true, soundOn=true, musicTimer=null, musicStep=0, musicNextTime=0;
+var muted=false, musicVol=1, sfxVol=1;
+try{ muted=localStorage.getItem("spanishDash_muted")==="1"; }catch(e){}
+try{ musicVol=parseFloat(localStorage.getItem("spanishDash_musicVol")||"1"); if(!(musicVol>=0&&musicVol<=1)) musicVol=1; }catch(e){ musicVol=1; }
+try{ sfxVol=parseFloat(localStorage.getItem("spanishDash_sfxVol")||"1"); if(!(sfxVol>=0&&sfxVol<=1)) sfxVol=1; }catch(e){ sfxVol=1; }
+function saveAudio(){ try{ localStorage.setItem("spanishDash_muted",muted?"1":"0"); localStorage.setItem("spanishDash_musicVol",String(musicVol)); localStorage.setItem("spanishDash_sfxVol",String(sfxVol)); }catch(e){} }
+function applyAudio(){
+  musicOn=musicVol>0; soundOn=sfxVol>0;
+  if(audioCtx){
+    masterGain.gain.value=muted?0:0.9;
+    musicGain.gain.value=0.30*musicVol;
+    sfxGain.gain.value=0.9*sfxVol;
+  }
+  updateMuteBtn();
+}
+function updateMuteBtn(){ var b=document.getElementById("btnMute"); if(b) b.textContent=muted?"🔇":"🔊"; }
+function setMuted(m){
+  muted=m; saveAudio(); applyAudio();
+  if(m){ try{ if("speechSynthesis" in window) speechSynthesis.cancel(); }catch(e){} }
+}
+function setMusicVol(v){ musicVol=clamp(v,0,1); saveAudio(); applyAudio(); }
+function setSfxVol(v){ sfxVol=clamp(v,0,1); saveAudio(); applyAudio(); }
 function audioEnsure(){
   if(audioCtx) { if(audioCtx.state==="suspended"){ audioCtx.resume(); } return; }
   try{
@@ -196,9 +229,10 @@ function audioEnsure(){
     musicGain=audioCtx.createGain(); musicGain.gain.value=0.30; musicGain.connect(masterGain);
     sfxGain=audioCtx.createGain(); sfxGain.gain.value=0.9; sfxGain.connect(masterGain);
   }catch(e){}
+  applyAudio();
 }
 function tone(freq,dur,type,vol,when,slideTo){
-  if(!audioCtx||!soundOn) return;
+  if(!audioCtx||!soundOn||muted) return;
   try{
     var t=(when||audioCtx.currentTime);
     var o=audioCtx.createOscillator(), g=audioCtx.createGain();
@@ -213,7 +247,7 @@ function tone(freq,dur,type,vol,when,slideTo){
 }
 function sfxJump(){ tone(320,0.10,"square",0.12,0,640); }
 function sfxCrash(){
-  if(!audioCtx||!soundOn) return;
+  if(!audioCtx||!soundOn||muted) return;
   tone(220,0.28,"sawtooth",0.25,0,45);
   try{
     var t=audioCtx.currentTime, len=0.18, buf=audioCtx.createBuffer(1,audioCtx.sampleRate*len,audioCtx.sampleRate);
@@ -246,7 +280,7 @@ function musicKick(when){
   o.connect(g); g.connect(musicGain); o.start(when); o.stop(when+0.15);
 }
 function musicScheduler(){
-  if(!audioCtx||!musicOn) return;
+  if(!audioCtx||!musicOn||muted){ if(audioCtx) musicNextTime=audioCtx.currentTime+0.06; return; }
   var stepDur=60/128/4;
   while(musicNextTime < audioCtx.currentTime+0.12){
     var s=musicStep%64;
@@ -264,15 +298,6 @@ function musicStart(){
   musicTimer=setInterval(musicScheduler,25);
 }
 function musicStop(){ if(musicTimer){clearInterval(musicTimer);musicTimer=null;} }
-function setMusic(on){
-  musicOn=on;
-  if(musicGain) musicGain.gain.value=on?0.30:0;
-  document.getElementById("btnMusic").textContent=on?"🎵":"🔇";
-}
-function setSound(on){
-  soundOn=on;
-  document.getElementById("btnSound").textContent=on?"🔊":"🔇";
-}
 
 /* ================= speech (Hear + Say-it) ================= */
 var _vCache=[];
@@ -290,6 +315,7 @@ function _vPick(prefs){
   return null;
 }
 function speakSpanish(text){
+  if(muted) return;
   try{
     if(!("speechSynthesis" in window)) return;
     speechSynthesis.cancel();
@@ -418,7 +444,7 @@ function startLevel(n){
   document.getElementById("pauseOv").classList.add("hidden");
   document.getElementById("quiz").classList.add("hidden");
   state="playing";
-  audioEnsure(); musicStart(); setMusic(musicOn);
+  audioEnsure(); musicStart(); applyAudio();
   updateHUD();
 }
 function respawn(){
@@ -765,11 +791,6 @@ function advanceQuiz(){
   if(quizIdx>=quizWords.length){ completeCheckpoint(); }
   else { showQuizWord(); }
 }
-function crashFromQuiz(){
-  closeQuiz();
-  state="playing";
-  crash();
-}
 function stopListen(user){
   if(listenTimer){ clearTimeout(listenTimer); listenTimer=null; }
   if(recog){ try{recog.abort();}catch(e){} recog=null; }
@@ -786,8 +807,7 @@ function scoreHeard(heard){
     setTimeout(function(){ if(state==="quiz") advanceQuiz(); },800);
   }else{
     sfxWrong();
-    setQuizFb('Heard: "'+heard+'" — not quite, try again.',"bad");
-    setTimeout(function(){ if(state==="quiz") crashFromQuiz(); },1500);
+    setQuizFb('Heard: "'+heard+'" — not quite. Try again — as many times as you like!',"bad");
   }
 }
 function startListen(){
@@ -803,6 +823,7 @@ function startListen(){
     recog=r;
     r.lang=langs[li]; r.interimResults=false; r.continuous=false; r.maxAlternatives=1;
     r.onresult=function(e){
+      if(recog!==r) return;
       got=true; if(timer){clearTimeout(timer);timer=null;}
       var heard=""; try{ heard=e.results[0][0].transcript||""; }catch(err){}
       lastHeard=heard;
@@ -811,6 +832,8 @@ function startListen(){
       else setQuizFb("Didn't catch that — try again.","bad");
     };
     r.onerror=function(e){
+      if(recog!==r) return;
+      if(e.error==="aborted") return;
       if(timer){clearTimeout(timer);timer=null;}
       if(e.error==="language-not-supported"&&li+1<langs.length){
         li++; try{r.abort();}catch(err){} attempt(); return;
@@ -823,6 +846,7 @@ function startListen(){
       }
     };
     r.onend=function(){
+      if(recog!==r) return;
       if(timer){clearTimeout(timer);timer=null;}
       if(userStopped){ userStopped=false; if(!got) setQuizFb("Didn't catch that — try again.","bad"); return; }
       if(listening){ stopListen(false); if(!got) setQuizFb("Didn't catch that — try again.","bad"); }
@@ -884,8 +908,23 @@ document.getElementById("btnPause").addEventListener("click",function(){
   if(state==="playing"){ state="paused"; document.getElementById("pauseOv").classList.remove("hidden"); }
   else if(state==="paused"){ document.getElementById("pauseOv").classList.add("hidden"); state="playing"; }
 });
-document.getElementById("btnMusic").addEventListener("click",function(){ setMusic(!musicOn); });
-document.getElementById("btnSound").addEventListener("click",function(){ setSound(!soundOn); });
+function toggleFull(){
+  var el=document.getElementById("gameArea");
+  try{
+    if(document.fullscreenElement||document.webkitFullscreenElement){
+      if(document.exitFullscreen) document.exitFullscreen();
+      else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+    }else if(el.requestFullscreen){
+      var p=el.requestFullscreen(); if(p&&p.catch) p.catch(function(){});
+    }else if(el.webkitRequestFullscreen){
+      el.webkitRequestFullscreen();
+    }
+  }catch(e){}
+}
+document.getElementById("btnMute").addEventListener("click",function(){ audioEnsure(); setMuted(!muted); });
+document.getElementById("btnFull").addEventListener("click",function(){ toggleFull(); });
+document.getElementById("volMusic").addEventListener("input",function(){ audioEnsure(); setMusicVol(this.value/100); });
+document.getElementById("volSfx").addEventListener("input",function(){ audioEnsure(); setSfxVol(this.value/100); });
 
 /* ================= input ================= */
 function pressJump(){ jumpHeld=true; doJump(); }
@@ -921,7 +960,9 @@ function loop(t){
   update(dt);
   draw();
 }
-setSound(true); setMusic(true);
+applyAudio();
+document.getElementById("volMusic").value=Math.round(musicVol*100);
+document.getElementById("volSfx").value=Math.round(sfxVol*100);
 showMenu();
 requestAnimationFrame(loop);
 </script>
