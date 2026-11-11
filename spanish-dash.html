@@ -79,7 +79,7 @@ html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-a
   <div id="gameArea">
     <canvas id="game" width="960" height="540"></canvas>
     <div id="flash"></div>
-    <div id="hud">
+    <div id="hud" style="display:none">
       <button class="hudBtn" id="btnMute" type="button" title="Mute all sound">🔊</button>
       <button class="hudBtn" id="btnPause" type="button" title="Pause / Menu">⏸</button>
       <span class="lvl" id="hudLevel">Level 1</span>
@@ -433,7 +433,9 @@ function saveBest(){
   }catch(e){}
 }
 function pct(){ return lv?Math.min(100,Math.floor(px/lv.L*100)):0; }
+function updateHUDVis(){ document.getElementById("hud").style.display=(state==="playing")?"":"none"; }
 function updateHUD(){
+  updateHUDVis();
   document.getElementById("hudLevel").textContent="Level "+level+" — "+levelTitle(level)+" · "+LEVEL_THEME[level];
   var p=pct();
   document.getElementById("progBar").style.width=p+"%";
@@ -779,6 +781,7 @@ function showQuizWord(){
 function openQuiz(cpIdx){
   quizCp=cpIdx; quizIdx=0; quizWords=checkpoints[cpIdx].words;
   state="quiz";
+  updateHUDVis();
   showQuizWord();
   quizEl.classList.remove("hidden");
   sfxDing();
@@ -787,6 +790,7 @@ function closeQuiz(){ quizEl.classList.add("hidden"); stopListen(false); }
 function resumeRun(){
   closeQuiz();
   state="playing";
+  updateHUDVis();
 }
 function completeCheckpoint(){
   var cp=checkpoints[quizCp];
@@ -888,6 +892,7 @@ function buildMenu(){
 }
 function showMenu(){
   state="menu";
+  updateHUDVis();
   buildMenu();
   document.getElementById("menu").classList.remove("hidden");
   document.getElementById("quiz").classList.add("hidden");
@@ -905,7 +910,7 @@ document.getElementById("btnNext").addEventListener("click",function(){ startLev
 document.getElementById("btnReplay").addEventListener("click",function(){ startLevel(level); });
 document.getElementById("btnWinMenu").addEventListener("click",function(){ showMenu(); });
 document.getElementById("btnResume").addEventListener("click",function(){
-  document.getElementById("pauseOv").classList.add("hidden"); state="playing";
+  document.getElementById("pauseOv").classList.add("hidden"); state="playing"; updateHUDVis();
 });
 document.getElementById("btnRestart").addEventListener("click",function(){
   document.getElementById("pauseOv").classList.add("hidden"); startLevel(level);
@@ -914,6 +919,7 @@ document.getElementById("btnQuit").addEventListener("click",function(){ showMenu
 document.getElementById("btnPause").addEventListener("click",function(){
   if(state==="playing"){ state="paused"; document.getElementById("pauseOv").classList.remove("hidden"); }
   else if(state==="paused"){ document.getElementById("pauseOv").classList.add("hidden"); state="playing"; }
+  updateHUDVis();
 });
 function toggleFull(){
   var el=document.getElementById("gameArea");
@@ -946,6 +952,7 @@ window.addEventListener("keydown",function(e){
   if(e.code==="Escape"){
     if(state==="playing"){ state="paused"; document.getElementById("pauseOv").classList.remove("hidden"); }
     else if(state==="paused"){ document.getElementById("pauseOv").classList.add("hidden"); state="playing"; }
+    updateHUDVis();
   }
 });
 window.addEventListener("keyup",function(e){
@@ -955,13 +962,14 @@ canvas.addEventListener("pointerdown",function(e){ e.preventDefault(); pressJump
 window.addEventListener("pointerup",function(){ releaseJump(); });
 canvas.addEventListener("pointercancel",function(){ releaseJump(); });
 document.addEventListener("visibilitychange",function(){
-  if(document.hidden&&state==="playing"){ state="paused"; document.getElementById("pauseOv").classList.remove("hidden"); }
+  if(document.hidden&&state==="playing"){ state="paused"; document.getElementById("pauseOv").classList.remove("hidden"); updateHUDVis(); }
 });
 
 /* ================= main loop ================= */
 var lastT=0;
 function loop(t){
   requestAnimationFrame(loop);
+  updateHUDVis();
   var dt=Math.min(0.033,(t-lastT)/1000||0.016);
   lastT=t;
   update(dt);
