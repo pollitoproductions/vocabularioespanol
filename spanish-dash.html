@@ -740,6 +740,8 @@ function showQuizWord(){
   quizTarget.textContent=w.display;
   setQuizFb("","");
   sayBtn.textContent="🎤 Say it"; sayBtn.classList.remove("listening");
+  // Ser vs. estar: Hear would speak the completed sentence and reveal the answer (es vs. está), so hide it on those levels.
+  hearBtn.style.display=(GAME_DATA.levels[level-1].type==="serestar")?"none":"";
 }
 function openQuiz(cpIdx){
   quizCp=cpIdx; quizIdx=0; quizWords=checkpoints[cpIdx].words;
@@ -833,7 +835,7 @@ function startListen(){
   }
   attempt();
 }
-hearBtn.addEventListener("click",function(){ var w=currentWord(); if(w) speakSpanish(w.target); });
+hearBtn.addEventListener("click",function(){ if(GAME_DATA.levels[level-1].type==="serestar") return; var w=currentWord(); if(w) speakSpanish(w.target); });
 sayBtn.addEventListener("click",function(){ startListen(); });
 document.getElementById("quizQuit").addEventListener("click",function(){ closeQuiz(); showMenu(); });
 
