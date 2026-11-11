@@ -228,10 +228,11 @@ var IDIOMS=[
 var deck=[],idx=0,dir=0,flipped=false;
 var cardMain=document.getElementById('card-main'),cardHint=document.getElementById('card-hint'),cardCount=document.getElementById('card-count'),fcard=document.getElementById('fcard');
 function shuffle(){deck=IDIOMS.slice();for(var i=deck.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=deck[i];deck[i]=deck[j];deck[j]=t;}idx=0;}
-function show(){var p=deck[idx];flipped=false;cardMain.textContent=dir===0?p[0]:p[1];cardHint.textContent='Tap to flip';cardCount.textContent='Card '+(idx+1)+' of '+deck.length;modSayLabel();}
-function flip(){var p=deck[idx];flipped=!flipped;cardMain.textContent=flipped?(dir===0?p[1]:p[0]):(dir===0?p[0]:p[1]);cardHint.textContent=flipped?'Tap to flip back':'Tap to flip';modSayLabel();}
+function show(){var p=deck[idx];flipped=false;cardMain.textContent=dir===0?p[0]:p[1];cardHint.textContent=dir===1?'Toca para voltear':'Tap to flip';cardCount.textContent=dir===1?'Tarjeta '+(idx+1)+' de '+deck.length:'Card '+(idx+1)+' of '+deck.length;modSayLabel();}
+function flip(){var p=deck[idx];flipped=!flipped;cardMain.textContent=flipped?(dir===0?p[1]:p[0]):(dir===0?p[0]:p[1]);cardHint.textContent=flipped?(dir===1?'Toca para volver':'Tap to flip back'):(dir===1?'Toca para voltear':'Tap to flip');modSayLabel();}
 function next(){stopListen();setFeedback('');idx++;if(idx>=deck.length){shuffle();}show();}
-function setDir(d){stopListen();setFeedback('');dir=d;document.getElementById('lang-es').className=d===0?'langbtn on':'langbtn';document.getElementById('lang-en').className=d===1?'langbtn on':'langbtn';show();}
+function modUI(){var es=dir===1;var bf=document.getElementById('btn-flip');if(bf)bf.textContent=es?'Voltear':'Flip';var bn=document.getElementById('btn-next');if(bn)bn.textContent=es?'Siguiente tarjeta':'Next card';var bs=document.getElementById('btn-shuffle');if(bs)bs.textContent=es?'Mezclar':'Shuffle';var pv=document.querySelector('p.privacy');if(pv)pv.textContent=es?'Tu voz se envía al servicio de voz de tu navegador para comprobarla; no se guarda.':"Your voice is sent to your browser's speech service to check it — it isn't stored.";var he=document.getElementById('btn-hear-es');if(he)he.setAttribute('aria-label',es?'Escuchar en español':'Hear in Spanish');var hn=document.getElementById('btn-hear-en');if(hn)hn.setAttribute('aria-label',es?'Escuchar en inglés':'Hear in English');var fc=document.getElementById('fcard');if(fc)fc.setAttribute('aria-label',es?'Tarjeta, toca para voltear':'Flashcard, tap to flip');}
+function setDir(d){stopListen();setFeedback('');dir=d;document.getElementById('lang-es').className=d===0?'langbtn on':'langbtn';document.getElementById('lang-en').className=d===1?'langbtn on':'langbtn';modUI();show();}
 document.getElementById('btn-flip').addEventListener('click',flip);
 document.getElementById('btn-next').addEventListener('click',next);
 document.getElementById('btn-shuffle').addEventListener('click',function(){stopListen();setFeedback('');shuffle();show();});
@@ -244,7 +245,7 @@ function normEn(s){return norm(s.replace(/\([^)]*\)/g,' ')).replace(/^to\s+/,'')
 function enMatch(heard,want){var h=normEn(heard);if(h===normEn(want)){return true;}var parts=want.split(/[,;]/);for(var i=0;i<parts.length;i++){if(h===normEn(parts[i])){return true;}}return false;}
 var recog=null,listening=false;
 function setFeedback(msg,cls){var f=document.getElementById('feedback');f.textContent=msg;f.className='feedback'+(cls?' '+cls:'');}
-function modSayLabel(){var ss=(dir===0&&!flipped)||(dir===1&&flipped);var b=document.getElementById('btn-say');if(b){b.textContent=ss?'🎤 Say it in Spanish':'🎤 Say it in English';b.setAttribute('aria-label',ss?'Say it in Spanish':'Say it in English');}}
+function modSayLabel(){var ss=(dir===0&&!flipped)||(dir===1&&flipped);var b=document.getElementById('btn-say');if(b){if(dir===1){b.textContent=ss?'🎤 Di lo en español':'🎤 Di lo en inglés';b.setAttribute('aria-label',ss?'Di lo en español':'Di lo en inglés');}else{b.textContent=ss?'🎤 Say it in Spanish':'🎤 Say it in English';b.setAttribute('aria-label',ss?'Say it in Spanish':'Say it in English');}}}
 function stopListen(){if(recog){try{recog.abort();}catch(e){}}listening=false;var b=document.getElementById('btn-say');b.classList.remove('say-listening');modSayLabel();}
 var _vCache=[];
 function _vLoad(){try{var v=speechSynthesis.getVoices();if(v&&v.length)_vCache=v;}catch(e){}}
@@ -260,24 +261,24 @@ function sayIt(){
 if(listening){try{if(recog){recog.stop();}}catch(e){}return;}/*Tap-to-stop uses recog.stop(), not stopListen()/abort(), so a final transcript is still delivered to onresult and scored; onend then resets the button and shows try-again only if nothing was heard.*/
 modAudioEnsure();
 var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-if(!SR){setFeedback("Speech recognition isn't available in this browser.",'bad');return;}
+if(!SR){setFeedback(dir===1?'El reconocimiento de voz no está disponible en este navegador.':"Speech recognition isn't available in this browser.",'bad');return;}
 stopListen();try{speechSynthesis.cancel();}catch(e){}
 var b=document.getElementById('btn-say');var got=false;var timer=null;
 var p=deck[idx];var target,langs,okWord;
 var spanishShowing=(dir===0&&!flipped)||(dir===1&&flipped);
-if(spanishShowing){target=p[0];langs=['es-MX','es-US'];okWord='¡Correcto!';}
-else{target=p[1];langs=['en-US','en-GB'];okWord='Correct!';}
+if(spanishShowing){target=p[0];langs=['es-MX','es-US'];}
+else{target=p[1];langs=['en-US','en-GB'];} okWord=dir===1?'¡Correcto!':'Correct!';
 var li=0;
 function startRec(){
 recog=new SR();recog.lang=langs[li];recog.interimResults=false;recog.maxAlternatives=1;
 var r=recog;
-recog.onresult=function(e){got=true;if(timer){clearTimeout(timer);}var heard=e.results[0][0].transcript;var ok;if(spanishShowing){ok=(norm(heard)===norm(target));}else{ok=enMatch(heard,target);}if(ok){setFeedback('✓ '+okWord,'ok');modDing();}else{setFeedback('Heard: “'+heard+'” — not quite, try again.','bad');}};
-recog.onerror=function(e){if(timer){clearTimeout(timer);}if(e.error==='language-not-supported'&&li+1<langs.length){li++;try{r.abort();}catch(e){}startRec();return;}if(e.error==='not-allowed'||e.error==='service-not-allowed'){setFeedback('Microphone access is blocked. Allow the microphone and try again.','bad');}else{setFeedback("Didn't catch that — try again.",'bad');}};
-recog.onend=function(){if(recog!==r){return;}if(timer){clearTimeout(timer);}if(listening){stopListen();if(!got){setFeedback("Didn't catch that — try again.",'bad');}}};
+recog.onresult=function(e){got=true;if(timer){clearTimeout(timer);}var heard=e.results[0][0].transcript;var ok;if(spanishShowing){ok=(norm(heard)===norm(target));}else{ok=enMatch(heard,target);}if(ok){setFeedback('✓ '+okWord,'ok');modDing();}else{setFeedback(dir===1?'Escuché: “'+heard+'” — no es correcto, inténtalo de nuevo.':'Heard: “'+heard+'” — not quite, try again.','bad');}};
+recog.onerror=function(e){if(timer){clearTimeout(timer);}if(e.error==='language-not-supported'&&li+1<langs.length){li++;try{r.abort();}catch(e){}startRec();return;}if(e.error==='not-allowed'||e.error==='service-not-allowed'){setFeedback(dir===1?'El acceso al micrófono está bloqueado. Permite el micrófono e inténtalo de nuevo.':'Microphone access is blocked. Allow the microphone and try again.','bad');}else{setFeedback("No te escuché — inténtalo de nuevo.",'bad');}};
+recog.onend=function(){if(recog!==r){return;}if(timer){clearTimeout(timer);}if(listening){stopListen();if(!got){setFeedback("No te escuché — inténtalo de nuevo.",'bad');}}};
 listening=true;b.classList.add('say-listening');b.textContent='● Listening… — tap to stop';setFeedback('');
-try{recog.start();}catch(e){stopListen();setFeedback("Didn't catch that — try again.",'bad');return;}
+try{recog.start();}catch(e){stopListen();setFeedback("No te escuché — inténtalo de nuevo.",'bad');return;}
 if(timer){clearTimeout(timer);}
-timer=setTimeout(function(){if(listening){stopListen();if(!got){setFeedback("Didn't catch that — try again.",'bad');}}},12000);
+timer=setTimeout(function(){if(listening){stopListen();if(!got){setFeedback("No te escuché — inténtalo de nuevo.",'bad');}}},12000);
 }
 startRec();
 }
