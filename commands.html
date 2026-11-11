@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Tú commands practice – Vocabulario Español</title>
+<meta name="description" content="Practice tú commands in Spanish: 100 sentences, affirmative and negative, pick the right command form, hear it, and say it — with a guide to the rules.">
+<meta name="google-adsense-account" content="ca-pub-7858482153655813"><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7858482153655813" crossorigin="anonymous"></script>
+
+<style>html{box-sizing:border-box}
+body{margin:0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#ffffff linear-gradient(180deg,#ffffff 0,#ffffff 280px) no-repeat;color:#111111;line-height:1.7}
+main{max-width:720px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top,0px)) 18px calc(40px + env(safe-area-inset-bottom,0px))}
+a.back{display:inline-block;padding:9px 16px;border-radius:999px;background:#f97316;color:#000000;text-decoration:none;font-weight:700;letter-spacing:.06em;font-size:.85rem;box-shadow:0 2px 0 #333333}
+h1{font-size:clamp(1.7rem,5vw,2.3rem);color:#000000;margin:22px 0 8px;line-height:1.2}
+h2{font-size:.95rem;letter-spacing:.14em;text-transform:uppercase;color:#f97316;margin:28px 0 8px}
+a{color:#111111}p{margin:0 0 12px;color:#333333}
+i{color:#111111}
+footer{margin-top:34px;padding-top:16px;border-top:1px solid #000000;font-size:.82rem;color:#ffffff;background:#000}
+footer a{margin-right:12px;display:inline-block;color:#fff}footer a:hover,footer a:focus-visible{color:#f97316}footer p{margin-top:10px;color:#bbbbbb}
+.note{background:#ffffff;border-left:4px solid #f97316;padding:10px 14px;border-radius:8px;margin:14px 0}
+.note p{margin:0}
+.lead{font-size:1.08rem;color:#333333}
+.btn{display:inline-block;margin:6px 8px 0 0;padding:12px 22px;border-radius:12px;background:#f97316;color:#000000;text-decoration:none;font-weight:700;letter-spacing:.04em;box-shadow:0 3px 0 #333333}
+.btn:hover,.btn:focus-visible{background:#000000;color:#fff}
+.btn.alt{background:#fff;color:#000000;border:2px solid #000000;box-shadow:none;padding:10px 20px}
+.tool{background:#fff;border:1px solid #dddddd;border-radius:18px;padding:18px;box-shadow:0 6px 18px rgba(0,0,0,.10);margin:18px 0 26px}
+.tool h2{font-size:1.3rem;letter-spacing:0;text-transform:none;color:#000000;margin:0 0 8px}
+.tool button.btn{display:inline-block;margin:6px 8px 0 0;padding:12px 22px;border-radius:12px;background:#f97316;color:#000000;font-weight:700;letter-spacing:.04em;box-shadow:0 3px 0 #333333;border:0;cursor:pointer;font:inherit;-webkit-appearance:none;appearance:none}
+.tool button.btn:hover,.tool button.btn:focus-visible{background:#000000;color:#fff}
+.tool button.btn.alt{background:#fff;color:#000000;border:2px solid #000000;box-shadow:none;padding:10px 20px;cursor:pointer;font:inherit}
+.tool .qbox{border:2px solid #000000;border-radius:14px;padding:26px 16px;text-align:center;min-height:110px;display:flex;flex-direction:column;justify-content:center}
+.tool .qbox b{font-size:1.55rem;color:#000000;line-height:1.3}
+.tool .qbox span{font-size:.85rem;color:#333333;margin-top:8px}
+.tool .count{font-size:.85rem;color:#333333;margin:12px 0 4px}
+.tool .ctl{display:flex;gap:10px;margin-top:14px}
+.tool .ctl button{flex:1;padding:12px 8px;text-align:center;margin:0}
+.opts{display:flex;gap:10px;margin:14px 0 4px}
+.opts button{flex:1;padding:14px 8px;font-size:1.25rem;margin:0}
+.trans{font-size:.95rem;color:#333333;margin:8px 0;min-height:1.4em}
+.reveal{display:none;border-top:1px solid #dddddd;margin-top:12px;padding-top:12px}
+.reveal.show{display:block}
+.reveal b{color:#000000;font-size:1.15rem}
+.feedback{min-height:1.4em;font-size:.95rem;margin:6px 0;color:#333333}
+.feedback.ok{color:#1f5c3f;font-weight:700}
+.feedback.bad{color:#8a3b00}
+.tool .listening{outline:3px solid #f97316;outline-offset:2px}
+.qctx{font-size:.88rem;color:#666666;margin:6px 0 0}
+.tool label.chk{display:inline-block;font-weight:700;color:#000000;margin:0 0 12px;cursor:pointer}
+.tool label.chk input{margin-right:8px;transform:scale(1.25)}
+.ad{margin:18px 0;text-align:center}
+</style></head>
+<body><main>
+<a class="back" href="/">&larr; Back to Pollito Productions</a>
+
+<div class="tool">
+<h2>Tú commands practice</h2>
+<p>100 sentences, one choice: the right command form. Pick the correct tú command for the sentence, use the translation help whenever you want it, and hear and say the full sentence after you answer.</p>
+<label class="chk"><input type="checkbox" id="chk-neg"> Include negative commands</label>
+<div class="qbox"><b id="q-sen"></b><span>Pick the correct command</span></div>
+<p class="qctx" id="q-ctx" style="display:none"></p>
+<p class="trans" id="trans" style="display:none"></p>
+<div><button class="btn alt" id="btn-trans" type="button">Show translation</button></div>
+<div class="opts" id="opts"></div>
+<p class="feedback" id="feedback"></p>
+<div class="reveal" id="reveal"><b id="reveal-sen"></b><p id="reveal-en"></p><p id="reveal-note"></p><button class="btn alt" id="btn-hear" type="button" style="display:none">🔊 Hear it</button> <button class="btn alt" id="btn-say" type="button" style="display:none">🎤 Say it in Spanish</button><p class="trans" id="say-privacy" style="display:none">Voice input is checked by your browser speech service. Nothing is stored.</p><p class="feedback" id="say-feedback"></p></div>
+<p class="count" id="card-count"></p>
+<div class="ctl"><button class="btn" id="btn-next" type="button">Next card</button> <button class="btn alt" id="btn-shuffle" type="button">Shuffle</button></div>
+<noscript><p>Turn on JavaScript to use the sentence tool.</p></noscript>
+</div>
+<script>
+var QAFF=[["___ la tarea ahora.", "haz", "haces", "Do the homework now.", "Irregular: hacer → haz.", "Tell your sister to do her homework."], ["___ a la escuela.", "ve", "vas", "Go to school.", "Irregular: ir → ve.", "Tell your brother to go to school."], ["___ la verdad, por favor.", "di", "dices", "Tell the truth, please.", "Irregular: decir → di.", "Tell your friend to tell the truth."], ["___ el libro aquí.", "pon", "pones", "Put the book here.", "Irregular: poner → pon.", "Tell your friend to put the book here."], ["___ de la casa.", "sal", "sales", "Leave the house.", "Irregular: salir → sal.", "Tell your brother to leave the house."], ["___ bueno con tu hermana.", "sé", "eres", "Be nice to your sister.", "Irregular: ser → sé.", "Tell your brother to be nice."], ["___ paciencia, por favor.", "ten", "tienes", "Have patience, please.", "Irregular: tener → ten.", "Tell your friend to be patient."], ["___ a mi casa.", "ven", "vienes", "Come to my house.", "Irregular: venir → ven.", "Tell your friend to come over."], ["___ con tu profesor.", "habla", "hablas", "Talk to your teacher.", "Affirmative: use the él/ella form (habla).", "Tell your friend to talk to the teacher."], ["___ la foto.", "mira", "miras", "Look at the photo.", "Affirmative: use the él/ella form (mira).", "Show your friend a photo."], ["___ la música.", "escucha", "escuchas", "Listen to the music.", "Affirmative: use the él/ella form (escucha).", "Tell your friend to listen."], ["___ español hoy.", "estudia", "estudias", "Study Spanish today.", "Affirmative: use the él/ella form (estudia).", "Tell your friend to study."], ["___ en la tienda.", "trabaja", "trabajas", "Work at the store.", "Affirmative: use the él/ella form (trabaja).", "Tell your brother to work at the store."], ["___ tu cuarto.", "limpia", "limpias", "Clean your room.", "Affirmative: use the él/ella form (limpia).", "Tell your sister to clean her room."], ["___ la cena.", "prepara", "preparas", "Make dinner.", "Affirmative: use the él/ella form (prepara).", "Tell your friend to make dinner."], ["___ a tu madre.", "llama", "llamas", "Call your mom.", "Affirmative: use the él/ella form (llama).", "Tell your friend to call his mom."], ["___ un momento.", "espera", "esperas", "Wait a moment.", "Affirmative: use the él/ella form (espera).", "Tell your friend to wait."], ["___ tus llaves.", "busca", "buscas", "Look for your keys.", "Affirmative: use the él/ella form (busca).", "Tell your friend to look for his keys."], ["___ pan, por favor.", "compra", "compras", "Buy bread, please.", "Affirmative: use the él/ella form (compra).", "Tell your friend to buy bread."], ["___ una canción.", "canta", "cantas", "Sing a song.", "Affirmative: use the él/ella form (canta).", "Tell your friend to sing."], ["___ conmigo.", "baila", "bailas", "Dance with me.", "Affirmative: use the él/ella form (baila).", "Tell your friend to dance."], ["___ a tu amigo.", "ayuda", "ayudas", "Help your friend.", "Affirmative: use the él/ella form (ayuda).", "Tell your brother to help his friend."], ["___ al profesor.", "pregunta", "preguntas", "Ask the teacher.", "Affirmative: use the él/ella form (pregunta).", "Tell your friend to ask the teacher."], ["___ la pregunta.", "contesta", "contestas", "Answer the question.", "Affirmative: use the él/ella form (contesta).", "Tell your friend to answer."], ["___ tu tarea.", "termina", "terminas", "Finish your homework.", "Affirmative: use the él/ella form (termina).", "Tell your friend to finish."], ["___ el libro, por favor.", "lee", "lees", "Read the book, please.", "Affirmative: use the él/ella form (lee).", "Tell your friend to read the book."], ["___ tu cena.", "come", "comes", "Eat your dinner.", "Affirmative: use the él/ella form (come).", "Tell your brother to eat his dinner."], ["___ las palabras.", "aprende", "aprendes", "Learn the words.", "Affirmative: use the él/ella form (aprende).", "Tell your friend to learn the words."], ["___ agua.", "bebe", "bebes", "Drink water.", "Affirmative: use the él/ella form (bebe).", "Tell your friend to drink water."], ["___ a la meta.", "corre", "corres", "Run to the finish line.", "Affirmative: use the él/ella form (corre).", "Tell your friend to run."], ["___ tu nombre.", "escribe", "escribes", "Write your name.", "Affirmative: use the él/ella form (escribe).", "Tell your friend to write his name."], ["___ la ventana.", "abre", "abres", "Open the window.", "Affirmative: use the él/ella form (abre).", "Tell your friend to open the window."], ["___ la puerta, por favor.", "cierra", "cierras", "Close the door, please.", "Stem-change: cerrar → cierra (e→ie).", "Tell your brother to close the door."], ["___ ahora mismo.", "empieza", "empiezas", "Start right now.", "Stem-change: empezar → empieza (e→ie).", "Tell your friend to start now."], ["___ en la respuesta.", "piensa", "piensas", "Think about the answer.", "Stem-change: pensar → piensa (e→ie).", "Tell your friend to think."], ["___ ocho horas.", "duerme", "duermes", "Sleep eight hours.", "Stem-change: dormir → duerme (o→ue).", "Tell your friend to sleep."], ["___ ayuda, por favor.", "pide", "pides", "Ask for help, please.", "Stem-change: pedir → pide (e→i).", "Tell your friend to ask for help."], ["___ las instrucciones.", "sigue", "sigues", "Follow the instructions.", "Stem-change: seguir → sigue (e→i).", "Tell your friend to follow them."], ["___ la sopa.", "sirve", "sirves", "Serve the soup.", "Stem-change: servir → sirve (e→i).", "Tell your friend to serve the soup."], ["___ al fútbol.", "juega", "juegas", "Play soccer.", "Stem-change: jugar → juega (u→ue).", "Tell your friend to play soccer."], ["___ hasta diez.", "cuenta", "cuentas", "Count to ten.", "Stem-change: contar → cuenta (o→ue).", "Tell your friend to count to ten."], ["___ el libro a Ana.", "da", "das", "Give the book to Ana.", "Affirmative: use the él/ella form (da).", "Tell your friend to give the book to Ana."], ["___ los platos.", "lava", "lavas", "Wash the dishes.", "Affirmative: use the él/ella form (lava).", "Tell your sister to wash the dishes."], ["___ el piso.", "barre", "barres", "Sweep the floor.", "Affirmative: use the él/ella form (barre).", "Tell your brother to sweep the floor."], ["___ la basura.", "saca", "sacas", "Take out the trash.", "Affirmative: use the él/ella form (saca).", "Tell your friend to take out the trash."], ["___ la luz.", "apaga", "apagas", "Turn off the light.", "Affirmative: use the él/ella form (apaga).", "Tell your friend to turn off the light."], ["___ la lámpara.", "enciende", "enciendes", "Turn on the lamp.", "Stem-change: encender → enciende (e→ie).", "Tell your friend to turn on the lamp."], ["___ ahora, por favor.", "hazlo", "lo haz", "Do it now, please.", "Affirmative: attach the pronoun (haz + lo = hazlo).", "Tell your friend to do it now."], ["___ por favor.", "dime", "me di", "Tell me, please.", "Affirmative: attach the pronoun (di + me = dime).", "Ask your friend to tell you."], ["___ aquí.", "ponlo", "lo pon", "Put it here.", "Affirmative: attach the pronoun (pon + lo = ponlo).", "Tell your friend to put the book here."]];
+var QNEG=[["No ___ mentiras.", "digas", "di", "Don't tell lies.", "Negative: 'no' + subjunctive — decir → no digas.", "Tell your friend not to lie."], ["No ___ eso.", "hagas", "haz", "Don't do that.", "Negative: 'no' + subjunctive — hacer → no hagas.", "Tell your brother not to do that."], ["No ___ a la fiesta.", "vayas", "ve", "Don't go to the party.", "Negative: 'no' + subjunctive — ir → no vayas.", "Tell your friend not to go."], ["No ___ eso aquí.", "pongas", "pon", "Don't put that here.", "Negative: 'no' + subjunctive — poner → no pongas.", "Tell your friend not to put it here."], ["No ___ de noche.", "salgas", "sal", "Don't go out at night.", "Negative: 'no' + subjunctive — salir → no salgas.", "Tell your sister not to go out at night."], ["No ___ malo.", "seas", "sé", "Don't be mean.", "Negative: 'no' + subjunctive — ser → no seas.", "Tell your brother not to be mean."], ["No ___ miedo.", "tengas", "ten", "Don't be afraid.", "Negative: 'no' + subjunctive — tener → no tengas.", "Tell your friend not to be afraid."], ["No ___ tarde.", "vengas", "ven", "Don't come late.", "Negative: 'no' + subjunctive — venir → no vengas.", "Tell your friend not to come late."], ["No ___ en clase.", "hables", "habla", "Don't talk in class.", "Negative: 'no' + subjunctive (no hables).", "Tell your friend not to talk."], ["No ___ la tele.", "mires", "mira", "Don't watch TV.", "Negative: 'no' + subjunctive (no mires).", "Tell your brother not to watch TV."], ["No ___ esa música.", "escuches", "escucha", "Don't listen to that music.", "Negative: 'no' + subjunctive (no escuches).", "Tell your friend not to listen."], ["No ___ tan tarde.", "estudies", "estudia", "Don't study so late.", "Negative: 'no' + subjunctive (no estudies).", "Tell your friend not to study so late."], ["No ___ hoy.", "trabajes", "trabaja", "Don't work today.", "Negative: 'no' + subjunctive (no trabajes).", "Tell your friend not to work today."], ["No ___ la mesa.", "limpies", "limpia", "Don't clean the table.", "Negative: 'no' + subjunctive (no limpies).", "Tell your sister not to clean the table."], ["No ___ la cena.", "prepares", "prepara", "Don't make dinner.", "Negative: 'no' + subjunctive (no prepares).", "Tell your friend not to make dinner."], ["No ___ a Juan.", "llames", "llama", "Don't call Juan.", "Negative: 'no' + subjunctive (no llames).", "Tell your friend not to call Juan."], ["No ___ más.", "esperes", "espera", "Don't wait anymore.", "Negative: 'no' + subjunctive (no esperes).", "Tell your friend not to wait."], ["No ___ mis llaves.", "busques", "busca", "Don't look for my keys.", "Negative: 'no' + subjunctive (no busques).", "Tell your friend not to look for my keys."], ["No ___ ese libro.", "compres", "compra", "Don't buy that book.", "Negative: 'no' + subjunctive (no compres).", "Tell your friend not to buy that book."], ["No ___ la puerta.", "cierres", "cierra", "Don't close the door.", "Negative: 'no' + subjunctive (no cierres).", "Tell your brother not to close the door."], ["No ___ ahora.", "cantes", "canta", "Don't sing now.", "Negative: 'no' + subjunctive (no cantes).", "Tell your friend not to sing now."], ["No ___ aquí.", "bailes", "baila", "Don't dance here.", "Negative: 'no' + subjunctive (no bailes).", "Tell your friend not to dance here."], ["No ___ a tu hermano.", "ayudes", "ayuda", "Don't help your brother.", "Negative: 'no' + subjunctive (no ayudes).", "Tell your friend not to help his brother."], ["No ___ a nadie.", "preguntes", "pregunta", "Don't ask anyone.", "Negative: 'no' + subjunctive (no preguntes).", "Tell your friend not to ask anyone."], ["No ___ todavía.", "contestes", "contesta", "Don't answer yet.", "Negative: 'no' + subjunctive (no contestes).", "Tell your friend not to answer yet."], ["No ___ el libro.", "termines", "termina", "Don't finish the book.", "Negative: 'no' + subjunctive (no termines).", "Tell your friend not to finish the book."], ["No ___ sin mí.", "empieces", "empieza", "Don't start without me.", "Negative: 'no' + subjunctive (no empieces).", "Tell your friend not to start without you."], ["No ___ en eso.", "pienses", "piensa", "Don't think about that.", "Negative: 'no' + subjunctive (no pienses).", "Tell your friend not to think about it."], ["No ___ un secreto.", "cuentes", "cuenta", "Don't tell a secret.", "Negative: 'no' + subjunctive (no cuentes).", "Tell your friend not to tell the secret."], ["No ___ en la casa.", "juegues", "juega", "Don't play in the house.", "Negative: 'no' + subjunctive (no juegues).", "Tell your friend not to play in the house."], ["No ___ el cuadro.", "toques", "toca", "Don't touch the painting.", "Negative: 'no' + subjunctive (no toques).", "Tell your friend not to touch the painting."], ["No ___ en el río.", "nades", "nada", "Don't swim in the river.", "Negative: 'no' + subjunctive (no nades).", "Tell your friend not to swim in the river."], ["No ___ en casa.", "cocines", "cocina", "Don't cook at home.", "Negative: 'no' + subjunctive (no cocines).", "Tell your friend not to cook at home."], ["No ___ el coche.", "laves", "lava", "Don't wash the car.", "Negative: 'no' + subjunctive (no laves).", "Tell your sister not to wash the car."], ["No ___ la basura.", "saques", "saca", "Don't take out the trash.", "Negative: 'no' + subjunctive (no saques).", "Tell your friend not to take out the trash."], ["No ___ la luz.", "apagues", "apaga", "Don't turn off the light.", "Negative: 'no' + subjunctive (no apagues).", "Tell your friend not to turn off the light."], ["No ___ la carne.", "comas", "come", "Don't eat the meat.", "Negative: 'no' + subjunctive (no comas).", "Tell your friend not to eat the meat."], ["No ___ el café.", "bebas", "bebe", "Don't drink the coffee.", "Negative: 'no' + subjunctive (no bebas).", "Tell your friend not to drink the coffee."], ["No ___ en el pasillo.", "corras", "corre", "Don't run in the hallway.", "Negative: 'no' + subjunctive (no corras).", "Tell your friend not to run in the hallway."], ["No ___ la carta.", "leas", "lee", "Don't read the letter.", "Negative: 'no' + subjunctive (no leas).", "Tell your friend not to read the letter."], ["No ___ la lámpara.", "enciendas", "enciende", "Don't turn on the lamp.", "Negative: 'no' + subjunctive (no enciendas).", "Tell your friend not to turn on the lamp."], ["No ___ en el libro.", "escribas", "escribe", "Don't write in the book.", "Negative: 'no' + subjunctive (no escribas).", "Tell your friend not to write in the book."], ["No ___ la caja.", "abras", "abre", "Don't open the box.", "Negative: 'no' + subjunctive (no abras).", "Tell your friend not to open the box."], ["No ___ en el sofá.", "duermas", "duerme", "Don't sleep on the couch.", "Negative: 'no' + subjunctive (no duermas).", "Tell your friend not to sleep on the couch."], ["No ___ más dinero.", "pidas", "pide", "Don't ask for more money.", "Negative: 'no' + subjunctive (no pidas).", "Tell your friend not to ask for more money."], ["No ___ a ese hombre.", "sigas", "sigue", "Don't follow that man.", "Negative: 'no' + subjunctive (no sigas).", "Tell your friend not to follow that man."], ["No ___ la sopa.", "sirvas", "sirve", "Don't serve the soup.", "Negative: 'no' + subjunctive (no sirvas).", "Tell your friend not to serve the soup."], ["No ___ ahí.", "subas", "sube", "Don't climb up there.", "Negative: 'no' + subjunctive (no subas).", "Tell your friend not to climb up there."], ["No ___ ahora, por favor.", "lo hagas", "hazlo", "Don't do it now, please.", "Negative: pronoun goes BEFORE the verb (no lo hagas).", "Tell your friend not to do it now."], ["No ___ nada.", "me digas", "dime", "Don't tell me anything.", "Negative: pronoun goes BEFORE the verb (no me digas).", "Tell your friend not to tell you anything."]];
+var deck=[],pos=0,answered=false,cur=null,completed="";
+function includeNeg(){var c=document.getElementById("chk-neg");return c&&c.checked;}
+function shuffleDeck(){deck=QAFF.slice();if(includeNeg()){deck=deck.concat(QNEG);}for(var i=deck.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=deck[i];deck[i]=deck[j];deck[j]=t;}pos=0;}
+function shuffle2(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function $(id){return document.getElementById(id);}
+function normSp(s){return (s||"").toLowerCase().trim().replace(/[.,!?\u00a1\u00bf:;"'()\-]/g,"").replace(/[\u00e1\u00e0\u00e4]/g,"a").replace(/[\u00e9\u00e8\u00eb]/g,"e").replace(/[\u00ed\u00ec\u00ef]/g,"i").replace(/[\u00f3\u00f2\u00f6]/g,"o").replace(/[\u00fa\u00f9\u00fc]/g,"u");}
+function show(){
+var q=deck[pos];var opts=shuffle2([q[1],q[2]]);completed=q[0].replace("___",q[1]);completed=completed.charAt(0).toUpperCase()+completed.slice(1);
+cur={q:q,opts:opts,ans:opts.indexOf(q[1]),correct:q[1]};answered=false;
+$("q-sen").textContent=q[0];
+$("q-ctx").textContent=q[5]||"";$("q-ctx").style.display=q[5]?"block":"none";
+$("trans").style.display="none";$("trans").textContent="";
+$("btn-trans").style.display="inline-block";
+$("reveal").className="reveal";$("btn-hear").style.display="none";$("btn-say").style.display="none";$("say-privacy").style.display="none";
+if(listening){stopSay(false);}$("say-feedback").textContent="";$("say-feedback").className="feedback";
+$("feedback").textContent="";$("feedback").className="feedback";
+var ob=$("opts");ob.innerHTML="";
+for(var o=0;o<opts.length;o++){var b=document.createElement("button");b.type="button";b.className="btn alt";b.textContent=opts[o];(function(ix){b.addEventListener("click",function(){answer(ix);});})(o);ob.appendChild(b);}
+$("card-count").textContent="Question "+(pos+1)+" of "+deck.length;
+}
+function answer(i){
+if(answered)return;answered=true;var q=cur.q;
+var f=$("feedback");
+if(i===cur.ans){f.textContent="\u2713 \u00a1Correcto!";f.className="feedback ok";}else{f.textContent="Not quite \u2014 the answer is "+cur.correct+".";f.className="feedback bad";}
+$("reveal-sen").textContent=completed;
+$("reveal-en").textContent=q[3];
+$("reveal-note").textContent=q[4];
+$("trans").textContent=q[3];$("trans").style.display="block";
+$("btn-trans").style.display="none";
+$("reveal").className="reveal show";$("btn-hear").style.display="inline-block";$("btn-say").style.display="inline-block";$("say-privacy").style.display="block";
+$("say-feedback").textContent="";$("say-feedback").className="feedback";
+}
+function showTrans(){var q=deck[pos];$("trans").textContent=q[3];$("trans").style.display="block";}
+var _vCache=[];function _vLoad(){try{var v=speechSynthesis.getVoices();if(v&&v.length)_vCache=v;}catch(e){}}try{_vLoad();if('speechSynthesis' in window)speechSynthesis.addEventListener('voiceschanged',_vLoad);}catch(e){}
+function _vPick(p,f,s){var vs=_vCache;var a=vs.filter(function(v){return v.lang&&v.lang.toLowerCase().indexOf(p)===0;});if(!a.length)a=vs.filter(function(v){return v.lang&&v.lang.toLowerCase().indexOf("es-")===0;});var b=a.filter(function(v){return v.lang.toLowerCase().indexOf(f)===0;});if(b.length)return b[0];var c=a.filter(function(v){return v.lang.toLowerCase().indexOf(s)===0;});if(c.length)return c[0];return a.length?a[0]:null;}
+function _vSpeak(u,p,f,s){var v=_vPick(p,f,s);if(v)u.voice=v;try{speechSynthesis.cancel();}catch(e){}speechSynthesis.speak(u);}
+function hearIt(){
+var u=new SpeechSynthesisUtterance(completed);u.lang="es-MX";u.rate=0.85;
+_vSpeak(u,"es-","es-mx","es-us");
+}
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+var recog=null,listening=false,listenTimer=null,lastTranscript="";
+function stopSay(score){
+listening=false;if(listenTimer){clearTimeout(listenTimer);listenTimer=null;}
+if(recog){try{recog.stop();}catch(e){}}
+var b=$("btn-say");if(b){b.textContent="🎤 Say it in Spanish";b.classList.remove("listening");}
+if(score&&lastTranscript){
+var got=normSp(lastTranscript),want=normSp(completed);
+if(got===want){var f=$("say-feedback");f.textContent="\u2713 Well said!";f.className="feedback ok";}
+else{var f=$("say-feedback");f.textContent="Heard: \""+lastTranscript+"\" \u2014 not quite. Try again.";f.className="feedback bad";}
+lastTranscript="";
+}
+}
+function sayIt(){
+if(!answered)return;
+if(!SR){var f=$("say-feedback");f.textContent="Speech input is not available in this browser.";f.className="feedback bad";return;}
+if(listening){stopSay(false);return;}
+listening=true;lastTranscript="";
+recog=new SR();recog.lang="es-MX";recog.interimResults=false;recog.maxAlternatives=1;
+recog.onresult=function(ev){lastTranscript=ev.results[0][0].transcript||"";stopSay(true);};
+recog.onerror=function(){stopSay(false);var f=$("say-feedback");f.textContent="Could not hear that \u2014 try again.";f.className="feedback bad";};
+recog.onend=function(){if(listening){stopSay(false);}};
+var b=$("btn-say");b.textContent="\u25cf Listening\u2026 \u2014 tap to stop";b.classList.add("listening");
+try{recog.start();}catch(e){stopSay(false);return;}
+listenTimer=setTimeout(function(){if(listening){stopSay(false);var f=$("say-feedback");f.textContent="Listening timed out \u2014 try again.";f.className="feedback bad";}},12000);
+}
+function next(){pos++;if(pos>=deck.length){shuffleDeck();}show();}
+$("chk-neg").addEventListener("change",function(){shuffleDeck();show();});
+$("btn-next").addEventListener("click",next);
+$("btn-shuffle").addEventListener("click",function(){shuffleDeck();show();});
+$("btn-trans").addEventListener("click",showTrans);
+$("btn-hear").addEventListener("click",hearIt);
+$("btn-say").addEventListener("click",sayIt);
+shuffleDeck();show();
+</script>
+
+<h1>T&uacute; commands</h1>
+
+<p>T&uacute; commands are the words you use when you tell someone to do something, and in Spanish the command changes depending on who you are talking to. If you are talking to a friend, a classmate, your brother or sister, or anyone you call &ldquo;t&uacute;,&rdquo; you use a t&uacute; command. &ldquo;Habla m&aacute;s despacio.&rdquo; Speak more slowly. &ldquo;Come tu cena.&rdquo; Eat your dinner. &ldquo;Abre la ventana.&rdquo; Open the window. These are not suggestions. They are direct instructions, and they are some of the most useful sentences you will ever learn, because telling people what to do, politely, is something you do every day. This guide covers the two kinds of t&uacute; commands: the affirmative ones, which tell someone to do something, and the negative ones, which tell someone not to do something. The two kinds are formed in completely different ways, and that is the first thing to understand.</p>
+
+<h2>Affirmative commands: the form you already know</h2>
+
+<p>The affirmative t&uacute; command is easy, because you already know it. It is the third-person singular present tense, the &eacute;l / ella / usted form. If you can say &ldquo;&eacute;l habla&rdquo; (he speaks), you can say &ldquo;habla&rdquo; as a command: &ldquo;Habla con tu profesor.&rdquo; Talk to your teacher. &ldquo;Mira la foto.&rdquo; Look at the photo. &ldquo;Escucha la m&uacute;sica.&rdquo; Listen to the music. &ldquo;Come tu cena.&rdquo; Eat your dinner. &ldquo;Escribe tu nombre.&rdquo; Write your name. The command is just the he/she form, used on its own. That is the whole rule for regular verbs, and it works for -ar, -er, and -ir verbs alike. &ldquo;Limpia tu cuarto.&rdquo; Clean your room. &ldquo;Lee el libro.&rdquo; Read the book. &ldquo;Abre la ventana.&rdquo; Open the window.</p>
+
+<p>There is one catch: eight very common verbs do not follow the rule. They have irregular affirmative commands, and you have to memorize them. The eight are: decir &rarr; di (say, tell), hacer &rarr; haz (do, make), ir &rarr; ve (go), poner &rarr; pon (put), salir &rarr; sal (leave, go out), ser &rarr; s&eacute; (be), tener &rarr; ten (have), and venir &rarr; ven (come). &ldquo;Di la verdad.&rdquo; Tell the truth. &ldquo;Haz la tarea.&rdquo; Do the homework. &ldquo;Ve a la escuela.&rdquo; Go to school. &ldquo;Pon el libro aqu&iacute;.&rdquo; Put the book here. &ldquo;Sal de la casa.&rdquo; Leave the house. &ldquo;S&eacute; bueno.&rdquo; Be good. &ldquo;Ten paciencia.&rdquo; Have patience. &ldquo;Ven a mi casa.&rdquo; Come to my house. These eight are the verbs you will use most often, so they are worth learning first. Say them out loud a few times, di, haz, ve, pon, sal, s&eacute;, ten, ven, and they start to stick. Every other verb follows the third-person rule, so once you know these eight, you can give a command with almost any verb you know.</p>
+
+<p>Stem-changing verbs keep their stem change in the command, because the command comes from the third-person present. &ldquo;Cierra la puerta.&rdquo; Close the door. &ldquo;Empieza ahora.&rdquo; Start now. &ldquo;Piensa en la respuesta.&rdquo; Think about the answer. &ldquo;Duerme ocho horas.&rdquo; Sleep eight hours. &ldquo;Pide ayuda.&rdquo; Ask for help. &ldquo;Sigue las instrucciones.&rdquo; Follow the instructions. &ldquo;Sirve la sopa.&rdquo; Serve the soup. &ldquo;Juega al f&uacute;tbol.&rdquo; Play soccer. If you know the third-person present form, you know the command. That is why the affirmative command feels so natural once you have the present tense down.</p>
+
+<h2>Negative commands: no plus the subjunctive</h2>
+
+<p>Negative commands are formed completely differently. You do not use the third-person present. You use the present subjunctive, and you put &ldquo;no&rdquo; in front of it. The subjunctive for a t&uacute; command comes from the yo form of the present tense: drop the -o, and add -es for -ar verbs or -as for -er and -ir verbs. &ldquo;Hablar&rdquo; becomes yo hablo, drop the -o, add -es, and you get &ldquo;hables.&rdquo; &ldquo;No hables en clase.&rdquo; Do not talk in class. &ldquo;Comer&rdquo; becomes yo como, drop the -o, add -as, and you get &ldquo;comas.&rdquo; &ldquo;No comas eso.&rdquo; Do not eat that. &ldquo;Escribir&rdquo; becomes yo escribo, drop the -o, add -as, and you get &ldquo;escribas.&rdquo; &ldquo;No escribas eso.&rdquo; Do not write that.</p>
+
+<p>The same eight irregular verbs have irregular negative commands, and they follow the subjunctive pattern: &ldquo;no digas&rdquo; (do not say), &ldquo;no hagas&rdquo; (do not do), &ldquo;no vayas&rdquo; (do not go), &ldquo;no pongas&rdquo; (do not put), &ldquo;no salgas&rdquo; (do not leave), &ldquo;no seas&rdquo; (do not be), &ldquo;no tengas&rdquo; (do not have), &ldquo;no vengas&rdquo; (do not come). &ldquo;No digas mentiras.&rdquo; Do not tell lies. &ldquo;No hagas eso.&rdquo; Do not do that. &ldquo;No vayas a la fiesta.&rdquo; Do not go to the party. &ldquo;No seas malo.&rdquo; Do not be mean. &ldquo;No tengas miedo.&rdquo; Do not be afraid. &ldquo;No vengas tarde.&rdquo; Do not come late.</p>
+
+<p>Notice that the negative command always starts with &ldquo;no.&rdquo; There is no negative command without it. If you leave out the &ldquo;no,&rdquo; you have an affirmative command, and the meaning flips completely. &ldquo;Habla&rdquo; means &ldquo;speak.&rdquo; &ldquo;No hables&rdquo; means &ldquo;do not speak.&rdquo; The &ldquo;no&rdquo; is not optional. It is the whole difference between telling someone to do something and telling them not to do it. And the verb itself changes too: the affirmative uses the third-person present, while the negative uses the subjunctive. &ldquo;Habla&rdquo; against &ldquo;no hables.&rdquo; &ldquo;Come&rdquo; against &ldquo;no comas.&rdquo; &ldquo;Escribe&rdquo; against &ldquo;no escribas.&rdquo; Two different forms, two opposite meanings.</p>
+
+<p>Spelling changes from the present tense carry into the subjunctive. A verb whose yo form ends in -co, like &ldquo;buscar&rdquo; (yo busco), keeps that spelling in the subjunctive: &ldquo;no busques.&rdquo; A verb like &ldquo;sacar&rdquo; (yo saco) becomes &ldquo;no saques.&rdquo; &ldquo;Tocar&rdquo; (yo toco) becomes &ldquo;no toques.&rdquo; &ldquo;Apagar&rdquo; (yo apago) becomes &ldquo;no apagues.&rdquo; The spelling change is there so the sound stays the same. You are still saying the same consonant sound, just spelled the way Spanish spells it before an -e. The rule is the same as the subjunctive you will meet later: take the yo form, drop the -o, and add the opposite ending. Once you can do that, you can build any negative command.</p>
+
+<h2>Pronouns: attached to the affirmative, before the negative</h2>
+
+<p>Pronouns, the little words lo, la, me, te, and nos, attach to the end of an affirmative command, and they go before the verb in a negative command. &ldquo;Hazlo.&rdquo; Do it. The &ldquo;lo&rdquo; sticks to the end of &ldquo;haz&rdquo; and becomes one word. &ldquo;Dime.&rdquo; Tell me. &ldquo;Ponlo aqu&iacute;.&rdquo; Put it here. When you attach a pronoun to a command, the stress can shift, so you sometimes need a written accent to keep the stress in the right place. &ldquo;Dime&rdquo; needs no accent, but a longer command like &ldquo;c&oacute;mpralo&rdquo; (buy it) does, because the stress falls three syllables from the end once the pronoun is attached.</p>
+
+<p>In a negative command, the pronoun goes before the verb, after the &ldquo;no.&rdquo; &ldquo;No lo hagas.&rdquo; Do not do it. &ldquo;No me digas nada.&rdquo; Do not tell me anything. The pronoun never attaches to a negative command. It always sits in front, between &ldquo;no&rdquo; and the verb. This is the rule students forget most often, and it is the one that makes your Spanish sound natural when you get it right. Compare the two: &ldquo;hazlo&rdquo; (do it) against &ldquo;no lo hagas&rdquo; (do not do it). Same pronoun, same verb, completely different position. Affirmative: attached to the end. Negative: before the verb. If you remember that one contrast, you have the pronoun rule.</p>
+
+<h2>Common mistakes</h2>
+
+<p>The most common mistake is using the present-tense t&uacute; form instead of the command. &ldquo;Hablas con tu profesor&rdquo; is a statement. You are talking to your teacher. &ldquo;Habla con tu profesor&rdquo; is a command. Talk to your teacher. The -s at the end is the difference. If your command ends in -s, it is not a command. It is a statement. Listen for that -s. &ldquo;Comes tu cena&rdquo; means you are eating your dinner. &ldquo;Come tu cena&rdquo; means eat your dinner. One letter changes a statement into a command.</p>
+
+<p>The second mistake is forgetting the &ldquo;no&rdquo; in a negative command. &ldquo;Hables en clase&rdquo; is not a sentence. It needs the &ldquo;no&rdquo;: &ldquo;No hables en clase.&rdquo; Without the &ldquo;no,&rdquo; the subjunctive form just hangs there with nothing to do. The third mistake is using the affirmative form for a negative. &ldquo;No habla en clase&rdquo; is wrong. The negative needs the subjunctive: &ldquo;No hables en clase.&rdquo; The fourth mistake is putting the pronoun in the wrong place. &ldquo;Lo haz&rdquo; is wrong. It is &ldquo;hazlo.&rdquo; &ldquo;No hazlo&rdquo; is wrong. It is &ldquo;no lo hagas.&rdquo; If you remember the eight irregulars, the &ldquo;no&rdquo; plus subjunctive rule, and the pronoun rule, you have the whole system.</p>
+
+<h2>Keep learning</h2>
+
+<p>T&uacute; commands are the first command form you will learn, and they open the door to the others. The <a href="ser-vs-estar.html">ser vs. estar</a> guide covers the other famous pair, when to use ser and when to use estar. The <a href="saber-vs-conocer.html">saber vs. conocer</a> guide covers two verbs that both mean &ldquo;to know&rdquo; but in different ways. And the <a href="pronouns.html">pronouns</a> guide covers the little words, me, te, lo, la, and le, that change with the person and the job in the sentence. Each one has a practice tool at the top, just like this one.</p>
+
+
+<div class="ad"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7858482153655813" data-ad-slot="2555609557" data-ad-format="auto" data-full-width-responsive="true"></ins><script>(adsbygoogle = window.adsbygoogle || []).push({});</script></div>
+<footer><a href="/">Home</a><a href="game.html">Game</a><a href="guides.html">Guides</a><a href="play.html">Play</a><a href="practice.html">Practice</a><a href="resources.html">Teacher Resources</a><a href="about.html">About</a><a href="vocabulary.html">Vocabulary</a><a href="privacy.html">Privacy Policy</a><p>Copyright © All Rights Reserved — Brant Fuller 2026</p></footer>
+</main></body></html>
