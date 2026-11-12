@@ -485,6 +485,7 @@ function speakSpanish(text){
 <script>
 /* ================= level generation ================= */
 var W=960, H=540, GROUND_Y=H-84;
+var PIT_FLOOR_Y=GROUND_Y+56; // pit bottom: spikes sit here, 26px below ground level
 var SPEED=320, GRAV=2600, JUMP_V=-880;
 function genLevel(level, seed){
   var rng=mulberry32(seed!==undefined?seed:((Math.random()*4294967296)|0));
@@ -567,6 +568,13 @@ function genLevel(level, seed){
       obstacles.push({type:"spike",x:Math.round(x+8),w:64,h:30,base:GROUND_Y-top3});
     }
     x+=w;
+  }
+  // pit spikes: every gap gets spikes on its floor, so falling in is a visible spike death
+  for(var gi3=0; gi3<gaps.length; gi3++){
+    var g3=gaps[gi3], nsp=Math.floor(g3.w/32);
+    for(var s3=0; s3<nsp; s3++){
+      obstacles.push({type:"spike",x:g3.x+s3*32,w:32,h:30,base:PIT_FLOOR_Y});
+    }
   }
   return {L:L,finishX:L-300,cps:cps,obstacles:obstacles,gaps:gaps,platforms:platforms};
 }
@@ -813,13 +821,16 @@ function update(dt){
       py=ptop-34; vy=0; onGround=true; landed=true;
     }
   }
-  // ground / gaps
+  // ground / gaps (falling into a pit no longer kills instantly — you drop to the spikes)
   if(!landed){
     if(py+34>=GROUND_Y){
       var cx=px+17;
-      if(!groundSolidAt(lv,cx)){ crash(); return; }
-      py=GROUND_Y-34; vy=0;
-      if(!onGround){ onGround=true; rot=Math.round(rot/(Math.PI/2))*(Math.PI/2); if(jumpHeld||jumpBuffer>0){ jumpBuffer=0; doJump(); } }
+      if(groundSolidAt(lv,cx)){
+        py=GROUND_Y-34; vy=0;
+        if(!onGround){ onGround=true; rot=Math.round(rot/(Math.PI/2))*(Math.PI/2); if(jumpHeld||jumpBuffer>0){ jumpBuffer=0; doJump(); } }
+      } else if(py+34>=PIT_FLOOR_Y){
+        crash(); return; // hit the spiky pit floor
+      }
     } else {
       if(onGround){ onGround=false; coyote=0.08; }
     }
@@ -963,9 +974,26 @@ function draw(){
     var x0=intervals[ii][0]-camX, x1=intervals[ii][1]-camX;
     if(x1<0||x0>W) continue;
     ctx.fillStyle=th.ground; ctx.fillRect(x0,GROUND_Y,x1-x0,H-GROUND_Y);
+    // subtle depth: ground darkens toward the bottom (works with every theme color)
+    var gg=ctx.createLinearGradient(0,GROUND_Y,0,H);
+    gg.addColorStop(0,"rgba(0,0,0,0)"); gg.addColorStop(1,"rgba(0,0,0,0.35)");
+    ctx.fillStyle=gg; ctx.fillRect(x0,GROUND_Y,x1-x0,H-GROUND_Y);
     ctx.fillStyle=th.groundTop; ctx.fillRect(x0,GROUND_Y,x1-x0,6);
-    ctx.strokeStyle="rgba(255,255,255,.14)"; ctx.lineWidth=1;
-    for(var gx=Math.floor(x0/40)*40; gx<x1; gx+=40){ ctx.beginPath(); ctx.moveTo(gx,GROUND_Y+6); ctx.lineTo(gx,H); ctx.stroke(); }
+    // deterministic pebbles, world-anchored via slotRand so they never pop while scrolling
+    for(var pslot=Math.floor((x0+camX)/36); pslot*36<x1+camX; pslot++){
+      var pw=pslot*36+slotRand(pslot,22)-camX, ph2=GROUND_Y+14+slotRand(pslot+7,52);
+      if(pw<x0||pw>x1) continue;
+      ctx.fillStyle=(slotRand(pslot+3,2)===0)?"rgba(255,255,255,.16)":"rgba(0,0,0,.20)";
+      ctx.fillRect(pw,ph2,3,3);
+    }
+  }
+  // pit floors: every gap gets a visible bottom for its spikes to sit on
+  var gapsD=lv?lv.gaps:[];
+  for(var gi2=0; gi2<gapsD.length; gi2++){
+    var g2=gapsD[gi2], gx0=g2.x-camX, gx1=g2.x+g2.w-camX;
+    if(gx1<0||gx0>W) continue;
+    ctx.fillStyle=th.ground; ctx.fillRect(gx0,PIT_FLOOR_Y,gx1-gx0,H-PIT_FLOOR_Y);
+    ctx.fillStyle=th.groundTop; ctx.fillRect(gx0,PIT_FLOOR_Y,gx1-gx0,5);
   }
   if(!lv){ return; }
   // finish line (300px before track end; text centered on the line so it can never run off the right edge)
@@ -1036,7 +1064,7 @@ function draw(){
     // feet
     ctx.fillStyle="#f97316";
     var step=Math.floor(px/18)%2;
-    ctx.fillRect(-10,17,7,5); ctx.fillRect(4+(step?2:0),17,7,5);
+    ctx.fillRect(-10+(step?0:2),17,7,5); ctx.fillRect(4+(step?2:0),17,7,5);
   } else if(skinId==="cow"){
     drawHighlandCow(ctx);
   } else if(skinId==="turtle"){
