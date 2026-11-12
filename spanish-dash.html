@@ -77,7 +77,7 @@ html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-a
 .speakOpt .speakNote{font-size:.85rem;color:#6b7280}
 .skinSec{margin:10px 0}
 .skinLabel{font-weight:800;color:#c2410c;margin-bottom:6px}
-#skinGrid{display:grid;grid-template-columns:repeat(9,1fr);gap:6px}
+#skinGrid{display:grid;grid-template-columns:repeat(10,1fr);gap:6px}
 .skinBtn{background:#fff;border:2px solid #e5e7eb;border-radius:10px;padding:3px 1px;cursor:pointer;min-width:0}
 .skinBtn:hover{background:#ffedd5}
 .skinBtn.sel{border-color:#f97316;background:#ffedd5;box-shadow:0 0 0 2px #f97316}
@@ -675,6 +675,7 @@ var SKINS=[
   {id:"present",name:"Present"},
   {id:"cow",name:"Highland cow",custom:"cow"},
   {id:"turtle",name:"Sea turtle",custom:"turtle"},
+  {id:"sugarskull",name:"Sugar skull"},
   {id:"doughnut",name:"Doughnut"},
   {id:"whale",name:"Whale"},
   {id:"unicorn",name:"Unicorn"},
@@ -682,7 +683,9 @@ var SKINS=[
   {id:"alien",name:"Alien"},
   {id:"frog",name:"Frog"},
   {id:"fox",name:"Fox"},
-  {id:"panda",name:"Panda"}
+  {id:"panda",name:"Panda"},
+  {id:"marigold",name:"Marigold"},
+  {id:"monarch",name:"Monarch"}
 ];
 
 /* Custom player sprites (drawn in the 34x34 box centred at 0,0; caller handles translate/rotate).
@@ -715,25 +718,45 @@ function drawHighlandCow(ctx){
 }
 function drawSeaTurtle(ctx){
   suitBase(ctx,"#43a047","#2e7d32");
-  // flippers (darker green, along the bottom edge)
+  // side flippers (darker green, peeking out at the sides)
   ctx.fillStyle="#2e7d32";
-  ctx.beginPath(); ctx.ellipse(-11,13,5,3,-0.5,0,Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(11,13,5,3,0.5,0,Math.PI*2); ctx.fill();
-  // domed shell (darker green) in the centre
+  ctx.beginPath(); ctx.ellipse(-14,6,3.5,4.5,0.3,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(14,6,3.5,4.5,-0.3,0,Math.PI*2); ctx.fill();
+  // bottom flippers (darker green, along the bottom edge)
+  ctx.beginPath(); ctx.ellipse(-10,14,5,2.8,-0.4,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(10,14,5,2.8,0.4,0,Math.PI*2); ctx.fill();
+  // big domed shell (darker green) filling the lower two-thirds
   ctx.fillStyle="#388e3c";
-  ctx.beginPath(); ctx.ellipse(0,3,12,10,0,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0,5,13,10,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle="#1b5e20"; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.ellipse(0,5,13,10,0,0,Math.PI*2); ctx.stroke();
+  // shell highlight (lighter green arc on the upper-left of the dome)
+  ctx.strokeStyle="#66bb6a"; ctx.lineWidth=2; ctx.lineCap="round";
+  ctx.beginPath(); ctx.arc(-3,4,9,Math.PI*0.9,Math.PI*1.4); ctx.stroke();
+  // shell scutes: central hexagon + vertical and horizontal seams
   ctx.strokeStyle="#1b5e20"; ctx.lineWidth=1.2;
-  ctx.beginPath(); ctx.ellipse(0,3,12,10,0,0,Math.PI*2); ctx.stroke();
-  // shell scute lines
-  ctx.strokeStyle="#1b5e20"; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(0,-7); ctx.lineTo(0,13); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(-12,3); ctx.lineTo(12,3); ctx.stroke();
-  // head (lighter green) at the top-right, clearly out of the shell
-  ctx.fillStyle="#7cb342";
-  ctx.beginPath(); ctx.arc(12,-10,4.5,0,Math.PI*2); ctx.fill();
-  // eye on the head
+  ctx.beginPath();
+  for(var sc=0;sc<6;sc++){
+    var a=sc*Math.PI/3-Math.PI/2;
+    var hx=5*Math.cos(a), hy=5+5*Math.sin(a);
+    if(sc===0) ctx.moveTo(hx,hy); else ctx.lineTo(hx,hy);
+  }
+  ctx.closePath(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,15); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-13,5); ctx.lineTo(13,5); ctx.stroke();
+  // big head (lighter green) at the top, clearly out of the shell
+  ctx.fillStyle="#8bc34a";
+  ctx.beginPath(); ctx.arc(0,-11,6,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle="#558b2f"; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.arc(0,-11,6,0,Math.PI*2); ctx.stroke();
+  // eyes (big, on the head) + glints
   ctx.fillStyle="#1f2937";
-  ctx.beginPath(); ctx.arc(13.5,-11,1.3,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(-2.5,-12,2,0,Math.PI*2); ctx.arc(2.5,-12,2,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle="#ffffff";
+  ctx.beginPath(); ctx.arc(-1.8,-12.8,0.8,0,Math.PI*2); ctx.arc(3.2,-12.8,0.8,0,Math.PI*2); ctx.fill();
+  // smile on the head
+  ctx.strokeStyle="#1f2937"; ctx.lineWidth=1.4; ctx.lineCap="round";
+  ctx.beginPath(); ctx.arc(0,-10,3.5,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
 }
 /* Base of every square suit: a filled 34x34 square with a darker border. */
 function suitBase(ctx,fill,border){
@@ -764,30 +787,52 @@ function drawSkinSuit(ctx,id){
     break;
   case "tree":
     suitBase(ctx,"#166534","#14532d");
-    // tree (lighter green triangle) + trunk + ornaments + star
+    // cheerful Christmas-tree character: green triangle body, star on top,
+    // big eyes + smile on the foliage, ornaments dotted around
     ctx.fillStyle="#22c55e";
-    ctx.beginPath(); ctx.moveTo(0,-15); ctx.lineTo(-11,9); ctx.lineTo(11,9); ctx.closePath(); ctx.fill();
-    ctx.fillStyle="#78350f"; ctx.fillRect(-3,9,6,8);
+    ctx.beginPath(); ctx.moveTo(0,-15); ctx.lineTo(-12,10); ctx.lineTo(12,10); ctx.closePath(); ctx.fill();
+    // trunk
+    ctx.fillStyle="#78350f"; ctx.fillRect(-3,10,6,7);
+    // gold star on top
     ctx.fillStyle="#fbbf24";
-    ctx.beginPath(); ctx.arc(0,-15,2.2,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle="#f87171"; ctx.beginPath(); ctx.arc(-5,-2,1.8,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle="#60a5fa"; ctx.beginPath(); ctx.arc(5,2,1.8,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle="#fbbf24"; ctx.beginPath(); ctx.arc(0,6,1.8,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0,-15,2.4,0,Math.PI*2); ctx.fill();
+    // eyes (big, on the foliage) + glints
+    ctx.fillStyle="#111827";
+    ctx.beginPath(); ctx.arc(-3.5,-1,2.5,0,Math.PI*2); ctx.arc(3.5,-1,2.5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.arc(-2.7,-1.8,0.9,0,Math.PI*2); ctx.arc(4.3,-1.8,0.9,0,Math.PI*2); ctx.fill();
+    // smile
+    ctx.strokeStyle="#111827"; ctx.lineWidth=1.8; ctx.lineCap="round";
+    ctx.beginPath(); ctx.arc(0,3,5,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
+    // ornaments (red/blue/gold dots on the foliage)
+    ctx.fillStyle="#f87171"; ctx.beginPath(); ctx.arc(-8,5,1.8,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#60a5fa"; ctx.beginPath(); ctx.arc(8,5,1.8,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#fbbf24"; ctx.beginPath(); ctx.arc(-3,-6,1.6,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#f87171"; ctx.beginPath(); ctx.arc(3,-6,1.6,0,Math.PI*2); ctx.fill();
     break;
   case "snowman":
     suitBase(ctx,"#f8fafc","#94a3b8");
-    // top hat
+    // top hat + red band
     ctx.fillStyle="#111827";
     ctx.fillRect(-8,-17,16,7);
     ctx.fillRect(-11,-11,22,3);
+    ctx.fillStyle="#dc2626"; ctx.fillRect(-8,-12,16,2);
     // coal eyes
-    ctx.beginPath(); ctx.arc(-5,0,2,0,Math.PI*2); ctx.arc(5,0,2,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#111827";
+    ctx.beginPath(); ctx.arc(-5,0,2.2,0,Math.PI*2); ctx.arc(5,0,2.2,0,Math.PI*2); ctx.fill();
     // carrot nose (orange triangle, pointing right)
     ctx.fillStyle="#f97316";
-    ctx.beginPath(); ctx.moveTo(1,3); ctx.lineTo(13,5); ctx.lineTo(1,7); ctx.closePath(); ctx.fill();
-    // buttons
+    ctx.beginPath(); ctx.moveTo(1,3); ctx.lineTo(14,5); ctx.lineTo(1,7); ctx.closePath(); ctx.fill();
+    // smile (coal dots curving under the nose)
     ctx.fillStyle="#111827";
-    ctx.beginPath(); ctx.arc(0,11,1.6,0,Math.PI*2); ctx.arc(0,15,1.6,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(-6,9,1.2,0,Math.PI*2); ctx.arc(-2,10.5,1.2,0,Math.PI*2); ctx.arc(2,10.5,1.2,0,Math.PI*2); ctx.arc(6,9,1.2,0,Math.PI*2); ctx.fill();
+    // rosy cheeks
+    ctx.fillStyle="#fda4af";
+    ctx.beginPath(); ctx.arc(-9,5,2,0,Math.PI*2); ctx.arc(9,5,2,0,Math.PI*2); ctx.fill();
+    // red scarf band + knot
+    ctx.fillStyle="#dc2626";
+    ctx.fillRect(-17,12,34,4);
+    ctx.beginPath(); ctx.arc(10,14,2.5,0,Math.PI*2); ctx.fill();
     break;
   case "snowflake":
     suitBase(ctx,"#bae6fd","#0284c7");
@@ -801,105 +846,220 @@ function drawSkinSuit(ctx,id){
     ctx.fillStyle="#ffffff";
     var tips=[[0,-13],[0,13],[-11,-7],[11,7],[-11,7],[11,-7]];
     for(var t=0;t<tips.length;t++){ ctx.beginPath(); ctx.arc(tips[t][0],tips[t][1],2,0,Math.PI*2); ctx.fill(); }
+    // friendly face in the centre (white circle so the face reads on the blue)
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.arc(0,0,6.5,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#0284c7"; ctx.lineWidth=1.2;
+    ctx.beginPath(); ctx.arc(0,0,6.5,0,Math.PI*2); ctx.stroke();
+    // eyes + smile
+    ctx.fillStyle="#0c4a6e";
+    ctx.beginPath(); ctx.arc(-2.5,-1,1.6,0,Math.PI*2); ctx.arc(2.5,-1,1.6,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#0c4a6e"; ctx.lineWidth=1.4; ctx.lineCap="round";
+    ctx.beginPath(); ctx.arc(0,1.5,3,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
     break;
   case "reindeer":
     suitBase(ctx,"#92400e","#78350f");
-    // antlers (darker brown, branching, at the top corners)
+    // antlers (branching, at the top corners)
     ctx.strokeStyle="#78350f"; ctx.lineWidth=2.5; ctx.lineCap="round";
-    ctx.beginPath(); ctx.moveTo(-10,-12); ctx.lineTo(-14,-17); ctx.moveTo(-12,-14); ctx.lineTo(-16,-15); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(10,-12); ctx.lineTo(14,-17); ctx.moveTo(12,-14); ctx.lineTo(16,-15); ctx.stroke();
-    // eyes
+    ctx.beginPath();
+    ctx.moveTo(-10,-11); ctx.lineTo(-15,-17);
+    ctx.moveTo(-12,-13); ctx.lineTo(-17,-14);
+    ctx.moveTo(-13,-14); ctx.lineTo(-16,-17);
+    ctx.moveTo(10,-11); ctx.lineTo(15,-17);
+    ctx.moveTo(12,-13); ctx.lineTo(17,-14);
+    ctx.moveTo(13,-14); ctx.lineTo(16,-17);
+    ctx.stroke();
+    // eyes (big, with glints)
     ctx.fillStyle="#1f2937";
-    ctx.beginPath(); ctx.arc(-6,-1,2.2,0,Math.PI*2); ctx.arc(6,-1,2.2,0,Math.PI*2); ctx.fill();
-    // tan muzzle + red nose
+    ctx.beginPath(); ctx.arc(-6,-1,2.4,0,Math.PI*2); ctx.arc(6,-1,2.4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.arc(-5.2,-1.8,0.9,0,Math.PI*2); ctx.arc(6.8,-1.8,0.9,0,Math.PI*2); ctx.fill();
+    // tan muzzle + red nose (with a glint) + smile under the nose
     ctx.fillStyle="#d9a066";
     ctx.beginPath(); ctx.ellipse(0,9,8,5,0,0,Math.PI*2); ctx.fill();
     ctx.fillStyle="#dc2626";
-    ctx.beginPath(); ctx.arc(0,8,3.2,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0,7,3.4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.arc(-1,6,1,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#3f2d20"; ctx.lineWidth=1.4; ctx.lineCap="round";
+    ctx.beginPath(); ctx.arc(0,8,4.5,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
     break;
   case "elf":
     suitBase(ctx,"#16a34a","#166534");
-    // pointy hat (darker green, flops to the right) + gold pom
-    ctx.fillStyle="#15803d";
-    ctx.beginPath(); ctx.moveTo(-13,-8); ctx.lineTo(12,-8); ctx.lineTo(14,-15); ctx.closePath(); ctx.fill();
-    ctx.fillStyle="#fbbf24";
-    ctx.beginPath(); ctx.arc(14,-15,1.8,0,Math.PI*2); ctx.fill();
     // pointy ears (skin tone, sticking out the sides)
     ctx.fillStyle="#fcd9b8";
-    ctx.beginPath(); ctx.moveTo(-17,-2); ctx.lineTo(-12,-6); ctx.lineTo(-12,2); ctx.closePath(); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(17,-2); ctx.lineTo(12,-6); ctx.lineTo(12,2); ctx.closePath(); ctx.fill();
-    // eyes + smile
+    ctx.beginPath(); ctx.moveTo(-17,-2); ctx.lineTo(-11,-7); ctx.lineTo(-11,3); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(17,-2); ctx.lineTo(11,-7); ctx.lineTo(11,3); ctx.closePath(); ctx.fill();
+    // face (skin-tone circle in the centre, so the elf reads as a character)
+    ctx.fillStyle="#fcd9b8";
+    ctx.beginPath(); ctx.arc(0,4,9,0,Math.PI*2); ctx.fill();
+    // pointy hat (darker green, flops to the right) + white trim + gold pom
+    ctx.fillStyle="#15803d";
+    ctx.beginPath(); ctx.moveTo(-11,-3); ctx.lineTo(11,-3); ctx.lineTo(15,-16); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#f8fafc";
+    ctx.fillRect(-11,-5,22,3);
+    ctx.fillStyle="#fbbf24";
+    ctx.beginPath(); ctx.arc(15,-16,2,0,Math.PI*2); ctx.fill();
+    // eyes (with glints) + smile + rosy cheeks
     ctx.fillStyle="#1f2937";
-    ctx.beginPath(); ctx.arc(-5,2,2,0,Math.PI*2); ctx.arc(5,2,2,0,Math.PI*2); ctx.fill();
-    ctx.strokeStyle="#1f2937"; ctx.lineWidth=1.5; ctx.lineCap="round";
+    ctx.beginPath(); ctx.arc(-4,3,2.2,0,Math.PI*2); ctx.arc(4,3,2.2,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.arc(-3.2,2.2,0.8,0,Math.PI*2); ctx.arc(4.8,2.2,0.8,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#1f2937"; ctx.lineWidth=1.6; ctx.lineCap="round";
     ctx.beginPath(); ctx.arc(0,7,5,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
+    ctx.fillStyle="#fda4af";
+    ctx.beginPath(); ctx.arc(-7,7,1.8,0,Math.PI*2); ctx.arc(7,7,1.8,0,Math.PI*2); ctx.fill();
     break;
   case "present":
     suitBase(ctx,"#dc2626","#991b1b");
-    // gold ribbon (vertical + horizontal bands) + bow at the top centre
+    // gold ribbon: vertical band down the middle, horizontal band low
     ctx.fillStyle="#fbbf24";
     ctx.fillRect(-3,-17,6,34);
-    ctx.fillRect(-17,-3,34,6);
+    ctx.fillRect(-17,9,34,5);
+    // bow at the top centre (two loops + knot)
     ctx.beginPath(); ctx.moveTo(0,-13); ctx.lineTo(-10,-16); ctx.lineTo(-10,-10); ctx.closePath(); ctx.fill();
     ctx.beginPath(); ctx.moveTo(0,-13); ctx.lineTo(10,-16); ctx.lineTo(10,-10); ctx.closePath(); ctx.fill();
     ctx.beginPath(); ctx.arc(0,-13,2.5,0,Math.PI*2); ctx.fill();
+    // face: big eyes + smile on the red, above the low ribbon
+    ctx.fillStyle="#111827";
+    ctx.beginPath(); ctx.arc(-6,-1,2.4,0,Math.PI*2); ctx.arc(6,-1,2.4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.arc(-5.2,-1.8,0.9,0,Math.PI*2); ctx.arc(6.8,-1.8,0.9,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#111827"; ctx.lineWidth=1.8; ctx.lineCap="round";
+    ctx.beginPath(); ctx.arc(0,2,4.5,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
+    // rosy cheeks
+    ctx.fillStyle="#fda4af";
+    ctx.beginPath(); ctx.arc(-10,3,2,0,Math.PI*2); ctx.arc(10,3,2,0,Math.PI*2); ctx.fill();
+    break;
+  case "sugarskull":
+    suitBase(ctx,"#7e22ce","#581c87");
+    // white skull: round cranium + jaw with rounded bottom corners
+    ctx.fillStyle="#fafafa";
+    ctx.beginPath(); ctx.arc(0,-3,10.5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-6,3); ctx.lineTo(6,3); ctx.lineTo(6,9);
+    ctx.quadraticCurveTo(6,13,2,13); ctx.lineTo(-2,13);
+    ctx.quadraticCurveTo(-6,13,-6,9); ctx.closePath(); ctx.fill();
+    // dark eye sockets (with a tiny glint in each)
+    ctx.fillStyle="#1e1b4b";
+    ctx.beginPath(); ctx.arc(-4.5,-4,3.2,0,Math.PI*2); ctx.arc(4.5,-4,3.2,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.arc(-3.7,-4.8,0.8,0,Math.PI*2); ctx.arc(5.3,-4.8,0.8,0,Math.PI*2); ctx.fill();
+    // little flower on the forehead (pink petals + yellow centre)
+    ctx.fillStyle="#ec4899";
+    ctx.beginPath(); ctx.arc(0,-11.5,1.8,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(-2.5,-10,1.2,0,Math.PI*2); ctx.arc(2.5,-10,1.2,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#fbbf24";
+    ctx.beginPath(); ctx.arc(0,-11.5,0.9,0,Math.PI*2); ctx.fill();
+    // upside-down heart nose (small dark triangle)
+    ctx.fillStyle="#1e1b4b";
+    ctx.beginPath(); ctx.moveTo(-2,0); ctx.lineTo(2,0); ctx.lineTo(0,3); ctx.closePath(); ctx.fill();
+    // stitched smile (line + vertical ticks)
+    ctx.strokeStyle="#1e1b4b"; ctx.lineWidth=1.4; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(-5,8); ctx.lineTo(5,8); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-3,6.5); ctx.lineTo(-3,9.5);
+    ctx.moveTo(0,6.5); ctx.lineTo(0,9.5);
+    ctx.moveTo(3,6.5); ctx.lineTo(3,9.5);
+    ctx.stroke();
+    // colourful cheek dots (orange + teal)
+    ctx.fillStyle="#f97316";
+    ctx.beginPath(); ctx.arc(-8,3,1.5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#2dd4bf";
+    ctx.beginPath(); ctx.arc(8,3,1.5,0,Math.PI*2); ctx.fill();
     break;
   case "doughnut":
     suitBase(ctx,"#e0a458","#b45309");
-    // pink frosting ring + hole + sprinkles
+    // pink frosting ring + darker pink drips at the edge
     ctx.fillStyle="#f472b6";
     ctx.beginPath(); ctx.arc(0,0,12,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle="#e0a458";
-    ctx.beginPath(); ctx.arc(0,0,4.5,0,Math.PI*2); ctx.fill();
-    var spr=[[-7,-6,"#ffffff"],[6,-7,"#60a5fa"],[-8,3,"#fbbf24"],[8,4,"#4ade80"],[0,-10,"#ffffff"],[-3,9,"#60a5fa"],[4,9,"#fbbf24"]];
+    ctx.fillStyle="#ec4899";
+    ctx.beginPath(); ctx.arc(-9,6,2.2,0,Math.PI*2); ctx.arc(9,6,2.2,0,Math.PI*2); ctx.arc(0,-11,2.2,0,Math.PI*2); ctx.fill();
+    // hole = open mouth (dark brown)
+    ctx.fillStyle="#b45309";
+    ctx.beginPath(); ctx.arc(0,2,4.5,0,Math.PI*2); ctx.fill();
+    // eyes (on the frosting, above the mouth) + glints
+    ctx.fillStyle="#1f2937";
+    ctx.beginPath(); ctx.arc(-6,-5,2.2,0,Math.PI*2); ctx.arc(6,-5,2.2,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.arc(-5.2,-5.8,0.8,0,Math.PI*2); ctx.arc(6.8,-5.8,0.8,0,Math.PI*2); ctx.fill();
+    // sprinkles on the frosting ring
+    var spr=[[-9,-7,"#ffffff"],[8,-8,"#60a5fa"],[-10,1,"#fbbf24"],[10,2,"#4ade80"],[-4,-10,"#ffffff"],[4,10,"#60a5fa"],[-3,10,"#fbbf24"]];
     ctx.lineWidth=1.6; ctx.lineCap="round";
     for(var s=0;s<spr.length;s++){ ctx.strokeStyle=spr[s][2]; ctx.beginPath(); ctx.moveTo(spr[s][0]-1.5,spr[s][1]); ctx.lineTo(spr[s][0]+1.5,spr[s][1]); ctx.stroke(); }
     break;
   case "whale":
     suitBase(ctx,"#3b82f6","#1d4ed8");
+    // tail fluke (darker blue, at the left edge)
+    ctx.fillStyle="#1d4ed8";
+    ctx.beginPath(); ctx.moveTo(-14,-4); ctx.lineTo(-17,-10); ctx.lineTo(-17,-1); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-14,4); ctx.lineTo(-17,10); ctx.lineTo(-17,1); ctx.closePath(); ctx.fill();
     // belly (lighter blue ellipse at the bottom)
     ctx.fillStyle="#93c5fd";
     ctx.beginPath(); ctx.ellipse(0,11,12,5.5,0,0,Math.PI*2); ctx.fill();
-    // eye + smile
+    // eyes (two, friendly) + glints
     ctx.fillStyle="#1f2937";
-    ctx.beginPath(); ctx.arc(6,-3,2.5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(2,-3,2.5,0,Math.PI*2); ctx.arc(11,-3,2.5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.arc(2.8,-3.8,0.9,0,Math.PI*2); ctx.arc(11.8,-3.8,0.9,0,Math.PI*2); ctx.fill();
+    // big smile
     ctx.strokeStyle="#1f2937"; ctx.lineWidth=1.8; ctx.lineCap="round";
-    ctx.beginPath(); ctx.arc(0,2,9,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
-    // spout (three short spray lines fanning up from the top)
+    ctx.beginPath(); ctx.arc(4,2,8,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
+    // pectoral fin (small, on the belly)
+    ctx.fillStyle="#1d4ed8";
+    ctx.beginPath(); ctx.ellipse(-6,8,4,2.2,-0.5,0,Math.PI*2); ctx.fill();
+    // spout (three spray lines + droplets)
     ctx.strokeStyle="#dbeafe"; ctx.lineWidth=2;
     ctx.beginPath();
-    ctx.moveTo(0,-14); ctx.lineTo(-4,-17);
-    ctx.moveTo(0,-14); ctx.lineTo(0,-17);
-    ctx.moveTo(0,-14); ctx.lineTo(4,-17);
+    ctx.moveTo(2,-13); ctx.lineTo(-1,-16);
+    ctx.moveTo(2,-13); ctx.lineTo(2,-16);
+    ctx.moveTo(2,-13); ctx.lineTo(5,-16);
     ctx.stroke();
+    ctx.fillStyle="#dbeafe";
+    ctx.beginPath(); ctx.arc(-1,-15,1.3,0,Math.PI*2); ctx.arc(2,-16,1.3,0,Math.PI*2); ctx.arc(5,-15,1.3,0,Math.PI*2); ctx.fill();
     break;
   case "unicorn":
     suitBase(ctx,"#fdf2f8","#db2777");
-    // gold horn (triangle at the top centre)
-    ctx.fillStyle="#fbbf24";
-    ctx.beginPath(); ctx.moveTo(-3,-11); ctx.lineTo(3,-11); ctx.lineTo(0,-17); ctx.closePath(); ctx.fill();
-    // pink mane (band along the left edge + tuft at the top)
+    // pink mane (both sides + top tufts)
     ctx.fillStyle="#f472b6";
-    ctx.beginPath(); ctx.ellipse(-12,-4,4.5,9,0,0,Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(-6,-13,4,0,Math.PI*2); ctx.fill();
-    // eyes
+    ctx.beginPath(); ctx.ellipse(-12,-2,4.5,10,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(12,-2,4.5,10,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(-5,-13,4.5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(5,-13,4.5,0,Math.PI*2); ctx.fill();
+    // gold horn (striped triangle at the top centre)
+    ctx.fillStyle="#fbbf24";
+    ctx.beginPath(); ctx.moveTo(-3,-10); ctx.lineTo(3,-10); ctx.lineTo(0,-17); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle="#d97706"; ctx.lineWidth=1.2;
+    ctx.beginPath(); ctx.moveTo(-1.5,-13); ctx.lineTo(1.5,-13); ctx.stroke();
+    // eyes (big, with glints)
     ctx.fillStyle="#1f2937";
-    ctx.beginPath(); ctx.arc(-4,2,2,0,Math.PI*2); ctx.arc(6,2,2,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(-4,3,2.4,0,Math.PI*2); ctx.arc(6,3,2.4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.arc(-3.2,2.2,0.9,0,Math.PI*2); ctx.arc(6.8,2.2,0.9,0,Math.PI*2); ctx.fill();
+    // smile + rosy cheeks
+    ctx.strokeStyle="#1f2937"; ctx.lineWidth=1.6; ctx.lineCap="round";
+    ctx.beginPath(); ctx.arc(1,7,5,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
+    ctx.fillStyle="#f9a8d4";
+    ctx.beginPath(); ctx.arc(-8,8,2,0,Math.PI*2); ctx.arc(8,8,2,0,Math.PI*2); ctx.fill();
     break;
   case "flower":
     suitBase(ctx,"#f9a8d4","#db2777");
     // white petals (6, arranged in a ring)
     ctx.fillStyle="#ffffff";
     for(var p=0;p<6;p++){
-      ctx.save(); ctx.translate(0,0); ctx.rotate(p*Math.PI/3);
+      ctx.save(); ctx.translate(0,-1); ctx.rotate(p*Math.PI/3);
       ctx.beginPath(); ctx.ellipse(0,-9,4,6,0,0,Math.PI*2); ctx.fill();
       ctx.restore();
     }
-    // yellow centre
+    // yellow centre + face
     ctx.fillStyle="#fbbf24";
-    ctx.beginPath(); ctx.arc(0,0,5.5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0,-1,5.5,0,Math.PI*2); ctx.fill();
     ctx.strokeStyle="#d97706"; ctx.lineWidth=1.2;
-    ctx.beginPath(); ctx.arc(0,0,5.5,0,Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0,-1,5.5,0,Math.PI*2); ctx.stroke();
+    ctx.fillStyle="#1f2937";
+    ctx.beginPath(); ctx.arc(-2,-2,1.5,0,Math.PI*2); ctx.arc(2,-2,1.5,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#1f2937"; ctx.lineWidth=1.3; ctx.lineCap="round";
+    ctx.beginPath(); ctx.arc(0,0,2.8,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
     break;
   case "alien":
     suitBase(ctx,"#4ade80","#16a34a");
@@ -908,27 +1068,35 @@ function drawSkinSuit(ctx,id){
     ctx.beginPath(); ctx.moveTo(-6,-11); ctx.lineTo(-8,-15); ctx.moveTo(6,-11); ctx.lineTo(8,-15); ctx.stroke();
     ctx.fillStyle="#16a34a";
     ctx.beginPath(); ctx.arc(-8,-15,1.5,0,Math.PI*2); ctx.arc(8,-15,1.5,0,Math.PI*2); ctx.fill();
-    // large black slanted eyes
+    // large black slanted eyes (with white glints)
     ctx.fillStyle="#1f2937";
     ctx.save(); ctx.translate(-6,0); ctx.rotate(-0.35); ctx.beginPath(); ctx.ellipse(0,0,4,6.5,0,0,Math.PI*2); ctx.fill(); ctx.restore();
     ctx.save(); ctx.translate(6,0); ctx.rotate(0.35); ctx.beginPath(); ctx.ellipse(0,0,4,6.5,0,0,Math.PI*2); ctx.fill(); ctx.restore();
-    // tiny mouth
-    ctx.strokeStyle="#1f2937"; ctx.lineWidth=1.5; ctx.lineCap="round";
-    ctx.beginPath(); ctx.moveTo(-2,10); ctx.lineTo(2,10); ctx.stroke();
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.arc(-7,-2,1.2,0,Math.PI*2); ctx.arc(5,-2,1.2,0,Math.PI*2); ctx.fill();
+    // smile + rosy cheeks
+    ctx.strokeStyle="#1f2937"; ctx.lineWidth=1.6; ctx.lineCap="round";
+    ctx.beginPath(); ctx.arc(0,7,5,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
+    ctx.fillStyle="#16a34a";
+    ctx.beginPath(); ctx.arc(-11,7,1.8,0,Math.PI*2); ctx.arc(11,7,1.8,0,Math.PI*2); ctx.fill();
     break;
   case "frog":
     suitBase(ctx,"#22c55e","#15803d");
-    // big bump eyes (white circles on top, with black pupils)
+    // big bump eyes (white circles on top, with black pupils + glints)
     ctx.fillStyle="#ffffff";
-    ctx.beginPath(); ctx.arc(-7,-10,5,0,Math.PI*2); ctx.arc(7,-10,5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(-7,-10,5.5,0,Math.PI*2); ctx.arc(7,-10,5.5,0,Math.PI*2); ctx.fill();
     ctx.fillStyle="#1f2937";
-    ctx.beginPath(); ctx.arc(-7,-10,2.5,0,Math.PI*2); ctx.arc(7,-10,2.5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(-7,-10,2.8,0,Math.PI*2); ctx.arc(7,-10,2.8,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.arc(-6,-11,1,0,Math.PI*2); ctx.arc(8,-11,1,0,Math.PI*2); ctx.fill();
     // wide smile
     ctx.strokeStyle="#1f2937"; ctx.lineWidth=2; ctx.lineCap="round";
     ctx.beginPath(); ctx.arc(0,2,11,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
-    // nostrils
+    // nostrils + rosy cheeks
     ctx.fillStyle="#1f2937";
     ctx.beginPath(); ctx.arc(-3,4,1,0,Math.PI*2); ctx.arc(3,4,1,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#86efac";
+    ctx.beginPath(); ctx.arc(-12,7,2,0,Math.PI*2); ctx.arc(12,7,2,0,Math.PI*2); ctx.fill();
     break;
   case "fox":
     suitBase(ctx,"#f97316","#c2410c");
@@ -939,14 +1107,19 @@ function drawSkinSuit(ctx,id){
     ctx.fillStyle="#ffffff";
     ctx.beginPath(); ctx.moveTo(-12,-10); ctx.lineTo(-8,-10); ctx.lineTo(-11,-15); ctx.closePath(); ctx.fill();
     ctx.beginPath(); ctx.moveTo(8,-10); ctx.lineTo(12,-10); ctx.lineTo(11,-15); ctx.closePath(); ctx.fill();
-    // eyes
+    // eyes (big, with glints)
     ctx.fillStyle="#1f2937";
-    ctx.beginPath(); ctx.arc(-6,0,2.2,0,Math.PI*2); ctx.arc(6,0,2.2,0,Math.PI*2); ctx.fill();
-    // white muzzle + black nose
+    ctx.beginPath(); ctx.arc(-6,0,2.4,0,Math.PI*2); ctx.arc(6,0,2.4,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.arc(-5.2,-0.8,0.9,0,Math.PI*2); ctx.arc(6.8,-0.8,0.9,0,Math.PI*2); ctx.fill();
+    // white muzzle + black nose + smile (two small curves under the nose)
     ctx.fillStyle="#ffffff";
     ctx.beginPath(); ctx.ellipse(0,9,8,5.5,0,0,Math.PI*2); ctx.fill();
     ctx.fillStyle="#1f2937";
     ctx.beginPath(); ctx.arc(0,6,2.2,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#1f2937"; ctx.lineWidth=1.4; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(0,8); ctx.quadraticCurveTo(0,11,-4,10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,8); ctx.quadraticCurveTo(0,11,4,10); ctx.stroke();
     break;
   case "panda":
     suitBase(ctx,"#f8fafc","#6b7280");
@@ -958,11 +1131,72 @@ function drawSkinSuit(ctx,id){
     ctx.save(); ctx.translate(6,0); ctx.rotate(0.4); ctx.beginPath(); ctx.ellipse(0,0,3.8,5.5,0,0,Math.PI*2); ctx.fill(); ctx.restore();
     ctx.fillStyle="#ffffff";
     ctx.beginPath(); ctx.arc(-5,-1,1.4,0,Math.PI*2); ctx.arc(7,-1,1.4,0,Math.PI*2); ctx.fill();
-    // black nose + mouth
+    // black nose + smile + rosy cheeks
     ctx.fillStyle="#1f2937";
     ctx.beginPath(); ctx.ellipse(0,8,2.5,1.8,0,0,Math.PI*2); ctx.fill();
-    ctx.strokeStyle="#1f2937"; ctx.lineWidth=1.4; ctx.lineCap="round";
-    ctx.beginPath(); ctx.moveTo(0,10); ctx.lineTo(0,12); ctx.stroke();
+    ctx.strokeStyle="#1f2937"; ctx.lineWidth=1.5; ctx.lineCap="round";
+    ctx.beginPath(); ctx.arc(0,8,5,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
+    ctx.fillStyle="#fda4af";
+    ctx.beginPath(); ctx.arc(-10,7,2,0,Math.PI*2); ctx.arc(10,7,2,0,Math.PI*2); ctx.fill();
+    break;
+  case "marigold":
+    suitBase(ctx,"#f97316","#c2410c");
+    // outer petals (8, darker orange) + inner petals (6, golden yellow)
+    ctx.fillStyle="#ea580c";
+    for(var p=0;p<8;p++){
+      ctx.save(); ctx.translate(0,-1); ctx.rotate(p*Math.PI/4);
+      ctx.beginPath(); ctx.ellipse(0,-10,3.5,6,0,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+    ctx.fillStyle="#fbbf24";
+    for(var q=0;q<6;q++){
+      ctx.save(); ctx.translate(0,-1); ctx.rotate(q*Math.PI/3);
+      ctx.beginPath(); ctx.ellipse(0,-7,3,4.5,0,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+    // yellow centre + face
+    ctx.fillStyle="#fde047";
+    ctx.beginPath(); ctx.arc(0,-1,5.5,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#d97706"; ctx.lineWidth=1.2;
+    ctx.beginPath(); ctx.arc(0,-1,5.5,0,Math.PI*2); ctx.stroke();
+    ctx.fillStyle="#1f2937";
+    ctx.beginPath(); ctx.arc(-2,-2,1.5,0,Math.PI*2); ctx.arc(2,-2,1.5,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#1f2937"; ctx.lineWidth=1.3; ctx.lineCap="round";
+    ctx.beginPath(); ctx.arc(0,0,2.8,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
+    break;
+  case "monarch":
+    suitBase(ctx,"#f97316","#c2410c");
+    // black wing frame just inside the border (monarch wings are edged in black)
+    ctx.strokeStyle="#1f2937"; ctx.lineWidth=2.5;
+    ctx.strokeRect(-15,-15,30,30);
+    // black veins radiating from the body to the wing corners and edges
+    ctx.strokeStyle="#1f2937"; ctx.lineWidth=1.5; ctx.lineCap="round";
+    ctx.beginPath();
+    ctx.moveTo(-4,-8); ctx.lineTo(-14,-14);
+    ctx.moveTo(-4,8); ctx.lineTo(-14,14);
+    ctx.moveTo(4,-8); ctx.lineTo(14,-14);
+    ctx.moveTo(4,8); ctx.lineTo(14,14);
+    ctx.moveTo(-4,0); ctx.lineTo(-14,0);
+    ctx.moveTo(4,0); ctx.lineTo(14,0);
+    ctx.stroke();
+    // white dots on the black wing frame (edge midpoints)
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.arc(0,-15,1.3,0,Math.PI*2); ctx.arc(0,15,1.3,0,Math.PI*2); ctx.arc(-15,0,1.3,0,Math.PI*2); ctx.arc(15,0,1.3,0,Math.PI*2); ctx.fill();
+    // black body (vertical ellipse) + head
+    ctx.fillStyle="#1f2937";
+    ctx.beginPath(); ctx.ellipse(0,2,4.5,11,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0,-9,4,0,Math.PI*2); ctx.fill();
+    // antennae (thin lines + dots, curving out from the head)
+    ctx.strokeStyle="#1f2937"; ctx.lineWidth=1.5; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(-2,-12); ctx.lineTo(-6,-15); ctx.moveTo(2,-12); ctx.lineTo(6,-15); ctx.stroke();
+    ctx.beginPath(); ctx.arc(-6,-15,1.2,0,Math.PI*2); ctx.arc(6,-15,1.2,0,Math.PI*2); ctx.fill();
+    // white eyes on the head (with dark pupils) + tiny smile
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.arc(-1.8,-9,1.3,0,Math.PI*2); ctx.arc(1.8,-9,1.3,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#1f2937";
+    ctx.beginPath(); ctx.arc(-1.8,-9,0.6,0,Math.PI*2); ctx.arc(1.8,-9,0.6,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#ffffff"; ctx.lineWidth=1; ctx.lineCap="round";
+    ctx.beginPath(); ctx.arc(0,-7,2,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
     break;
   default:
     // unknown id: plain grey square (skinById already falls back to Pollito,
