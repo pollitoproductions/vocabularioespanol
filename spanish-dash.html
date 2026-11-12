@@ -83,6 +83,11 @@ html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-a
 .skinBtn.sel{border-color:#f97316;background:#ffedd5;box-shadow:0 0 0 2px #f97316}
 .skinBtn .e{font-size:1.2rem;line-height:1.1}
 .skinBtn .n{font-size:.55rem;font-weight:700;color:#1f2937;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.skinBtn{position:relative}
+.skinBtn.locked{opacity:.55;filter:grayscale(.8);cursor:not-allowed}
+.skinBtn.locked:hover{background:#fff}
+.skinBtn .lock{position:absolute;top:1px;right:2px;font-size:.7rem;line-height:1;z-index:1}
+.unlockNote{font-weight:700;color:#15803d;background:#dcfce7;border:1px solid #86efac;border-radius:8px;padding:6px 8px;margin:6px 0}
 #quizHearRow{margin:4px 0}
 .homeLink{display:inline-block;margin-top:6px;color:#2563eb;font-weight:700}
 .small{font-size:.85rem;color:#6b7280}
@@ -171,6 +176,7 @@ html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-a
         <div class="skinSec">
           <div class="skinLabel">Choose your character:</div>
           <div id="skinGrid"></div>
+          <div id="skinLockHint" class="small"></div>
         </div>
         <label class="speakOpt"><input type="checkbox" id="chkSpeaking"> 🎤 <b>Speaking activities</b> — also say each answer out loud <span class="speakNote">(needs a microphone; off by default)</span></label>
         <p style="margin:4px 0"><button class="btn resetBtn" id="btnReset" type="button">Reset progress</button></p>
@@ -222,6 +228,7 @@ html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-a
         <p id="winSub">You finished Level 1!</p>
         <div id="winWords"></div>
         <p id="winBest"></p>
+        <p id="winUnlock" class="unlockNote hidden">🎉 You beat the whole game — all 10 levels! New skins unlocked!</p>
         <button class="btn" id="btnNext" type="button">Next level</button>
         <button class="btn alt" id="btnReplay" type="button">Replay</button>
         <button class="btn alt" id="btnWinMenu" type="button">Level select</button>
@@ -655,50 +662,50 @@ function saveBest(){
 
 /* ================= character skins ================= */
 /* The player sprite. Pollito (chicken) is the default; students pick their own. */
+/* Skins are square "suits": every kept skin is drawn as a 34x34 square (the same
+   size as the Pollito suit) with a face/design on it — never a bare emoji. The
+   rocket was removed (tall/thin, cannot be a square). */
 var SKINS=[
-  {id:"pollito",name:"Pollito",emoji:"🐔"},
-  {id:"tree",name:"Christmas tree",emoji:"🎄"},
-  {id:"snowman",name:"Snowman",emoji:"⛄"},
-  {id:"snowflake",name:"Snowflake",emoji:"❄️"},
-  {id:"reindeer",name:"Reindeer",emoji:"🦌"},
-  {id:"elf",name:"Elf",emoji:"🧝"},
-  {id:"present",name:"Present",emoji:"🎁"},
-  {id:"doughnut",name:"Doughnut",emoji:"🍩"},
-  {id:"whale",name:"Whale",emoji:"🐳"},
-  {id:"unicorn",name:"Unicorn",emoji:"🦄"},
-  {id:"cow",name:"Highland cow",emoji:"🐮",custom:"cow"},
-  {id:"flower",name:"Flower",emoji:"🌸"},
-  {id:"alien",name:"Alien",emoji:"👽"},
-  {id:"turtle",name:"Sea turtle",emoji:"🐢",custom:"turtle"},
-  {id:"frog",name:"Frog",emoji:"🐸"},
-  {id:"fox",name:"Fox",emoji:"🦊"},
-  {id:"panda",name:"Panda",emoji:"🐼"},
-  {id:"rocket",name:"Rocket",emoji:"🚀"}
+  {id:"pollito",name:"Pollito"},
+  {id:"tree",name:"Christmas tree"},
+  {id:"snowman",name:"Snowman"},
+  {id:"snowflake",name:"Snowflake"},
+  {id:"reindeer",name:"Reindeer"},
+  {id:"elf",name:"Elf"},
+  {id:"present",name:"Present"},
+  {id:"cow",name:"Highland cow",custom:"cow"},
+  {id:"turtle",name:"Sea turtle",custom:"turtle"},
+  {id:"doughnut",name:"Doughnut"},
+  {id:"whale",name:"Whale"},
+  {id:"unicorn",name:"Unicorn"},
+  {id:"flower",name:"Flower"},
+  {id:"alien",name:"Alien"},
+  {id:"frog",name:"Frog"},
+  {id:"fox",name:"Fox"},
+  {id:"panda",name:"Panda"}
 ];
 
 /* Custom player sprites (drawn in the 34x34 box centred at 0,0; caller handles translate/rotate).
    Highland cow: shaggy brown fur + pale horns. Sea turtle: domed shell + head clearly OUT of the shell. */
+/* Custom player sprites, drawn as 34x34 square "suits" centred at 0,0 (caller
+   handles translate/rotate). Highland cow: brown square suit, shaggy fringe,
+   pale horns, tan muzzle. Sea turtle: green square suit, shell with scute
+   lines, head at the top-right. */
 function drawHighlandCow(ctx){
-  // horns (pale, curved, behind the fur)
-  ctx.strokeStyle="#f3e5c8"; ctx.lineWidth=3.5; ctx.lineCap="round";
-  ctx.beginPath(); ctx.moveTo(-10,-8); ctx.quadraticCurveTo(-18,-11,-19,-16); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(10,-8); ctx.quadraticCurveTo(18,-11,19,-16); ctx.stroke();
-  // shaggy head: jagged reddish-brown fur outline
-  ctx.fillStyle="#8b5a2b";
-  ctx.beginPath();
-  var pts=[[-14,-6],[-16,-1],[-15,5],[-16,10],[-12,14],[-8,16],[-4,14],[0,16],[4,14],[8,16],[12,14],[16,10],[15,5],[16,-1],[14,-6],[10,-10],[5,-12],[0,-13],[-5,-12],[-10,-10]];
-  ctx.moveTo(pts[0][0],pts[0][1]);
-  for(var i=1;i<pts.length;i++) ctx.lineTo(pts[i][0],pts[i][1]);
-  ctx.closePath(); ctx.fill();
+  suitBase(ctx,"#8b5a2b","#5d3a1a");
+  // pale horns (curved, at the top corners, inside the box)
+  ctx.strokeStyle="#f3e5c8"; ctx.lineWidth=3; ctx.lineCap="round";
+  ctx.beginPath(); ctx.moveTo(-11,-12); ctx.quadraticCurveTo(-16,-14,-16,-17); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(11,-12); ctx.quadraticCurveTo(16,-14,16,-17); ctx.stroke();
   // shaggy fringe over the forehead (darker brown, zigzag bottom edge)
   ctx.fillStyle="#6b4423";
   ctx.beginPath();
-  ctx.moveTo(-13,-12); ctx.lineTo(13,-12); ctx.lineTo(11,-2); ctx.lineTo(8,-6); ctx.lineTo(5,-1);
-  ctx.lineTo(2,-6); ctx.lineTo(0,-1); ctx.lineTo(-2,-6); ctx.lineTo(-5,-1); ctx.lineTo(-8,-6); ctx.lineTo(-11,-2);
+  ctx.moveTo(-13,-13); ctx.lineTo(13,-13); ctx.lineTo(11,-3); ctx.lineTo(8,-7); ctx.lineTo(5,-2);
+  ctx.lineTo(2,-7); ctx.lineTo(0,-2); ctx.lineTo(-2,-7); ctx.lineTo(-5,-2); ctx.lineTo(-8,-7); ctx.lineTo(-11,-3);
   ctx.closePath(); ctx.fill();
   // eyes peeking under the fringe
   ctx.fillStyle="#1f2937";
-  ctx.beginPath(); ctx.arc(-6,-2,1.6,0,Math.PI*2); ctx.arc(6,-2,1.6,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(-6,-1,1.8,0,Math.PI*2); ctx.arc(6,-1,1.8,0,Math.PI*2); ctx.fill();
   // broad tan muzzle
   ctx.fillStyle="#d9a066";
   ctx.beginPath(); ctx.ellipse(0,9,8,5.5,0,0,Math.PI*2); ctx.fill();
@@ -707,68 +714,313 @@ function drawHighlandCow(ctx){
   ctx.beginPath(); ctx.ellipse(-3.5,9,1.6,1.2,0,0,Math.PI*2); ctx.ellipse(3.5,9,1.6,1.2,0,0,Math.PI*2); ctx.fill();
 }
 function drawSeaTurtle(ctx){
-  // flippers (darker green, below the shell)
+  suitBase(ctx,"#43a047","#2e7d32");
+  // flippers (darker green, along the bottom edge)
   ctx.fillStyle="#2e7d32";
-  ctx.beginPath(); ctx.ellipse(-11,12,5,3.5,-0.6,0,Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(5,13,5.5,3.5,0.5,0,Math.PI*2); ctx.fill();
-  // domed shell (green)
-  ctx.fillStyle="#43a047";
-  ctx.beginPath();
-  ctx.moveTo(-16,8);
-  ctx.quadraticCurveTo(-16,-11,-3,-11);
-  ctx.quadraticCurveTo(9,-11,9,8);
-  ctx.closePath(); ctx.fill();
-  // shell rim
-  ctx.strokeStyle="#2e7d32"; ctx.lineWidth=1.5;
-  ctx.beginPath();
-  ctx.moveTo(-16,8);
-  ctx.quadraticCurveTo(-16,-11,-3,-11);
-  ctx.quadraticCurveTo(9,-11,9,8);
-  ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(-11,13,5,3,-0.5,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(11,13,5,3,0.5,0,Math.PI*2); ctx.fill();
+  // domed shell (darker green) in the centre
+  ctx.fillStyle="#388e3c";
+  ctx.beginPath(); ctx.ellipse(0,3,12,10,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle="#1b5e20"; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.ellipse(0,3,12,10,0,0,Math.PI*2); ctx.stroke();
   // shell scute lines
-  ctx.strokeStyle="#2e7d32"; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(-8,-9); ctx.quadraticCurveTo(-8,0,-8,8); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(0,-11); ctx.quadraticCurveTo(0,0,0,8); ctx.stroke();
-  // neck + head (lighter green) — head sits CLEARLY outside the shell (shell right edge x=9, head centre x=12.5)
+  ctx.strokeStyle="#1b5e20"; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,-7); ctx.lineTo(0,13); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-12,3); ctx.lineTo(12,3); ctx.stroke();
+  // head (lighter green) at the top-right, clearly out of the shell
   ctx.fillStyle="#7cb342";
-  ctx.beginPath();
-  ctx.moveTo(5,-3); ctx.lineTo(11,-5); ctx.lineTo(11,3); ctx.lineTo(5,5); ctx.closePath(); ctx.fill();
-  ctx.beginPath(); ctx.arc(12.5,-2,4,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(12,-10,4.5,0,Math.PI*2); ctx.fill();
   // eye on the head
   ctx.fillStyle="#1f2937";
-  ctx.beginPath(); ctx.arc(14,-3,1.3,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle="#fff";
-  ctx.beginPath(); ctx.arc(14.5,-3.5,0.5,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(13.5,-11,1.3,0,Math.PI*2); ctx.fill();
+}
+/* Base of every square suit: a filled 34x34 square with a darker border. */
+function suitBase(ctx,fill,border){
+  ctx.fillStyle=fill; ctx.fillRect(-17,-17,34,34);
+  ctx.strokeStyle=border; ctx.lineWidth=2; ctx.strokeRect(-17,-17,34,34);
+}
+/* Draw any kept skin as its 34x34 square suit (centred at 0,0; caller handles
+   translate/rotate). Pollito's static suit is used by the picker; in-game
+   Pollito keeps its animated branch. Cow/turtle dispatch to their functions. */
+function drawSkinSuit(ctx,id){
+  if(id==="cow"){ drawHighlandCow(ctx); return; }
+  if(id==="turtle"){ drawSeaTurtle(ctx); return; }
+  switch(id){
+  case "pollito":
+    suitBase(ctx,"#ffd23f","#b45309");
+    // comb
+    ctx.fillStyle="#dc2626";
+    ctx.beginPath(); ctx.arc(-6,-18,4.5,0,Math.PI*2); ctx.arc(2,-19,4.5,0,Math.PI*2); ctx.arc(9,-17,4,0,Math.PI*2); ctx.fill();
+    // eyes
+    ctx.fillStyle="#111827";
+    ctx.beginPath(); ctx.arc(2,-4,3,0,Math.PI*2); ctx.arc(11,-4,3,0,Math.PI*2); ctx.fill();
+    // beak
+    ctx.fillStyle="#f97316";
+    ctx.beginPath(); ctx.moveTo(17,0); ctx.lineTo(9,-4); ctx.lineTo(9,4); ctx.closePath(); ctx.fill();
+    // feet (static; in-game Pollito animates them)
+    ctx.fillStyle="#7c2d12";
+    ctx.fillRect(-10,13,7,4); ctx.fillRect(4,13,7,4);
+    break;
+  case "tree":
+    suitBase(ctx,"#166534","#14532d");
+    // tree (lighter green triangle) + trunk + ornaments + star
+    ctx.fillStyle="#22c55e";
+    ctx.beginPath(); ctx.moveTo(0,-15); ctx.lineTo(-11,9); ctx.lineTo(11,9); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#78350f"; ctx.fillRect(-3,9,6,8);
+    ctx.fillStyle="#fbbf24";
+    ctx.beginPath(); ctx.arc(0,-15,2.2,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#f87171"; ctx.beginPath(); ctx.arc(-5,-2,1.8,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#60a5fa"; ctx.beginPath(); ctx.arc(5,2,1.8,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#fbbf24"; ctx.beginPath(); ctx.arc(0,6,1.8,0,Math.PI*2); ctx.fill();
+    break;
+  case "snowman":
+    suitBase(ctx,"#f8fafc","#94a3b8");
+    // top hat
+    ctx.fillStyle="#111827";
+    ctx.fillRect(-8,-17,16,7);
+    ctx.fillRect(-11,-11,22,3);
+    // coal eyes
+    ctx.beginPath(); ctx.arc(-5,0,2,0,Math.PI*2); ctx.arc(5,0,2,0,Math.PI*2); ctx.fill();
+    // carrot nose (orange triangle, pointing right)
+    ctx.fillStyle="#f97316";
+    ctx.beginPath(); ctx.moveTo(1,3); ctx.lineTo(13,5); ctx.lineTo(1,7); ctx.closePath(); ctx.fill();
+    // buttons
+    ctx.fillStyle="#111827";
+    ctx.beginPath(); ctx.arc(0,11,1.6,0,Math.PI*2); ctx.arc(0,15,1.6,0,Math.PI*2); ctx.fill();
+    break;
+  case "snowflake":
+    suitBase(ctx,"#bae6fd","#0284c7");
+    // white 6-arm asterisk + dots at the arm tips
+    ctx.strokeStyle="#ffffff"; ctx.lineWidth=2.5; ctx.lineCap="round";
+    ctx.beginPath();
+    ctx.moveTo(0,-13); ctx.lineTo(0,13);
+    ctx.moveTo(-11,-7); ctx.lineTo(11,7);
+    ctx.moveTo(-11,7); ctx.lineTo(11,-7);
+    ctx.stroke();
+    ctx.fillStyle="#ffffff";
+    var tips=[[0,-13],[0,13],[-11,-7],[11,7],[-11,7],[11,-7]];
+    for(var t=0;t<tips.length;t++){ ctx.beginPath(); ctx.arc(tips[t][0],tips[t][1],2,0,Math.PI*2); ctx.fill(); }
+    break;
+  case "reindeer":
+    suitBase(ctx,"#92400e","#78350f");
+    // antlers (darker brown, branching, at the top corners)
+    ctx.strokeStyle="#78350f"; ctx.lineWidth=2.5; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(-10,-12); ctx.lineTo(-14,-17); ctx.moveTo(-12,-14); ctx.lineTo(-16,-15); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(10,-12); ctx.lineTo(14,-17); ctx.moveTo(12,-14); ctx.lineTo(16,-15); ctx.stroke();
+    // eyes
+    ctx.fillStyle="#1f2937";
+    ctx.beginPath(); ctx.arc(-6,-1,2.2,0,Math.PI*2); ctx.arc(6,-1,2.2,0,Math.PI*2); ctx.fill();
+    // tan muzzle + red nose
+    ctx.fillStyle="#d9a066";
+    ctx.beginPath(); ctx.ellipse(0,9,8,5,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#dc2626";
+    ctx.beginPath(); ctx.arc(0,8,3.2,0,Math.PI*2); ctx.fill();
+    break;
+  case "elf":
+    suitBase(ctx,"#16a34a","#166534");
+    // pointy hat (darker green, flops to the right) + gold pom
+    ctx.fillStyle="#15803d";
+    ctx.beginPath(); ctx.moveTo(-13,-8); ctx.lineTo(12,-8); ctx.lineTo(14,-15); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#fbbf24";
+    ctx.beginPath(); ctx.arc(14,-15,1.8,0,Math.PI*2); ctx.fill();
+    // pointy ears (skin tone, sticking out the sides)
+    ctx.fillStyle="#fcd9b8";
+    ctx.beginPath(); ctx.moveTo(-17,-2); ctx.lineTo(-12,-6); ctx.lineTo(-12,2); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(17,-2); ctx.lineTo(12,-6); ctx.lineTo(12,2); ctx.closePath(); ctx.fill();
+    // eyes + smile
+    ctx.fillStyle="#1f2937";
+    ctx.beginPath(); ctx.arc(-5,2,2,0,Math.PI*2); ctx.arc(5,2,2,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#1f2937"; ctx.lineWidth=1.5; ctx.lineCap="round";
+    ctx.beginPath(); ctx.arc(0,7,5,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
+    break;
+  case "present":
+    suitBase(ctx,"#dc2626","#991b1b");
+    // gold ribbon (vertical + horizontal bands) + bow at the top centre
+    ctx.fillStyle="#fbbf24";
+    ctx.fillRect(-3,-17,6,34);
+    ctx.fillRect(-17,-3,34,6);
+    ctx.beginPath(); ctx.moveTo(0,-13); ctx.lineTo(-10,-16); ctx.lineTo(-10,-10); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(0,-13); ctx.lineTo(10,-16); ctx.lineTo(10,-10); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.arc(0,-13,2.5,0,Math.PI*2); ctx.fill();
+    break;
+  case "doughnut":
+    suitBase(ctx,"#e0a458","#b45309");
+    // pink frosting ring + hole + sprinkles
+    ctx.fillStyle="#f472b6";
+    ctx.beginPath(); ctx.arc(0,0,12,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#e0a458";
+    ctx.beginPath(); ctx.arc(0,0,4.5,0,Math.PI*2); ctx.fill();
+    var spr=[[-7,-6,"#ffffff"],[6,-7,"#60a5fa"],[-8,3,"#fbbf24"],[8,4,"#4ade80"],[0,-10,"#ffffff"],[-3,9,"#60a5fa"],[4,9,"#fbbf24"]];
+    ctx.lineWidth=1.6; ctx.lineCap="round";
+    for(var s=0;s<spr.length;s++){ ctx.strokeStyle=spr[s][2]; ctx.beginPath(); ctx.moveTo(spr[s][0]-1.5,spr[s][1]); ctx.lineTo(spr[s][0]+1.5,spr[s][1]); ctx.stroke(); }
+    break;
+  case "whale":
+    suitBase(ctx,"#3b82f6","#1d4ed8");
+    // belly (lighter blue ellipse at the bottom)
+    ctx.fillStyle="#93c5fd";
+    ctx.beginPath(); ctx.ellipse(0,11,12,5.5,0,0,Math.PI*2); ctx.fill();
+    // eye + smile
+    ctx.fillStyle="#1f2937";
+    ctx.beginPath(); ctx.arc(6,-3,2.5,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#1f2937"; ctx.lineWidth=1.8; ctx.lineCap="round";
+    ctx.beginPath(); ctx.arc(0,2,9,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
+    // spout (three short spray lines fanning up from the top)
+    ctx.strokeStyle="#dbeafe"; ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(0,-14); ctx.lineTo(-4,-17);
+    ctx.moveTo(0,-14); ctx.lineTo(0,-17);
+    ctx.moveTo(0,-14); ctx.lineTo(4,-17);
+    ctx.stroke();
+    break;
+  case "unicorn":
+    suitBase(ctx,"#fdf2f8","#db2777");
+    // gold horn (triangle at the top centre)
+    ctx.fillStyle="#fbbf24";
+    ctx.beginPath(); ctx.moveTo(-3,-11); ctx.lineTo(3,-11); ctx.lineTo(0,-17); ctx.closePath(); ctx.fill();
+    // pink mane (band along the left edge + tuft at the top)
+    ctx.fillStyle="#f472b6";
+    ctx.beginPath(); ctx.ellipse(-12,-4,4.5,9,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(-6,-13,4,0,Math.PI*2); ctx.fill();
+    // eyes
+    ctx.fillStyle="#1f2937";
+    ctx.beginPath(); ctx.arc(-4,2,2,0,Math.PI*2); ctx.arc(6,2,2,0,Math.PI*2); ctx.fill();
+    break;
+  case "flower":
+    suitBase(ctx,"#f9a8d4","#db2777");
+    // white petals (6, arranged in a ring)
+    ctx.fillStyle="#ffffff";
+    for(var p=0;p<6;p++){
+      ctx.save(); ctx.translate(0,0); ctx.rotate(p*Math.PI/3);
+      ctx.beginPath(); ctx.ellipse(0,-9,4,6,0,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+    // yellow centre
+    ctx.fillStyle="#fbbf24";
+    ctx.beginPath(); ctx.arc(0,0,5.5,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#d97706"; ctx.lineWidth=1.2;
+    ctx.beginPath(); ctx.arc(0,0,5.5,0,Math.PI*2); ctx.stroke();
+    break;
+  case "alien":
+    suitBase(ctx,"#4ade80","#16a34a");
+    // antennae (thin lines + dots, at the top)
+    ctx.strokeStyle="#16a34a"; ctx.lineWidth=1.8; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(-6,-11); ctx.lineTo(-8,-15); ctx.moveTo(6,-11); ctx.lineTo(8,-15); ctx.stroke();
+    ctx.fillStyle="#16a34a";
+    ctx.beginPath(); ctx.arc(-8,-15,1.5,0,Math.PI*2); ctx.arc(8,-15,1.5,0,Math.PI*2); ctx.fill();
+    // large black slanted eyes
+    ctx.fillStyle="#1f2937";
+    ctx.save(); ctx.translate(-6,0); ctx.rotate(-0.35); ctx.beginPath(); ctx.ellipse(0,0,4,6.5,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+    ctx.save(); ctx.translate(6,0); ctx.rotate(0.35); ctx.beginPath(); ctx.ellipse(0,0,4,6.5,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+    // tiny mouth
+    ctx.strokeStyle="#1f2937"; ctx.lineWidth=1.5; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(-2,10); ctx.lineTo(2,10); ctx.stroke();
+    break;
+  case "frog":
+    suitBase(ctx,"#22c55e","#15803d");
+    // big bump eyes (white circles on top, with black pupils)
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.arc(-7,-10,5,0,Math.PI*2); ctx.arc(7,-10,5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#1f2937";
+    ctx.beginPath(); ctx.arc(-7,-10,2.5,0,Math.PI*2); ctx.arc(7,-10,2.5,0,Math.PI*2); ctx.fill();
+    // wide smile
+    ctx.strokeStyle="#1f2937"; ctx.lineWidth=2; ctx.lineCap="round";
+    ctx.beginPath(); ctx.arc(0,2,11,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
+    // nostrils
+    ctx.fillStyle="#1f2937";
+    ctx.beginPath(); ctx.arc(-3,4,1,0,Math.PI*2); ctx.arc(3,4,1,0,Math.PI*2); ctx.fill();
+    break;
+  case "fox":
+    suitBase(ctx,"#f97316","#c2410c");
+    // pointy ears (darker orange triangles at the top corners) + white inner ears
+    ctx.fillStyle="#c2410c";
+    ctx.beginPath(); ctx.moveTo(-15,-8); ctx.lineTo(-5,-8); ctx.lineTo(-13,-17); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(5,-8); ctx.lineTo(15,-8); ctx.lineTo(13,-17); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.moveTo(-12,-10); ctx.lineTo(-8,-10); ctx.lineTo(-11,-15); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(8,-10); ctx.lineTo(12,-10); ctx.lineTo(11,-15); ctx.closePath(); ctx.fill();
+    // eyes
+    ctx.fillStyle="#1f2937";
+    ctx.beginPath(); ctx.arc(-6,0,2.2,0,Math.PI*2); ctx.arc(6,0,2.2,0,Math.PI*2); ctx.fill();
+    // white muzzle + black nose
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.ellipse(0,9,8,5.5,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#1f2937";
+    ctx.beginPath(); ctx.arc(0,6,2.2,0,Math.PI*2); ctx.fill();
+    break;
+  case "panda":
+    suitBase(ctx,"#f8fafc","#6b7280");
+    // black ears (circles at the top corners)
+    ctx.fillStyle="#1f2937";
+    ctx.beginPath(); ctx.arc(-11,-11,5,0,Math.PI*2); ctx.arc(11,-11,5,0,Math.PI*2); ctx.fill();
+    // black eye patches (tilted ellipses) + white eye glints
+    ctx.save(); ctx.translate(-6,0); ctx.rotate(-0.4); ctx.beginPath(); ctx.ellipse(0,0,3.8,5.5,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+    ctx.save(); ctx.translate(6,0); ctx.rotate(0.4); ctx.beginPath(); ctx.ellipse(0,0,3.8,5.5,0,0,Math.PI*2); ctx.fill(); ctx.restore();
+    ctx.fillStyle="#ffffff";
+    ctx.beginPath(); ctx.arc(-5,-1,1.4,0,Math.PI*2); ctx.arc(7,-1,1.4,0,Math.PI*2); ctx.fill();
+    // black nose + mouth
+    ctx.fillStyle="#1f2937";
+    ctx.beginPath(); ctx.ellipse(0,8,2.5,1.8,0,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#1f2937"; ctx.lineWidth=1.4; ctx.lineCap="round";
+    ctx.beginPath(); ctx.moveTo(0,10); ctx.lineTo(0,12); ctx.stroke();
+    break;
+  default:
+    // unknown id: plain grey square (skinById already falls back to Pollito,
+    // so this should not happen)
+    suitBase(ctx,"#9ca3af","#4b5563");
+    break;
+  }
 }
 function skinById(id){ for(var i=0;i<SKINS.length;i++){ if(SKINS[i].id===id) return SKINS[i]; } return SKINS[0]; }
 var skinId="pollito";
 try{ var _sk=localStorage.getItem("spanishDash_skin"); if(_sk) skinId=skinById(_sk).id; }catch(e){}
 function saveSkin(){ try{ localStorage.setItem("spanishDash_skin",skinId); }catch(e){} }
+/* "Beat the game completely" = all 10 levels finished (best 100% each).
+   Derived from bestMap (already persisted) — no new storage key. */
+function gameBeaten(){ for(var n=1;n<=10;n++){ if(bestMap[n]!==100) return false; } return true; }
+/* First half of the suits is free; the second half is locked until the game is
+   beaten. With 17 suits, the split is 9 free (indices 0–8) / 8 locked (9–16). */
+var LOCK_FROM=Math.ceil(SKINS.length/2);
 function buildSkinGrid(){
   var g=document.getElementById("skinGrid"); if(!g) return;
   g.innerHTML="";
+  var beaten=gameBeaten();
+  var anyLocked=false;
   for(var i=0;i<SKINS.length;i++){
-    (function(sk){
+    (function(sk,idx){
+      // The suit already selected stays usable even if it would otherwise be
+      // locked (e.g. the player beat the game, picked it, then Reset progress
+      // — Reset does not clear the skin). The lock only blocks SELECTING one.
+      var locked=idx>=LOCK_FROM&&!beaten&&sk.id!==skinId;
+      if(locked) anyLocked=true;
       var b=document.createElement("button");
       b.type="button";
-      b.className="skinBtn"+(sk.id===skinId?" sel":"");
-      if(sk.custom){
-        var e=document.createElement("div"); e.className="e";
-        var cv=document.createElement("canvas");
-        cv.width=34; cv.height=34; cv.style.width="22px"; cv.style.height="22px";
-        e.appendChild(cv);
-        var n2=document.createElement("div"); n2.className="n"; n2.textContent=sk.name;
-        b.appendChild(e); b.appendChild(n2);
-        var c2=cv.getContext("2d"); c2.translate(17,17);
-        if(sk.custom==="cow") drawHighlandCow(c2);
-        else if(sk.custom==="turtle") drawSeaTurtle(c2);
-      } else {
-        b.innerHTML='<div class="e">'+sk.emoji+'</div><div class="n">'+sk.name+'</div>';
+      b.className="skinBtn"+(sk.id===skinId?" sel":"")+(locked?" locked":"");
+      if(locked) b.title="Finish all 10 levels to unlock";
+      var e=document.createElement("div"); e.className="e";
+      var cv=document.createElement("canvas");
+      cv.width=34; cv.height=34; cv.style.width="22px"; cv.style.height="22px";
+      // block (not inline) so the canvas adds no baseline descender space
+      // below it — otherwise every picker button grows a few px taller.
+      cv.style.display="block"; cv.style.margin="0 auto";
+      e.appendChild(cv);
+      var n2=document.createElement("div"); n2.className="n"; n2.textContent=sk.name;
+      b.appendChild(e); b.appendChild(n2);
+      if(locked){
+        var lk=document.createElement("span"); lk.className="lock"; lk.textContent="🔒";
+        b.appendChild(lk);
       }
-      b.addEventListener("click",function(){ skinId=sk.id; saveSkin(); buildSkinGrid(); });
+      var c2=cv.getContext("2d"); c2.translate(17,17);
+      drawSkinSuit(c2,sk.id);
+      b.addEventListener("click",function(){
+        if(locked) return; // locked suits cannot be selected
+        skinId=sk.id; saveSkin(); buildSkinGrid();
+      });
       g.appendChild(b);
-    })(SKINS[i]);
+    })(SKINS[i],i);
   }
+  var hint=document.getElementById("skinLockHint");
+  if(hint) hint.textContent=anyLocked?"🔒 Finish all 10 levels to unlock the locked suits!":"";
 }
 function pct(){ return lv?Math.min(100,Math.floor(px/lv.L*100)):0; }
 function updateHUDVis(){ document.getElementById("hud").style.display=(state==="playing")?"":"none"; }
@@ -811,8 +1063,14 @@ function crash(){
 }
 function winLevel(){
   state="win"; sfxWin();
+  var wasBeaten=gameBeaten();
   bestMap[level]=100; saveBest();
   if(level<10&&unlocked<level+1){ unlocked=level+1; saveBest(); }
+  // First time the game is beaten (this win makes all 10 levels 100%): the
+  // locked half of the suits unlocks — say so on the win screen.
+  var justBeat=!wasBeaten&&gameBeaten();
+  var un=document.getElementById("winUnlock");
+  if(un) un.classList.toggle("hidden",!justBeat);
   var html="";
   for(var i=0;i<words.length;i++){
     var st=wordStatus[i]||"ok";
@@ -832,7 +1090,7 @@ function winLevel(){
 function doJump(){
   if(state!=="playing") return;
   if(onGround||coyote>0){ vy=JUMP_V; onGround=false; coyote=0; sfxJump(); }
-  else { jumpBuffer=0.12; }
+  else { jumpBuffer=0.20; }
 }
 function update(dt){
   if(state==="crashed"){
@@ -847,6 +1105,10 @@ function update(dt){
   vy+=GRAV*dt;
   var prevBottom=py+34;
   py+=vy*dt;
+  // wasAir: the player was airborne when this frame started — used for the
+  // hold-to-jump auto-hop, which must fire on ANY landing (ground, platform,
+  // or block top), not just the ground.
+  var wasAir=!onGround;
   // blocks: land on top or crash on side
   var hb={x:px+4,y:py+4,w:26,h:26};
   var landed=false;
@@ -876,7 +1138,7 @@ function update(dt){
       var cx=px+17;
       if(groundSolidAt(lv,cx)){
         py=GROUND_Y-34; vy=0;
-        if(!onGround){ onGround=true; rot=Math.round(rot/(Math.PI/2))*(Math.PI/2); if(jumpHeld||jumpBuffer>0){ jumpBuffer=0; doJump(); } }
+        if(!onGround){ onGround=true; rot=Math.round(rot/(Math.PI/2))*(Math.PI/2); }
       } else if(py+34>=PIT_FLOOR_Y){
         crash(); return; // hit the spiky pit floor
       }
@@ -884,6 +1146,11 @@ function update(dt){
       if(onGround){ onGround=false; coyote=0.08; }
     }
   }
+  // hold-to-jump: re-jump immediately on ANY landing (ground, platform top,
+  // or block top) while the button is held or a jump is buffered. (Previously
+  // this only ran in the ground branch, so landing on a platform or a block
+  // swallowed the held jump and the buffered tap.)
+  if(wasAir&&onGround&&(jumpHeld||jumpBuffer>0)){ jumpBuffer=0; doJump(); }
   if(py>H+80){ crash(); return; }
   // rotation in air
   if(!onGround){ rot+= (SPEED*dt)/34*(Math.PI/2)*0.9; }
@@ -1118,15 +1385,9 @@ function draw(){
     var fx1=-10+(step?0:2), fx2=4+(step?2:0);
     ctx.fillRect(fx1,17,7,5); ctx.strokeRect(fx1,17,7,5);
     ctx.fillRect(fx2,17,7,5); ctx.strokeRect(fx2,17,7,5);
-  } else if(skinId==="cow"){
-    drawHighlandCow(ctx);
-  } else if(skinId==="turtle"){
-    drawSeaTurtle(ctx);
   } else {
-    var sk=skinById(skinId);
-    ctx.font="32px 'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif";
-    ctx.textAlign="center"; ctx.textBaseline="middle";
-    ctx.fillText(sk.emoji,0,1);
+    // every other kept skin is drawn as its 34x34 square suit
+    drawSkinSuit(ctx,skinId);
   }
   ctx.restore();
 }
@@ -1352,6 +1613,7 @@ function showMenu(){
   state="menu";
   updateHUDVis();
   buildMenu();
+  buildSkinGrid(); // re-check the beaten/locked state each time the menu shows
   document.getElementById("menu").classList.remove("hidden");
   document.getElementById("quiz").classList.add("hidden");
   document.getElementById("winOv").classList.add("hidden");
@@ -1396,6 +1658,7 @@ document.getElementById("btnResetYes").addEventListener("click",function(){
   document.getElementById("resetConfirm").classList.add("hidden");
   document.getElementById("btnReset").style.display="";
   buildMenu();
+  buildSkinGrid(); // Reset clears bestMap, so the game is unbeaten again — re-lock the second half of the suits
 });
 document.getElementById("btnPause").addEventListener("click",function(){
   if(state==="playing"){ state="paused"; document.getElementById("pauseOv").classList.remove("hidden"); }
