@@ -1158,8 +1158,10 @@ function showSpeakStep(){
   quizChoicesEl.style.display="none";
   quizSpeakEl.style.display="";
   setQuizFb("","");
-  // Ser vs. estar: Hear would speak the completed sentence and reveal the answer (es vs. está), so hide it on those levels.
-  quizHearRowEl.style.display=(LEVEL_TYPE[level-1]==="serestar")?"none":"";
+  // Hear is available here: the answer is already given (they picked correctly),
+  // so hearing the pronunciation can't give anything away — it's there for
+  // students who can't pronounce it yet. All levels, including ser/estar.
+  quizHearRowEl.style.display="";
 }
 function showQuizWord(){
   var w=currentWord();
@@ -1167,9 +1169,10 @@ function showQuizWord(){
   quizCount.textContent="Word "+(quizIdx+1)+" of 5";
   setQuizFb("","");
   sayBtn.textContent="🎤 Say it"; sayBtn.classList.remove("listening");
-  // Step 1: choose from 4 (all levels now, including cognates). Hear is
-  // available here too (except ser/estar). When speaking is off this is the
-  // only step; when it is on, a correct pick leads to the Say-it step.
+  // Step 1: choose from 4 (all levels now, including cognates). Hear is NOT
+  // available here: it would speak the correct answer and give it away.
+  // When speaking is off this is the only step; when it is on, a correct
+  // pick leads to the Say-it step, where Hear is available.
   quizStep="choose";
   quizStepEl.textContent=speakingOn?"Step 1 of 2 · Choose":"Choose";
   quizPrompt.textContent=w.q;
@@ -1177,7 +1180,7 @@ function showQuizWord(){
   else { quizTarget.style.display="none"; }
   quizSpeakEl.style.display="none";
   quizChoicesEl.style.display="";
-  quizHearRowEl.style.display=(LEVEL_TYPE[level-1]==="serestar")?"none":"";
+  quizHearRowEl.style.display="none";
   renderChoices(w);
 }
 function openQuiz(cpIdx){
@@ -1272,7 +1275,7 @@ function startListen(){
   }
   attempt();
 }
-hearBtn.addEventListener("click",function(){ if(LEVEL_TYPE[level-1]==="serestar") return; var w=currentWord(); if(w) speakSpanish(w.target); });
+hearBtn.addEventListener("click",function(){ var w=currentWord(); if(w) speakSpanish(w.target); });
 sayBtn.addEventListener("click",function(){ startListen(); });
 document.getElementById("quizQuit").addEventListener("click",function(){ closeQuiz(); showMenu(); });
 
