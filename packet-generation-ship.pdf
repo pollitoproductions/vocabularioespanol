@@ -9,11 +9,11 @@ endobj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 11 0 R /F2 12 0 R /F3 13 0 R >> >> /Contents 4 0 R >>
 endobj
 4 0 obj
-<< /Length 4015 >>
+<< /Length 4159 >>
 stream
 0.5 w 0 g
 BT /F2 18 Tf 54.00 738.00 Td (Generation Ship packet) Tj ET
-BT /F1 11 Tf 54.00 710.00 Td (Activities from Generation Ship: ARK-7 \227 the spinning station, its six stations, the six repositories,) Tj ET
+BT /F1 11 Tf 54.00 710.00 Td (Activities from Generation Ship: ARK-7 \227 the spinning station, its nine stations, the nine repositories,) Tj ET
 BT /F1 11 Tf 54.00 695.00 Td (mining, and flight rules. Print this packet and work on paper.) Tj ET
 BT /F1 11 Tf 54.00 672.00 Td (Name:) Tj ET
 BT /F1 11 Tf 86.39 672.00 Td ( ______________________________  ) Tj ET
@@ -26,37 +26,38 @@ BT /F1 11 Tf 54.00 597.00 Td (stations in the agriculture ring, recover words an
 BT /F1 11 Tf 54.00 582.00 Td (WATER and METAL. Guidance only, never rescue: the ship warns you at 25 and 40 km, and at 50 km) Tj ET
 BT /F1 11 Tf 54.00 567.00 Td (you are LOST \227 but a lost flight is a free retry with your haul kept.) Tj ET
 BT /F2 13 Tf 54.00 530.00 Td (1. Put the quest in order) Tj ET
-BT /F1 11 Tf 54.00 510.00 Td (The first voyage has six steps. Number them 1 to 6 in the order a new player follows them.) Tj ET
-BT /F1 11 Tf 54.00 487.00 Td (1. Recover the nearest word or exercise floating in space. \227 order: ____________________) Tj ET
-BT /F1 11 Tf 54.00 468.00 Td (2. Visit the Cognates station in the agriculture ring. \227 order: ____________________) Tj ET
-BT /F1 11 Tf 54.00 449.00 Td (3. Open the in-game menu and review your progress \(PROGRESS, then REVIEW EVERYTHING\). \227) Tj ET
-BT /F1 11 Tf 54.00 434.00 Td (order: ____________________) Tj ET
-BT /F1 11 Tf 54.00 415.00 Td (4. Speak 3 cognates at the station. \227 order: ____________________) Tj ET
-BT /F1 11 Tf 54.00 396.00 Td (5. Return aboard the ship. \227 order: ____________________) Tj ET
-BT /F1 11 Tf 54.00 377.00 Td (6. Depart the ship in your shuttle. \227 order: ____________________) Tj ET
-BT /F2 13 Tf 54.00 344.00 Td (2. Match the repository) Tj ET
-BT /F1 11 Tf 54.00 324.00 Td (Rebuilding the repositories is the ship\222s quest. Match each repository to what it collects.) Tj ET
-BT /F1 11 Tf 54.00 301.00 Td (1. Vocabulary) Tj ET
-BT /F1 11 Tf 318.00 301.00 Td (a. ser and estar at the Ser vs. estar station) Tj ET
-BT /F1 11 Tf 54.00 284.00 Td (2. Cognates) Tj ET
-BT /F1 11 Tf 318.00 284.00 Td (b. dictation at the Dictation station) Tj ET
-BT /F1 11 Tf 54.00 267.00 Td (3. Idioms) Tj ET
-BT /F1 11 Tf 318.00 267.00 Td (c. verb forms at the Conjugation station) Tj ET
-BT /F1 11 Tf 54.00 250.00 Td (4. Verbs) Tj ET
-BT /F1 11 Tf 318.00 250.00 Td (d. idioms at the Idioms station) Tj ET
-BT /F1 11 Tf 54.00 233.00 Td (5. Dictation) Tj ET
-BT /F1 11 Tf 318.00 233.00 Td (e. cognates at the Cognates station) Tj ET
-BT /F1 11 Tf 54.00 216.00 Td (6. Ser vs. estar) Tj ET
-BT /F1 11 Tf 318.00 216.00 Td (f. the 1,000 floating word tiles in space) Tj ET
-BT /F2 13 Tf 54.00 177.00 Td (3. Match the station to its repository) Tj ET
-BT /F1 11 Tf 54.00 157.00 Td (Five stations each feed one repository, and the Vocabulary repository is fed from space. Match each) Tj ET
-BT /F1 11 Tf 54.00 142.00 Td (station to the repository it feeds. One station has no matching repository \227 write it in the last blank.) Tj ET
-BT /F1 11 Tf 54.00 119.00 Td (1. Cognates station) Tj ET
-BT /F1 11 Tf 318.00 119.00 Td (a. Ser vs. estar) Tj ET
-BT /F1 11 Tf 54.00 102.00 Td (2. Conjugation station) Tj ET
-BT /F1 11 Tf 318.00 102.00 Td (b. Dictation) Tj ET
-BT /F1 11 Tf 54.00 85.00 Td (3. Idioms station) Tj ET
-BT /F1 11 Tf 318.00 85.00 Td (c. Verbs) Tj ET
+BT /F1 11 Tf 54.00 510.00 Td (The first voyage has seven steps. Number them 1 to 7 in the order a new player follows them.) Tj ET
+BT /F1 11 Tf 54.00 487.00 Td (1. Collect your first word or exercise floating in space. \227 order: ____________________) Tj ET
+BT /F1 11 Tf 54.00 468.00 Td (2. Walk to the Cognates station in the agriculture ring. \227 order: ____________________) Tj ET
+BT /F1 11 Tf 54.00 449.00 Td (3. Deposit the other kind \(WATER or METAL\). \227 order: ____________________) Tj ET
+BT /F1 11 Tf 54.00 430.00 Td (4. Say 3 cognates at the station. \227 order: ____________________) Tj ET
+BT /F1 11 Tf 54.00 411.00 Td (5. Return aboard the ship. \227 order: ____________________) Tj ET
+BT /F1 11 Tf 54.00 392.00 Td (6. Depart the ship in your shuttle. \227 order: ____________________) Tj ET
+BT /F1 11 Tf 54.00 373.00 Td (7. Make your first deposit. \227 order: ____________________) Tj ET
+BT /F2 13 Tf 54.00 340.00 Td (2. Match the repository) Tj ET
+BT /F1 11 Tf 54.00 320.00 Td (Rebuilding the repositories is the ship\222s quest. Match each repository to what it collects.) Tj ET
+BT /F1 11 Tf 54.00 297.00 Td (1. Vocabulary) Tj ET
+BT /F1 11 Tf 318.00 297.00 Td (a. ser and estar at the Ser vs. estar station) Tj ET
+BT /F1 11 Tf 54.00 280.00 Td (2. Cognates) Tj ET
+BT /F1 11 Tf 318.00 280.00 Td (b. dictation at the Dictation station) Tj ET
+BT /F1 11 Tf 54.00 263.00 Td (3. Idioms) Tj ET
+BT /F1 11 Tf 318.00 263.00 Td (c. verb forms at the Conjugation station) Tj ET
+BT /F1 11 Tf 54.00 246.00 Td (4. Verbs) Tj ET
+BT /F1 11 Tf 318.00 246.00 Td (d. idioms at the Idioms station) Tj ET
+BT /F1 11 Tf 54.00 229.00 Td (5. Dictation) Tj ET
+BT /F1 11 Tf 318.00 229.00 Td (e. cognates at the Cognates station) Tj ET
+BT /F1 11 Tf 54.00 212.00 Td (6. Ser vs. estar) Tj ET
+BT /F1 11 Tf 318.00 212.00 Td (f. the 1,000 floating word tiles in space) Tj ET
+BT /F1 11 Tf 54.00 195.00 Td (7. Saber vs. conocer) Tj ET
+BT /F1 11 Tf 318.00 195.00 Td (g. saber and conocer at the Saber vs. conocer) Tj ET
+BT /F1 11 Tf 318.00 180.00 Td (station) Tj ET
+BT /F1 11 Tf 54.00 163.00 Td (8. Pronouns) Tj ET
+BT /F1 11 Tf 318.00 163.00 Td (h. pronouns at the Pronouns station) Tj ET
+BT /F1 11 Tf 54.00 146.00 Td (9. Por vs. para) Tj ET
+BT /F1 11 Tf 318.00 146.00 Td (i. por and para at the Por vs. para station) Tj ET
+BT /F2 13 Tf 54.00 107.00 Td (3. Match the station to its repository) Tj ET
+BT /F1 11 Tf 54.00 87.00 Td (Eight stations each feed one repository, and the Vocabulary repository is fed from space. Match each) Tj ET
+BT /F1 11 Tf 54.00 72.00 Td (station to the repository it feeds. One station has no matching repository \227 write it in the last blank.) Tj ET
 BT /F1 9 Tf 54 36 Td (Generation Ship packet) Tj ET
 BT /F1 9 Tf 529.48 36 Td (Page 1) Tj ET
 endstream
@@ -65,45 +66,52 @@ endobj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 11 0 R /F2 12 0 R /F3 13 0 R >> >> /Contents 6 0 R >>
 endobj
 6 0 obj
-<< /Length 3610 >>
+<< /Length 3769 >>
 stream
 0.5 w 0 g
-BT /F1 11 Tf 54.00 738.00 Td (4. Dictation station) Tj ET
-BT /F1 11 Tf 318.00 738.00 Td (d. Idioms) Tj ET
-BT /F1 11 Tf 54.00 721.00 Td (5. Ser vs. estar station) Tj ET
-BT /F1 11 Tf 318.00 721.00 Td (e. Cognates) Tj ET
-BT /F1 11 Tf 54.00 696.00 Td (1. Station with no matching repository: ____________________) Tj ET
-BT /F2 13 Tf 54.00 663.00 Td (4. Mining math) Tj ET
-BT /F1 11 Tf 54.00 643.00 Td (All 40 asteroids can be mined. Mining them all gives 20 WATER and 570 METAL. The first crash is) Tj ET
-BT /F1 11 Tf 54.00 628.00 Td (free; every later crash repair costs 10 WATER and 10 METAL.) Tj ET
-BT /F1 11 Tf 54.00 605.00 Td (1. You have mined all 40 asteroids and hold 20 WATER. A repair costs 10 WATER. How many paid) Tj ET
-BT /F1 11 Tf 54.00 590.00 Td (repairs can you afford?) Tj ET
-BT /F1 11 Tf 54.00 571.00 Td (2. You hold 570 METAL. A repair costs 10 METAL. How many paid repairs can you afford?) Tj ET
-BT /F1 11 Tf 54.00 552.00 Td (3. Your first crash was free. Your second and third crashes each need a repair. How much WATER and) Tj ET
-BT /F1 11 Tf 54.00 537.00 Td (METAL do both repairs cost together?) Tj ET
-BT /F1 11 Tf 54.00 518.00 Td (4. Beacon warnings sound at 25 km and 40 km, and you are LOST at 50 km. You are flying at 30 km.) Tj ET
-BT /F1 11 Tf 54.00 503.00 Td (Which warning have you already passed?) Tj ET
-BT /F1 11 Tf 54.00 484.00 Td (5. You hold the full haul: 20 WATER and 570 METAL. After 2 paid repairs, how much WATER and) Tj ET
-BT /F1 11 Tf 54.00 469.00 Td (METAL do you have left?) Tj ET
-BT /F1 11 Tf 54.00 450.00 Td (6. Repairs are limited by whichever resource runs out first. From the full haul, how many paid repairs) Tj ET
-BT /F1 11 Tf 54.00 435.00 Td (can you afford in total, and which resource limits you?) Tj ET
-BT /F1 11 Tf 54.00 416.00 Td (7. You are flying at 45 km. Which warnings have you passed, and what happens if you reach 50 km?) Tj ET
-BT /F1 11 Tf 54.00 397.00 Td (8. A repair costs 10 WATER and 10 METAL. You hold 5 WATER and 570 METAL. Can you afford a) Tj ET
-BT /F1 11 Tf 54.00 382.00 Td (repair? Why or why not?) Tj ET
-BT /F2 13 Tf 54.00 349.00 Td (5. True or false?) Tj ET
-BT /F1 11 Tf 54.00 329.00 Td (Write T or F for each rule of the ship.) Tj ET
-BT /F1 11 Tf 54.00 306.00 Td (1. Beacon warnings sound at 25 km and 40 km. \227 ____________________) Tj ET
-BT /F1 11 Tf 54.00 287.00 Td (2. If you fly past 50 km you lose everything you collected. \227 ____________________) Tj ET
-BT /F1 11 Tf 54.00 268.00 Td (3. The first crash is free. \227 ____________________) Tj ET
-BT /F1 11 Tf 54.00 249.00 Td (4. A later crash repair costs 10 WATER and 10 METAL. \227 ____________________) Tj ET
-BT /F1 11 Tf 54.00 230.00 Td (5. Stations open automatically when you walk past them. \227 ____________________) Tj ET
-BT /F1 11 Tf 54.00 211.00 Td (6. Stations open with the cyan LEARN button within 8 m. \227 ____________________) Tj ET
-BT /F1 11 Tf 54.00 192.00 Td (7. There are 1,000 floating word tiles in space. \227 ____________________) Tj ET
-BT /F1 11 Tf 54.00 173.00 Td (8. There are 3,417 floating question tiles in space. \227 ____________________) Tj ET
-BT /F1 11 Tf 54.00 154.00 Td (9. The ship has 8 review terminals. \227 ____________________) Tj ET
-BT /F1 11 Tf 54.00 135.00 Td (10. The ship spins at 1.37 RPM. \227 ____________________) Tj ET
-BT /F2 13 Tf 54.00 102.00 Td (6. Name the six stations) Tj ET
-BT /F1 11 Tf 54.00 82.00 Td (The agriculture ring holds six stations. Write them all. Word bank: Dictation, Cognates, Ser vs. estar,) Tj ET
+BT /F1 11 Tf 54.00 738.00 Td (1. Cognates station) Tj ET
+BT /F1 11 Tf 318.00 738.00 Td (a. Ser vs. estar) Tj ET
+BT /F1 11 Tf 54.00 721.00 Td (2. Conjugation station) Tj ET
+BT /F1 11 Tf 318.00 721.00 Td (b. Dictation) Tj ET
+BT /F1 11 Tf 54.00 704.00 Td (3. Idioms station) Tj ET
+BT /F1 11 Tf 318.00 704.00 Td (c. Verbs) Tj ET
+BT /F1 11 Tf 54.00 687.00 Td (4. Dictation station) Tj ET
+BT /F1 11 Tf 318.00 687.00 Td (d. Idioms) Tj ET
+BT /F1 11 Tf 54.00 670.00 Td (5. Ser vs. estar station) Tj ET
+BT /F1 11 Tf 318.00 670.00 Td (e. Cognates) Tj ET
+BT /F1 11 Tf 54.00 653.00 Td (6. Saber vs. conocer station) Tj ET
+BT /F1 11 Tf 318.00 653.00 Td (f. Saber vs. conocer) Tj ET
+BT /F1 11 Tf 54.00 636.00 Td (7. Pronouns station) Tj ET
+BT /F1 11 Tf 318.00 636.00 Td (g. Pronouns) Tj ET
+BT /F1 11 Tf 54.00 619.00 Td (8. Por vs. para station) Tj ET
+BT /F1 11 Tf 318.00 619.00 Td (h. Por vs. para) Tj ET
+BT /F1 11 Tf 54.00 594.00 Td (1. Station with no matching repository: ____________________) Tj ET
+BT /F2 13 Tf 54.00 561.00 Td (4. Mining math) Tj ET
+BT /F1 11 Tf 54.00 541.00 Td (All 40 asteroids can be mined. Mining them all gives 20 WATER and 570 METAL. The first crash is) Tj ET
+BT /F1 11 Tf 54.00 526.00 Td (free; every later crash repair costs 10 WATER and 10 METAL.) Tj ET
+BT /F1 11 Tf 54.00 503.00 Td (1. You have mined all 40 asteroids and hold 20 WATER. A repair costs 10 WATER. How many paid) Tj ET
+BT /F1 11 Tf 54.00 488.00 Td (repairs can you afford?) Tj ET
+BT /F1 11 Tf 54.00 469.00 Td (2. You hold 570 METAL. A repair costs 10 METAL. How many paid repairs can you afford?) Tj ET
+BT /F1 11 Tf 54.00 450.00 Td (3. Your first crash was free. Your second and third crashes each need a repair. How much WATER and) Tj ET
+BT /F1 11 Tf 54.00 435.00 Td (METAL do both repairs cost together?) Tj ET
+BT /F1 11 Tf 54.00 416.00 Td (4. Beacon warnings sound at 25 km and 40 km, and you are LOST at 50 km. You are flying at 30 km.) Tj ET
+BT /F1 11 Tf 54.00 401.00 Td (Which warning have you already passed?) Tj ET
+BT /F1 11 Tf 54.00 382.00 Td (5. You hold the full haul: 20 WATER and 570 METAL. After 2 paid repairs, how much WATER and) Tj ET
+BT /F1 11 Tf 54.00 367.00 Td (METAL do you have left?) Tj ET
+BT /F1 11 Tf 54.00 348.00 Td (6. Repairs are limited by whichever resource runs out first. From the full haul, how many paid repairs) Tj ET
+BT /F1 11 Tf 54.00 333.00 Td (can you afford in total, and which resource limits you?) Tj ET
+BT /F1 11 Tf 54.00 314.00 Td (7. You are flying at 45 km. Which warnings have you passed, and what happens if you reach 50 km?) Tj ET
+BT /F1 11 Tf 54.00 295.00 Td (8. A repair costs 10 WATER and 10 METAL. You hold 5 WATER and 570 METAL. Can you afford a) Tj ET
+BT /F1 11 Tf 54.00 280.00 Td (repair? Why or why not?) Tj ET
+BT /F2 13 Tf 54.00 247.00 Td (5. True or false?) Tj ET
+BT /F1 11 Tf 54.00 227.00 Td (Write T or F for each rule of the ship.) Tj ET
+BT /F1 11 Tf 54.00 204.00 Td (1. Beacon warnings sound at 25 km and 40 km. \227 ____________________) Tj ET
+BT /F1 11 Tf 54.00 185.00 Td (2. If you fly past 50 km you lose everything you collected. \227 ____________________) Tj ET
+BT /F1 11 Tf 54.00 166.00 Td (3. The first crash is free. \227 ____________________) Tj ET
+BT /F1 11 Tf 54.00 147.00 Td (4. A later crash repair costs 10 WATER and 10 METAL. \227 ____________________) Tj ET
+BT /F1 11 Tf 54.00 128.00 Td (5. Stations open automatically when you walk past them. \227 ____________________) Tj ET
+BT /F1 11 Tf 54.00 109.00 Td (6. Stations open with the cyan LEARN button within 8 m. \227 ____________________) Tj ET
+BT /F1 11 Tf 54.00 90.00 Td (7. There are 1,000 floating word tiles in space. \227 ____________________) Tj ET
 BT /F1 9 Tf 54 36 Td (Generation Ship packet) Tj ET
 BT /F1 9 Tf 529.48 36 Td (Page 2) Tj ET
 endstream
@@ -112,59 +120,43 @@ endobj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 11 0 R /F2 12 0 R /F3 13 0 R >> >> /Contents 8 0 R >>
 endobj
 8 0 obj
-<< /Length 2499 >>
+<< /Length 2176 >>
 stream
 0.5 w 0 g
-BT /F1 11 Tf 54.00 738.00 Td (Conjugation, Practice, Idioms.) Tj ET
-BT /F1 11 Tf 54.00 715.00 Td (1. ____________________) Tj ET
-BT /F1 11 Tf 54.00 696.00 Td (2. ____________________) Tj ET
-BT /F1 11 Tf 54.00 677.00 Td (3. ____________________) Tj ET
-BT /F1 11 Tf 54.00 658.00 Td (4. ____________________) Tj ET
-BT /F1 11 Tf 54.00 639.00 Td (5. ____________________) Tj ET
-BT /F1 11 Tf 54.00 620.00 Td (6. ____________________) Tj ET
-BT /F2 13 Tf 54.00 587.00 Td (7. Plan a voyage) Tj ET
-BT /F1 11 Tf 54.00 567.00 Td (Write the six quest steps in your own words, in order. Then answer the last question.) Tj ET
-BT /F1 11 Tf 54.00 544.00 Td (1. Step 1:) Tj ET
-54.00 525.00 m 558.00 525.00 l S
-BT /F1 11 Tf 54.00 507.00 Td (2. Step 2:) Tj ET
-54.00 488.00 m 558.00 488.00 l S
-BT /F1 11 Tf 54.00 470.00 Td (3. Step 3:) Tj ET
-54.00 451.00 m 558.00 451.00 l S
-BT /F1 11 Tf 54.00 433.00 Td (4. Step 4:) Tj ET
-54.00 414.00 m 558.00 414.00 l S
-BT /F1 11 Tf 54.00 396.00 Td (5. Step 5:) Tj ET
-54.00 377.00 m 558.00 377.00 l S
-BT /F1 11 Tf 54.00 359.00 Td (6. Step 6:) Tj ET
-54.00 340.00 m 558.00 340.00 l S
-BT /F1 11 Tf 54.00 322.00 Td (7. What would you do first after departing, and why?) Tj ET
-54.00 303.00 m 558.00 303.00 l S
-54.00 285.00 m 558.00 285.00 l S
-BT /F2 13 Tf 54.00 253.00 Td (8. Voyage log) Tj ET
-BT /F1 11 Tf 54.00 233.00 Td (Play the ship, then fill in your log. One row per voyage \227 or one log per player.) Tj ET
-0.92 g 54.00 196.00 185.61 14.00 re f 0 g
-54.00 196.00 185.61 14.00 re S
-BT /F2 11 Tf 59.00 202.00 Td (Record) Tj ET
-0.92 g 239.61 196.00 78.02 14.00 re f 0 g
-239.61 196.00 78.02 14.00 re S
-BT /F2 11 Tf 244.61 202.00 Td (Your voyage) Tj ET
-54.00 176.00 185.61 14.00 re S
-BT /F1 11 Tf 59.00 182.00 Td (Word tiles collected \(of 1,000\)) Tj ET
-239.61 176.00 78.02 14.00 re S
-54.00 156.00 185.61 14.00 re S
-BT /F1 11 Tf 59.00 162.00 Td (Question tiles collected) Tj ET
-239.61 156.00 78.02 14.00 re S
-54.00 136.00 185.61 14.00 re S
-BT /F1 11 Tf 59.00 142.00 Td (Asteroids mined \(of 40\)) Tj ET
-239.61 136.00 78.02 14.00 re S
-54.00 116.00 185.61 14.00 re S
-BT /F1 11 Tf 59.00 122.00 Td (WATER held) Tj ET
-239.61 116.00 78.02 14.00 re S
-54.00 96.00 185.61 14.00 re S
-BT /F1 11 Tf 59.00 102.00 Td (METAL held) Tj ET
-239.61 96.00 78.02 14.00 re S
-54.00 76.00 185.61 14.00 re S
-BT /F1 11 Tf 59.00 82.00 Td (Crashes \(was the first one free?\)) Tj ET
-239.61 76.00 78.02 14.00 re S
+BT /F1 11 Tf 54.00 738.00 Td (8. There are 4,317 floating question tiles in space. \227 ____________________) Tj ET
+BT /F1 11 Tf 54.00 719.00 Td (9. The ship has 8 review terminals. \227 ____________________) Tj ET
+BT /F1 11 Tf 54.00 700.00 Td (10. The ship spins at 1.37 RPM. \227 ____________________) Tj ET
+BT /F2 13 Tf 54.00 667.00 Td (6. Name the nine stations) Tj ET
+BT /F1 11 Tf 54.00 647.00 Td (The agriculture ring holds nine stations. Write them all. Word bank: Dictation, Cognates, Ser vs. estar,) Tj ET
+BT /F1 11 Tf 54.00 632.00 Td (Conjugation, Practice, Idioms, Saber vs. conocer, Pronouns, Por vs. para.) Tj ET
+BT /F1 11 Tf 54.00 609.00 Td (1. ____________________) Tj ET
+BT /F1 11 Tf 54.00 590.00 Td (2. ____________________) Tj ET
+BT /F1 11 Tf 54.00 571.00 Td (3. ____________________) Tj ET
+BT /F1 11 Tf 54.00 552.00 Td (4. ____________________) Tj ET
+BT /F1 11 Tf 54.00 533.00 Td (5. ____________________) Tj ET
+BT /F1 11 Tf 54.00 514.00 Td (6. ____________________) Tj ET
+BT /F1 11 Tf 54.00 495.00 Td (7. ____________________) Tj ET
+BT /F1 11 Tf 54.00 476.00 Td (8. ____________________) Tj ET
+BT /F1 11 Tf 54.00 457.00 Td (9. ____________________) Tj ET
+BT /F2 13 Tf 54.00 424.00 Td (7. Plan a voyage) Tj ET
+BT /F1 11 Tf 54.00 404.00 Td (Write the seven quest steps in your own words, in order. Then answer the last question.) Tj ET
+BT /F1 11 Tf 54.00 381.00 Td (1. Step 1:) Tj ET
+54.00 362.00 m 558.00 362.00 l S
+BT /F1 11 Tf 54.00 344.00 Td (2. Step 2:) Tj ET
+54.00 325.00 m 558.00 325.00 l S
+BT /F1 11 Tf 54.00 307.00 Td (3. Step 3:) Tj ET
+54.00 288.00 m 558.00 288.00 l S
+BT /F1 11 Tf 54.00 270.00 Td (4. Step 4:) Tj ET
+54.00 251.00 m 558.00 251.00 l S
+BT /F1 11 Tf 54.00 233.00 Td (5. Step 5:) Tj ET
+54.00 214.00 m 558.00 214.00 l S
+BT /F1 11 Tf 54.00 196.00 Td (6. Step 6:) Tj ET
+54.00 177.00 m 558.00 177.00 l S
+BT /F1 11 Tf 54.00 159.00 Td (7. Step 7:) Tj ET
+54.00 140.00 m 558.00 140.00 l S
+BT /F1 11 Tf 54.00 122.00 Td (8. What would you do first after departing, and why?) Tj ET
+54.00 103.00 m 558.00 103.00 l S
+54.00 85.00 m 558.00 85.00 l S
 BT /F1 9 Tf 54 36 Td (Generation Ship packet) Tj ET
 BT /F1 9 Tf 529.48 36 Td (Page 3) Tj ET
 endstream
@@ -173,33 +165,54 @@ endobj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 11 0 R /F2 12 0 R /F3 13 0 R >> >> /Contents 10 0 R >>
 endobj
 10 0 obj
-<< /Length 1380 >>
+<< /Length 2375 >>
 stream
 0.5 w 0 g
-0.92 g 54.00 724.00 185.61 14.00 re f 0 g
-54.00 724.00 185.61 14.00 re S
-BT /F2 11 Tf 59.00 730.00 Td (Record) Tj ET
-0.92 g 239.61 724.00 78.02 14.00 re f 0 g
-239.61 724.00 78.02 14.00 re S
-BT /F2 11 Tf 244.61 730.00 Td (Your voyage) Tj ET
-54.00 704.00 185.61 14.00 re S
-BT /F1 11 Tf 59.00 710.00 Td (Repositories finished \(which ones?\)) Tj ET
-239.61 704.00 78.02 14.00 re S
-54.00 684.00 185.61 14.00 re S
-BT /F1 11 Tf 59.00 690.00 Td (Furthest distance flown \(km\)) Tj ET
-239.61 684.00 78.02 14.00 re S
-BT /F2 13 Tf 54.00 656.00 Td (9. Reflection) Tj ET
-BT /F1 11 Tf 54.00 636.00 Td (Answer in English or Spanish.) Tj ET
-BT /F1 11 Tf 54.00 613.00 Td (1. Which repository would you rebuild first, and why?) Tj ET
-54.00 594.00 m 558.00 594.00 l S
-54.00 576.00 m 558.00 576.00 l S
-BT /F1 11 Tf 54.00 558.00 Td (2. Would you spend your first mined WATER and METAL on repairs or save them? Explain your plan.) Tj ET
-54.00 539.00 m 558.00 539.00 l S
-54.00 521.00 m 558.00 521.00 l S
-BT /F1 11 Tf 54.00 503.00 Td (3. What rule keeps a pilot from getting LOST, and what would you do if the 40 km warning sounded?) Tj ET
-54.00 484.00 m 558.00 484.00 l S
-54.00 466.00 m 558.00 466.00 l S
-BT /F2 11 Tf 54.00 440.00 Td (Answer key \(teachers\): packet-generation-ship-answers.pdf) Tj ET
+BT /F2 13 Tf 54.00 724.00 Td (8. Voyage log) Tj ET
+BT /F1 11 Tf 54.00 704.00 Td (Play the ship, then fill in your log. One row per voyage \227 or one log per player.) Tj ET
+0.92 g 54.00 667.00 185.61 14.00 re f 0 g
+54.00 667.00 185.61 14.00 re S
+BT /F2 11 Tf 59.00 673.00 Td (Record) Tj ET
+0.92 g 239.61 667.00 78.02 14.00 re f 0 g
+239.61 667.00 78.02 14.00 re S
+BT /F2 11 Tf 244.61 673.00 Td (Your voyage) Tj ET
+54.00 647.00 185.61 14.00 re S
+BT /F1 11 Tf 59.00 653.00 Td (Word tiles collected \(of 1,000\)) Tj ET
+239.61 647.00 78.02 14.00 re S
+54.00 627.00 185.61 14.00 re S
+BT /F1 11 Tf 59.00 633.00 Td (Question tiles collected) Tj ET
+239.61 627.00 78.02 14.00 re S
+54.00 607.00 185.61 14.00 re S
+BT /F1 11 Tf 59.00 613.00 Td (Asteroids mined \(of 40\)) Tj ET
+239.61 607.00 78.02 14.00 re S
+54.00 587.00 185.61 14.00 re S
+BT /F1 11 Tf 59.00 593.00 Td (WATER held) Tj ET
+239.61 587.00 78.02 14.00 re S
+54.00 567.00 185.61 14.00 re S
+BT /F1 11 Tf 59.00 573.00 Td (METAL held) Tj ET
+239.61 567.00 78.02 14.00 re S
+54.00 547.00 185.61 14.00 re S
+BT /F1 11 Tf 59.00 553.00 Td (Crashes \(was the first one free?\)) Tj ET
+239.61 547.00 78.02 14.00 re S
+54.00 527.00 185.61 14.00 re S
+BT /F1 11 Tf 59.00 533.00 Td (Repositories finished \(which ones?\)) Tj ET
+239.61 527.00 78.02 14.00 re S
+54.00 507.00 185.61 14.00 re S
+BT /F1 11 Tf 59.00 513.00 Td (Furthest distance flown \(km\)) Tj ET
+239.61 507.00 78.02 14.00 re S
+BT /F2 13 Tf 54.00 479.00 Td (9. Reflection) Tj ET
+BT /F1 11 Tf 54.00 459.00 Td (Answer in English or Spanish.) Tj ET
+BT /F1 11 Tf 54.00 436.00 Td (1. Which repository would you rebuild first, and why?) Tj ET
+54.00 417.00 m 558.00 417.00 l S
+54.00 399.00 m 558.00 399.00 l S
+BT /F1 11 Tf 54.00 381.00 Td (2. Would you spend your first mined WATER and METAL on repairs or save them? Explain your plan.) Tj ET
+54.00 362.00 m 558.00 362.00 l S
+54.00 344.00 m 558.00 344.00 l S
+BT /F1 11 Tf 54.00 326.00 Td (3. What rule keeps a pilot from getting LOST, and what would you do if the 40 km warning sounded?) Tj ET
+54.00 307.00 m 558.00 307.00 l S
+54.00 289.00 m 558.00 289.00 l S
+BT /F1 11 Tf 54.00 271.00 Td (Generation Ship packet \227 Pollito Productions) Tj ET
+BT /F2 11 Tf 54.00 240.00 Td (Answer key \(teachers\): packet-generation-ship-answers.pdf) Tj ET
 BT /F1 9 Tf 54 36 Td (Generation Ship packet) Tj ET
 BT /F1 9 Tf 529.48 36 Td (Page 4) Tj ET
 endstream
@@ -220,17 +233,17 @@ xref
 0000000058 00000 n 
 0000000133 00000 n 
 0000000282 00000 n 
-0000004349 00000 n 
-0000004498 00000 n 
-0000008160 00000 n 
-0000008309 00000 n 
-0000010860 00000 n 
-0000011010 00000 n 
-0000012443 00000 n 
-0000012541 00000 n 
-0000012644 00000 n 
+0000004493 00000 n 
+0000004642 00000 n 
+0000008463 00000 n 
+0000008612 00000 n 
+0000010840 00000 n 
+0000010990 00000 n 
+0000013418 00000 n 
+0000013516 00000 n 
+0000013619 00000 n 
 trailer
 << /Size 14 /Root 1 0 R >>
 startxref
-12750
+13725
 %%EOF
