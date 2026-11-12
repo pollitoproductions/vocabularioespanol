@@ -290,6 +290,29 @@ function pickDistractors(pool, correct, n){
 }
 /* Ser/estar forms by subject code (subj_code from serestar.html). */
 var SER_MAP={ser:{yo:"soy",tu:"eres",el:"es",nos:"somos",ellos:"son"},estar:{yo:"estoy",tu:"estás",el:"está",nos:"estamos",ellos:"están"}};
+/* Practice levels (L3-4) should test real vocabulary, not cognate recognition
+   (cognates are what L1-2 are for). PRAC_NC is PRAC_POOL minus any entry whose
+   core Spanish word is a cognate: lowercase, accents stripped, leading article
+   removed, compared against the COG_POOL Spanish words normalized the same way.
+   The original 1,000-word PRAC_POOL is untouched. 68 entries removed, 932 left. */
+function normCoreWord(s){
+  var w=(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+  return w.replace(/^(el|la|los|las|un|una)\s+/,"");
+}
+var COG_SET={};
+for(var cgi=0;cgi<COG_POOL.length;cgi++){ COG_SET[normCoreWord(COG_POOL[cgi][0])]=1; }
+var PRAC_NC=PRAC_POOL.filter(function(e){ return !COG_SET[normCoreWord(e[0])]; });
+/* Possessive groups: noun-form key (phrase minus the first word, the pronoun)
+   -> the entries sharing that noun form. Every group has exactly 4 entries
+   (one per pronoun: mi/tu/su/nuestro-a or mis/tus/sus/nuestro-a-s), verified;
+   groups with fewer than 4 are excluded from the draw (none exist). */
+var POSS_GROUPS={};
+for(var pgi=0;pgi<POSS_POOL.length;pgi++){
+  var psp=POSS_POOL[pgi][0];
+  var pkey=psp.substring(psp.indexOf(" ")+1);
+  (POSS_GROUPS[pkey]=POSS_GROUPS[pkey]||[]).push(POSS_POOL[pgi]);
+}
+var POSS_KEYS=Object.keys(POSS_GROUPS).filter(function(k){ return POSS_GROUPS[k].length===4; });
 /* Draw 25 fresh items for a level from the FULL pool (no repeats in a run).
    Replaying a level re-draws, so the mix is different every time. */
 function levelWords(level){
@@ -307,16 +330,34 @@ function levelWords(level){
         q:"Which Spanish word means \u201c"+cen+"\u201d?",
         prompt:"Say this word:", display:csp});
     }
-  } else if(type==="practice"||type==="possessive"){
-    var pool=type==="practice"?PRAC_POOL:POSS_POOL;
-    var pi=idxs(pool.length).slice(0,25);
-    var allSp=pool.map(function(e){ return e[0]; });
+  } else if(type==="practice"){
+    // Practice uses the cognate-filtered pool (PRAC_NC), so L3-4 test real
+    // vocabulary instead of cognate recognition (cognates are L1-2's job).
+    var pi=idxs(PRAC_NC.length).slice(0,25);
+    var allSpP=PRAC_NC.map(function(e){ return e[0]; });
     for(var b=0;b<pi.length;b++){
-      var item=pool[pi[b]], sp=item[0], en=item[1];
-      var ch=pickDistractors(allSp, sp, 3); ch.push(sp); shuffle(ch);
+      var item=PRAC_NC[pi[b]], sp=item[0], en=item[1];
+      var ch=pickDistractors(allSpP, sp, 3); ch.push(sp); shuffle(ch);
       out.push({target:sp, choice:sp, choices:ch, qTarget:null,
         q:"Which Spanish phrase means \u201c"+en+"\u201d?",
         prompt:"Say this phrase:", display:sp});
+    }
+  } else if(type==="possessive"){
+    // Possessive: the 4 choices are the SAME noun with only the pronoun
+    // differing, so the student must know the pronoun (not just the noun).
+    // Draw 25 DISTINCT noun-form groups per run, so no noun-form repeats
+    // within a run; the question item is one entry of the group, picked at
+    // random, and the choices are that group's 4 entries (same noun, 4
+    // pronouns). All entries come from the pool (agreement pre-verified).
+    var pkeys=shuffle(POSS_KEYS.slice()).slice(0,25);
+    for(var pb=0;pb<pkeys.length;pb++){
+      var grp=POSS_GROUPS[pkeys[pb]];
+      var pick=grp[Math.floor(Math.random()*grp.length)];
+      var sp2=pick[0], en2=pick[1];
+      var ch2=grp.map(function(e){ return e[0]; }); shuffle(ch2);
+      out.push({target:sp2, choice:sp2, choices:ch2, qTarget:null,
+        q:"Which Spanish phrase means \u201c"+en2+"\u201d?",
+        prompt:"Say this phrase:", display:sp2});
     }
   } else if(type==="conjugation"){
     // All 113 verbs x 5 subjects = 565 combos; draw 25 distinct combos.
@@ -333,11 +374,19 @@ function levelWords(level){
         prompt:"Say the form:", display:form, sub:vb[0]+" — "+SUBJ_NAME[sub]});
     }
   } else { // serestar
-    var kind=level===9?"ser":"estar";
-    var spool=kind==="ser"?SER_POOL:ESTAR_POOL;
-    var si=idxs(spool.length).slice(0,25);
-    for(var d=0;d<si.length;d++){
-      var sent=spool[si[d]][0], subj=spool[si[d]][1];
+    // L9 and L10 BOTH mix ser and estar (the combined 96-sentence pool),
+    // roughly even: 13 of one kind + 12 of the other, with which side gets
+    // the extra one chosen at random each run. Each item keeps its kind so
+    // the correct form comes from the right SER_MAP. Format unchanged
+    // (sentence with blank, 4 ser/estar forms, speak the full sentence).
+    var nSer=Math.random()<0.5?13:12, nEst=25-nSer;
+    var serTake=idxs(SER_POOL.length).slice(0,nSer).map(function(i){ return ["ser",i]; });
+    var estTake=idxs(ESTAR_POOL.length).slice(0,nEst).map(function(i){ return ["estar",i]; });
+    var take=shuffle(serTake.concat(estTake));
+    for(var d=0;d<take.length;d++){
+      var kind=take[d][0], sidx=take[d][1];
+      var spool=kind==="ser"?SER_POOL:ESTAR_POOL;
+      var sent=spool[sidx][0], subj=spool[sidx][1];
       var f=SER_MAP[kind][subj];
       var target=sent.replace("___", f);
       var ch3=SER_DIST[f].slice(); ch3.push(f); shuffle(ch3);
@@ -1061,10 +1110,14 @@ function draw(){
     // beak
     ctx.fillStyle="#f97316";
     ctx.beginPath(); ctx.moveTo(17,0); ctx.lineTo(9,-4); ctx.lineTo(9,4); ctx.closePath(); ctx.fill();
-    // feet
-    ctx.fillStyle="#f97316";
+    // feet (dark rust #7c2d12 + black outline, so they stand out from the
+    // bright orange platform tops instead of blending into them)
+    ctx.fillStyle="#7c2d12";
+    ctx.strokeStyle="#111827"; ctx.lineWidth=1;
     var step=Math.floor(px/18)%2;
-    ctx.fillRect(-10+(step?0:2),17,7,5); ctx.fillRect(4+(step?2:0),17,7,5);
+    var fx1=-10+(step?0:2), fx2=4+(step?2:0);
+    ctx.fillRect(fx1,17,7,5); ctx.strokeRect(fx1,17,7,5);
+    ctx.fillRect(fx2,17,7,5); ctx.strokeRect(fx2,17,7,5);
   } else if(skinId==="cow"){
     drawHighlandCow(ctx);
   } else if(skinId==="turtle"){
