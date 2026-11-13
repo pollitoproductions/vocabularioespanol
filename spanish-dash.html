@@ -543,6 +543,7 @@ function speakSpanish(text){
 var W=960, H=540, GROUND_Y=H-84;
 var PIT_FLOOR_Y=GROUND_Y+56; // pit bottom: spikes sit here, 26px below ground level
 var SPEED=320, GRAV=2600, JUMP_V=-880;
+var PAD_V=-1150; // jump-pad launch: ~1.5x a normal jump (254px high, 283px far)
 function genLevel(level, seed){
   var rng=mulberry32(seed!==undefined?seed:((Math.random()*4294967296)|0));
   var L=24000;
@@ -572,12 +573,50 @@ function genLevel(level, seed){
     var tallChance=(level>=2?0.05+0.225*d:0)+0.15*p;
     var t=rng(), w=0;
     var spikeT=0.20+0.06*h, blockT=spikeT+0.14+0.04*h, gapT=blockT+0.14;
-    var platSpikeT=gapT+0.17, platGapT=platSpikeT+0.12, stairT=platGapT+0.10+0.05*h;
+    var padT=gapT+(level>=4?0.06:0);
+    var platSpikeT=padT+0.17, platGapT=platSpikeT+0.12, stairT=platGapT+0.10+0.05*h;
     if(t<spikeT){
-      var dbl=rng()<dblChance;
-      w=dbl?64:32;
-      if(inSafe(x,x+w)) continue;
-      obstacles.push({type:"spike",x:Math.round(x),w:w,h:30,base:GROUND_Y});
+      // L3+: spike variants — triple, half, fake, ground saw, saw-over-spike.
+      // All live inside the spike branch, so the overall spike rate is unchanged;
+      // only the mix gets richer as levels go up. The thresholds are cumulative
+      // and level-adjusted, so each variant keeps a FIXED rate (combo 10%,
+      // saw 12%, fake 15%, half 15%) at every level where it is unlocked —
+      // a gated-off variant must not widen the ones below it.
+      var vr=rng();
+      var comboT=level>=6?0.10:0;
+      var sawT=comboT+(level>=5?0.12:0);
+      var fakeT=sawT+(level>=4?0.15:0);
+      var halfT=fakeT+(level>=3?0.15:0);
+      if(vr<comboT){
+        // saw over a spike: jump the spike EARLY, high enough to clear the blade
+        w=32;
+        if(inSafe(x,x+w)) continue;
+        obstacles.push({type:"spike",x:Math.round(x),w:32,h:30,base:GROUND_Y});
+        obstacles.push({type:"saw",x:Math.round(x+16),y:GROUND_Y-95,r:18,w:36});
+      }else if(vr<sawT){
+        // ground sawblade (medium): a round lethal hazard instead of a spike
+        w=44;
+        if(inSafe(x,x+w)) continue;
+        obstacles.push({type:"saw",x:Math.round(x+22),y:GROUND_Y-20,r:20,w:44});
+      }else if(vr<fakeT){
+        // fake spike: looks lethal, safe to touch (drawn faded — the tell)
+        var fdbl=rng()<0.3;
+        w=fdbl?64:32;
+        if(inSafe(x,x+w)) continue;
+        obstacles.push({type:"fakespike",x:Math.round(x),w:w,h:30,base:GROUND_Y});
+      }else if(vr<halfT){
+        // half-spike: half height, still lethal, needs only a small jump
+        w=32;
+        if(inSafe(x,x+w)) continue;
+        obstacles.push({type:"halfspike",x:Math.round(x),w:32,h:15,base:GROUND_Y});
+      }else{
+        var dbl=rng()<dblChance;
+        var triple=false;
+        if(dbl&&level>=3&&rng()<0.6) triple=true;
+        w=triple?96:(dbl?64:32);
+        if(inSafe(x,x+w)) continue;
+        obstacles.push({type:"spike",x:Math.round(x),w:w,h:30,base:GROUND_Y});
+      }
     }else if(t<blockT){
       var tall=rng()<tallChance;
       w=40;
@@ -588,6 +627,24 @@ function genLevel(level, seed){
       if(w>120) w=120;
       if(inSafe(x,x+w)) continue;
       gaps.push({x:Math.round(x),w:w});
+    }else if(t<padT){
+      // jump pad + helper (L4+): the pad launches you over a wide gap or a tall
+      // block. Both are clearable by a well-timed normal jump too — the pad
+      // makes it easy. (A pad never gates progress: nothing after it is
+      // impossible without it.)
+      if(rng()<0.5){
+        var gw2=170+Math.floor(rng()*30); // 170-200px gap
+        w=88+gw2;
+        if(inSafe(x,x+w)) continue;
+        obstacles.push({type:"pad",x:Math.round(x),w:48,h:12,base:GROUND_Y});
+        gaps.push({x:Math.round(x+88),w:gw2});
+      }else{
+        var bh2=120+Math.floor(rng()*20); // 120-140px tall block
+        w=138;
+        if(inSafe(x,x+w)) continue;
+        obstacles.push({type:"pad",x:Math.round(x),w:48,h:12,base:GROUND_Y});
+        obstacles.push({type:"block",x:Math.round(x+98),w:40,h:bh2});
+      }
     }else if(t<platSpikeT){
       // platform over a ground spike: hop up to dodge it
       w=102;
@@ -630,6 +687,19 @@ function genLevel(level, seed){
     var g3=gaps[gi3], nsp=Math.floor(g3.w/32);
     for(var s3=0; s3<nsp; s3++){
       obstacles.push({type:"spike",x:g3.x+s3*32,w:32,h:30,base:PIT_FLOOR_Y});
+    }
+  }
+  // jump orbs (L5+): a floating orb above some plain gaps — tap it mid-air for a
+  // double-jump boost. Optional (the gap is clearable without it); the orb is
+  // only a safety net. Wide gaps (>130px) are staircases or pad gaps, so they
+  // are skipped.
+  if(level>=5){
+    for(var gi4=0; gi4<gaps.length; gi4++){
+      var g4=gaps[gi4];
+      if(g4.w>130) continue;
+      if(rng()<0.35){
+        obstacles.push({type:"orb",x:Math.round(g4.x+g4.w/2),y:GROUND_Y-120,r:16,w:32,used:false});
+      }
     }
   }
   return {L:L,finishX:L-300,cps:cps,obstacles:obstacles,gaps:gaps,platforms:platforms};
@@ -1286,6 +1356,8 @@ function respawn(){
   px=bx+4; py=GROUND_Y-34; vy=0; onGround=true; rot=0;
   camX=Math.max(0,Math.min(px-240,lv.L-W));
   state="playing";
+  // fresh attempt: orbs and pads are usable again
+  if(lv){ for(var ri=0;ri<lv.obstacles.length;ri++){ lv.obstacles[ri].used=false; } }
   updateHUD();
 }
 function crash(){
@@ -1324,7 +1396,24 @@ function winLevel(){
 function doJump(){
   if(state!=="playing") return;
   if(onGround||coyote>0){ vy=JUMP_V; onGround=false; coyote=0; sfxJump(); }
-  else { jumpBuffer=0.20; }
+  else {
+    // jump orb (GD rule): a tap while overlapping a floating orb gives a
+    // mid-air boost. One fire per pass; holding through does nothing — each
+    // orb needs its own tap.
+    var orb=orbAt(px+17,py+17);
+    if(orb){ orb.used=true; vy=JUMP_V; sfxJump(); return; }
+    jumpBuffer=0.20;
+  }
+}
+function orbAt(cx,cy){
+  var obs=lv?lv.obstacles:[];
+  for(var i=0;i<obs.length;i++){
+    var o=obs[i];
+    if(o.type!=="orb"||o.used) continue;
+    var dx=cx-o.x, dy=cy-o.y;
+    if(dx*dx+dy*dy<38*38) return o;
+  }
+  return null;
 }
 function update(dt){
   if(state==="crashed"){
@@ -1395,6 +1484,39 @@ function update(dt){
     if(s.type!=="spike") continue;
     var sx=s.x+5, sw=s.w-10, sy=(s.base||GROUND_Y)-s.h+12, sh=s.h-12;
     if(hb.x<sx+sw&&hb.x+hb.w>sx&&hb.y<sy+sh&&hb.y+hb.h>sy){ crash(); return; }
+  }
+  // sawblades (circle hitbox, slightly forgiving: 0.85x the drawn radius)
+  for(var m=0;m<lv.obstacles.length;m++){
+    var sw2=lv.obstacles[m];
+    if(sw2.type!=="saw") continue;
+    var rr=sw2.r*0.85;
+    var nx=Math.max(hb.x,Math.min(sw2.x,hb.x+hb.w));
+    var ny=Math.max(hb.y,Math.min(sw2.y,hb.y+hb.h));
+    var ddx=sw2.x-nx, ddy=sw2.y-ny;
+    if(ddx*ddx+ddy*ddy<rr*rr){ crash(); return; }
+  }
+  // half-spikes: short triangles, still lethal (hitbox = top 9px of the 15px spike)
+  for(var hs=0;hs<lv.obstacles.length;hs++){
+    var hh=lv.obstacles[hs];
+    if(hh.type!=="halfspike") continue;
+    var hx=hh.x+5, hw=hh.w-10, hy=(hh.base||GROUND_Y)-9, hh2=9;
+    if(hb.x<hx+hw&&hb.x+hb.w>hx&&hb.y<hy+hh2&&hb.y+hb.h>hy){ crash(); return; }
+  }
+  // jump pads: auto-launch on touch (no click needed). Fires once per pass;
+  // the flag resets when the player leaves the pad's x-range.
+  for(var pd2=0;pd2<lv.obstacles.length;pd2++){
+    var pd=lv.obstacles[pd2];
+    if(pd.type!=="pad") continue;
+    if(px+34<pd.x||px>pd.x+pd.w){ pd.used=false; continue; }
+    if(!pd.used&&hb.x<pd.x+pd.w&&hb.x+hb.w>pd.x&&hb.y<(pd.base||GROUND_Y)&&hb.y+hb.h>(pd.base||GROUND_Y)-12){
+      pd.used=true; vy=PAD_V; onGround=false; coyote=0; sfxJump();
+    }
+  }
+  // jump orbs: reset the once-per-pass flag when the player leaves the orb's range
+  for(var ob2=0;ob2<lv.obstacles.length;ob2++){
+    var ob=lv.obstacles[ob2];
+    if(ob.type!=="orb") continue;
+    if(px+34<ob.x-40||px>ob.x+40) ob.used=false;
   }
   // checkpoints
   for(var k=0;k<checkpoints.length;k++){
@@ -1586,6 +1708,64 @@ function draw(){
         ctx.beginPath(); ctx.moveTo(bx2,sbase); ctx.lineTo(bx2+16,sbase-o.h); ctx.lineTo(bx2+32,sbase); ctx.closePath(); ctx.fill();
         ctx.strokeStyle=th.spikeEdge; ctx.lineWidth=2; ctx.stroke();
       }
+    }else if(o.type==="halfspike"){
+      var hsbase=(o.base||GROUND_Y);
+      ctx.fillStyle=th.spike;
+      ctx.beginPath(); ctx.moveTo(ox,hsbase); ctx.lineTo(ox+16,hsbase-o.h); ctx.lineTo(ox+32,hsbase); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle=th.spikeEdge; ctx.lineWidth=2; ctx.stroke();
+    }else if(o.type==="fakespike"){
+      // fake spike: the same triangle, drawn faded — the tell that it is safe
+      var fsbase=(o.base||GROUND_Y);
+      ctx.save(); ctx.globalAlpha=0.45;
+      ctx.fillStyle=th.spike;
+      var fn=o.w/32;
+      for(var fs=0;fs<fn;fs++){
+        var fbx=ox+fs*32;
+        ctx.beginPath(); ctx.moveTo(fbx,fsbase); ctx.lineTo(fbx+16,fsbase-o.h); ctx.lineTo(fbx+32,fsbase); ctx.closePath(); ctx.fill();
+      }
+      ctx.restore();
+    }else if(o.type==="saw"){
+      // rotating sawblade: toothed silver circle with a dark hub
+      var sa=Date.now()/250;
+      ctx.save(); ctx.translate(ox,o.y); ctx.rotate(sa);
+      ctx.fillStyle="#d1d5db";
+      for(var st=0;st<8;st++){
+        ctx.rotate(Math.PI/4);
+        ctx.beginPath(); ctx.moveTo(0,-o.r); ctx.lineTo(5,-o.r-7); ctx.lineTo(10,-o.r); ctx.closePath(); ctx.fill();
+      }
+      ctx.beginPath(); ctx.arc(0,0,o.r,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle="#6b7280";
+      ctx.beginPath(); ctx.arc(0,0,o.r*0.55,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle="#374151";
+      ctx.beginPath(); ctx.arc(0,0,o.r*0.22,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }else if(o.type==="pad"){
+      // jump pad: bright yellow with chevrons, pulsing glow — it launches you
+      var pbase=(o.base||GROUND_Y);
+      var pulse=0.5+0.5*Math.sin(Date.now()/150);
+      ctx.fillStyle="rgba(250,204,21,"+(0.25+0.25*pulse)+")";
+      ctx.fillRect(ox-4,pbase-16,o.w+8,16);
+      ctx.fillStyle="#facc15";
+      ctx.fillRect(ox,pbase-12,o.w,12);
+      ctx.strokeStyle="#a16207"; ctx.lineWidth=2; ctx.strokeRect(ox,pbase-12,o.w,12);
+      ctx.fillStyle="#a16207";
+      for(var ch=0;ch<2;ch++){
+        var chx=ox+10+ch*22;
+        ctx.beginPath(); ctx.moveTo(chx,pbase-4); ctx.lineTo(chx+7,pbase-10); ctx.lineTo(chx+14,pbase-4); ctx.closePath(); ctx.fill();
+      }
+    }else if(o.type==="orb"){
+      // jump orb: glowing yellow ring, pulsing — tap it mid-air for a boost
+      var opulse=0.6+0.4*Math.sin(Date.now()/120);
+      ctx.save();
+      ctx.globalAlpha=0.35+0.35*opulse;
+      ctx.strokeStyle="#facc15"; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.arc(ox,o.y,o.r+6+4*opulse,0,Math.PI*2); ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle="#fde047";
+      ctx.beginPath(); ctx.arc(ox,o.y,o.r,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle="#a16207"; ctx.lineWidth=2.5; ctx.stroke();
+      ctx.fillStyle="#fff";
+      ctx.beginPath(); ctx.arc(ox-4,o.y-4,4,0,Math.PI*2); ctx.fill();
     }else{
       ctx.fillStyle=th.block; ctx.fillRect(ox,GROUND_Y-o.h,o.w,o.h);
       ctx.strokeStyle=th.blockEdge; ctx.lineWidth=3; ctx.strokeRect(ox,GROUND_Y-o.h,o.w,o.h);
