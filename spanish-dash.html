@@ -71,7 +71,13 @@ html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-a
 .howto p{margin:4px 0}
 .volRow{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin:10px 0}
 .volRow label{font-weight:700;font-size:.95rem;color:#1f2937}
-.volRow input[type=range]{vertical-align:middle;width:120px;accent-color:#f97316}
+.volRow{display:flex;flex-direction:column;gap:12px;margin:12px 0}
+.volRow label{display:flex;align-items:center;gap:10px;font-weight:700}
+.volRow input[type=range]{flex:1;min-width:0;height:32px;accent-color:#f97316;touch-action:pan-x;-webkit-tap-highlight-color:transparent}
+.volRow input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:28px;height:28px;border-radius:50%;background:#f97316;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);cursor:pointer}
+.volRow input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:#fed7aa}
+.volRow input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;background:#f97316;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);cursor:pointer}
+.volRow input[type=range]::-moz-range-track{height:8px;border-radius:4px;background:#fed7aa}
 .speakOpt{display:flex;align-items:center;justify-content:center;gap:8px;background:#ffedd5;border:2px solid #f97316;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:1rem;cursor:pointer;text-align:left}
 .speakOpt input[type=checkbox]{width:20px;height:20px;accent-color:#f97316;flex:0 0 auto}
 .speakOpt .speakNote{font-size:.85rem;color:#6b7280}
