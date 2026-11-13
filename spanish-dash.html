@@ -39,8 +39,8 @@ html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-a
 .btn:disabled{opacity:.45;cursor:not-allowed}
 #quizTarget{font-size:2.4rem;font-weight:800;color:#111827;margin:10px 0;line-height:1.15}
 #quizStep{font-weight:700;color:#c2410c;font-size:.95rem;margin:2px 0}
-#quizChoices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
-.choiceBtn{background:#fff;border:2px solid #f97316;border-radius:12px;padding:14px 10px;font-size:1.15rem;font-weight:700;color:#1f2937;cursor:pointer;min-height:56px;line-height:1.2}
+#quizChoices{display:grid;grid-template-columns:1fr;gap:12px;margin:12px 0}
+.choiceBtn{background:#fff;border:2px solid #f97316;border-radius:12px;padding:16px 12px;font-size:1.2rem;font-weight:700;color:#1f2937;cursor:pointer;min-height:64px;line-height:1.2;box-sizing:border-box;width:100%;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .choiceBtn:hover{background:#ffedd5}
 .choiceBtn.correct{background:#dcfce7;border-color:#16a34a;color:#166534}
 .choiceBtn.wrong{background:#fee2e2;border-color:#dc2626;color:#991b1b;opacity:.55}
@@ -119,7 +119,8 @@ html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-a
   #menu .lvlBtn .b{font-size:.8rem}
   #levelGrid{gap:6px;margin:4px 0}
   #quiz .card{padding:10px 14px}
-  #quiz .choiceBtn{min-height:44px;padding:8px}
+  #quizChoices{grid-template-columns:1fr 1fr;gap:10px}
+  #quiz .choiceBtn{min-height:56px;padding:12px 8px;font-size:1.1rem}
   #quiz #quizTarget{font-size:1.5rem;margin:6px 0}
   #quiz .feedback{min-height:0;margin:4px 0}
   #quizHearRow .btn{padding:8px 14px;font-size:1rem}
@@ -138,7 +139,7 @@ html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-a
 @media (max-width:600px){
   h1{font-size:1.5rem}
   #quizTarget{font-size:1.8rem}
-  .choiceBtn{font-size:1.05rem;padding:12px 8px;min-height:52px}
+  .choiceBtn{font-size:1.2rem;padding:16px 12px;min-height:64px}
   .card{padding:14px 16px}
   .card h2{font-size:1.35rem}
   .card p{margin:4px 0}
@@ -1861,7 +1862,7 @@ function addTap(el, fn){
   el.addEventListener("pointerdown",function(e){ sx=e.clientX; sy=e.clientY; down=true; });
   el.addEventListener("pointerup",function(e){
     if(!down) return; down=false;
-    if(Math.abs(e.clientX-sx)<=12&&Math.abs(e.clientY-sy)<=12) fn();
+    if(Math.abs(e.clientX-sx)<=20&&Math.abs(e.clientY-sy)<=20) fn();
   });
   el.addEventListener("pointercancel",function(){ down=false; });
   el.addEventListener("pointerleave",function(){ down=false; });
