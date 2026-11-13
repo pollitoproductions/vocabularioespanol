@@ -1865,7 +1865,6 @@ function addTap(el, fn){
     if(Math.abs(e.clientX-sx)<=20&&Math.abs(e.clientY-sy)<=20) fn();
   });
   el.addEventListener("pointercancel",function(){ down=false; });
-  el.addEventListener("pointerleave",function(){ down=false; });
 }
 function renderChoices(w){
   quizChoicesEl.innerHTML="";
