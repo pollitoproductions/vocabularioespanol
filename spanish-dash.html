@@ -128,7 +128,7 @@ html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-a
   #quiz .card h2{font-size:1.2rem;margin:2px 0}
   #quiz .card p{margin:2px 0}
   #quizChoices{grid-template-columns:repeat(4,1fr);gap:8px;margin:6px 0}
-  #quiz .choiceBtn{min-height:48px;padding:8px 6px;font-size:1rem}
+  #quiz .choiceBtn{min-height:64px;padding:10px 6px;font-size:1.05rem}
   #quiz #quizTarget{font-size:1.3rem;margin:4px 0}
   #quiz .feedback{min-height:0;margin:2px 0}
   #quizHearRow{margin:2px 0}
@@ -184,74 +184,74 @@ html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-a
       <button class="hudBtn" id="btnFull" type="button" title="Full screen">⛶</button>
     </div>
 
-  </div>
-</div>
-<div id="menu" class="overlay">
-  <div class="card">
-    <h2>🐔 Spanish Dash</h2>
-    <p class="tagline">Run. Jump. Say it in Spanish!</p>
-    <p class="menuDesc">Tap, click, or <b>Space</b> to jump. At each checkpoint, pick the right answer from 4 choices. Wrong pick? Back to the last checkpoint — except in the easy Cognates levels!</p>
-    <div id="levelGrid"></div>
-    <p class="small">L1–2 Cognates &nbsp;·&nbsp; L3–4 Practice &nbsp;·&nbsp; L5–6 Present tense &nbsp;·&nbsp; L7–8 Possessives &nbsp;·&nbsp; L9–10 Ser vs. estar<br>25 questions per level, fresh every run.</p>
-    <div class="skinSec">
-      <div class="skinLabel">Choose your character:</div>
-      <div id="skinGrid"></div>
-      <div id="skinLockHint" class="small"></div>
+    <div id="menu" class="overlay">
+      <div class="card">
+        <h2>🐔 Spanish Dash</h2>
+        <p class="tagline">Run. Jump. Say it in Spanish!</p>
+        <p class="menuDesc">Tap, click, or <b>Space</b> to jump. At each checkpoint, pick the right answer from 4 choices. Wrong pick? Back to the last checkpoint — except in the easy Cognates levels!</p>
+        <div id="levelGrid"></div>
+        <p class="small">L1–2 Cognates &nbsp;·&nbsp; L3–4 Practice &nbsp;·&nbsp; L5–6 Present tense &nbsp;·&nbsp; L7–8 Possessives &nbsp;·&nbsp; L9–10 Ser vs. estar<br>25 questions per level, fresh every run.</p>
+        <div class="skinSec">
+          <div class="skinLabel">Choose your character:</div>
+          <div id="skinGrid"></div>
+          <div id="skinLockHint" class="small"></div>
+        </div>
+        <label class="speakOpt"><input type="checkbox" id="chkSpeaking"> 🎤 <b>Speaking activities</b> — also say each answer out loud <span class="speakNote">(needs a microphone; off by default)</span></label>
+        <p style="margin:4px 0"><button class="btn resetBtn" id="btnReset" type="button">Reset progress</button></p>
+        <div id="resetConfirm" class="hidden">
+          <p><b>Are you sure?</b> This clears all best scores and unlocked levels.</p>
+          <p><button class="btn" id="btnResetYes" type="button">Yes, reset</button> <button class="btn alt" id="btnResetNo" type="button">No, keep them</button></p>
+        </div>
+        <p><a class="homeLink" href="index.html">← Back to Pollito Productions</a></p>
+      </div>
     </div>
-    <label class="speakOpt"><input type="checkbox" id="chkSpeaking"> 🎤 <b>Speaking activities</b> — also say each answer out loud <span class="speakNote">(needs a microphone; off by default)</span></label>
-    <p style="margin:4px 0"><button class="btn resetBtn" id="btnReset" type="button">Reset progress</button></p>
-    <div id="resetConfirm" class="hidden">
-      <p><b>Are you sure?</b> This clears all best scores and unlocked levels.</p>
-      <p><button class="btn" id="btnResetYes" type="button">Yes, reset</button> <button class="btn alt" id="btnResetNo" type="button">No, keep them</button></p>
-    </div>
-    <p><a class="homeLink" href="index.html">← Back to Pollito Productions</a></p>
-  </div>
-</div>
 
-<div id="quiz" class="overlay hidden">
-  <div class="card">
-    <div id="quizTitle">Checkpoint 1</div>
-    <div id="quizCount">Word 1 of 5</div>
-    <div id="quizStep">Step 1 of 2 · Choose</div>
-    <p id="quizPrompt">Which Spanish phrase means "the cat"?</p>
-    <div id="quizTarget">hotel</div>
-    <div id="quizChoices"></div>
-    <div id="quizHearRow"><button class="btn alt" id="quizHear" type="button">🔊 Hear it</button></div>
-    <div id="quizSpeak">
-      <button class="btn say" id="quizSay" type="button">🎤 Say it</button>
+    <div id="quiz" class="overlay hidden">
+      <div class="card">
+        <div id="quizTitle">Checkpoint 1</div>
+        <div id="quizCount">Word 1 of 5</div>
+        <div id="quizStep">Step 1 of 2 · Choose</div>
+        <p id="quizPrompt">Which Spanish phrase means "the cat"?</p>
+        <div id="quizTarget">hotel</div>
+        <div id="quizChoices"></div>
+        <div id="quizHearRow"><button class="btn alt" id="quizHear" type="button">🔊 Hear it</button></div>
+        <div id="quizSpeak">
+          <button class="btn say" id="quizSay" type="button">🎤 Say it</button>
+        </div>
+        <p id="quizFb" class="feedback"></p>
+        <button class="btn link" id="quizQuit" type="button">← Back to level select</button>
+      </div>
     </div>
-    <p id="quizFb" class="feedback"></p>
-    <button class="btn link" id="quizQuit" type="button">← Back to level select</button>
-  </div>
-</div>
 
-<div id="pauseOv" class="overlay hidden">
-  <div class="card">
-    <h2>Paused</h2>
-    <div class="howto">
-      <b>How to play</b>
-      <p>Tap, click, or press <b>Space</b> to jump. Dodge spikes, blocks, and gaps — land on the orange platforms to hop over trouble. At each checkpoint, <b>pick the right answer from 4 choices</b> to keep running. Pick the wrong answer (except in the Cognates levels) and you go back to the last checkpoint. Speaking is optional — turn on <b>Speaking activities</b> on the home menu if you also want to say each answer out loud. If the game mishears you when you speak, just try again as many times as you like.</p>
+    <div id="pauseOv" class="overlay hidden">
+      <div class="card">
+        <h2>Paused</h2>
+        <div class="howto">
+          <b>How to play</b>
+          <p>Tap, click, or press <b>Space</b> to jump. Dodge spikes, blocks, and gaps — land on the orange platforms to hop over trouble. At each checkpoint, <b>pick the right answer from 4 choices</b> to keep running. Pick the wrong answer (except in the Cognates levels) and you go back to the last checkpoint. Speaking is optional — turn on <b>Speaking activities</b> on the home menu if you also want to say each answer out loud. If the game mishears you when you speak, just try again as many times as you like.</p>
+        </div>
+        <div class="volRow">
+          <label>Music <input id="volMusic" type="range" min="0" max="100" value="100"></label>
+          <label>Sound effects <input id="volSfx" type="range" min="0" max="100" value="100"></label>
+        </div>
+        <button class="btn" id="btnResume" type="button">Resume</button>
+        <button class="btn alt" id="btnRestart" type="button">Restart level</button>
+        <button class="btn alt" id="btnQuit" type="button">Level select</button>
+      </div>
     </div>
-    <div class="volRow">
-      <label>Music <input id="volMusic" type="range" min="0" max="100" value="100"></label>
-      <label>Sound effects <input id="volSfx" type="range" min="0" max="100" value="100"></label>
-    </div>
-    <button class="btn" id="btnResume" type="button">Resume</button>
-    <button class="btn alt" id="btnRestart" type="button">Restart level</button>
-    <button class="btn alt" id="btnQuit" type="button">Level select</button>
-  </div>
-</div>
 
-<div id="winOv" class="overlay hidden">
-  <div class="card">
-    <h2>🎉 Level Complete!</h2>
-    <p id="winSub">You finished Level 1!</p>
-    <div id="winWords"></div>
-    <p id="winBest"></p>
-    <p id="winUnlock" class="unlockNote hidden">🎉 You beat the whole game — all 10 levels! New skins unlocked!</p>
-    <button class="btn" id="btnNext" type="button">Next level</button>
-    <button class="btn alt" id="btnReplay" type="button">Replay</button>
-    <button class="btn alt" id="btnWinMenu" type="button">Level select</button>
+    <div id="winOv" class="overlay hidden">
+      <div class="card">
+        <h2>🎉 Level Complete!</h2>
+        <p id="winSub">You finished Level 1!</p>
+        <div id="winWords"></div>
+        <p id="winBest"></p>
+        <p id="winUnlock" class="unlockNote hidden">🎉 You beat the whole game — all 10 levels! New skins unlocked!</p>
+        <button class="btn" id="btnNext" type="button">Next level</button>
+        <button class="btn alt" id="btnReplay" type="button">Replay</button>
+        <button class="btn alt" id="btnWinMenu" type="button">Level select</button>
+      </div>
+    </div>
   </div>
 </div>
 <script>
@@ -1864,24 +1864,13 @@ function setQuizFb(msg,cls){ quizFb.textContent=msg; quizFb.className="feedback"
 function currentWord(){ return quizWords[quizIdx]; }
 // Tap helper for quiz buttons: on iOS a plain "click" inside the scrollable
 // quiz card can miss or be swallowed, so the touch never lands on the box.
-// pointerdown + pointerup with a small movement threshold fires the tap
-// immediately and reliably, while a real scroll (finger moves) does nothing.
-function addTap(el, fn){
-  var sx=0, sy=0, down=false;
-  el.addEventListener("pointerdown",function(e){ sx=e.clientX; sy=e.clientY; down=true; });
-  el.addEventListener("pointerup",function(e){
-    if(!down) return; down=false;
-    if(Math.abs(e.clientX-sx)<=20&&Math.abs(e.clientY-sy)<=20) fn();
-  });
-  el.addEventListener("pointercancel",function(){ down=false; });
-}
 function renderChoices(w){
   quizChoicesEl.innerHTML="";
   for(var i=0;i<w.choices.length;i++){
     (function(ch){
       var b=document.createElement("button");
       b.className="choiceBtn"; b.type="button"; b.textContent=ch;
-      addTap(b,function(){ pickChoice(ch,b); });
+      b.addEventListener("click",function(){ pickChoice(ch,b); });
       quizChoicesEl.appendChild(b);
     })(w.choices[i]);
   }
@@ -2053,8 +2042,8 @@ function startListen(){
   }
   attempt();
 }
-addTap(hearBtn,function(){ var w=currentWord(); if(w) speakSpanish(w.target); });
-addTap(sayBtn,function(){ startListen(); });
+hearBtn.addEventListener("click",function(){ var w=currentWord(); if(w) speakSpanish(w.target); });
+sayBtn.addEventListener("click",function(){ startListen(); });
 document.getElementById("quizQuit").addEventListener("click",function(){ closeQuiz(); showMenu(); });
 
 /* ================= UI: menu / level select / win / pause ================= */
