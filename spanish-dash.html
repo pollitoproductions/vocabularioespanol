@@ -659,26 +659,32 @@ function genLevel(level, seed){
   /* Difficulty ladder: d=0 at L1, 1 at L10; p = progress through the level (0..1).
      Density, double-spike and tall-block rates, spacing and gap width all scale
      with BOTH d and p, so L5 > L1, L10 > L5, and the end of a level is harder
-     than its start. Hardest sections stay clearable: max gap 120px (jump 217px),
-     tall block 80px (jump 149px), min flat gap ~295px between features.
+     than its start. The ramp starts at L1 (no more gentle intro — L1 is
+     already busy) and every level is denser than the last. Empty stretches
+     are kept short: spacing between features is 320px at L1 shrinking to
+     ~180px by L10, with only 0-60px of random extra, so there is almost no
+     dead running. Hardest sections stay clearable: max gap 120px (jump 217px),
+     tall block 80px (jump 149px), min flat gap ~180px between features.
      Advanced-obstacle rates (saw-over-spike combos, ground saws, gap gates,
-     bounce/floatpad platforms, spike staircases) ALSO scale with d, so the
-     later levels are genuinely denser with hard obstacles, not just busier. */
+     bounce/floatpad platforms, spike staircases) ALSO scale with d, and the
+     easier variants unlock early (half-spike L1, fake spike L2, triple L2,
+     ground saw + gate L4, combo L5), so the later levels are genuinely denser
+     with hard obstacles, not just busier. */
   var d=(level-1)/9;
   var x=700;
   while(x<L-450){
     var p=x/L;
     var h=d*0.7+p*0.3; /* combined hardness for the feature mix */
-    var spacing=470-135*d-40*p;
-    x+=spacing+rng()*120;
+    var spacing=320-110*d-30*p;
+    x+=spacing+rng()*60;
     if(x>L-450) break;
-    var density=Math.min(0.98, 0.72+0.225*d+0.05*p);
+    var density=Math.min(0.99, 0.85+0.14*d+0.03*p);
     if(rng()>density) continue;
-    var dblChance=0.10+0.27*d+0.15*p;
-    var tallChance=(level>=2?0.05+0.225*d:0)+0.15*p;
+    var dblChance=0.15+0.25*d+0.15*p;
+    var tallChance=0.05+0.225*d+0.15*p;
     var t=rng(), w=0;
     var spikeT=0.20+0.06*h, blockT=spikeT+0.14+0.04*h, gapT=blockT+0.14;
-    var padT=gapT+(level>=4?0.06:0);
+    var padT=gapT+(level>=3?0.06:0);
     var platSpikeT=padT+0.17, platGapT=platSpikeT+0.12, stairT=platGapT+0.10+0.05*h;
     if(t<spikeT){
       // L3+: spike variants — triple, half, fake, ground saw, saw-over-spike.
@@ -689,10 +695,10 @@ function genLevel(level, seed){
       // (12%→20%) scale up with d — so the later levels get more of the hard
       // variants and fewer plain spikes.
       var vr=rng();
-      var comboT=level>=6?(0.10+0.10*d):0;
-      var sawT=comboT+(level>=5?(0.12+0.08*d):0);
-      var fakeT=sawT+(level>=4?0.15:0);
-      var halfT=fakeT+(level>=3?0.15:0);
+      var comboT=level>=5?(0.10+0.10*d):0;
+      var sawT=comboT+(level>=4?(0.12+0.08*d):0);
+      var fakeT=sawT+(level>=2?0.15:0);
+      var halfT=fakeT+0.15;
       if(vr<comboT){
         // saw over a spike: jump the spike EARLY, high enough to clear the blade
         // (the saw spans x+16..x+52, so the safe-zone check covers that full
@@ -723,13 +729,13 @@ function genLevel(level, seed){
       }else{
         var dbl=rng()<dblChance;
         var triple=false;
-        if(dbl&&level>=3&&rng()<0.6+0.3*d) triple=true;
+        if(dbl&&level>=2&&rng()<0.6+0.3*d) triple=true;
         w=triple?96:(dbl?64:32);
         if(inSafe(x,x+w)) continue;
         obstacles.push({type:"spike",x:Math.round(x),w:w,h:30,base:GROUND_Y});
       }
     }else if(t<blockT){
-      if(level>=5&&rng()<0.35+0.30*d){
+      if(level>=4&&rng()<0.35+0.30*d){
         // gap gate: tall wall (230px, unjumpable) with a slot at jump height
         // (40-180px up, 140px tall). Pure timing test — the jump height is
         // fixed, so you must time the jump: two windows clear it (jump
