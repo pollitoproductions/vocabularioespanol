@@ -509,6 +509,16 @@ var BLOCK_HIT = 0.4;         // block half-width inflation for a hit (ball radiu
 var GAP_HIT = 0.25;          // gap inset for a fall (ball centre must be this far inside the hole)
 var MAX_REVIVES = 3;
 var REVIVE_PASS = 4;         // correct answers needed out of 5 to revive
+/* The downhill: the track drops SLOPE_DROP units per 20-unit segment
+   (grade 0.14, ~8°) so the slope reads as a real descent, not a flat
+   plane. trackY(d) is the track surface height at distance d. */
+var SLOPE_DROP = 2.8;
+var SLOPE_GRADE = SLOPE_DROP / SEG_LEN;
+/* asin (not atan): sin(SLOPE_ANGLE) === SLOPE_GRADE exactly, so each
+   segment's far end lands exactly on the next segment's near end —
+   no step at the boundary. */
+var SLOPE_ANGLE = Math.asin(SLOPE_GRADE);
+function trackY(d){ return -d * SLOPE_GRADE; }
 
 /* ---------- state ---------- */
 var state = "menu";          // menu | playing | paused | revive | over
@@ -544,9 +554,9 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 var scene = new THREE.Scene();
 scene.background = new THREE.Color(0x050510);
-scene.fog = new THREE.Fog(0x050510, 40, 260);
-var camera = new THREE.PerspectiveCamera(72, window.innerWidth/window.innerHeight, 0.1, 500);
-camera.position.set(0, 4.8, 9);
+scene.fog = new THREE.Fog(0x050510, 60, 400);
+var camera = new THREE.PerspectiveCamera(72, window.innerWidth/window.innerHeight, 0.1, 600);
+camera.position.set(0, 5, 10);
 scene.add(new THREE.AmbientLight(0x8899bb, 1.4));
 var dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
 dirLight.position.set(4, 10, 6);
@@ -561,7 +571,37 @@ scene.add(ballMesh);
 
 /* Shared geometries/materials (reused by every segment — keeps it fast). */
 var floorGeo = new THREE.PlaneGeometry(1, SEG_LEN);
-var floorMat = new THREE.MeshStandardMaterial({color:0x0e0e26, roughness:0.85, metalness:0.2});
+/* Neon grid texture for the track surface — the original Slope's
+   signature: a glowing grid that scrolls toward the camera so the
+   motion reads. One canvas tile = one 2x2-unit cell (bright cyan lines
+   on the dark track); it is cloned per floor mesh so the repeat matches
+   that mesh's width (gap strips are narrower than the full track) and
+   the grid stays a uniform 2 units everywhere. The transverse lines
+   align across segments (20 is a multiple of 2), so the grid is
+   continuous down the whole track. */
+function makeGridTexture(){
+  var c = document.createElement("canvas"); c.width = 128; c.height = 128;
+  var g = c.getContext("2d");
+  g.fillStyle = "#0e0e26"; g.fillRect(0, 0, 128, 128);
+  g.strokeStyle = "#22d3ee"; g.lineWidth = 4;
+  g.shadowColor = "#22d3ee"; g.shadowBlur = 10;
+  /* Lines on the left + top edges tile into a continuous grid. */
+  g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 128); g.stroke();
+  g.beginPath(); g.moveTo(0, 0); g.lineTo(128, 0); g.stroke();
+  var tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+  tex.anisotropy = 4;
+  return tex;
+}
+var gridTex = makeGridTexture();
+/* One material (+ cloned texture) per floor mesh; the caller disposes
+   both when the segment is removed. Returns {mat, tex}. */
+function floorMaterialFor(width){
+  var t = gridTex.clone();
+  t.repeat.set(width/2, SEG_LEN/2);
+  t.needsUpdate = true;
+  return {mat: new THREE.MeshStandardMaterial({color:0xffffff, map:t, roughness:0.85, metalness:0.2}), tex: t};
+}
 var edgeGeo = new THREE.BoxGeometry(0.18, 0.08, SEG_LEN);
 var edgeMat = new THREE.MeshBasicMaterial({color:0x22d3ee});
 var crossGeo = new THREE.BoxGeometry(TRACK_W, 0.06, 0.14);
@@ -678,24 +718,34 @@ function buildSegment(idx){
   var plan = planSegment(idx, dist, rng, prevSegGap);
   prevSegGap = !!plan.gap;
   var group = new THREE.Group();
-  group.position.z = -idx * SEG_LEN;
+  /* The segment descends with the slope: its near end sits at the
+     track height for this distance, and the group is tilted by the
+     slope angle so the far end drops a further SLOPE_DROP. Blocks,
+     tiles and edges ride in group-local coordinates, so they sit on
+     the sloped surface automatically. */
+  group.position.set(0, trackY(idx * SEG_LEN), -idx * SEG_LEN);
+  group.rotation.x = -SLOPE_ANGLE;
+  var floorMats = [];   // per-floor materials/textures, disposed on removal
   /* Floor: one full plane, or two strips leaving the gap open. */
   if(plan.gap){
     var lw = plan.gap.x0 + 5, rw = 5 - plan.gap.x1;
     if(lw > 0.05){
-      var left = new THREE.Mesh(floorGeo, floorMat);
+      var fmL = floorMaterialFor(lw); floorMats.push(fmL);
+      var left = new THREE.Mesh(floorGeo, fmL.mat);
       left.rotation.x = -Math.PI/2; left.scale.x = lw;
       left.position.set(-5 + lw/2, 0, -SEG_LEN/2);
       group.add(left);
     }
     if(rw > 0.05){
-      var right = new THREE.Mesh(floorGeo, floorMat);
+      var fmR = floorMaterialFor(rw); floorMats.push(fmR);
+      var right = new THREE.Mesh(floorGeo, fmR.mat);
       right.rotation.x = -Math.PI/2; right.scale.x = rw;
       right.position.set(5 - rw/2, 0, -SEG_LEN/2);
       group.add(right);
     }
   } else {
-    var floor = new THREE.Mesh(floorGeo, floorMat);
+    var fm = floorMaterialFor(TRACK_W); floorMats.push(fm);
+    var floor = new THREE.Mesh(floorGeo, fm.mat);
     floor.rotation.x = -Math.PI/2; floor.scale.x = TRACK_W;
     floor.position.set(0, 0, -SEG_LEN/2);
     group.add(floor);
@@ -721,8 +771,19 @@ function buildSegment(idx){
     group.add(tileMesh);
   }
   scene.add(group);
-  segments.set(idx, {group:group, plan:plan, tileMesh:tileMesh, tileTaken:false, phase:Math.random()*6.28});
+  segments.set(idx, {group:group, plan:plan, tileMesh:tileMesh, tileTaken:false, phase:Math.random()*6.28, floorMats:floorMats});
   return plan;
+}
+function disposeSegment(seg){
+  scene.remove(seg.group);
+  if(seg.tileMesh && seg.tileMesh.material.map) seg.tileMesh.material.map.dispose();
+  if(seg.tileMesh) seg.tileMesh.material.dispose();
+  if(seg.floorMats){
+    for(var i=0;i<seg.floorMats.length;i++){
+      seg.floorMats[i].tex.dispose();
+      seg.floorMats[i].mat.dispose();
+    }
+  }
 }
 function ensureSegments(){
   /* Keep ~520 units of track ahead of the ball; drop what is behind. */
@@ -733,19 +794,13 @@ function ensureSegments(){
   var behind = ballZ + 50;
   segments.forEach(function(seg, idx){
     if(-idx * SEG_LEN > behind){
-      scene.remove(seg.group);
-      if(seg.tileMesh && seg.tileMesh.material.map) seg.tileMesh.material.map.dispose();
-      if(seg.tileMesh) seg.tileMesh.material.dispose();
+      disposeSegment(seg);
       segments.delete(idx);
     }
   });
 }
 function resetTrack(){
-  segments.forEach(function(seg){
-    scene.remove(seg.group);
-    if(seg.tileMesh && seg.tileMesh.material.map) seg.tileMesh.material.map.dispose();
-    if(seg.tileMesh) seg.tileMesh.material.dispose();
-  });
+  segments.forEach(function(seg){ disposeSegment(seg); });
   segments.clear();
   nextSegIdx = 0; prevSegGap = false;
   runSeed = (Math.random()*2147483647)|0;
@@ -753,18 +808,22 @@ function resetTrack(){
 }
 
 /* ---------- speed particles (streaks rushing past) ---------- */
-var P_COUNT = 220;
+var P_COUNT = 120;
 var pGeo = new THREE.BufferGeometry();
 var pPos = new Float32Array(P_COUNT*3);
+var pH = new Float32Array(P_COUNT);   // height of each particle above the track
 function resetParticle(i, zBase){
   pPos[i*3]   = -9 + Math.random()*18;
-  pPos[i*3+1] = Math.random()*7;
   pPos[i*3+2] = zBase - Math.random()*70;
+  pH[i] = Math.random()*6;
+  /* y follows the descending track so particles don't float as
+     abstract shapes in the void far ahead of the ball. */
+  pPos[i*3+1] = pPos[i*3+2]*SLOPE_GRADE + pH[i];
 }
 for(var pi=0; pi<P_COUNT; pi++) resetParticle(pi, 0);
 pGeo.setAttribute("position", new THREE.BufferAttribute(pPos, 3));
 var points = new THREE.Points(pGeo, new THREE.PointsMaterial({
-  color:0x9be8ff, size:0.14, transparent:true, opacity:0.75,
+  color:0x9be8ff, size:0.10, transparent:true, opacity:0.55,
   blending:THREE.AdditiveBlending, depthWrite:false}));
 scene.add(points);
 
@@ -934,12 +993,14 @@ function frame(){
     checkCollisions();
     updateHUD();
   }
-  /* Ball roll + lean, invincibility flash. */
-  ballMesh.position.set(ballX, BALL_R, ballZ);
+  /* Ball roll + lean, invincibility flash. The ball rides the slope:
+     its height follows the track's descent at the current distance. */
+  var ballY = BALL_R + trackY(dist);
+  ballMesh.position.set(ballX, ballY, ballZ);
   ballMesh.rotation.x -= curSpeed()*dt/BALL_R * (state === "playing" ? 1 : 0);
   ballMesh.rotation.z = -ballVX*0.03;
   ballMesh.visible = !(state === "playing" && isInvincible() && Math.floor(t*10) % 2 === 0);
-  ballLight.position.set(ballX, 2.2, ballZ + 1);
+  ballLight.position.set(ballX, ballY + 1.7, ballZ + 1);
   /* Word tiles bob gently. */
   segments.forEach(function(seg){
     if(seg.tileMesh && !seg.tileTaken){
@@ -953,16 +1014,22 @@ function frame(){
     pp[i*3+2] += pv*dt*1.4;
     if(pp[i*3+2] > ballZ + 6){
       pp[i*3] = -9 + Math.random()*18;
-      pp[i*3+1] = Math.random()*7;
+      pH[i] = Math.random()*6;
       pp[i*3+2] = ballZ - 60 - Math.random()*10;
     }
+    /* Keep each particle at its height above the descending track. */
+    pp[i*3+1] = pp[i*3+2]*SLOPE_GRADE + pH[i];
   }
   pGeo.attributes.position.needsUpdate = true;
-  /* Camera follows the ball, looking down the slope. */
+  /* Camera follows the ball, looking forward and down the slope. The
+     camera pitches down LESS steeply than the track descends (pitch
+     ~4.6° vs slope ~8°), so the track ahead visibly drops away below
+     the view centre — that is what makes the downhill read instead of
+     looking like a flat plane. */
   camera.position.x += ((ballX*0.5) - camera.position.x) * Math.min(1, dt*6);
-  camera.position.y += (4.8 - camera.position.y) * Math.min(1, dt*6);
-  camera.position.z = ballZ + 9;
-  camera.lookAt(ballX*0.75, 0.4, ballZ - 14);
+  camera.position.y += ((ballY + 4.5) - camera.position.y) * Math.min(1, dt*6);
+  camera.position.z = ballZ + 10;
+  camera.lookAt(ballX*0.75, ballY + 2.4, ballZ - 16);
   renderer.render(scene, camera);
 }
 function checkCollisions(){
