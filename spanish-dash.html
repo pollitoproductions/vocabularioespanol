@@ -2275,9 +2275,14 @@ window.addEventListener("keyup",function(e){
 canvas.addEventListener("pointerdown",function(e){ e.preventDefault(); pressJump(); });
 window.addEventListener("pointerup",function(){ releaseJump(); });
 canvas.addEventListener("pointercancel",function(){ releaseJump(); });
+function autoPause(){
+  if(state==="playing"){ state="paused"; document.getElementById("pauseOv").classList.remove("hidden"); updateHUDVis(); }
+}
 document.addEventListener("visibilitychange",function(){
-  if(document.hidden&&state==="playing"){ state="paused"; document.getElementById("pauseOv").classList.remove("hidden"); updateHUDVis(); }
+  if(document.hidden) autoPause();
 });
+window.addEventListener("blur",autoPause);
+window.addEventListener("pagehide",autoPause);
 
 /* ================= main loop ================= */
 var lastT=0;
