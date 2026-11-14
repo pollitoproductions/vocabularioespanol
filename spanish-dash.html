@@ -11,6 +11,12 @@
 html,body{margin:0;padding:0;background:#000;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#fff;height:100%;overflow:hidden}
 #wrap{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center}
 #gameArea{position:relative;flex:0 0 auto;width:min(100vw,177.78vh);width:min(100dvw,177.78dvh);height:min(100vh,56.25vw);height:min(100dvh,56.25dvw);background:#000;overflow:hidden}
+/* Portrait: the 16:9 letterbox shrinks to a tiny strip (~1/4 of the screen).
+   Use a tall 9:16 box instead — it fills most of the screen height, and the
+   game renders into it with a zoomed camera (see blitToScreen in the loop). */
+@media (orientation:portrait){
+  #gameArea{width:min(100vw,56.25vh);width:min(100dvw,56.25dvh);height:min(100vh,177.78vw);height:min(100dvh,177.78dvw)}
+}
 #game{display:block;width:100%;height:100%;touch-action:none;cursor:pointer}
 #hud{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;gap:8px;padding:8px 10px;background:linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,0));z-index:6;pointer-events:none}
 #hud>*{pointer-events:auto}
@@ -648,7 +654,10 @@ function genLevel(level, seed){
      Density, double-spike and tall-block rates, spacing and gap width all scale
      with BOTH d and p, so L5 > L1, L10 > L5, and the end of a level is harder
      than its start. Hardest sections stay clearable: max gap 120px (jump 217px),
-     tall block 80px (jump 149px), min flat gap ~295px between features. */
+     tall block 80px (jump 149px), min flat gap ~295px between features.
+     Advanced-obstacle rates (saw-over-spike combos, ground saws, gap gates,
+     bounce/floatpad platforms, spike staircases) ALSO scale with d, so the
+     later levels are genuinely denser with hard obstacles, not just busier. */
   var d=(level-1)/9;
   var x=700;
   while(x<L-450){
@@ -669,24 +678,30 @@ function genLevel(level, seed){
       // L3+: spike variants — triple, half, fake, ground saw, saw-over-spike.
       // All live inside the spike branch, so the overall spike rate is unchanged;
       // only the mix gets richer as levels go up. The thresholds are cumulative
-      // and level-adjusted, so each variant keeps a FIXED rate (combo 10%,
-      // saw 12%, fake 15%, half 15%) at every level where it is unlocked —
-      // a gated-off variant must not widen the ones below it.
+      // and level-adjusted: fake (15%) and half (15%) keep a FIXED rate at every
+      // level where they are unlocked, while combo (10%→20%) and ground saw
+      // (12%→20%) scale up with d — so the later levels get more of the hard
+      // variants and fewer plain spikes.
       var vr=rng();
-      var comboT=level>=6?0.10:0;
-      var sawT=comboT+(level>=5?0.12:0);
+      var comboT=level>=6?(0.10+0.10*d):0;
+      var sawT=comboT+(level>=5?(0.12+0.08*d):0);
       var fakeT=sawT+(level>=4?0.15:0);
       var halfT=fakeT+(level>=3?0.15:0);
       if(vr<comboT){
         // saw over a spike: jump the spike EARLY, high enough to clear the blade
+        // (the saw spans x+16..x+52, so the safe-zone check covers that full
+        // extent — the old check only covered the spike's x..x+32, and the
+        // saw could poke into a checkpoint safe zone)
         w=32;
-        if(inSafe(x,x+w)) continue;
+        if(inSafe(x,x+52)) continue;
         obstacles.push({type:"spike",x:Math.round(x),w:32,h:30,base:GROUND_Y});
         obstacles.push({type:"saw",x:Math.round(x+16),y:GROUND_Y-95,r:18,w:36});
       }else if(vr<sawT){
         // ground sawblade (medium): a round lethal hazard instead of a spike
+        // (the saw is centred at x+22 and spans x+22..x+66, so the safe-zone
+        // check covers that full extent — the old check only covered x..x+44)
         w=44;
-        if(inSafe(x,x+w)) continue;
+        if(inSafe(x,x+66)) continue;
         obstacles.push({type:"saw",x:Math.round(x+22),y:GROUND_Y-20,r:20,w:44});
       }else if(vr<fakeT){
         // fake spike: looks lethal, safe to touch (drawn faded — the tell)
@@ -702,13 +717,13 @@ function genLevel(level, seed){
       }else{
         var dbl=rng()<dblChance;
         var triple=false;
-        if(dbl&&level>=3&&rng()<0.6) triple=true;
+        if(dbl&&level>=3&&rng()<0.6+0.3*d) triple=true;
         w=triple?96:(dbl?64:32);
         if(inSafe(x,x+w)) continue;
         obstacles.push({type:"spike",x:Math.round(x),w:w,h:30,base:GROUND_Y});
       }
     }else if(t<blockT){
-      if(level>=5&&rng()<0.35){
+      if(level>=5&&rng()<0.35+0.30*d){
         // gap gate: tall wall (230px, unjumpable) with a slot at jump height
         // (40-180px up, 140px tall). Pure timing test — the jump height is
         // fixed, so you must time the jump: two windows clear it (jump
@@ -723,10 +738,27 @@ function genLevel(level, seed){
         obstacles.push({type:"block",x:Math.round(x),w:40,h:tall?80:40});
       }
     }else if(t<gapT){
-      w=70+Math.floor(27*d)+Math.floor(rng()*40);
-      if(w>120) w=120;
-      if(inSafe(x,x+w)) continue;
-      gaps.push({x:Math.round(x),w:w});
+      if(level>=5&&rng()<0.25+0.20*d){
+        // FLOATPAD over a wide gap: the gap (240-260px) is too wide for a
+        // normal jump (217px), so the floating bounce platform IS the way
+        // across — not decoration. The player jumps onto the floatpad (70px
+        // up, reachable by a normal 149px jump from the edge), the pad
+        // auto-launches them 283px, and they land on the far side. The pad
+        // spans the whole platform top, so any landing on it triggers the
+        // bounce. The gap is tagged float:1 so it is never counted as a plain gap.
+        var gwB=240+Math.floor(rng()*21); // 240-260px gap
+        w=gwB;
+        if(inSafe(x,x+w)) continue;
+        var fpH=70, fpW=130, fpX=x+70;
+        platforms.push({x:Math.round(fpX),w:fpW,h:fpH});
+        obstacles.push({type:"pad",x:Math.round(fpX),w:fpW,h:12,base:GROUND_Y-fpH,float:1,fp:"gap",gapX:Math.round(x),gapW:gwB});
+        gaps.push({x:Math.round(x),w:gwB,float:1});
+      }else{
+        w=70+Math.floor(27*d)+Math.floor(rng()*40);
+        if(w>120) w=120;
+        if(inSafe(x,x+w)) continue;
+        gaps.push({x:Math.round(x),w:w});
+      }
     }else if(t<padT){
       // jump pad + helper (L4+): the pad launches you over a wide gap or a tall
       // block. Both are clearable by a well-timed normal jump too — the pad
@@ -749,19 +781,40 @@ function genLevel(level, seed){
         obstacles.push({type:"block",x:Math.round(x+98),w:40,h:bh2});
       }
     }else if(t<platSpikeT){
-      if(rng()<0.35){
-        // bounce platform: a low platform carries a jump pad that launches
-        // you onto a HIGHER platform, then you jump the spikes at the end.
-        // Low platform 60px up; pad on it; higher platform 200px up,
-        // 170-330px past the pad (pad launch lands ~236px out); triple
-        // spike at the end, clearable from the high platform or the ground.
-        w=446;
-        if(inSafe(x,x+w)) continue;
-        var lowH=60, highH=200;
-        platforms.push({x:Math.round(x),w:100,h:lowH});
-        obstacles.push({type:"pad",x:Math.round(x+20),w:48,h:12,base:GROUND_Y-lowH});
-        platforms.push({x:Math.round(x+190),w:160,h:highH});
-        obstacles.push({type:"spike",x:Math.round(x+350),w:96,h:30,base:GROUND_Y});
+      var bounceRate=level>=3?(0.35+0.30*d):0.35;
+      if(rng()<bounceRate){
+        if(level>=5&&rng()<0.5){
+          // FLOATPAD to a high ledge: ground spikes block the ground route,
+          // so the player MUST jump onto the floating bounce platform and
+          // ride it up to the high ledge — the bounce is the route, not a
+          // bonus. Floatpad 130 wide, 60 up, at x+90 (reachable by a normal
+          // 149px jump from the edge); the pad spans the whole platform top
+          // and auto-launches 283px; the launch lands on the high ledge
+          // (200 up, x+290..x+470). Safe ground resumes past the spike field.
+          w=470;
+          if(inSafe(x,x+w)) continue;
+          var nspA=Math.floor(w/32);
+          for(var spa=0;spa<nspA;spa++){
+            obstacles.push({type:"spike",x:Math.round(x+spa*32),w:32,h:30,base:GROUND_Y});
+          }
+          var faH=60, faW=130, faX=x+90;
+          platforms.push({x:Math.round(faX),w:faW,h:faH});
+          obstacles.push({type:"pad",x:Math.round(faX),w:faW,h:12,base:GROUND_Y-faH,float:1,fp:"ledge",ledgeX:Math.round(x+290),ledgeW:180,ledgeH:200});
+          platforms.push({x:Math.round(x+290),w:180,h:200});
+        }else{
+          // bounce platform: a low platform carries a jump pad that launches
+          // you onto a HIGHER platform, then you jump the spikes at the end.
+          // Low platform 60px up; pad on it; higher platform 200px up,
+          // 170-330px past the pad (pad launch lands ~236px out); triple
+          // spike at the end, clearable from the high platform or the ground.
+          w=446;
+          if(inSafe(x,x+w)) continue;
+          var lowH=60, highH=200;
+          platforms.push({x:Math.round(x),w:100,h:lowH});
+          obstacles.push({type:"pad",x:Math.round(x+20),w:48,h:12,base:GROUND_Y-lowH});
+          platforms.push({x:Math.round(x+190),w:160,h:highH});
+          obstacles.push({type:"spike",x:Math.round(x+350),w:96,h:30,base:GROUND_Y});
+        }
       }else{
         // platform over a ground spike: hop up to dodge it
         w=102;
@@ -788,7 +841,8 @@ function genLevel(level, seed){
       w=(steps-1)*(stepW+stepGap)+stepW;
       if(inSafe(x,x+w)) continue;
       var h0=40+Math.floor(rng()*15);
-      if(rng()<0.4){
+      var spikeStairRate=level>=3?(0.40+0.30*d):0.40;
+      if(rng()<spikeStairRate){
         // spike staircase: ground spikes under the whole route, no pit
         var nsp2=Math.floor(w/32);
         for(var sp2=0;sp2<nsp2;sp2++){
@@ -817,19 +871,13 @@ function genLevel(level, seed){
       obstacles.push({type:"spike",x:g3.x+s3*32,w:32,h:30,base:PIT_FLOOR_Y});
     }
   }
-  // jump orbs (L5+): a floating orb above some plain gaps — tap it mid-air for a
-  // double-jump boost. Optional (the gap is clearable without it); the orb is
-  // only a safety net. Wide gaps (>130px) are staircases or pad gaps, so they
-  // are skipped.
-  if(level>=5){
-    for(var gi4=0; gi4<gaps.length; gi4++){
-      var g4=gaps[gi4];
-      if(g4.w>130) continue;
-      if(rng()<0.35){
-        obstacles.push({type:"orb",x:Math.round(g4.x+g4.w/2),y:GROUND_Y-120,r:16,w:32,used:false});
-      }
-    }
-  }
+  // (Jump orbs were REMOVED Nov 14: they were never needed anywhere — every
+  // gap was clearable without them, so they just looked like coins that did
+  // nothing. Their replacement is the FLOATPAD: a floating bounce platform
+  // generated inside the gap and platform branches above, placed only where
+  // the bounce is actually needed — over a too-wide gap, or up to a high ledge
+  // over spikes. A floatpad is a floating platform whose whole top is a jump
+  // pad (type "pad", float:1), so it auto-launches on any landing.)
   return {L:L,finishX:L-300,cps:cps,obstacles:obstacles,gaps:gaps,platforms:platforms};
 }
 
@@ -840,7 +888,16 @@ function groundSolidAt(lv,x){
 }
 
 /* ================= game state ================= */
-var canvas=document.getElementById("game"), ctx=canvas.getContext("2d");
+/* Rendering: draw() always renders the 960x540 world into an offscreen canvas
+   (ctx). The loop then blits it to the visible canvas. Landscape is a 1:1 blit.
+   Portrait uses a zoomed camera (blitToScreen): a 400px-wide slice of the
+   world, centred on the player with ~300px of lookahead, scaled 1.35x into a
+   tall 540x960 canvas — so the game fills most of a portrait screen instead
+   of shrinking to a tiny 16:9 strip. The WORLD (W/H/GROUND_Y/physics) is
+   untouched; this is a rendering/camera change only. */
+var canvas=document.getElementById("game"), visCtx=canvas.getContext("2d");
+var offCanvas=document.createElement("canvas"); offCanvas.width=960; offCanvas.height=540;
+var ctx=offCanvas.getContext("2d");
 var state="menu"; // menu | playing | quiz | crashed | win | paused
 var level=1, lv=null, words=[], checkpoints=[];
 var px=0, py=GROUND_Y-34, vy=0, onGround=true, rot=0;
@@ -1484,7 +1541,7 @@ function respawn(){
   px=bx+4; py=GROUND_Y-34; vy=0; onGround=true; rot=0;
   camX=Math.max(0,Math.min(px-240,lv.L-W));
   state="playing";
-  // fresh attempt: orbs and pads are usable again
+  // fresh attempt: pads are usable again
   if(lv){ for(var ri=0;ri<lv.obstacles.length;ri++){ lv.obstacles[ri].used=false; } }
   updateHUD();
 }
@@ -1524,24 +1581,7 @@ function winLevel(){
 function doJump(){
   if(state!=="playing") return;
   if(onGround||coyote>0){ vy=JUMP_V; onGround=false; coyote=0; sfxJump(); }
-  else {
-    // jump orb (GD rule): a tap while overlapping a floating orb gives a
-    // mid-air boost. One fire per pass; holding through does nothing — each
-    // orb needs its own tap.
-    var orb=orbAt(px+17,py+17);
-    if(orb){ orb.used=true; vy=JUMP_V; sfxJump(); return; }
-    jumpBuffer=0.20;
-  }
-}
-function orbAt(cx,cy){
-  var obs=lv?lv.obstacles:[];
-  for(var i=0;i<obs.length;i++){
-    var o=obs[i];
-    if(o.type!=="orb"||o.used) continue;
-    var dx=cx-o.x, dy=cy-o.y;
-    if(dx*dx+dy*dy<38*38) return o;
-  }
-  return null;
+  else { jumpBuffer=0.20; }
 }
 function update(dt){
   if(state==="crashed"){
@@ -1601,7 +1641,20 @@ function update(dt){
   // or block top) while the button is held or a jump is buffered. (Previously
   // this only ran in the ground branch, so landing on a platform or a block
   // swallowed the held jump and the buffered tap.)
-  if(wasAir&&onGround&&(jumpHeld||jumpBuffer>0)){ jumpBuffer=0; doJump(); }
+  // EXCEPT when the player just landed on a jump pad (a ground pad, or a pad
+  // on a platform — including the floating bounce platforms): then the PAD
+  // must fire. Without this, holding jump would auto-hop a short normal jump
+  // off the pad instead, and the pad launch the route needs would never happen.
+  var onPadNow=false;
+  if(onGround){
+    for(var ppi=0;ppi<lv.obstacles.length;ppi++){
+      var pp=lv.obstacles[ppi];
+      if(pp.type!=="pad"||pp.used) continue;
+      var pb2=(pp.base||GROUND_Y);
+      if(py+34>=pb2-12&&py+34<=pb2+2&&px+4<pp.x+pp.w&&px+30>pp.x){ onPadNow=true; break; }
+    }
+  }
+  if(wasAir&&onGround&&!onPadNow&&(jumpHeld||jumpBuffer>0)){ jumpBuffer=0; doJump(); }
   if(py>H+80){ crash(); return; }
   // rotation in air
   if(!onGround){ rot+= (SPEED*dt)/34*(Math.PI/2)*0.9; }
@@ -1650,12 +1703,6 @@ function update(dt){
     if(!pd.used&&hb.x<pd.x+pd.w&&hb.x+hb.w>pd.x&&hb.y<(pd.base||GROUND_Y)&&hb.y+hb.h>(pd.base||GROUND_Y)-12){
       pd.used=true; vy=PAD_V; onGround=false; coyote=0; sfxJump();
     }
-  }
-  // jump orbs: reset the once-per-pass flag when the player leaves the orb's range
-  for(var ob2=0;ob2<lv.obstacles.length;ob2++){
-    var ob=lv.obstacles[ob2];
-    if(ob.type!=="orb") continue;
-    if(px+34<ob.x-40||px>ob.x+40) ob.used=false;
   }
   // checkpoints
   for(var k=0;k<checkpoints.length;k++){
@@ -1888,8 +1935,11 @@ function draw(){
       ctx.fillRect(ox,pbase-12,o.w,12);
       ctx.strokeStyle="#a16207"; ctx.lineWidth=2; ctx.strokeRect(ox,pbase-12,o.w,12);
       ctx.fillStyle="#a16207";
-      for(var ch=0;ch<2;ch++){
+      // chevrons scale with the pad width: a 48px ground pad gets 2 (as
+      // before), a wide floatpad gets more, so the whole top reads as a pad
+      for(var ch=0;ch<Math.floor(o.w/22);ch++){
         var chx=ox+10+ch*22;
+        if(chx+14>ox+o.w) break;
         ctx.beginPath(); ctx.moveTo(chx,pbase-4); ctx.lineTo(chx+7,pbase-10); ctx.lineTo(chx+14,pbase-4); ctx.closePath(); ctx.fill();
       }
     }else if(o.type==="gate"){
@@ -1907,19 +1957,6 @@ function draw(){
       ctx.fillStyle="#facc15";
       var gMid=(gTop+gBot)/2;
       ctx.beginPath(); ctx.moveTo(ox+8,gMid-6); ctx.lineTo(ox+16,gMid); ctx.lineTo(ox+8,gMid+6); ctx.closePath(); ctx.fill();
-    }else if(o.type==="orb"){
-      // jump orb: glowing yellow ring, pulsing — tap it mid-air for a boost
-      var opulse=0.6+0.4*Math.sin(Date.now()/120);
-      ctx.save();
-      ctx.globalAlpha=0.35+0.35*opulse;
-      ctx.strokeStyle="#facc15"; ctx.lineWidth=3;
-      ctx.beginPath(); ctx.arc(ox,o.y,o.r+6+4*opulse,0,Math.PI*2); ctx.stroke();
-      ctx.restore();
-      ctx.fillStyle="#fde047";
-      ctx.beginPath(); ctx.arc(ox,o.y,o.r,0,Math.PI*2); ctx.fill();
-      ctx.strokeStyle="#a16207"; ctx.lineWidth=2.5; ctx.stroke();
-      ctx.fillStyle="#fff";
-      ctx.beginPath(); ctx.arc(ox-4,o.y-4,4,0,Math.PI*2); ctx.fill();
     }else{
       ctx.fillStyle=th.block; ctx.fillRect(ox,GROUND_Y-o.h,o.w,o.h);
       ctx.strokeStyle=th.blockEdge; ctx.lineWidth=3; ctx.strokeRect(ox,GROUND_Y-o.h,o.w,o.h);
@@ -2286,6 +2323,26 @@ window.addEventListener("pagehide",autoPause);
 
 /* ================= main loop ================= */
 var lastT=0;
+// Portrait camera: crop a 400x540 slice of the 960x540 world frame (the full
+// world height, 400px wide) and scale it 1.35x into the tall canvas. The slice
+// is anchored on the player — player centre sits 100px into the slice, so
+// ~300px of track ahead is always visible (~0.95s at full speed: enough to
+// spot a spike and jump; a normal jump covers 217px). Near the track ends the
+// slice clamps to the frame edges. Landscape blits the frame 1:1, unchanged.
+function blitToScreen(){
+  var portrait=window.innerHeight>window.innerWidth;
+  if(!portrait){
+    if(canvas.width!==960||canvas.height!==540){ canvas.width=960; canvas.height=540; }
+    visCtx.drawImage(offCanvas,0,0);
+    return;
+  }
+  if(canvas.width!==540||canvas.height!==960){ canvas.width=540; canvas.height=960; }
+  visCtx.fillStyle="#000"; visCtx.fillRect(0,0,540,960);
+  var sx=0;
+  if(lv){ sx=clamp(px+17-camX-100,0,560); }
+  // dest 540x729 (400x540 scaled 1.35x), centred vertically (115px bars top/bottom)
+  visCtx.drawImage(offCanvas,sx,0,400,540,0,115,540,729);
+}
 function loop(t){
   requestAnimationFrame(loop);
   updateHUDVis();
@@ -2293,6 +2350,7 @@ function loop(t){
   lastT=t;
   update(dt);
   draw();
+  blitToScreen();
 }
 applyAudio();
 document.getElementById("volMusic").value=Math.round(musicVol*100);
