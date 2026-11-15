@@ -2434,11 +2434,28 @@ function resumeTile(){
   hudEl.classList.add("on");
 }
 
+/* ---------- portrait playability (round 11) ----------
+   Landscape is ONE way to play, not the way — portrait stays fully
+   supported, with nothing telling the player to rotate. The portrait
+   fix is the camera: a fixed vertical FOV narrows the horizontal view
+   as the viewport gets taller, so in portrait the FOV opens up (72°
+   in landscape, up to ~96° in tall portrait) until the full 10-unit
+   track width reads at the ball's depth. */
+var BASE_FOV = 72;
+function applyCameraFov(){
+  var aspect = window.innerWidth / window.innerHeight;
+  var fov = BASE_FOV;
+  if(aspect < 1) fov = Math.min(98, BASE_FOV + (1 - aspect) * 45);
+  if(camera.fov !== fov){ camera.fov = fov; camera.updateProjectionMatrix(); }
+}
+
 window.addEventListener("resize", function(){
   camera.aspect = window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  applyCameraFov();
 });
+applyCameraFov();
 /* Auto-pause when the player leaves the screen (same as Spanish Dash). */
 function autoPause(){ if(state === "playing") pauseGame(); }
 document.addEventListener("visibilitychange", function(){ if(document.hidden) autoPause(); });
