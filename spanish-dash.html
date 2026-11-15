@@ -2087,6 +2087,7 @@ function pickChoice(ch, btn){
 function showSpeakStep(){
   var w=currentWord();
   quizStep="speak";
+  sayBtn.disabled=false; // re-enable after a correct hear disabled it (scoreHeard)
   quizStepEl.textContent="Step 2 of 2 · Say it";
   quizPrompt.textContent=w.prompt;
   quizTarget.style.display="";
@@ -2156,6 +2157,10 @@ function scoreHeard(heard){
     sfxCorrect();
     wordStatus[quizCp*5+quizIdx]="ok";
     setQuizFb("✓ Correct!","ok");
+    /* No second listen during the 800 ms beat: a fresh recognition could
+       score this same word again and advanceQuiz() twice, skipping the
+       next word. Re-enabled in showSpeakStep. (Same fix as Slope round 17.) */
+    sayBtn.disabled=true;
     setTimeout(function(){ if(state==="quiz") advanceQuiz(); },800);
   }else{
     sfxWrong();
@@ -2165,7 +2170,12 @@ function scoreHeard(heard){
 function startListen(){
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){ setQuizFb("Speech recognition isn't available in this browser. Keep playing with just the choices — turn off Speaking activities on the home menu — or use Chrome or Safari.","bad"); return; }
-  if(listening){ userStopped=true; try{recog.stop();}catch(e){} return; }
+  /* Tap-to-stop goes through stopListen() synchronously (round 17 fix,
+     same as Slope): the old branch only called recog.stop() and trusted
+     onend's userStopped branch, but that branch never reset listening,
+     so one tap-to-stop left listening=true forever and no new listen
+     ever started until a page reload. Never rely on onend for cleanup. */
+  if(listening){ stopListen(false); setQuizFb("Didn't catch that — try again.","bad"); return; }
   audioEnsure();
   stopListen(false);
   var langs=["es-MX","es-US"], li=0, got=false, timer=null;
