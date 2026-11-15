@@ -267,7 +267,7 @@
 <div id="howMenu" class="overlay hidden">
   <div class="card">
     <h2>How to play</h2>
-    <p>Your ball rolls downhill on its own, faster and faster. Steer left and right to dodge the red blocks and the gaps in the track. If you roll off a gap or hit a block, you crash.</p>
+    <p>Your ball rolls downhill on its own, faster and faster. Steer left and right to dodge the red blocks and the gaps in the track. If you roll off a gap or hit an obstacle, you crash.</p>
     <p>Some stretches of track tilt to the left or the right — the slope pulls your ball toward the low side, so steer against the tilt to hold your line. Gaps on a tilted stretch are jumped the same way.</p>
     <p>Neon rings mark a tunnel — just scenery, roll straight through. And watch the edges: the ball can fall off the side of the track now, so don't ride the edge to dodge.</p>
     <p>Amber pads with chevrons are launch ramps — roll over one and it flings you into the air, across a wide gap or up onto a raised platform. Just ride onto it; no tap needed.</p>
@@ -734,9 +734,16 @@ var HOP_CLEAR = 1.25;        // ball this high above the track clears a block
    camera down in a little closer. Yet." Round 19: a closer view of
    the ball as it rolls down (3.5 / 7.1 / back 9) — the ball reads
    ~16% bigger on screen; the VP stays ~1/4 up and the ball ~89%
-   down, and the track ahead still reads to the fog far edge. */
-var CAM_HEIGHT = 3.5;        // camera height above the ball (round 19: closer view of the ball, from 3.8)
-var CAM_LOOK_HEIGHT = 5.6;   // lookAt height above the ball, 16 ahead (round 22: gap 2.1 — the narrower FOV pushes the ball down, so the look target comes down to hold it at ~90%)
+   down, and the track ahead still reads to the fog far edge. Round 22:
+   FOV 72 -> 56 zooms the ball bigger (~35 px) and the look target
+   comes down to 5.6 (gap 2.1) to hold the ball ~90% down — but Brant
+   reads it as MORE track behind, not less. Round 23: ball 50% bigger
+   (~52 px) and HALF as much track behind (~1.2 world units, was ~2.5)
+   — camera closer and lower (2.75 / 3.25 / back 9.5), FOV 42, look
+   gap 0.5 (nearly level look); the ball stays ~90% down and the VP
+   ~19% up, so the perspective barely moves. */
+var CAM_HEIGHT = 2.75;       // camera height above the ball (round 23: lower, from 3.5 — part of the 50%-bigger ball)
+var CAM_LOOK_HEIGHT = 3.25;  // lookAt height above the ball, 16 ahead (round 23: gap 0.5 — the nearly level look tilts the view up so the bottom edge cuts the track ~1.2 units behind the ball, half of round 22's ~2.5)
 /* The downhill: the track drops SLOPE_DROP units per 20-unit segment
    (grade 0.21, ~12°) so the descent is unmistakable, not a flat
    plane. trackY(d) is the track surface height at distance d. */
@@ -826,7 +833,7 @@ function makeSkyTexture(){
 }
 scene.background = makeSkyTexture();
 scene.fog = new THREE.Fog(0x0d0724, 80, 650);   // round 5: fog pushed out so the track reads much further ahead
-var camera = new THREE.PerspectiveCamera(56, window.innerWidth/window.innerHeight, 0.1, 900);   // round 22: base FOV 56 (was 72) — zoomed in so the ball reads bigger; round 5: far plane raised for the far view
+var camera = new THREE.PerspectiveCamera(42, window.innerWidth/window.innerHeight, 0.1, 900);   // round 23: base FOV 42 (was 56) — zoomed in so the ball reads 50% bigger (~52 px); round 5: far plane raised for the far view
 camera.position.set(0, 5, 10);
 scene.add(new THREE.AmbientLight(0x99aaff, 1.5));
 var dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
@@ -1850,22 +1857,31 @@ scene.add(points);
    not underneath it. Small/medium tets get a uniform offset
    -50..+50; the biggest tets sit low (-10..+5) so each one rises
    from below the track up past it, like the buildings in the
-   original Slope. The key is unchanged: each tet's height is
+   original Slope. Round 23 (Brant, Nov 15): to REALLY feel the
+   downhill, the tets have to work like the ORIGINAL Slope's
+   buildings — a LOT bigger, set FURTHER OUT from the track, and a
+   LOT of them — so as they come by they get bigger and bigger
+   (perspective growth) and the player can clearly see they are
+   descending relative to the height of those things. So the field
+   is now 120 tets (was 48), sizes 6 / 12 / 24 (was 2.5 / 4.5 / 10
+   — the biggest is now a proper tall building, spanning from well
+   below the track to ~29 above it), and every tet sits further out
+   (inner edge >= 10, was >= 6). The key is unchanged: each tet's height is
    WORLD-ANCHORED — set once at placement from the track height at
    ITS OWN position plus the offset, then NEVER updated while the
    ball approaches. The ball/camera descend with the track, so every
    tet streams UPWARD past the player on both sides — that
    rising-past-the-sides motion is what reads as "going downhill".
-   They are NEVER on the track (inner edge always >= 6 units out,
-   the track is 5 wide, fall-off at 5.3) and never cause a crash —
+   They are NEVER on the track (inner edge always >= 10 units out,
+   round 23, was >= 6 — the track is 5 wide, fall-off at 5.3) and never cause a crash —
    pure scenery, wireframe neon so they read as shapes, not
    obstacles. Three shared geometries / three shared materials,
    recycled as they pass behind the ball. */
-var TET_COUNT = 48;
-var TET_SIZES = [2.5, 4.5, 10];   // round 18: biggest class 7 -> 10, so the "buildings" are tall enough to rise from below the track up past it
+var TET_COUNT = 120;
+var TET_SIZES = [6, 12, 24];   // round 23: 2.5/4.5/10 -> 6/12/24 — a LOT bigger, like the original Slope's tall buildings; the biggest class spans from well below the track to ~29 above it
 var TET_Y_MIN = -50;   // cloud band (round 18): lowest offset — well BELOW the track
 var TET_Y_MAX = 50;    // cloud band (round 18): highest offset — well above the track
-var TET_BIG_Y_MIN = -10;  // biggest tets sit low (round 18): centres -10..+5, so a size-10 tet spans from below the track up past it
+var TET_BIG_Y_MIN = -10;  // biggest tets sit low (round 18): centres -10..+5, so a size-24 tet spans from well below the track to ~29 above it
 var TET_BIG_Y_SPAN = 15;
 var tetGeos = TET_SIZES.map(function(s){ return new THREE.TetrahedronGeometry(s); });
 var tetMats = [
@@ -1875,11 +1891,13 @@ var tetMats = [
 ];
 var tets = [];
 function placeTetXY(mesh){
-  /* Lateral position: inner edge stays >= 6 units from the centre
-     (6 + size + up to 8 out), clear of the track (5 wide) and the
-     fall-off line (5.3) for every size class. */
+  /* Lateral position: inner edge stays >= 10 units from the centre
+     (round 23: was >= 6 — the tets sit FURTHER OUT now, like the
+     original Slope's buildings; 10 + size + up to 12 out), clear of
+     the track (5 wide) and the fall-off line (5.3) for every size
+     class, and clear of the camera's view of the track. */
   var size = TET_SIZES[mesh.userData.size];
-  mesh.position.x = (Math.random() < 0.5 ? -1 : 1) * (6 + size + Math.random()*8);
+  mesh.position.x = (Math.random() < 0.5 ? -1 : 1) * (10 + size + Math.random()*12);
   /* Height: WORLD-ANCHORED (round 14) — fixed at placement, so the tet
      streams upward past the descending player instead of hugging the
      slope. Round 18: we are going down THROUGH a cloud of
@@ -2511,7 +2529,7 @@ function frame(){
   var camDrop = (state === "falling") ? fallDrop : 0;
   camera.position.x += ((ballX*0.5) - camera.position.x) * Math.min(1, dt*6);
   camera.position.y += ((ballY + CAM_HEIGHT - camDrop) - camera.position.y) * Math.min(1, dt*6);
-  camera.position.z = ballZ + 10.5;   // round 22: back stays 10.5 — the zoom (FOV 56) makes the ball bigger while the ball sits ~90% down, so a little track still shows behind it before it exits the bottom edge
+  camera.position.z = ballZ + 9.5;   // round 23: back 10.5 -> 9.5 — closer in, part of the 50%-bigger ball; the ball stays ~90% down with about half as much track behind it as round 22
   camera.lookAt(ballX*0.75, ballY + CAM_LOOK_HEIGHT - camDrop, ballZ - 16);
   renderer.render(scene, camera);
 }
@@ -2676,14 +2694,15 @@ function resumePreview(fromTouch){
    Landscape is ONE way to play, not the way — portrait stays fully
    supported, with nothing telling the player to rotate. The portrait
    fix is the camera: a fixed vertical FOV narrows the horizontal view
-   as the viewport gets taller, so in portrait the FOV opens up (56°
-   in landscape, up to ~94° in tall portrait) until the full 10-unit
+   as the viewport gets taller, so in portrait the FOV opens up (42°
+   in landscape, up to 98° in tall portrait — round 23: boost 115 keeps
+   the narrower base FOV wide enough) until the full 10-unit
    track width reads at the ball's depth. */
-var BASE_FOV = 56;   // round 22: 72 -> 56 — zoomed in so the ball reads clearly bigger (was ~27 px, round 19 was ~31 px)
+var BASE_FOV = 42;   // round 23: 56 -> 42 — zoomed in so the ball reads 50% bigger (~52 px live, round 22 was ~35 px)
 function applyCameraFov(){
   var aspect = window.innerWidth / window.innerHeight;
   var fov = BASE_FOV;
-  if(aspect < 1) fov = Math.min(98, BASE_FOV + (1 - aspect) * 70);   // round 22: boost 45 -> 70, so the narrower base FOV still opens wide enough in portrait for the full track width to read at the ball's depth
+  if(aspect < 1) fov = Math.min(98, BASE_FOV + (1 - aspect) * 115);   // round 23: boost 70 -> 115, so the narrower base FOV (42) still opens wide enough in portrait for the full track width to read at the ball's depth (worst half-width ~5.05 at the ball's depth)
   if(camera.fov !== fov){ camera.fov = fov; camera.updateProjectionMatrix(); }
 }
 
@@ -2724,7 +2743,7 @@ function startRevive(cause){
   state = "revive";
   reviveTitle.textContent = cause === "gap" ? "💥 You fell in a gap!"
     : cause === "side" ? "💥 You fell off the side!"
-    : "💥 You hit a block!";
+    : "💥 You hit an obstacle!";
   reviveSub.textContent = "Answer 4 of 5 to keep rolling!  (Revive " + reviveNum +
     " · " + reviveLevelName(reviveNum) + ")";
   reviveResults.classList.add("hidden");
