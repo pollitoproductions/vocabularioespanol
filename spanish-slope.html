@@ -151,6 +151,8 @@
     <div class="skinRow" id="skinRow"></div>
     <label class="checkRow"><input type="checkbox" id="chkSpeaking"> 🎤 Speaking activities — also say each answer out loud</label>
     <button class="bigBtn" id="btnStart" type="button">▶ Start rolling</button>
+    <button class="bigBtn hidden" id="btnContinue" type="button">▶ Continue</button>
+    <button class="ghostBtn" id="btnScores" type="button">🏆 High scores</button>
     <button class="ghostBtn" id="btnHow" type="button">How to play</button>
     <div class="bestLine" id="menuBest"></div>
     <a class="homeLink" href="https://pollitoproductions.github.io/">← Back to Pollito Productions</a>
@@ -180,6 +182,7 @@
     <div class="sliderRow"><label for="sfxVol">🔊 Sound effects volume</label>
       <input type="range" id="sfxVol" min="0" max="100" value="100"></div>
     <button class="bigBtn" id="btnResume" type="button">▶ Resume</button>
+    <button class="ghostBtn" id="btnSaveQuit" type="button">💾 Save &amp; quit</button>
     <button class="ghostBtn" id="btnRestart" type="button">↻ Restart run</button>
     <button class="ghostBtn" id="btnQuitMenu" type="button">← Back to menu</button>
   </div>
@@ -222,11 +225,22 @@
   </div>
 </div>
 
+<div id="scoresMenu" class="overlay hidden">
+  <div class="card">
+    <div style="color:#22d3ee; font-weight:700; letter-spacing:1px; font-size:.9rem;">SLOPE ESPAÑOL</div>
+    <h2>🏆 High scores</h2>
+    <p class="sub">Your top 5 runs on this device — private, saved on this device only.</p>
+    <div id="scoresList"></div>
+    <button class="bigBtn" id="btnScoresClose" type="button">← Back</button>
+  </div>
+</div>
+
 <div id="over" class="overlay hidden">
   <div class="card">
     <div style="color:#22d3ee; font-weight:700; letter-spacing:1px; font-size:.9rem;">SLOPE ESPAÑOL</div>
     <h2>Game over</h2>
     <p id="overStats"></p>
+    <div class="bestLine" id="overNew"></div>
     <div class="bestLine" id="overBest"></div>
     <button class="bigBtn" id="btnAgain" type="button">↻ Roll again</button>
     <button class="ghostBtn" id="btnOverMenu" type="button">← Back to menu</button>
@@ -574,10 +588,10 @@ var SPIN_MAX = 1.5;          // max visible roll, rad/s — at full speed the ph
                              // recognisable, so the ball never tumbles faster
                              // than a slow roll. Forward motion + track convey
                              // the speed, not the spin.
-var LAT_SPEED = 30;          // max lateral (steering) speed, units/s — raised for the new top speed 120 (was 24 at 87)
+var LAT_SPEED = 30;          // max lateral (steering) speed, units/s — raised for the old top speed 120 (was 24 at 87); kept at 100 (round 9)
 var BASE_SPEED = 31.5;       // starting forward speed — round 5: 25% down from the doubled 42
-var MAX_SPEED = 120;         // top forward speed — round 8: Brant asked for 120 (was 87)
-var RAMP_DIST = 1730;        // ramp distance: top speed reached after this far — stretched from 1387.5 so 120 still arrives in ~22 s
+var MAX_SPEED = 100;         // top forward speed — round 9: Brant asked for 100 (was 120; "fast enough that you're gonna crash quick anyways")
+var RAMP_DIST = 1500;        // ramp distance: top speed reached after this far — 1500 so 100 still arrives in ~21 s
                              // (round 7: concave ramp — see curSpeed)
 var BLOCK_HIT = 0.4;         // block half-width inflation for a hit (ball radius, forgiving)
 var GAP_HIT = 0.25;          // gap inset for a fall (ball centre must be this far inside the hole)
@@ -661,7 +675,7 @@ function curSpeed(){
 function el(id){ return document.getElementById(id); }
 var canvas = el("game"), hudEl = el("hud"), hopHintEl = el("hopHint");
 var menuEl = el("menu"), howEl = el("howMenu"), pauseEl = el("pauseMenu"),
-    reviveEl = el("revive"), overEl = el("over");
+    reviveEl = el("revive"), overEl = el("over"), scoresEl = el("scoresMenu");
 var hudDist = el("hudDist"), hudScore = el("hudScore"), hudSpeed = el("hudSpeed"),
     hudWords = el("hudWords"), hudBest = el("hudBest"),
     hudPassRow = el("hudPassRow"), hudPasses = el("hudPasses"),
@@ -777,10 +791,10 @@ function skinTexture(kind){
   if(skinTextures[kind]) return skinTextures[kind];
   var tex;
   if(kind === "pollito"){
-    /* Pollito himself: white chicken face — red comb, big black eyes,
+    /* Pollito himself: YELLOW chick face — red comb, big black eyes,
        orange beak. This is the default skin and it MUST read as Pollito. */
     tex = makeSkinTexture(function(g,W,H){
-      g.fillStyle = "#f8fafc"; g.fillRect(0, 0, W, H);
+      g.fillStyle = "#facc15"; g.fillRect(0, 0, W, H);
       /* comb: three red scallops across the top of the face */
       g.fillStyle = "#ef4444";
       g.beginPath(); g.ellipse(96, 42, 20, 24, 0, 0, 6.29); g.fill();
@@ -798,22 +812,30 @@ function skinTexture(kind){
       g.beginPath(); g.ellipse(384, 40, 20, 22, 0, 0, 6.29); g.fill();
     });
   } else if(kind === "cow"){
-    /* White with LARGE black patches and a pink muzzle face. */
+    /* Highland cow: solid reddish-brown, long shaggy fringe over the
+       forehead, curved horns, and a lighter tan muzzle. No spots. */
     tex = makeSkinTexture(function(g,W,H){
-      g.fillStyle = "#f8fafc"; g.fillRect(0, 0, W, H);
-      g.fillStyle = "#111827";
-      g.beginPath(); g.ellipse(310, 55, 48, 38, 0.4, 0, 6.29); g.fill();
-      g.beginPath(); g.ellipse(435, 160, 52, 44, -0.3, 0, 6.29); g.fill();
-      g.beginPath(); g.ellipse(52, 218, 42, 34, 0.2, 0, 6.29); g.fill();
-      g.beginPath(); g.ellipse(330, 228, 44, 30, 0, 0, 6.29); g.fill();
-      /* face: dark eyes + big pink muzzle with nostrils */
-      skinEyes(g, 128, 92, 15, 18);
-      g.fillStyle = "#f9a8d4";
-      g.beginPath(); g.ellipse(128, 152, 40, 24, 0, 0, 6.29); g.fill();
-      g.fillStyle = "#111827";
-      g.beginPath(); g.ellipse(112, 152, 6, 9, 0, 0, 6.29); g.fill();
-      g.beginPath(); g.ellipse(144, 152, 6, 9, 0, 0, 6.29); g.fill();
-      /* back: one more big patch */
+      g.fillStyle = "#92400e"; g.fillRect(0, 0, W, H);
+      /* horns: curved cream horns sweeping out from the sides of the head */
+      g.fillStyle = "#fef3c7";
+      g.beginPath(); g.moveTo(64, 70); g.quadraticCurveTo(28, 40, 20, 8); g.quadraticCurveTo(52, 22, 78, 48); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(192, 70); g.quadraticCurveTo(228, 40, 236, 8); g.quadraticCurveTo(204, 22, 178, 48); g.closePath(); g.fill();
+      /* shaggy fringe: long dark-brown hair hanging over the forehead,
+         drawn as overlapping strands down to just above the eyes */
+      g.fillStyle = "#78350f";
+      for(var i=0;i<9;i++){
+        var fx = 62 + i*16;
+        g.beginPath(); g.moveTo(fx, 30); g.lineTo(fx+16, 30); g.lineTo(fx+8, 78 + (i%2)*10); g.closePath(); g.fill();
+      }
+      /* face: dark eyes below the fringe + big tan muzzle with nostrils */
+      skinEyes(g, 128, 104, 15, 18);
+      g.fillStyle = "#d4a373";
+      g.beginPath(); g.ellipse(128, 158, 40, 24, 0, 0, 6.29); g.fill();
+      g.fillStyle = "#3f2d20";
+      g.beginPath(); g.ellipse(112, 158, 6, 9, 0, 0, 6.29); g.fill();
+      g.beginPath(); g.ellipse(144, 158, 6, 9, 0, 0, 6.29); g.fill();
+      /* back: solid brown with a darker shaggy patch */
+      g.fillStyle = "#78350f";
       g.beginPath(); g.ellipse(384, 110, 46, 40, 0.3, 0, 6.29); g.fill();
     });
   } else if(kind === "snowman"){
@@ -948,12 +970,12 @@ function skinTexture(kind){
   return tex;
 }
 var SKINS = [
-  {id:"pollito", label:"Pollito", tex:"pollito", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xffa040},
+  {id:"pollito", label:"Pollito", tex:"pollito", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xfacc15},
   {id:"cyan", label:"Cyan", tex:"cyan", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0x67e8f9},
   {id:"magenta", label:"Magenta", tex:"magenta", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xf472b6},
   {id:"lime", label:"Lime", tex:"lime", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xbef264},
   {id:"purple", label:"Purple", tex:"purple", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xc4b5fd},
-  {id:"cow", label:"Cow", tex:"cow", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xffffff},
+  {id:"cow", label:"Cow", tex:"cow", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xd97706},
   {id:"snowman", label:"Snowman", tex:"snowman", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xe0f2fe},
   {id:"turtle", label:"Turtle", tex:"turtle", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0x86efac},
   {id:"skull", label:"Sugar skull", tex:"skull", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xfbcfe8}
@@ -1064,7 +1086,12 @@ function makeRampTexture(){
   tex.anisotropy = 4;
   return tex;
 }
-var rampGeo = new THREE.BoxGeometry(TRACK_W, 0.12, 3);
+/* Round 9: the launch ramp is a WEDGE (triangular prism), not a flat pad —
+   it rises from the track at its near end to a peak at its far end (the
+   launch point), so it reads as a ramp instead of flat terrain. The
+   wedge geometry is built in the track-segments section below (after
+   RAMP_SLANTS is defined) — one geometry per slant class, the chevron
+   texture mapping onto the sloped top, pointing forward. */
 var rampMat = new THREE.MeshStandardMaterial({map:makeRampTexture(), emissive:0xf59e0b, emissiveIntensity:0.7, roughness:0.4});
 var blockGeo = new THREE.BoxGeometry(1, 1, 1);
 /* Round 8: grid-patterned blocks (Brant: "like the grid on the ramp").
@@ -1139,8 +1166,17 @@ var archMat = new THREE.MeshBasicMaterial({color:0x22d3ee});
 var tileGeo = new THREE.PlaneGeometry(2.6, 1.3);
 
 /* Word tiles cycle through the vocabulary: cognates first, then practice
-   words — the same pools the revives draw from. */
-var TILE_WORDS = shuffle(COG_POOL.slice()).concat(shuffle(PRAC_NC.slice()));
+   words — the same pools the revives draw from. Round 9 (save/continue):
+   the order is seeded by runSeed, so a resumed run shows exactly the
+   same tile words in the same order as the saved run did (a page-load
+   Math.random shuffle would reshuffle them on reload). Rebuilt on every
+   resetTrack, right after runSeed is set. */
+function buildTileWords(seed){
+  var r = mulberry32(seed >>> 0);
+  function sh(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(r()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+  return sh(COG_POOL.slice()).concat(sh(PRAC_NC.slice()));
+}
+var TILE_WORDS = buildTileWords(1);
 var tileIdx = 0;
 
 /* __TRACK_PLAN_BEGIN__ */
@@ -1209,12 +1245,13 @@ function bankAt(d){
    carrying a neon arch ring the ball rolls through. Pure scenery — the
    rings never block the ball, never cause a crash, and never hide an
    obstacle, a gap, or a word tile (tunnel segments are always plain:
-   no gaps, no blocks, no tiles). One hash per 30-segment group (its own
+   no gaps, no blocks, no tiles). One hash per 15-segment group (its own
    stream, so the obstacle rng is untouched); ~60% of groups have a
-   tunnel, so roughly one tunnel every ~50 segments. Never in the safe
+   tunnel, so roughly one tunnel every ~25 segments (round 9: doubled
+   from one every ~49 — Brant asked for more tunnels). Never in the safe
    start (segments 0-4 stay plain). The arches ride in the segment
    group, so they tilt with the bank like everything else. */
-var TUNNEL_GROUP = 30;   // segments per tunnel group
+var TUNNEL_GROUP = 15;   // segments per tunnel group (round 9: was 30 — tunnels now ~twice as common)
 var TUNNEL_LEN = 3;      // arch rings per tunnel
 function tunnelFor(idx){
   if(idx < 5) return 0;  // safe start stays plain
@@ -1226,54 +1263,102 @@ function tunnelFor(idx){
   if(off < start || off >= start + TUNNEL_LEN) return 0;
   return 1;
 }
-/* Launch ramps + platforms (round 8): a ramp feature is a run of
-   segments — one ramp segment, then either a WIDE GAP (1 segment, a
-   full-width hole the ball must fly over — it cannot steer around it)
+/* Launch ramps + platforms (round 8, retuned round 9): a ramp feature is
+   a run of segments — one ramp segment, then either a WIDE GAP (1 segment,
+   a full-width hole the ball must fly over — it cannot steer around it)
    or a PLATFORM (5 segments of raised track the ball lands on and
    rolls along). One hash per 45-segment group (its own stream, so the
-   obstacle rng is untouched); ~50% of groups have a ramp feature, so
-   roughly one every ~90 segments. Never in the safe start (segments
-   0-4 stay plain). The ramp pad sits near the START of its segment
-   (2 units in), so the ball has ~18 units of run-up before the gap /
-   platform: enough time to rise above the hole / ledge at every speed.
-   The ramp is a pad the ball rolls over: it is AUTOMATICALLY launched
-   (a vertical boost, no tap needed). The boost differs by target —
-   a wide gap needs LAUNCH_V_GAP 16; a platform needs LAUNCH_V_PLATFORM
-   12. Both are verified by the harness at 31.5 / 60 / 87 / 120. */
+   obstacle rng is untouched); ~65% of groups have a ramp feature (round 9:
+   was ~50% — Brant asked for more gaps with jumps), so roughly one every
+   ~69 segments, and ~60% of features are wide gaps (was 50%). Never in
+   the safe start (segments 0-4 stay plain).
+   The ramp itself is a WEDGE (round 9): the pad rises from the track at
+   its near end to a peak at its far end, and the ball rolls up it and
+   launches off the top — no tap needed. The wedge is WEDGE_LEN units
+   long (its far end is the launch point); the wide gap / platform starts
+   at the next segment, so it is (SEG_LEN - WEDGE_LEN - 0.5) = 16.5 units
+   past the launch point. The boost differs by slant AND by target (see
+   RAMP_SLANTS): steeper ramps launch from higher up, so they take a
+   slightly smaller platform boost to land on the same platform, and a
+   bigger gap boost (the ball must clear the hole). All verified by the
+   launch sim at 31.5 / 60 / 100 for every slant class. */
 var RAMP_GROUP = 45;
+var RAMP_START = 14;     // feature starts at offset 14 in the group (round 9: was 10 — with tunnels now every ~25 segments, offset 10 sits inside a tunnel's possible range, so the tunnel guard would kill ~60% of ramp features; at offset 14 the feature (14-19) never overlaps a tunnel (tunnels end by offset 13 in their group), so the guard is only a safety net)
+var RAMP_FEATURE_P = 0.65;  // ~65% of groups have a ramp feature (round 9: was 0.5)
+var RAMP_GAP_P = 0.6;       // ~60% of features are wide gaps, the rest platforms (round 9: was 0.5)
 var PLATFORM_LEN = 5;    // raised segments per platform
 var WIDEGAP_LEN = 1;     // segments per wide gap (a full-width hole, 1 segment)
 var PLATFORM_H = 1.2;    // platform height above the main track
-var LAUNCH_V_GAP = 16;   // boost over a wide gap (air time 1.26 s: the ball is above the hole for the whole 20-unit gap + margin at every speed 31.5-120)
-var LAUNCH_V_PLATFORM = 12;  // boost onto a platform (lands on the 5-segment platform at every speed — above the 1.2-high ledge at the platform start, descends onto it before the platform ends; verified by the harness at 31.5 / 60 / 87 / 120)
-/* Returns the ramp-feature role of segment idx, or null:
-   "ramp-gap" (ramp pad, boost LAUNCH_V_GAP), "ramp-platform" (ramp pad,
-   boost LAUNCH_V_PLATFORM), "widegap" (full-width hole), "platform"
-   (raised floor). The ramp is the segment just before its target. */
-function rampRoleFor(idx){
+var WEDGE_LEN = 3;       // wedge length in units (the pad spans 3 units; the launch point is its far end, 3.5 into the segment)
+/* Ramp slant classes (round 9): the wedge rises H over WEDGE_LEN units
+   (angle atan(H/WEDGE_LEN)); steeper ramps launch from higher up, so
+   they take a slightly smaller platform boost to land on the same
+   platform, and a bigger gap boost (the ball must clear the hole).
+   40% gentle, 35% medium, 25% steep. Boosts verified by the launch sim
+   at 31.5 / 60 / 100 for every class. */
+var RAMP_SLANTS = [
+  {name:"gentle", h:0.53, gap:15.0, plat:12.0},   // gentle: ~10 deg
+  {name:"medium", h:1.09, gap:16.0, plat:13.0},   // medium: ~20 deg
+  {name:"steep",  h:1.73, gap:17.0, plat:13.5}    // steep: ~30 deg
+];
+/* Returns the ramp feature for segment idx, or null:
+   {role, slant} — role is "ramp-gap" (ramp pad, boost RAMP_SLANTS[slant].gap),
+   "ramp-platform" (ramp pad, boost RAMP_SLANTS[slant].plat), "widegap"
+   (full-width hole), or "platform" (raised floor); slant is 0 (gentle),
+   1 (medium), 2 (steep). The ramp is the segment just before its target. */
+function rampFeatureFor(idx){
   if(idx < 5) return null;  // safe start stays plain
   var g = Math.floor((idx - 5) / RAMP_GROUP);
   var off = (idx - 5) % RAMP_GROUP;
   var h = mulberry32((runSeed*1000003 + g*262147) >>> 0);
-  if(h() >= 0.5) return null;   // ~50% of groups have no ramp feature
-  var isGap = h() < 0.5;        // wide gap or platform
-  var start = 10;               // feature starts at offset 10 in the group
+  if(h() >= RAMP_FEATURE_P) return null;   // ~35% of groups have no ramp feature
+  var isGap = h() < RAMP_GAP_P;            // wide gap or platform
+  var start = RAMP_START;
   /* A ramp feature never overlaps a tunnel (a tunnel is scenery on a
      plain stretch; a wide gap / platform is a gameplay feature). If
-     any segment in the feature's range (offsets 10-15, the ramp plus
-     the longest feature, a platform) is a tunnel, this group has no
-     ramp feature at all — the whole group is plain. */
+     any segment in the feature's range (the ramp plus the longest
+     feature, a platform) is a tunnel, this group has no ramp feature
+     at all — the whole group is plain. (Round 9: with RAMP_START 14
+     the feature can never overlap a tunnel, so this is only a safety net.) */
   var base = g * RAMP_GROUP + 5;
   for(var o = start; o <= start + PLATFORM_LEN; o++){
     if(tunnelFor(base + o)) return null;
   }
-  if(off === start) return isGap ? "ramp-gap" : "ramp-platform";
+  /* Slant class, drawn after the presence + isGap draws so those are
+     unchanged: 40% gentle, 35% medium, 25% steep. */
+  var sr = h();
+  var slant = sr < 0.4 ? 0 : sr < 0.75 ? 1 : 2;
+  if(off === start) return {role: isGap ? "ramp-gap" : "ramp-platform", slant: slant};
   if(isGap){
-    if(off > start && off <= start + WIDEGAP_LEN) return "widegap";
+    if(off > start && off <= start + WIDEGAP_LEN) return {role:"widegap", slant: slant};
   } else {
-    if(off > start && off <= start + PLATFORM_LEN) return "platform";
+    if(off > start && off <= start + PLATFORM_LEN) return {role:"platform", slant: slant};
   }
   return null;
+}
+/* Role only (kept for floorHFor and the harness). */
+function rampRoleFor(idx){
+  var f = rampFeatureFor(idx);
+  return f ? f.role : null;
+}
+/* Slant class of the ramp feature covering segment idx, or -1. */
+function rampSlantFor(idx){
+  var f = rampFeatureFor(idx);
+  return f ? f.slant : -1;
+}
+/* Wedge height at distance d (the ball rides up the wedge surface while
+   on a ramp segment, so the ball's ground height follows it). The wedge
+   spans the first WEDGE_LEN units of its segment (0.5 to 3.5 into the
+   segment), rising from 0 to RAMP_SLANTS[slant].h at its far end (the
+   launch point); past the far end the ball is airborne (launched) or
+   back on flat track. */
+function wedgeHAt(d){
+  var idx = Math.floor(d / SEG_LEN);
+  var f = rampFeatureFor(idx);
+  if(!f || (f.role !== "ramp-gap" && f.role !== "ramp-platform")) return 0;
+  var s = d - idx*SEG_LEN - 0.5;   // distance into the pad (pad starts 0.5 into the segment)
+  if(s < 0 || s > WEDGE_LEN) return 0;
+  return RAMP_SLANTS[f.slant].h * s / WEDGE_LEN;
 }
 /* Floor height of segment idx: PLATFORM_H on a platform segment, else 0.
    The ball's hop lands on this height (its "ground" on that segment). */
@@ -1312,18 +1397,18 @@ function maxFreeLane(blocks, gap){
 }
 function planSegment(idx, dist, rng, prevGap){
   var d = Math.min(1, dist/1500);
-  var plan = {blocks:[], gap:null, tile:null, bank:bankFor(idx), tunnel:tunnelFor(idx), ramp:0, widegap:false, floorH:0};
+  var plan = {blocks:[], gap:null, tile:null, bank:bankFor(idx), tunnel:tunnelFor(idx), ramp:0, rampSlant:-1, rampH:0, widegap:false, floorH:0};
   /* Ramp feature (round 8): a ramp segment, a wide gap, or a platform
      segment overrides the normal obstacle generation — the feature
      segments are purpose-built, so no random blocks/gaps/tiles land
      on them. A wide gap is a full-width hole (the ball must fly over
      it); a platform is raised track (the ball lands on it). The ramp
-     segment itself is plain except for the launch pad. */
-  var role = rampRoleFor(idx);
-  if(role === "ramp-gap"){ plan.ramp = LAUNCH_V_GAP; return plan; }
-  if(role === "ramp-platform"){ plan.ramp = LAUNCH_V_PLATFORM; return plan; }
-  if(role === "widegap"){ plan.widegap = true; plan.gap = {x0:-5, x1:5}; return plan; }
-  if(role === "platform"){ plan.floorH = PLATFORM_H; return plan; }
+     segment itself is plain except for the launch wedge. */
+  var feat = rampFeatureFor(idx);
+  if(feat && feat.role === "ramp-gap"){ plan.ramp = RAMP_SLANTS[feat.slant].gap; plan.rampSlant = feat.slant; plan.rampH = RAMP_SLANTS[feat.slant].h; return plan; }
+  if(feat && feat.role === "ramp-platform"){ plan.ramp = RAMP_SLANTS[feat.slant].plat; plan.rampSlant = feat.slant; plan.rampH = RAMP_SLANTS[feat.slant].h; return plan; }
+  if(feat && feat.role === "widegap"){ plan.widegap = true; plan.gap = {x0:-5, x1:5}; return plan; }
+  if(feat && feat.role === "platform"){ plan.floorH = PLATFORM_H; return plan; }
   /* Safe start: the first 5 segments (0-100 units) are plain track —
      no gaps, no blocks — so the ball never falls in a hole before the
      player has time to react. (A gap segment in the opening stretch
@@ -1333,10 +1418,12 @@ function planSegment(idx, dist, rng, prevGap){
   if(idx >= 5 && !plan.tunnel){
   var r = rng();
   /* Round 5: obstacle density down 25% (Brant: "I am dying quick") —
-     gap and block spawn rates are both multiplied by 0.75. The safe
-     start and the reachability guarantees (free lane >= 2.4, a gap
-     leaves >= 6.0 of solid track) are unchanged. */
-  var gapP = (0.14 + 0.06*d) * 0.75, blockP = gapP + (0.38 + 0.12*d) * 0.75;
+     gap and block spawn rates are both multiplied by 0.75. Round 9:
+     the gap base rate is raised 0.14 -> 0.22 (Brant: "more of those gaps
+     with jumps") while the block rate is UNCHANGED — only gaps go up.
+     The safe start and the reachability guarantees (free lane >= 2.4,
+     a gap leaves >= 6.0 of solid track) are unchanged. */
+  var gapP = (0.22 + 0.06*d) * 0.75, blockP = gapP + (0.38 + 0.12*d) * 0.75;
   if(!prevGap && r < gapP){
     /* Gap segment: a hole 2.6-3.6 wide, positioned so >= 6.0 of the
        10-wide track stays solid — always a wide way around it. */
@@ -1391,6 +1478,41 @@ function planSegment(idx, dist, rng, prevGap){
 /* ---------- track segments (Three.js) ---------- */
 var segments = new Map();   // idx -> {group, plan, tileMesh, tileTaken}
 var nextSegIdx = 0, prevSegGap = false, runSeed = 1;
+
+/* Round 9: the launch-ramp wedge geometry. One triangular prism per slant
+   class (the peak height differs); the chevron texture maps onto the
+   sloped top, pointing forward (up the track). Vertices are group-local:
+   the pad spans z -0.5 to -3.5, x -5 to 5, rising from y 0 to y H at
+   the far end. Built here (after RAMP_SLANTS is defined) — the geometry
+   section above runs before the plan constants exist. */
+function makeWedgeGeometry(H){
+  var z0 = -0.5, z1 = -3.5, x0 = -TRACK_W/2, x1 = TRACK_W/2;
+  var A=[x0,0,z0], B=[x1,0,z0], C=[x0,0,z1], D=[x1,0,z1], E=[x0,H,z1], F=[x1,H,z1];
+  var pos = [], uv = [];
+  function tri(p,q,r, uvs){
+    pos.push(p[0],p[1],p[2], q[0],q[1],q[2], r[0],r[1],r[2]);
+    uv.push(uvs[0],uvs[1], uvs[2],uvs[3], uvs[4],uvs[5]);
+  }
+  /* Top slope (the riding surface): u across the width, v along the slope (0 near, 1 far). */
+  tri(A,B,F, [0,0, 1,0, 1,1]);
+  tri(A,F,E, [0,0, 1,1, 0,1]);
+  /* Back face (vertical, at the far end): u across, v up. */
+  tri(C,D,F, [0,0, 1,0, 1,1]);
+  tri(C,F,E, [0,0, 1,1, 0,1]);
+  /* Left + right triangular sides. */
+  tri(A,C,E, [0,0, 1,0, 1,1]);
+  tri(B,F,D, [0,0, 1,0, 1,1]);
+  /* Bottom (hidden, on the track). */
+  tri(A,D,B, [0,0, 1,0, 1,1]);
+  tri(A,C,D, [0,0, 1,0, 1,1]);
+  var g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+  g.computeVertexNormals();
+  return g;
+}
+var rampPrismGeo = RAMP_SLANTS.map(function(s){ return makeWedgeGeometry(s.h); });
+
 function makeTileTexture(sp){
   var c = document.createElement("canvas"); c.width = 512; c.height = 256;
   var g = c.getContext("2d");
@@ -1412,6 +1534,12 @@ function buildSegment(idx){
   var rng = mulberry32((runSeed*1000003 + idx*7919) >>> 0);
   var plan = planSegment(idx, dist, rng, prevSegGap);
   prevSegGap = !!plan.gap;
+  return buildSegmentFromPlan(idx, plan);
+}
+/* Build the meshes for a segment from an already-computed plan (used by
+   the normal path above, and by resume — which replays the plan chain
+   and builds meshes only for the segments near the ball). */
+function buildSegmentFromPlan(idx, plan){
   var group = new THREE.Group();
   /* The segment descends with the slope: its near end sits at the
      track height for this distance, and the group is tilted by the
@@ -1475,14 +1603,16 @@ function buildSegment(idx){
   var eL = new THREE.Mesh(edgeGeo, edgeMatL); eL.position.set(-5, 0.04, -SEG_LEN/2); group.add(eL);
   var eR = new THREE.Mesh(edgeGeo, edgeMatR); eR.position.set(5, 0.04, -SEG_LEN/2); group.add(eR);
   var cr = new THREE.Mesh(crossGeo, crossMat); cr.position.set(0, 0.03, 0); group.add(cr);
-  /* Launch ramp pad (round 8): a yellow chevron pad across the full
-     track width at the segment centre. Rolling over it AUTOMATICALLY
-     launches the ball (see checkCollisions) — across a wide gap or
-     up onto a raised platform. Full-width so the ball can never miss
-     it and roll into the gap / platform face beyond. */
+  /* Launch ramp wedge (round 8, wedge round 9): an amber chevron wedge
+     across the full track width, rising from the track to its peak at
+     the far end (the launch point). Rolling up it AUTOMATICALLY launches
+     the ball (see checkCollisions) — across a wide gap or up onto a
+     raised platform. Full-width so the ball can never miss it and roll
+     into the gap / platform face beyond. The wedge slant varies by
+     class (gentle / medium / steep) — see RAMP_SLANTS. */
   if(plan.ramp > 0){
-    var ramp = new THREE.Mesh(rampGeo, rampMat);
-    ramp.position.set(0, 0.06, -2);
+    var ramp = new THREE.Mesh(rampPrismGeo[plan.rampSlant], rampMat);
+    ramp.position.set(0, 0, 0);   // the prism vertices are already group-local
     group.add(ramp);
   }
   /* Red blocks at the segment centre. */
@@ -1545,6 +1675,7 @@ function resetTrack(){
   segments.clear();
   nextSegIdx = 0; prevSegGap = false;
   runSeed = (Math.random()*2147483647)|0;
+  TILE_WORDS = buildTileWords(runSeed);   // tile words are seeded by the run (save/continue reproduces them exactly)
   ensureSegments();
 }
 
@@ -1600,11 +1731,19 @@ for(var ti=0; ti<TET_COUNT; ti++){
 }
 
 /* ---------- hop ---------- */
+/* Ground height at distance d: the platform height on a raised platform
+   segment, or the wedge height while on a launch-ramp wedge (the ball
+   rides up the wedge surface), else the main track (0). The wedge and
+   the platform never overlap (different segments), so the max is exact. */
+function groundHAt(d){
+  return Math.max(floorHFor(Math.floor(d / SEG_LEN)), wedgeHAt(d));
+}
 function doHop(){
   if(state !== "playing") return;
-  /* Grounded means on the current floor — the main track (hopY 0) or
-     a raised platform (hopY == its floor height). No double-hop. */
-  var groundH = floorHFor(Math.floor(dist / SEG_LEN));
+  /* Grounded means on the current floor — the main track (hopY 0), a
+     raised platform (hopY == its floor height), or a launch wedge
+     (hopY == the wedge height at this spot). No double-hop. */
+  var groundH = groundHAt(dist);
   if(ballHopY > groundH + 0.01) return;   // already airborne — no double-hop
   if(nowSec() < nextHopAt) return;    // cooldown
   hideHopHint();   // first hop dismisses the run-start hint early
@@ -1696,9 +1835,192 @@ function hideHopHint(){
     hopHintEl.classList.remove("fade");
   }, 650);
 }
+/* ================= save / continue + high scores (round 9) ================= */
+
+/* ---------- high scores: top 5 runs, LOCAL ONLY ----------
+   Brant: "just do a local high scores menu, have it save their top five
+   scores." On-device only (localStorage), private — no server, no names,
+   no sharing. Students compare by showing each other their screens.
+   Each entry is {d: distance in metres, t: timestamp ms}. The existing
+   single best (slopeEspanol_best) is kept as-is. */
+var HS_KEY = "slopeEspanol_highscores";
+function loadHighscores(){
+  try{
+    var raw = localStorage.getItem(HS_KEY);
+    if(!raw) return [];
+    var arr = JSON.parse(raw);
+    if(!Array.isArray(arr)) return [];
+    return arr.filter(function(e){ return e && typeof e.d === "number" && e.d > 0; })
+      .sort(function(a,b){ return b.d - a.d; }).slice(0, 5);
+  }catch(e){ return []; }
+}
+function saveHighscores(list){
+  try{ localStorage.setItem(HS_KEY, JSON.stringify(list.slice(0, 5))); }catch(e){}
+}
+/* Record a finished run in the top 5. Returns the rank (1-5) if it made
+   the list, or 0 if it did not. */
+function recordHighscore(d){
+  if(!(d > 0)) return 0;
+  var list = loadHighscores();
+  var entry = {d: d, t: Date.now()};
+  var rank = 0;
+  for(var i=0;i<list.length;i++){ if(d > list[i].d){ rank = i+1; break; } }
+  if(rank === 0 && list.length < 5) rank = list.length + 1;
+  if(rank === 0) return 0;
+  list.splice(rank-1, 0, entry);
+  saveHighscores(list.slice(0, 5));
+  return rank;
+}
+
+/* ---------- save / continue: one slot, manual save only ----------
+   Brant: runs can go forever (unlimited revives), so a player should be
+   able to save a run from the pause menu and continue it later. The
+   save captures everything needed to resume the run EXACTLY where it
+   left off:
+     - runSeed + TILE_WORDS (rebuilt from the seed) + tileIdx: the track
+       ahead regenerates identically, tile words included.
+     - nextSegIdx: how far the plan chain had been computed, so the
+       resume replays the plan chain to exactly the same state.
+     - dist (ballZ = -dist), ballX, ballVX, rampDist (speed), reviveNum
+       + REVIVE_Q (the queued revive questions) + PAIR_USED (the
+       no-repeat shown set), freePasses, wordsGot.
+   Resume replays the pure plan chain from segment 0 (cheap — no meshes)
+   and rebuilds meshes only for the segments near the ball. Saving is
+   manual only, from the pause menu — no autosave. */
+var SAVE_KEY = "slopeEspanol_save";
+function saveRun(){
+  /* Only a run in progress can be saved (paused mid-run). */
+  if(state !== "paused" && state !== "playing") return false;
+  var payload = {
+    v: 1,
+    seed: runSeed,
+    dist: dist,
+    ballX: ballX,
+    ballVX: ballVX,
+    rampDist: rampDist,
+    reviveNum: reviveNum,
+    freePasses: freePasses,
+    wordsGot: wordsGot,
+    tileIdx: tileIdx,
+    nextSegIdx: nextSegIdx,
+    reviveQ: REVIVE_Q,
+    pairUsed: PAIR_USED,
+    savedAt: Date.now()
+  };
+  try{
+    localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+    return true;
+  }catch(e){ return false; }
+}
+function loadSave(){
+  try{
+    var raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return null;
+    var s = JSON.parse(raw);
+    if(!s || s.v !== 1 || typeof s.seed !== "number" || typeof s.dist !== "number" || s.dist < 0) return null;
+    return s;
+  }catch(e){ return null; }
+}
+function clearSave(){
+  try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+}
+/* Rebuild the track from a save: replay the pure plan chain from segment
+   0 (no meshes — fast even for very long runs) so prevSegGap and tileIdx
+   land exactly where the saved run had them, then build meshes only for
+   the segments near the ball. The replayed plans carry the exact tile
+   words the saved run showed. */
+function rebuildTrackFromSave(s){
+  segments.forEach(function(seg){ disposeSegment(seg); });
+  segments.clear();
+  runSeed = s.seed;
+  TILE_WORDS = buildTileWords(runSeed);
+  prevSegGap = false;
+  tileIdx = 0;
+  var ballSeg = Math.floor(s.dist / SEG_LEN);
+  var firstIdx = Math.max(0, ballSeg - 3);   // a few segments behind for the view
+  var lastIdx = Math.min(s.nextSegIdx - 1, ballSeg + 39);  // ~780 ahead, like ensureSegments
+  var plans = {};
+  for(var idx = 0; idx < s.nextSegIdx; idx++){
+    var rng = mulberry32((runSeed*1000003 + idx*7919) >>> 0);
+    var plan = planSegment(idx, idx*SEG_LEN, rng, prevSegGap);
+    prevSegGap = !!plan.gap;
+    if(idx >= firstIdx && idx <= lastIdx) plans[idx] = plan;
+  }
+  /* tileIdx now equals the saved run's (the replay reproduced it). */
+  for(var j = firstIdx; j <= lastIdx; j++){
+    buildSegmentFromPlan(j, plans[j]);
+  }
+  nextSegIdx = lastIdx + 1;
+  /* ensureSegments will keep building forward from here with the
+     replayed state (prevSegGap / tileIdx already correct). */
+}
+function continueRun(){
+  var s = loadSave();
+  if(!s) return;
+  audioEnsure();
+  musicStart();
+  /* Restore the run state. */
+  dist = s.dist; score = Math.floor(s.dist); wordsGot = s.wordsGot || 0; rampDist = s.rampDist || 0;
+  reviveNum = s.reviveNum || 0; freePasses = s.freePasses || 0;
+  ballX = s.ballX || 0; ballVX = s.ballVX || 0; ballZ = -s.dist; invincibleUntil = 0;
+  ballHopY = 0; ballHopV = 0; nextHopAt = 0; fallDrop = 0; fallV = 0; fallT = 0; zBefore = 0;
+  PAIR_USED = s.pairUsed || {};
+  REVIVE_Q = s.reviveQ || {};
+  rebuildTrackFromSave(s);
+  /* The save is consumed: once resumed, the run continues from here and
+     a fresh save must be made to store it again. (This also stops a
+     stale save from resurrecting an old run after it ends.) */
+  clearSave();
+  menuEl.classList.add("hidden");
+  overEl.classList.add("hidden");
+  pauseEl.classList.add("hidden");
+  reviveEl.classList.add("hidden");
+  howEl.classList.add("hidden");
+  tileEl.classList.add("hidden");
+  scoresEl.classList.add("hidden");
+  hudEl.classList.add("on");
+  updateHUD();
+  invincibleUntil = nowSec() + 2;   // brief blink on resume, like a respawn
+  state = "playing";
+}
+/* Show or hide the home-menu Continue button (with the saved distance). */
+function refreshContinueBtn(){
+  var s = loadSave();
+  var b = el("btnContinue");
+  if(!b) return;
+  if(s){
+    b.classList.remove("hidden");
+    b.textContent = "▶ Continue — " + Math.floor(s.dist) + " m";
+  } else {
+    b.classList.add("hidden");
+  }
+}
+/* High-scores screen (read-only list + Back). */
+function showScores(){
+  var list = loadHighscores();
+  var html = "";
+  if(list.length === 0){
+    html = '<p class="sub">No scores yet — roll the ball and set one!</p>';
+  } else {
+    for(var i=0;i<list.length;i++){
+      var e = list[i];
+      var date = "";
+      try{ date = new Date(e.t).toLocaleDateString(undefined, {month:"short", day:"numeric", year:"numeric"}); }catch(err){}
+      html += '<div class="resultRow"><span>' + (i+1) + '. <b>' + e.d.toLocaleString() + ' m</b></span><span class="ans">' + date + '</span></div>';
+    }
+  }
+  el("scoresList").innerHTML = html;
+  menuEl.classList.add("hidden");
+  scoresEl.classList.remove("hidden");
+}
+function hideScores(){
+  scoresEl.classList.add("hidden");
+  menuEl.classList.remove("hidden");
+}
 function startRun(){
   audioEnsure();
   musicStart();
+  clearSave();   // a fresh run replaces any saved run
   dist = 0; score = 0; wordsGot = 0; rampDist = 0;
   reviveNum = 0; freePasses = 0;
   ballX = 0; ballVX = 0; ballZ = 0; invincibleUntil = 0;
@@ -1713,6 +2035,7 @@ function startRun(){
   reviveEl.classList.add("hidden");
   howEl.classList.add("hidden");
   tileEl.classList.add("hidden");
+  scoresEl.classList.add("hidden");
   hudEl.classList.add("on");
   updateHUD();
   state = "playing";
@@ -1745,8 +2068,10 @@ function showMenu(){
   reviveEl.classList.add("hidden");
   howEl.classList.add("hidden");
   tileEl.classList.add("hidden");
+  scoresEl.classList.add("hidden");
   hudEl.classList.remove("on");
   el("menuBest").textContent = best > 0 ? ("Best distance: " + best + " m") : "";
+  refreshContinueBtn();
   /* Park the ball at the start so the menu shows the slope behind it. */
   ballX = 0; ballZ = 0; ballHopY = 0; ballHopV = 0; fallDrop = 0; fallV = 0; fallT = 0;
   resetTrack();
@@ -1757,11 +2082,15 @@ function gameOver(){
   state = "over";
   musicStop();
   stingOver();
+  clearSave();   // the run is over — no resuming it
   var d = Math.floor(dist);
   if(d > best){
     best = d;
     try{ localStorage.setItem("slopeEspanol_best", String(best)); }catch(e){}
   }
+  /* Top-5 high scores (local only): flag it on the game-over screen. */
+  var hsRank = recordHighscore(d);
+  el("overNew").textContent = hsRank > 0 ? ("🎉 New high score — #" + hsRank + "!") : "";
   el("overStats").textContent = "You rolled " + d + " m" +
     "  ·  " + wordsGot + " word" + (wordsGot === 1 ? "" : "s") + " collected  ·  " +
     reviveNum + " revive" + (reviveNum === 1 ? "" : "s") + " used";
@@ -1867,11 +2196,14 @@ function frame(){
     ballZ = -dist;
     /* Hop physics: integrate the bounce, land back on the track. The
        "ground" is the current segment's floor height — 0 on the main
-       track, PLATFORM_H on a raised platform — so the ball lands on a
-       platform it was launched onto, and drops back to the main track
-       when it rolls off the platform's end (the floor falls away
-       beneath it and gravity pulls it down). */
-    var groundH = floorHFor(Math.floor(dist / SEG_LEN));
+       track, PLATFORM_H on a raised platform, or the wedge height on a
+       launch ramp — so the ball lands on a platform it was launched
+       onto, and drops back to the main track when it rolls off the
+       platform's end (the floor falls away beneath it and gravity
+       pulls it down). A grounded ball rides UP a rising wedge (the
+       ground rises under it) instead of sinking into it. */
+    var groundH = groundHAt(dist);
+    if(ballHopV === 0 && ballHopY < groundH) ballHopY = groundH;   // ride up the wedge
     if(ballHopV !== 0 || ballHopY > groundH){
       var prevHopY = ballHopY;
       ballHopV -= HOP_G*dt;
@@ -1996,13 +2328,14 @@ function checkCollisions(){
     }
   }
   if(isInvincible()) return;
-  /* Launch ramp (round 8): rolling over the pad AUTOMATICALLY launches
-     the ball — no tap needed. The pad sits 2 units into its segment;
-     the boost (plan.ramp) carries the ball across the wide gap or up
-     onto the raised platform that follows. A swept check (like the
-     blocks) so a fast ball cannot tunnel past the pad. */
+  /* Launch ramp (round 8, wedge round 9): rolling up the wedge
+     AUTOMATICALLY launches the ball — no tap needed. The launch happens
+     at the wedge top (its far end, 3.5 units into the segment); the
+     boost (plan.ramp) carries the ball across the wide gap or up onto
+     the raised platform that follows. A swept check (like the blocks)
+     so a fast ball cannot tunnel past the pad. */
   if(plan.ramp > 0){
-    var rampZ = -segIdx*SEG_LEN - 2;
+    var rampZ = -segIdx*SEG_LEN - 3.5;
     if(ballZ <= rampZ && zBefore >= rampZ){
       if(ballHopV < plan.ramp) ballHopV = plan.ramp;
     }
@@ -2548,8 +2881,12 @@ el("btnHowClose").addEventListener("click", function(){
 el("btnPause").addEventListener("click", function(){ togglePause(); });
 el("btnMute").addEventListener("click", function(){ audioEnsure(); setMuted(!muted); });
 el("btnResume").addEventListener("click", function(){ resumeGame(); });
+el("btnSaveQuit").addEventListener("click", function(){ if(saveRun()) showMenu(); });
 el("btnRestart").addEventListener("click", function(){ startRun(); });
 el("btnQuitMenu").addEventListener("click", function(){ showMenu(); });
+el("btnContinue").addEventListener("click", function(){ audioEnsure(); continueRun(); });
+el("btnScores").addEventListener("click", function(){ showScores(); });
+el("btnScoresClose").addEventListener("click", function(){ hideScores(); });
 el("btnAgain").addEventListener("click", function(){ startRun(); });
 el("btnOverMenu").addEventListener("click", function(){ showMenu(); });
 el("btnRevived").addEventListener("click", function(){ respawn(); });
@@ -2589,6 +2926,7 @@ applySkin(skinName);   // saved ball, or Pollito by default
 buildSkinPicker();
 syncSliders();
 el("menuBest").textContent = best > 0 ? ("Best distance: " + best + " m") : "";
+refreshContinueBtn();
 resetTrack();
 frame();
 
