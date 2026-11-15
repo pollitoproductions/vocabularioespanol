@@ -153,7 +153,7 @@
     <button class="bigBtn" id="btnStart" type="button">▶ Start rolling</button>
     <button class="ghostBtn" id="btnHow" type="button">How to play</button>
     <div class="bestLine" id="menuBest"></div>
-    <a class="homeLink" href="index.html">← Back to Pollito Productions</a>
+    <a class="homeLink" href="https://pollitoproductions.github.io/">← Back to Pollito Productions</a>
   </div>
 </div>
 
@@ -227,7 +227,7 @@
     <div class="bestLine" id="overBest"></div>
     <button class="bigBtn" id="btnAgain" type="button">↻ Roll again</button>
     <button class="ghostBtn" id="btnOverMenu" type="button">← Back to menu</button>
-    <a class="homeLink" href="index.html">← Back to Pollito Productions</a>
+    <a class="homeLink" href="https://pollitoproductions.github.io/">← Back to Pollito Productions</a>
   </div>
 </div>
 
@@ -573,7 +573,9 @@ var SPIN_MAX = 1.5;          // max visible roll, rad/s — at full speed the ph
                              // the speed, not the spin.
 var LAT_SPEED = 24;          // max lateral (steering) speed, units/s — kept responsive at the new top speed 87
 var BASE_SPEED = 31.5;       // starting forward speed — round 5: 25% down from the doubled 42
-var MAX_SPEED = 87;          // top forward speed — round 5: 25% down from the doubled 116 (same ramp shape, ~23 s to top)
+var MAX_SPEED = 87;          // top forward speed — round 5: 25% down from the doubled 116
+var RAMP_DIST = 1387.5;      // ramp distance: top speed reached after this far
+                             // (round 7: concave ramp — see curSpeed)
 var BLOCK_HIT = 0.4;         // block half-width inflation for a hit (ball radius, forgiving)
 var GAP_HIT = 0.25;          // gap inset for a fall (ball centre must be this far inside the hole)
 /* Revives are UNLIMITED (Brant, round 6): every crash offers the quiz,
@@ -619,10 +621,11 @@ var state = "menu";          // menu | playing | paused | revive | over | tile |
 var speakMode = "revive";    // which overlay the Say-it button belongs to ("revive" | "tile")
 var tileTarget = "";         // the Spanish word on the current word-tile pause
 var dist = 0, score = 0, wordsGot = 0;
+var rampDist = 0;   // distance since the run started or the last revive — drives the speed ramp (round 7)
 var reviveNum = 0;   // how many times the player has revived this run (a count, never a limit)
 var freePasses = 0;  // banked free revives: one per correctly-spoken collected word;
                      // each one skips the quiz on the next crash (round 6)
-var ballX = 0, ballVX = 0, ballZ = 0, speedMul = 1, invincibleUntil = 0;
+var ballX = 0, ballVX = 0, ballZ = 0, invincibleUntil = 0;
 var ballHopY = 0, ballHopV = 0, nextHopAt = 0;   // hop state (height above track)
 var fallDrop = 0, fallV = 0, fallT = 0;   // gap-death fall animation
 var zBefore = 0;   // ball z at the start of the frame (swept collision checks)
@@ -633,7 +636,15 @@ try{ speakingOn = localStorage.getItem("slopeEspanol_speaking") === "1"; }catch(
 function saveSpeaking(){ try{ localStorage.setItem("slopeEspanol_speaking", speakingOn ? "1" : "0"); }catch(e){} }
 function nowSec(){ return performance.now()/1000; }
 function isInvincible(){ return nowSec() < invincibleUntil; }
-function curSpeed(){ return (BASE_SPEED + Math.min(MAX_SPEED - BASE_SPEED, dist/25)) * speedMul; }
+/* Speed ramp (round 7): concave — the ball picks up speed FAST early, so
+   the player feels it accelerating in the first 10 seconds, then the
+   climb eases off toward top speed (~22 s to top, same as before).
+   rampDist is the distance since the run started or the last revive, so
+   a revive resets the speed to base and the ramp climbs again. */
+function curSpeed(){
+  var p = Math.min(1, rampDist / RAMP_DIST);
+  return BASE_SPEED + (MAX_SPEED - BASE_SPEED) * (1 - (1 - p) * (1 - p));
+}
 
 /* ---------- DOM ---------- */
 function el(id){ return document.getElementById(id); }
@@ -1433,9 +1444,9 @@ function hideHopHint(){
 function startRun(){
   audioEnsure();
   musicStart();
-  dist = 0; score = 0; wordsGot = 0;
+  dist = 0; score = 0; wordsGot = 0; rampDist = 0;
   reviveNum = 0; freePasses = 0;
-  ballX = 0; ballVX = 0; ballZ = 0; speedMul = 1; invincibleUntil = 0;
+  ballX = 0; ballVX = 0; ballZ = 0; invincibleUntil = 0;
   ballHopY = 0; ballHopV = 0; nextHopAt = 0; fallDrop = 0; fallV = 0; fallT = 0; zBefore = 0;
   PAIR_USED = {};   // fresh question session each run
   REVIVE_Q = {};    // fresh revive queues (blocks of ten) each run
@@ -1558,7 +1569,7 @@ function respawn(){
   reviveEl.classList.add("hidden");
   ballZ -= 10;               // roll past the crash site
   ballHopY = 0; ballHopV = 0; fallDrop = 0; fallV = 0; fallT = 0;
-  speedMul = 0.55;           // moderate speed again — ramps back up on its own
+  rampDist = 0;              // speed resets to base — the ramp climbs again from here
   invincibleUntil = nowSec() + 2;   // 2 s of flashing invincibility
   state = "playing";
   hudEl.classList.add("on");
@@ -1584,8 +1595,8 @@ function frame(){
     if(ballX === -4.7 || ballX === 4.7) ballVX = 0;
     zBefore = ballZ;              // for swept collision checks (fast ball)
     dist += v*dt;
+    rampDist += v*dt;   // ramp distance: reset on revive, drives the speed ramp
     ballZ = -dist;
-    speedMul = Math.min(1, speedMul + dt*0.12);   // ease back to full speed after a revive
     /* Hop physics: integrate the bounce, land back on the track. */
     if(ballHopV !== 0 || ballHopY > 0){
       ballHopV -= HOP_G*dt;
@@ -1669,12 +1680,30 @@ function frame(){
   renderer.render(scene, camera);
 }
 function checkCollisions(){
-  if(isInvincible()) return;
   var segIdx = Math.floor(-ballZ / SEG_LEN);
   var seg = segments.get(segIdx);
   if(!seg) return;
   var plan = seg.plan;
   var blockZ = -segIdx*SEG_LEN - SEG_LEN/2;
+  /* Word tiles are ALWAYS collectible — invincibility blocks crash damage
+     only, never pickups (round 7): a tile rolled through during the
+     post-revive blink still pauses the run for its Say-it. */
+  if(plan.tile && !seg.tileTaken){
+    var tileZ = blockZ;
+    if(ballZ <= tileZ + 1.3 && zBefore >= tileZ - 1.3 && Math.abs(ballX - plan.tile.x) < 2.0){
+      /* Collect the word: the game pauses and asks the player to SAY it.
+         Saying it correctly earns ONE free revive (a "skip the quiz"
+         pass for the next crash; passes stack, one per word). No
+         points — score is distance only. */
+      seg.tileTaken = true;
+      seg.tileMesh.visible = false;
+      wordsGot++;
+      updateHUD();
+      startTilePause(plan.tile);
+      return;
+    }
+  }
+  if(isInvincible()) return;
   /* Hop: while the ball is high enough above the track it clears a
      block; while it is airborne at all it rides over a gap. Landing
      on a block or in a gap still crashes. */
@@ -1694,20 +1723,6 @@ function checkCollisions(){
   if(!airborne && plan.gap && ballX > plan.gap.x0 + GAP_HIT && ballX < plan.gap.x1 - GAP_HIT){
     crash("gap");
     return;
-  }
-  if(plan.tile && !seg.tileTaken){
-    var tileZ = blockZ;
-    if(ballZ <= tileZ + 1.3 && zBefore >= tileZ - 1.3 && Math.abs(ballX - plan.tile.x) < 2.0){
-      /* Collect the word: the game pauses and asks the player to SAY it.
-         Saying it correctly earns ONE free revive (a "skip the quiz"
-         pass for the next crash; passes stack, one per word). No
-         points — score is distance only. */
-      seg.tileTaken = true;
-      seg.tileMesh.visible = false;
-      wordsGot++;
-      updateHUD();
-      startTilePause(plan.tile);
-    }
   }
 }
 function escapeHtml(s){
