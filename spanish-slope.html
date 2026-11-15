@@ -251,7 +251,7 @@
     <div class="menuRight">
       <div class="skinLabel">Choose your ball:</div>
       <div class="skinRow" id="skinRow"></div>
-      <label class="checkRow"><input type="checkbox" id="chkSpeaking"> 🎤 Speaking activities — also say each answer out loud</label>
+      <label class="checkRow"><input type="checkbox" id="chkSpeaking"> 🎤 Speaking activities — also say each answer out loud in revive quizzes</label>
       <button class="bigBtn" id="btnStart" type="button">▶ Start rolling</button>
       <button class="bigBtn hidden" id="btnContinue" type="button">▶ Continue</button>
       <button class="ghostBtn" id="btnScores" type="button">🏆 High scores</button>
@@ -685,8 +685,8 @@ var BALL_R = 0.5;
    skull) were unreadable. The ball still rolls forward fast; only its
    spin is slowed, to 40% of the physically-accurate rate, so a design
    stays on screen long enough to read. */
-var SPIN_FACTOR = 0.15;      // ball roll slowed so the skin art stays readable (round 6: was 0.4)
-var SPIN_MAX = 1.5;          // max visible roll, rad/s — at full speed the physical
+var SPIN_FACTOR = 0.25;      // ball roll slowed so the skin art stays readable (round 6: was 0.4; round 19: up from 0.15 so the roll reads a bit livelier)
+var SPIN_MAX = 2.5;          // max visible roll, rad/s — at full speed the physical
                              // roll is ~170 rad/s (a blur); the face must stay
                              // recognisable, so the ball never tumbles faster
                              // than a slow roll. Forward motion + track convey
@@ -729,9 +729,12 @@ var HOP_CLEAR = 1.25;        // ball this high above the track clears a block
    round-5 3.5/7.1/10 and the round-6 4.5/8.1/12). The VP stays ~1/4
    up and the ball stays ~86% down. Round 16: another modest step
    down and closer yet (3.8 / 7.4 / back 10.5) — Brant: "bring the
-   camera down in a little closer. Yet." */
-var CAM_HEIGHT = 3.8;        // camera height above the ball (round 16: down a little closer yet from 4.0)
-var CAM_LOOK_HEIGHT = 7.4;   // lookAt height above the ball, 16 ahead (gap stays 3.6)
+   camera down in a little closer. Yet." Round 19: a closer view of
+   the ball as it rolls down (3.5 / 7.1 / back 9) — the ball reads
+   ~16% bigger on screen; the VP stays ~1/4 up and the ball ~89%
+   down, and the track ahead still reads to the fog far edge. */
+var CAM_HEIGHT = 3.5;        // camera height above the ball (round 19: closer view of the ball, from 3.8)
+var CAM_LOOK_HEIGHT = 7.1;   // lookAt height above the ball, 16 ahead (gap stays 3.6)
 /* The downhill: the track drops SLOPE_DROP units per 20-unit segment
    (grade 0.21, ~12°) so the descent is unmistakable, not a flat
    plane. trackY(d) is the track surface height at distance d. */
@@ -2502,7 +2505,7 @@ function frame(){
   var camDrop = (state === "falling") ? fallDrop : 0;
   camera.position.x += ((ballX*0.5) - camera.position.x) * Math.min(1, dt*6);
   camera.position.y += ((ballY + CAM_HEIGHT - camDrop) - camera.position.y) * Math.min(1, dt*6);
-  camera.position.z = ballZ + 10.5;   // round 16: a little closer yet than the round-15 11 (round-5 was 10)
+  camera.position.z = ballZ + 9;   // round 19: closer view of the ball (round-16 was 10.5, round-5 was 10)
   camera.lookAt(ballX*0.75, ballY + CAM_LOOK_HEIGHT - camDrop, ballZ - 16);
   renderer.render(scene, camera);
 }
