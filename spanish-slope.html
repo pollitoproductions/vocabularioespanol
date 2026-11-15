@@ -60,8 +60,12 @@
   /* ---------- overlays ---------- */
   .overlay{ position:fixed; inset:0; z-index:10; display:flex; align-items:center; justify-content:center;
     background:rgba(2,6,23,.72); padding:14px; overflow-y:auto; }
+  /* margin:auto (round 16): in a flex-centred overlay, a card taller
+     than the viewport used to clip at the TOP and the clipped part was
+     unreachable by scrolling. Auto margins centre the card when it
+     fits and let it scroll correctly from the top when it doesn't. */
   .card{ background:#0f172a; border:2px solid #0ea5e9; border-radius:18px; max-width:560px; width:100%;
-    padding:22px 20px; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,.6), 0 0 24px rgba(14,165,233,.35); }
+    margin:auto; padding:22px 20px; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,.6), 0 0 24px rgba(14,165,233,.35); }
   .card h1{ font-size:2.1rem; color:#0ea5e9; letter-spacing:.5px; }
   .card h1 .es{ color:#22d3ee; }
   .card h2{ font-size:1.5rem; color:#0ea5e9; margin-bottom:6px; }
@@ -173,6 +177,47 @@
     #menu .ghostBtn{ padding:9px; margin-top:8px; }
     #menu .bestLine{ text-align:center; }
     #menu .homeLink{ text-align:center; }
+
+    /* ---------- quiz + all other overlays in short landscape (round 16) ----------
+       The revive quiz card was too tall for a wide, short landscape viewport
+       (844x390): h2 + sub + count + prompt + big target + a 2x2 choice grid
+       + feedback + buttons ran ~490px, so the questions were cut off — and
+       the flex-centred overlay clipped the top when it overflowed, so the
+       cut-off part was unreachable. Compact everything: a wider card, the
+       4 choices in ONE row (the width is there in landscape), smaller
+       target/text/padding. The same compact treatment covers the tile
+       pause, pause menu, game over and high scores, so every overlay
+       reads fully in landscape. The base .card margin:auto (above) makes
+       any card that still overflows scroll correctly instead of clipping
+       its top, in both orientations. Rotating mid-quiz loses nothing:
+       quiz state lives in JS vars, and the resize handler only updates
+       the camera/renderer — it never re-renders the quiz or pauses. */
+    .card{ padding:12px 16px; }
+    .card h2{ font-size:1.25rem; margin-bottom:2px; }
+    .card p{ margin:6px 0; }
+    .bigBtn{ padding:11px; margin-top:8px; }
+    .ghostBtn{ padding:9px; margin-top:8px; }
+    .feedback{ margin-top:8px; font-size:.95rem; min-height:1.3em; }
+    .sliderRow{ margin:6px 0; }
+    #revive .card{ max-width:780px; }
+    #reviveSub{ font-size:.9rem; }
+    #quizPrompt{ font-size:.95rem; margin-top:2px; }
+    #quizTarget{ font-size:1.5rem; margin:6px 0 2px; }
+    .choices{ grid-template-columns:repeat(4,1fr); gap:8px; margin-top:10px; }
+    .choiceBtn{ min-height:48px; padding:8px 6px; font-size:.95rem; }
+    .speakRow{ margin-top:4px; }
+    .speakRow .bigBtn{ padding:11px; }
+    .hearBtn{ padding:11px 6px; }
+    .resultRow{ padding:3px 8px; font-size:.9rem; }
+    /* Results list in two columns (round 16): 5 questions + up to 5
+       answer rows is 10 rows single-column — too tall for a 390px
+       viewport even compacted. Two columns keeps the whole results
+       view on screen with the score and buttons. */
+    #reviveResults{ display:grid; grid-template-columns:1fr 1fr; column-gap:12px; }
+    #tilePause .card{ max-width:640px; }
+    #tileWord{ font-size:1.5rem; margin:6px 0 2px; }
+    #tileMeaning{ font-size:1rem; margin:4px 0 6px; }
+    #tilePause .sub{ font-size:.85rem; }
   }
 </style>
 </head>
@@ -682,9 +727,11 @@ var HOP_CLEAR = 1.25;        // ball this high above the track clears a block
    14), the camera comes back DOWN a little toward the old framing —
    a modest step, not a full revert (4.0 / 7.6 / back 11: between the
    round-5 3.5/7.1/10 and the round-6 4.5/8.1/12). The VP stays ~1/4
-   up and the ball stays ~86% down. */
-var CAM_HEIGHT = 4.0;        // camera height above the ball (round 15: down a little from 4.5 now the side scenery sells the downhill)
-var CAM_LOOK_HEIGHT = 7.6;   // lookAt height above the ball, 16 ahead (gap stays 3.6)
+   up and the ball stays ~86% down. Round 16: another modest step
+   down and closer yet (3.8 / 7.4 / back 10.5) — Brant: "bring the
+   camera down in a little closer. Yet." */
+var CAM_HEIGHT = 3.8;        // camera height above the ball (round 16: down a little closer yet from 4.0)
+var CAM_LOOK_HEIGHT = 7.4;   // lookAt height above the ball, 16 ahead (gap stays 3.6)
 /* The downhill: the track drops SLOPE_DROP units per 20-unit segment
    (grade 0.21, ~12°) so the descent is unmistakable, not a flat
    plane. trackY(d) is the track surface height at distance d. */
@@ -2437,7 +2484,7 @@ function frame(){
   var camDrop = (state === "falling") ? fallDrop : 0;
   camera.position.x += ((ballX*0.5) - camera.position.x) * Math.min(1, dt*6);
   camera.position.y += ((ballY + CAM_HEIGHT - camDrop) - camera.position.y) * Math.min(1, dt*6);
-  camera.position.z = ballZ + 11;   // round 15: a little more behind the ball than 10, a little less far than the round-6 12
+  camera.position.z = ballZ + 10.5;   // round 16: a little closer yet than the round-15 11 (round-5 was 10)
   camera.lookAt(ballX*0.75, ballY + CAM_LOOK_HEIGHT - camDrop, ballZ - 16);
   renderer.render(scene, camera);
 }
@@ -2660,6 +2707,11 @@ function startRevive(cause){
 function showReviveQ(){
   var w = reviveWordsArr[rqIdx];
   rqStep = "choose";
+  /* Round 16: the results view hides these (they are empty there) —
+     restore them whenever a question shows again. */
+  quizStepEl.style.display = "";
+  quizPrompt.style.display = "";
+  quizFb.style.display = "";
   quizCount.textContent = "Question " + (rqIdx+1) + " of 5";
   quizStepEl.textContent = speakingOn ? "Step 1 of 2 · Choose" : "Choose";
   quizPrompt.textContent = w.q;
@@ -2728,6 +2780,13 @@ function advanceRevive(){
 }
 function showReviveResults(){
   rqStep = "done";
+  /* Round 16: the step label, the prompt line and the feedback line
+     are all EMPTY in the results view, so hide them — in a short
+     landscape viewport they were eating ~68px of a card that needs
+     every pixel for the results list. showReviveQ restores them. */
+  quizStepEl.style.display = "none";
+  quizPrompt.style.display = "none";
+  quizFb.style.display = "none";
   quizChoicesEl.innerHTML = "";
   quizSpeakRow.classList.add("hidden");
   quizPrompt.textContent = "";
