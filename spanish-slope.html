@@ -1831,25 +1831,34 @@ scene.add(points);
    has scenery rolling by. Round 14 (Brant, Nov 14): he studied the
    original Slope and found it is the SIDE SCENERY that sells the
    downhill — tall grid walls streaming past on both sides — so the
-   field is ramped up 4x (12 -> 48 tets), bigger (three sizes, up to
-   7), and closer to the track edges, forming tall walls on both
-   sides. The key: each tet's height is WORLD-ANCHORED — set once at
-   placement from the track height at ITS OWN position plus a wide
-   offset (-8..+55), then NEVER updated while the ball approaches.
-   The ball/camera descend with the track, so every tet streams
-   UPWARD past the player on both sides — that rising-past-the-sides
-   motion is what reads as "going downhill", instead of the old
-   2..9-above-the-track hug that moved with the slope. They are
-   NEVER on the track (inner edge always >= 6 units out, the track
-   is 5 wide, fall-off at 5.3) and never cause a crash — pure
-   scenery, wireframe neon so they read as shapes, not obstacles.
-   Three shared geometries / three shared materials, recycled as
-   they pass behind the ball. */
+   field is ramped up 4x (12 -> 48 tets), bigger (three sizes), and
+   closer to the track edges, forming tall walls on both sides.
+   Round 15: the wall climbed with distance ahead. Round 18 (Brant,
+   Nov 14): that climb made the field read as CLOUDS FLOATING ABOVE
+   the road — every far tet sat high, with empty space underneath.
+   His framing: "We are going down through a cloud of tetrahedrons."
+   So the field is now a tall 3D band AROUND the track, from well
+   below it to well above it — the player descends THROUGH the cloud,
+   not underneath it. Small/medium tets get a uniform offset
+   -50..+50; the biggest tets sit low (-10..+5) so each one rises
+   from below the track up past it, like the buildings in the
+   original Slope. The key is unchanged: each tet's height is
+   WORLD-ANCHORED — set once at placement from the track height at
+   ITS OWN position plus the offset, then NEVER updated while the
+   ball approaches. The ball/camera descend with the track, so every
+   tet streams UPWARD past the player on both sides — that
+   rising-past-the-sides motion is what reads as "going downhill".
+   They are NEVER on the track (inner edge always >= 6 units out,
+   the track is 5 wide, fall-off at 5.3) and never cause a crash —
+   pure scenery, wireframe neon so they read as shapes, not
+   obstacles. Three shared geometries / three shared materials,
+   recycled as they pass behind the ball. */
 var TET_COUNT = 48;
-var TET_SIZES = [2.5, 4.5, 7];
-var TET_Y_MIN = -8;    // lowest offset (right at the ball)
-var TET_Y_RISE = 100;  // round 15: the wall CLIMBS this much over the 650-unit field ahead — a steeper rise than the flat random -8..+55 of round 14
-var TET_Y_JIT = 12;    // random jitter on top of the climb
+var TET_SIZES = [2.5, 4.5, 10];   // round 18: biggest class 7 -> 10, so the "buildings" are tall enough to rise from below the track up past it
+var TET_Y_MIN = -50;   // cloud band (round 18): lowest offset — well BELOW the track
+var TET_Y_MAX = 50;    // cloud band (round 18): highest offset — well above the track
+var TET_BIG_Y_MIN = -10;  // biggest tets sit low (round 18): centres -10..+5, so a size-10 tet spans from below the track up past it
+var TET_BIG_Y_SPAN = 15;
 var tetGeos = TET_SIZES.map(function(s){ return new THREE.TetrahedronGeometry(s); });
 var tetMats = [
   new THREE.MeshBasicMaterial({color:0x22d3ee, wireframe:true, transparent:true, opacity:0.55}),
@@ -1865,12 +1874,21 @@ function placeTetXY(mesh){
   mesh.position.x = (Math.random() < 0.5 ? -1 : 1) * (6 + size + Math.random()*8);
   /* Height: WORLD-ANCHORED (round 14) — fixed at placement, so the tet
      streams upward past the descending player instead of hugging the
-     slope. Round 15: the offset now CLIMBS with distance ahead
-     (-8 at the ball, rising ~100 over the 650-unit field, plus a
-     little jitter), so the wall rises at a steeper angle as it
-     recedes — the downhill cue is even stronger. */
-  var dAhead = Math.max(0, -mesh.position.z - dist);
-  mesh.position.y = trackY(-mesh.position.z) + TET_Y_MIN + (dAhead/650)*TET_Y_RISE + Math.random()*TET_Y_JIT;
+     slope. Round 18: we are going down THROUGH a cloud of
+     tetrahedrons, so the offset is a flat wide band around the track
+     (-50..+50 for small/medium tets), not a climb — the round-15
+     climb (offset rising with distance ahead) pushed every far tet
+     up high and made the field read as clouds floating above the
+     road, with empty space underneath. The biggest tets sit low
+     (-10..+5) so each one rises from below the track up past it,
+     like the buildings in the original Slope. */
+  var off;
+  if(mesh.userData.size === 2){
+    off = TET_BIG_Y_MIN + Math.random()*TET_BIG_Y_SPAN;
+  } else {
+    off = TET_Y_MIN + Math.random()*(TET_Y_MAX - TET_Y_MIN);
+  }
+  mesh.position.y = trackY(-mesh.position.z) + off;
   mesh.rotation.set(Math.random()*6.28, Math.random()*6.28, Math.random()*6.28);
 }
 function placeTet(mesh, zMin, zMax){
@@ -2455,7 +2473,7 @@ function frame(){
   /* Background tetrahedrons tumble slowly and recycle ahead once
      they pass behind the ball — scenery, never obstacles. Round 14:
      the recycle re-rolls the lateral position and the WORLD-ANCHORED
-     height at the new spot (placeTetXY), so the wall field stays
+     height at the new spot (placeTetXY), so the cloud field stays
      varied and every tet keeps streaming upward past the descending
      player. The jump is 650, so a recycled tet lands at most ~620
      ahead of the ball — at the fog's far edge, fading in, never
