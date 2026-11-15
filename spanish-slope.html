@@ -741,12 +741,19 @@ var HOP_CLEAR = 1.25;        // ball this high above the track clears a block
    (~52 px) and HALF as much track behind (~1.2 world units, was ~2.5)
    — camera closer and lower (2.75 / 3.25 / back 9.5), FOV 42, look
    gap 0.5 (nearly level look); the ball stays ~90% down and the VP
-   ~19% up, so the perspective barely moves. */
-var CAM_HEIGHT = 2.75;       // camera height above the ball (round 23: lower, from 3.5 — part of the 50%-bigger ball)
-var CAM_LOOK_HEIGHT = 2.75;  // lookAt height above the ball, 16 ahead (round 25: 3.25 -> 2.75 — angle the landscape camera DOWN a little, per Brant Nov 15, so the ball stays on screen at top speed; the look is now level with the camera height, VP ~77% down, track behind ~2.3 units)
-var PORTRAIT_CAM_BACK = 6.75;   // camera back distance in PORTRAIT (round 25: 6.35 -> 6.75 — a touch further back, paired with the much narrower portrait FOV, so the ball reads ~29% of screen width and ROUND while the track ahead stays visible)
-var PORTRAIT_CAM_HEIGHT = 2.25;   // camera height above the ball in PORTRAIT (round 25: NEW — lower than the landscape 2.75; with the closer back + narrower FOV the low camera keeps the ball big and round at the scribble spot)
-var PORTRAIT_CAM_LOOK_HEIGHT = 2.5;  // lookAt height above the ball in PORTRAIT (round 25: 10.5 -> 2.5 — the round-24 high look + extreme FOV 120 is what stretched the ball into an egg; the look now sits just above the camera height, the view is nearly level, and the ball sits ~84% down ROUND at ~29% of screen width)
+   ~19% up, so the perspective barely moves. Round 26: the camera
+   goes UP and the view pitches DOWN (landscape 4.0/1.0/back 9.2,
+   portrait 3.85/-1.6/back 5.85) so the road DISAPPEARS at a high VP
+   (~47% down portrait, ~62% landscape) — the angle Brant drew — while
+   the ball stays big, round, and ~82% down (portrait) / on screen
+   (landscape); the VP and the ball are separated by raising the camera
+   (the ball sits further below the camera's horizontal) while the
+   pitched-down view lifts the VP. */
+var CAM_HEIGHT = 4.0;        // camera height above the ball (round 26: 2.75 -> 4.0 — the camera goes UP so the ball sits further below the camera's horizontal, separating it from the VP while the pitched-down view lifts the VP to ~62% down)
+var CAM_LOOK_HEIGHT = 1.0;   // lookAt height above the ball, 16 ahead (round 26: 2.75 -> 1.0 — the view pitches DOWN ~7 deg, lifting the VP to ~62% down; the ball stays ~89% down, ~53 px, round)
+var PORTRAIT_CAM_BACK = 5.85;   // camera back distance in PORTRAIT (round 26: 6.75 -> 5.85 — closer, paired with the higher camera, so the ball stays ~29% of screen width and ROUND at the scribble spot)
+var PORTRAIT_CAM_HEIGHT = 3.85;   // camera height above the ball in PORTRAIT (round 26: 2.25 -> 3.85 — the camera goes UP so the ball sits further below the camera's horizontal, separating it from the VP while the pitched-down view lifts the VP to ~47% down)
+var PORTRAIT_CAM_LOOK_HEIGHT = -1.6;  // lookAt height above the ball in PORTRAIT (round 26: 2.5 -> -1.6 — the view pitches DOWN ~14 deg, lifting the VP to ~47% down (the angle Brant drew); the look point sits just above the track surface 16 ahead, and the ball stays ~82% down ROUND at ~29% of screen width)
 /* The downhill: the track drops SLOPE_DROP units per 20-unit segment
    (grade 0.21, ~12°) so the descent is unmistakable, not a flat
    plane. trackY(d) is the track surface height at distance d. */
@@ -835,8 +842,8 @@ function makeSkyTexture(){
   return new THREE.CanvasTexture(c);
 }
 scene.background = makeSkyTexture();
-scene.fog = new THREE.Fog(0x0d0724, 80, 650);   // round 5: fog pushed out so the track reads much further ahead
-var camera = new THREE.PerspectiveCamera(42, window.innerWidth/window.innerHeight, 0.1, 900);   // round 23: base FOV 42 (was 56) — zoomed in so the ball reads 50% bigger (~52 px); round 5: far plane raised for the far view
+scene.fog = new THREE.Fog(0x0d0724, 80, 1400);   // round 26: far edge 650 -> 1400 — the road reads much further down the track and fades in gradually over 1320 units instead of popping in at a hard edge (Brant Nov 15: see the road disappear, nothing popping up out of nowhere)
+var camera = new THREE.PerspectiveCamera(42, window.innerWidth/window.innerHeight, 0.1, 2000);   // round 26: far plane 900 -> 2000 — must clear the fog far edge (1400) and the mesh build distance (1500); round 23: base FOV 42 (was 56) — zoomed in so the ball reads 50% bigger (~52 px)
 camera.position.set(0, 5, 10);
 scene.add(new THREE.AmbientLight(0x99aaff, 1.5));
 var dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
@@ -1810,9 +1817,10 @@ function disposeSegment(seg){
   }
 }
 function ensureSegments(){
-  /* Keep ~780 units of track ahead of the ball (round 5: further, to
-     match the elevated far view); drop what is behind. */
-  while(nextSegIdx * SEG_LEN < -ballZ + 780){
+  /* Keep ~1500 units of track ahead of the ball (round 26: 780 -> 1500 —
+     meshes must exist past the fog far edge (1400) so the road never ends
+     visibly before it fades out; drop what is behind. */
+  while(nextSegIdx * SEG_LEN < -ballZ + 1500){
     buildSegment(nextSegIdx);
     nextSegIdx++;
   }
@@ -1939,7 +1947,7 @@ for(var ti=0; ti<TET_COUNT; ti++){
   tet.userData.size = ti % tetGeos.length;
   tet.userData.rx = 0.2 + Math.random()*0.4;
   tet.userData.ry = 0.2 + Math.random()*0.4;
-  placeTet(tet, 50, 650);
+  placeTet(tet, 50, 1400);   // round 26: was 50..650 — spread the field out to the new fog far edge
   scene.add(tet);
   tets.push(tet);
 }
@@ -2175,7 +2183,7 @@ function rebuildTrackFromSave(s){
   tileIdx = 0;
   var ballSeg = Math.floor(s.dist / SEG_LEN);
   var firstIdx = Math.max(0, ballSeg - 3);   // a few segments behind for the view
-  var lastIdx = Math.min(s.nextSegIdx - 1, ballSeg + 39);  // ~780 ahead, like ensureSegments
+  var lastIdx = Math.min(s.nextSegIdx - 1, ballSeg + 75);  // ~1500 ahead, like ensureSegments (round 26: was +39 / ~780)
   var plans = {};
   for(var idx = 0; idx < s.nextSegIdx; idx++){
     var rng = mulberry32((runSeed*1000003 + idx*7919) >>> 0);
@@ -2515,24 +2523,25 @@ function frame(){
      the recycle re-rolls the lateral position and the WORLD-ANCHORED
      height at the new spot (placeTetXY), so the cloud field stays
      varied and every tet keeps streaming upward past the descending
-     player. The jump is 650, so a recycled tet lands at most ~620
-     ahead of the ball — at the fog's far edge, fading in, never
-     popping into view. */
+     player. The jump is 1400 (round 26: was 650), so a recycled tet
+     lands at most ~1370 ahead of the ball — at the fog's far edge,
+     fading in, never popping into view. (The field spreads over a
+     longer range now, so it reads sparser — the price of the long view.) */
   for(var i=0;i<tets.length;i++){
     var tet = tets[i];
     tet.rotation.x += tet.userData.rx*dt;
     tet.rotation.y += tet.userData.ry*dt;
     if(tet.position.z > ballZ + 30){
-      tet.position.z -= 650;
+      tet.position.z -= 1400;   // round 26: was 650 — must land at the new fog far edge or the tet pops in visibly mid-fade
       placeTetXY(tet);
     }
   }
-  /* Camera follows the ball, looking forward and down the slope. The
-     camera pitches UP (look target well above camera height), so the
-     track direction sits ~20° below the view centre and the vanishing
-     point lands ~1/4 of the screen height up from the bottom (1/3 was
-     too much, 1/6 too little) — the downhill reads clearly. The ball
-     stays in the lower half of the screen, clearly visible. The camera
+  /* Camera follows the ball, looking forward and down the slope. Round 26:
+     the camera sits HIGHER above the ball and the view pitches DOWN, so
+     the vanishing point lifts to ~47% down in portrait (~62% landscape) —
+     the road disappears at the angle Brant drew — while the ball stays
+     big, round, and low on screen (~82% down portrait, ~89% landscape).
+     The camera
      does NOT follow the hop — it rides the track height, so the view
      stays steady while the ball bounces. But it DOES follow the fall
      (round 8): while the ball is tumbling down through a hole or off
@@ -2542,8 +2551,8 @@ function frame(){
   var camDrop = (state === "falling") ? fallDrop : 0;
   camera.position.x += ((ballX*0.5) - camera.position.x) * Math.min(1, dt*6);
   camera.position.y += ((ballY + (camera.aspect < 1 ? PORTRAIT_CAM_HEIGHT : CAM_HEIGHT) - camDrop) - camera.position.y) * Math.min(1, dt*40);   // round 25: lerp dt*6 -> dt*40 — the slow Y lerp lagged ~3 units high at top speed while the ball descended, pushing it off the bottom in landscape (round 24: 110% down); the tight lerp tracks the descent, ball ~91% down at top speed. X lerp stays dt*6 (lateral follow is smoothed, not a constant drift).
-  camera.position.z = ballZ + (camera.aspect < 1 ? PORTRAIT_CAM_BACK : 9.5);   // round 25: portrait back 6.75; landscape keeps 9.5
-  camera.lookAt(ballX*0.75, ballY + (camera.aspect < 1 ? PORTRAIT_CAM_LOOK_HEIGHT : CAM_LOOK_HEIGHT) - camDrop, ballZ - 16);   // round 25: portrait look 2.5 (was 10.5), landscape look 2.75 (was 3.25) — both nearly level now, which is what keeps the ball round and on screen
+  camera.position.z = ballZ + (camera.aspect < 1 ? PORTRAIT_CAM_BACK : 9.2);   // round 26: landscape back 9.5 -> 9.2 (solver value for the VP/ball targets); portrait back 5.85
+  camera.lookAt(ballX*0.75, ballY + (camera.aspect < 1 ? PORTRAIT_CAM_LOOK_HEIGHT : CAM_LOOK_HEIGHT) - camDrop, ballZ - 16);   // round 26: portrait look -1.6, landscape look 1.0 — the view pitches DOWN now (portrait ~14 deg, landscape ~7 deg), lifting the VP to ~47% down (portrait) / ~62% (landscape) — the angle Brant drew — while the raised camera keeps the ball big, round, and low on screen
   renderer.render(scene, camera);
 }
 function checkCollisions(){
