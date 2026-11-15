@@ -743,9 +743,10 @@ var HOP_CLEAR = 1.25;        // ball this high above the track clears a block
    gap 0.5 (nearly level look); the ball stays ~90% down and the VP
    ~19% up, so the perspective barely moves. */
 var CAM_HEIGHT = 2.75;       // camera height above the ball (round 23: lower, from 3.5 — part of the 50%-bigger ball)
-var CAM_LOOK_HEIGHT = 3.25;  // lookAt height above the ball, 16 ahead (round 23: gap 0.5 — the nearly level look tilts the view up so the bottom edge cuts the track ~1.2 units behind the ball, half of round 22's ~2.5)
-var PORTRAIT_CAM_BACK = 6.35;   // camera back distance in PORTRAIT (round 24: closer than the landscape 9.5, so the ball reads bigger — ~58 px, 1.21x round 23's 48.2 px — while the wider portrait FOV keeps the full track width in frame)
-var PORTRAIT_CAM_LOOK_HEIGHT = 10.5;  // lookAt height above the ball in PORTRAIT (round 24: higher than the landscape 3.25, so the look tilts up and the ball sits ~84% down LIVE at typical play speeds — the camera lerp lag while descending drops it a few points lower still at speed, so the theoretical spot is ~77%)  // lookAt height above the ball in PORTRAIT (round 24: much higher than the landscape 3.25, so the look tilts up and the ball sits ~84% down, where Brant sketched it in his screenshot)
+var CAM_LOOK_HEIGHT = 2.75;  // lookAt height above the ball, 16 ahead (round 25: 3.25 -> 2.75 — angle the landscape camera DOWN a little, per Brant Nov 15, so the ball stays on screen at top speed; the look is now level with the camera height, VP ~77% down, track behind ~2.3 units)
+var PORTRAIT_CAM_BACK = 6.75;   // camera back distance in PORTRAIT (round 25: 6.35 -> 6.75 — a touch further back, paired with the much narrower portrait FOV, so the ball reads ~29% of screen width and ROUND while the track ahead stays visible)
+var PORTRAIT_CAM_HEIGHT = 2.25;   // camera height above the ball in PORTRAIT (round 25: NEW — lower than the landscape 2.75; with the closer back + narrower FOV the low camera keeps the ball big and round at the scribble spot)
+var PORTRAIT_CAM_LOOK_HEIGHT = 2.5;  // lookAt height above the ball in PORTRAIT (round 25: 10.5 -> 2.5 — the round-24 high look + extreme FOV 120 is what stretched the ball into an egg; the look now sits just above the camera height, the view is nearly level, and the ball sits ~84% down ROUND at ~29% of screen width)
 /* The downhill: the track drops SLOPE_DROP units per 20-unit segment
    (grade 0.21, ~12°) so the descent is unmistakable, not a flat
    plane. trackY(d) is the track surface height at distance d. */
@@ -2540,9 +2541,9 @@ function frame(){
      to its normal position on revive/respawn, when fallDrop resets. */
   var camDrop = (state === "falling") ? fallDrop : 0;
   camera.position.x += ((ballX*0.5) - camera.position.x) * Math.min(1, dt*6);
-  camera.position.y += ((ballY + CAM_HEIGHT - camDrop) - camera.position.y) * Math.min(1, dt*6);
-  camera.position.z = ballZ + (camera.aspect < 1 ? PORTRAIT_CAM_BACK : 9.5);   // round 24: portrait uses the closer back (6.35) so the ball reads bigger; landscape keeps 9.5
-  camera.lookAt(ballX*0.75, ballY + (camera.aspect < 1 ? PORTRAIT_CAM_LOOK_HEIGHT : CAM_LOOK_HEIGHT) - camDrop, ballZ - 16);   // round 24: portrait looks much higher so the ball sits ~84% down
+  camera.position.y += ((ballY + (camera.aspect < 1 ? PORTRAIT_CAM_HEIGHT : CAM_HEIGHT) - camDrop) - camera.position.y) * Math.min(1, dt*40);   // round 25: lerp dt*6 -> dt*40 — the slow Y lerp lagged ~3 units high at top speed while the ball descended, pushing it off the bottom in landscape (round 24: 110% down); the tight lerp tracks the descent, ball ~91% down at top speed. X lerp stays dt*6 (lateral follow is smoothed, not a constant drift).
+  camera.position.z = ballZ + (camera.aspect < 1 ? PORTRAIT_CAM_BACK : 9.5);   // round 25: portrait back 6.75; landscape keeps 9.5
+  camera.lookAt(ballX*0.75, ballY + (camera.aspect < 1 ? PORTRAIT_CAM_LOOK_HEIGHT : CAM_LOOK_HEIGHT) - camDrop, ballZ - 16);   // round 25: portrait look 2.5 (was 10.5), landscape look 2.75 (was 3.25) — both nearly level now, which is what keeps the ball round and on screen
   renderer.render(scene, camera);
 }
 function checkCollisions(){
@@ -2715,7 +2716,7 @@ var BASE_FOV = 42;   // round 23: 56 -> 42 — zoomed in so the ball reads 50% b
 function applyCameraFov(){
   var aspect = window.innerWidth / window.innerHeight;
   var fov = BASE_FOV;
-  if(aspect < 1) fov = Math.min(120, BASE_FOV + (1 - aspect) * 250);   // round 24: cap 98 -> 120, boost 115 -> 250 — the wider portrait FOV lets the closer portrait camera (back 6.35) keep the full track width in frame (worst half-width ~5.06 at aspect 0.46) while the ball reads bigger
+  if(aspect < 1) fov = Math.min(57.5, BASE_FOV + (1 - aspect) * 28.7);   // round 25: cap 120 -> 57.5, boost 250 -> 28.7 — the extreme wide FOV is what stretched the ball into an egg (off-axis ~50 deg at 84% down); the narrow FOV + closer camera gives a ROUND ball ~29% of screen width at aspect 0.46. TRADE-OFF (measured): a ball that wide cannot also keep the full 10-unit track width at its depth (width ~= r/HW) — the visible half-width at the ball is ~1.7, so the track edges appear ~12 units ahead of the ball instead of at the ball; the track ahead stays fully visible (VP ~70% down).
   if(camera.fov !== fov){ camera.fov = fov; camera.updateProjectionMatrix(); }
 }
 
