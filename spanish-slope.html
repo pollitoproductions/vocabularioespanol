@@ -161,6 +161,9 @@
   <div class="card">
     <h2>How to play</h2>
     <p>Your ball rolls downhill on its own, faster and faster. Steer left and right to dodge the red blocks and the gaps in the track. If you roll off a gap or hit a block, you crash.</p>
+    <p>Some stretches of track tilt to the left or the right — the slope pulls your ball toward the low side, so steer against the tilt to hold your line. Gaps on a tilted stretch are jumped the same way.</p>
+    <p>Neon rings mark a tunnel — just scenery, roll straight through. And watch the edges: the ball can fall off the side of the track now, so don't ride the edge to dodge.</p>
+    <p>Amber pads with chevrons are launch ramps — roll over one and it flings you into the air, across a wide gap or up onto a raised platform. Just ride onto it; no tap needed.</p>
     <p><b>Hop:</b> tap, press Space, or press ↑ to hop — a big bounce that clears a block or a gap. You can hop about once every half second, so time it.</p>
     <p>Glowing word tiles float over the track — roll through one and the game pauses so you can say the word out loud. Say it correctly and you earn a <b>free revive</b>: the next time you crash you revive instantly with no quiz. Free revives stack — say more words, bank more skips. Don't want to speak it? Tap “Keep rolling” to skip — skipping earns nothing.</p>
     <p>When you crash, you get a <b>quiz revive</b>: 5 Spanish questions. Get 4 or 5 right and you keep rolling, with a short head start and 2 seconds of flashing invincibility. You can revive as many times as you like. The questions follow the same order as Spanish Dash — cognates, then common words, then present tense, then possessive pronouns, then ser vs. estar — ten revives of each, and then they start over, so there are 50 different revives.</p>
@@ -571,10 +574,10 @@ var SPIN_MAX = 1.5;          // max visible roll, rad/s — at full speed the ph
                              // recognisable, so the ball never tumbles faster
                              // than a slow roll. Forward motion + track convey
                              // the speed, not the spin.
-var LAT_SPEED = 24;          // max lateral (steering) speed, units/s — kept responsive at the new top speed 87
+var LAT_SPEED = 30;          // max lateral (steering) speed, units/s — raised for the new top speed 120 (was 24 at 87)
 var BASE_SPEED = 31.5;       // starting forward speed — round 5: 25% down from the doubled 42
-var MAX_SPEED = 87;          // top forward speed — round 5: 25% down from the doubled 116
-var RAMP_DIST = 1387.5;      // ramp distance: top speed reached after this far
+var MAX_SPEED = 120;         // top forward speed — round 8: Brant asked for 120 (was 87)
+var RAMP_DIST = 1730;        // ramp distance: top speed reached after this far — stretched from 1387.5 so 120 still arrives in ~22 s
                              // (round 7: concave ramp — see curSpeed)
 var BLOCK_HIT = 0.4;         // block half-width inflation for a hit (ball radius, forgiving)
 var GAP_HIT = 0.25;          // gap inset for a fall (ball centre must be this far inside the hole)
@@ -627,7 +630,15 @@ var freePasses = 0;  // banked free revives: one per correctly-spoken collected 
                      // each one skips the quiz on the next crash (round 6)
 var ballX = 0, ballVX = 0, ballZ = 0, invincibleUntil = 0;
 var ballHopY = 0, ballHopV = 0, nextHopAt = 0;   // hop state (height above track)
-var fallDrop = 0, fallV = 0, fallT = 0;   // gap-death fall animation
+var fallDrop = 0, fallV = 0, fallT = 0;   // fall animation (gap or side)
+var fallCause = "gap";                    // which fall is playing: "gap" | "side"
+const FALL_TIME = 0.9;                    // round 8: the fall lasts a touch longer
+                                          // than the old 0.65 s, so the player
+                                          // sees the ball tumble away
+const EDGE_FALL = 5.3;                    // round 8: the ball falls off the side
+                                          // past the track half-width (5.0) plus
+                                          // a small 0.3 margin — the edge is a
+                                          // real boundary, not a clamp
 var zBefore = 0;   // ball z at the start of the frame (swept collision checks)
 var best = 0;
 try{ best = parseInt(localStorage.getItem("slopeEspanol_best") || "0", 10) || 0; }catch(e){}
@@ -1031,8 +1042,69 @@ var edgeMatL = new THREE.MeshBasicMaterial({color:0x22d3ee});   /* cyan, left */
 var edgeMatR = new THREE.MeshBasicMaterial({color:0xec4899});   /* hot pink, right */
 var crossGeo = new THREE.BoxGeometry(TRACK_W, 0.06, 0.14);
 var crossMat = new THREE.MeshBasicMaterial({color:0x7c3aed});
+/* Round 8: launch-ramp pad — a yellow/orange pad with chevrons, like the
+   Dash jump pad. Rolling over it AUTOMATICALLY launches the ball (a
+   vertical boost, no tap needed). The pad spans the full track width,
+   so the ball can never miss it and roll into the wide gap / platform
+   face beyond. Shared geometry/material (the chevron texture is drawn
+   once). */
+function makeRampTexture(){
+  var c = document.createElement("canvas"); c.width = 256; c.height = 128;
+  var g = c.getContext("2d");
+  g.fillStyle = "#f59e0b"; g.fillRect(0, 0, 256, 128);   /* amber pad */
+  g.fillStyle = "#fde68a";
+  for(var i=0;i<3;i++){   /* three chevrons pointing forward (up the track) */
+    var y = 18 + i*38;
+    g.beginPath();
+    g.moveTo(28, y+22); g.lineTo(128, y); g.lineTo(228, y+22);
+    g.lineTo(228, y+34); g.lineTo(128, y+12); g.lineTo(28, y+34);
+    g.closePath(); g.fill();
+  }
+  var tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = 4;
+  return tex;
+}
+var rampGeo = new THREE.BoxGeometry(TRACK_W, 0.12, 3);
+var rampMat = new THREE.MeshStandardMaterial({map:makeRampTexture(), emissive:0xf59e0b, emissiveIntensity:0.7, roughness:0.4});
 var blockGeo = new THREE.BoxGeometry(1, 1, 1);
-var blockMat = new THREE.MeshStandardMaterial({color:0x991b1b, emissive:0xff2d55, emissiveIntensity:2.2, roughness:0.35});   /* round 5: brighter/more emissive so blocks read from further away */
+/* Round 8: grid-patterned blocks (Brant: "like the grid on the ramp").
+   A neon red grid texture in the same style as the track grid — dark
+   red base, neon red lines drawn twice (a wide red glow pass, then a
+   thin near-white core), lines on BOTH edges of the tile so it is
+   seamless when it repeats. The texture is the block's diffuse map AND
+   its emissive map, so the grid lines glow neon red while the base
+   stays a darker red — the blocks read as grid-patterned, not solid
+   slabs, but stay bright red and visible from a distance (same
+   emissive intensity 2.2 as the solid blocks). One shared texture and
+   material; the 2x2 repeat gives 2x2 grid cells per face. */
+function makeBlockGridTexture(){
+  var c = document.createElement("canvas"); c.width = 128; c.height = 128;
+  var g = c.getContext("2d");
+  g.fillStyle = "#400000"; g.fillRect(0, 0, 128, 128);   /* dark red base — the block still reads red, the grid reads on top */
+  function hline(y){
+    g.strokeStyle = "#ff0000"; g.lineWidth = 8;
+    g.shadowColor = "#ff0000"; g.shadowBlur = 18;
+    g.beginPath(); g.moveTo(0, y); g.lineTo(128, y); g.stroke();
+    g.strokeStyle = "#ffffff"; g.lineWidth = 2.5; g.shadowBlur = 0;
+    g.beginPath(); g.moveTo(0, y); g.lineTo(128, y); g.stroke();
+  }
+  function vline(x){
+    g.strokeStyle = "#ff0000"; g.lineWidth = 8;
+    g.shadowColor = "#ff0000"; g.shadowBlur = 18;
+    g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 128); g.stroke();
+    g.strokeStyle = "#ffffff"; g.lineWidth = 2.5; g.shadowBlur = 0;
+    g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 128); g.stroke();
+  }
+  vline(0); vline(128);
+  hline(0); hline(128);
+  var tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(2, 2);
+  tex.anisotropy = 4;
+  return tex;
+}
+var blockGridTex = makeBlockGridTexture();
+var blockMat = new THREE.MeshStandardMaterial({map:blockGridTex, emissive:0xff0000, emissiveMap:blockGridTex, emissiveIntensity:2.2, roughness:0.35});   /* round 8: neon red grid (was solid neon red) */
 /* Round 5: glowing gap edges — a hole must read from a distance, so
    each gap gets a hot pink-red neon outline: two rails along its
    left/right edges plus a bar across its near end, where the hole
@@ -1053,6 +1125,17 @@ var gapEdgeMat = new THREE.MeshBasicMaterial({color:0xff2d55});
 var skirtGeo = new THREE.BoxGeometry(0.15, 2.5, SEG_LEN);
 var skirtMatL = new THREE.MeshBasicMaterial({color:0x0891b2});   /* cyan, left */
 var skirtMatR = new THREE.MeshBasicMaterial({color:0xbe185d});   /* hot pink, right */
+/* Round 8: tunnel arches — a neon ring the ball rolls through. A tunnel
+   is 3 consecutive segments, each carrying one ring, so the rings read
+   as a short tunnel. The ring is a torus (radius 6, tube 0.22) centred
+   3 units above the track floor, so the ball passes through its lower
+   half; the bottom of the ring sits below the track (buried, unseen).
+   Shared geometry/material (no per-segment disposal). Pure scenery:
+   the ring never blocks the ball, never causes a crash, and tunnel
+   segments are always plain (no gaps, blocks, or tiles), so it never
+   hides anything. Unlit cyan so it reads from a distance. */
+var archGeo = new THREE.TorusGeometry(6, 0.22, 10, 40);
+var archMat = new THREE.MeshBasicMaterial({color:0x22d3ee});
 var tileGeo = new THREE.PlaneGeometry(2.6, 1.3);
 
 /* Word tiles cycle through the vocabulary: cognates first, then practice
@@ -1067,11 +1150,142 @@ var tileIdx = 0;
    Guarantees: blocks never cover the full width (a free lane >= 2.4 wide
    always remains); a gap leaves >= 6.0 of solid track; never two gap
    segments in a row (prevGap). */
+
+/* ---------- banked track sections (round 8) ----------
+   Brant: "having the surface angled to the left and to the right with
+   gaps that you have to jump like the original, some of them looking
+   steeper too." Some stretches of track tilt sideways (bank), left or
+   right, so the surface angles down to one side. The bank is a PURE
+   function of (runSeed, idx) so the layout can be simulated in Node
+   and the ball's height/pull interpolated for any distance.
+   Layout: after the safe start, the track runs in groups of 9 segments.
+   Each group holds ONE banked run of 2-3 segments, so banked stretches
+   are always separated by at least 2 flat segments. Within a run the
+   bank follows a smooth bump (half, peak, half), so the surface never
+   jumps from flat to full tilt in one step. Most runs are gentle
+   (0.08-0.16 rad, ~5-9 deg), some are medium (0.16-0.24), a few are
+   noticeably steep (0.24-0.30 rad, ~14-17 deg).
+   Sign: bank > 0 means the RIGHT side (+x) is LOWER — the surface
+   angles down to the right and gravity pulls the ball toward +x.
+   bank < 0 is the mirror (left side low, pull toward -x). */
+var BANK_G = 150;          // lateral pull strength (units/s^2 per sin(bank)):
+                           // at the steepest bank (0.30 rad) the pull is
+                           // ~44 units/s^2, which shifts the ball's lateral
+                           // velocity by ~4.4 units/s — clearly felt, but
+                           // easily overcome by steering (LAT_SPEED 30).
+var BANK_GROUP = 9;        // segments per group (one banked run per group)
+var BANK_MAX = 0.30;       // steepest bank angle, radians (~17 deg)
+function bankFor(idx){
+  if(idx < 5) return 0;    // safe start stays flat
+  var g = Math.floor((idx - 5) / BANK_GROUP);
+  var off = (idx - 5) % BANK_GROUP;
+  /* One hash per group (its own stream — the obstacle rng is untouched,
+     so block/gap/tile layouts are byte-identical to round 7). */
+  var h = mulberry32((runSeed*1000003 + g*7919) >>> 0);
+  var runLen = 2 + Math.floor(h()*2);                          // 2-3 segments
+  var runStart = Math.floor(h() * (BANK_GROUP - runLen - 1));  // >=2 flat after the run
+  if(off < runStart || off >= runStart + runLen) return 0;
+  var dir = h() < 0.5 ? -1 : 1;
+  var r = h();
+  var peak;
+  if(r < 0.55) peak = 0.08 + h()*0.08;        // gentle 0.08-0.16
+  else if(r < 0.85) peak = 0.16 + h()*0.08;   // medium 0.16-0.24
+  else peak = 0.24 + h()*0.06;                // steep 0.24-0.30
+  var i = off - runStart;                     // 0-based within the run
+  return dir * peak * Math.sin(Math.PI * (i + 0.5) / runLen);
+}
+function bankAt(d){
+  /* Smooth bank at distance d: lerp between segment-CENTRE banks, so the
+     ball's height and the pull never jump at a segment boundary. The
+     segment mesh itself rotates by its own bank (a small kink between
+     segments is fine — the original Slope's track hinges the same way). */
+  var f = d / SEG_LEN - 0.5;
+  var i0 = Math.floor(f);
+  var frac = f - i0;
+  var b0 = bankFor(i0), b1 = bankFor(i0 + 1);
+  return b0 + (b1 - b0) * frac;
+}
+/* Tunnels (round 8): a tunnel is a run of 3 consecutive segments, each
+   carrying a neon arch ring the ball rolls through. Pure scenery — the
+   rings never block the ball, never cause a crash, and never hide an
+   obstacle, a gap, or a word tile (tunnel segments are always plain:
+   no gaps, no blocks, no tiles). One hash per 30-segment group (its own
+   stream, so the obstacle rng is untouched); ~60% of groups have a
+   tunnel, so roughly one tunnel every ~50 segments. Never in the safe
+   start (segments 0-4 stay plain). The arches ride in the segment
+   group, so they tilt with the bank like everything else. */
+var TUNNEL_GROUP = 30;   // segments per tunnel group
+var TUNNEL_LEN = 3;      // arch rings per tunnel
+function tunnelFor(idx){
+  if(idx < 5) return 0;  // safe start stays plain
+  var g = Math.floor((idx - 5) / TUNNEL_GROUP);
+  var off = (idx - 5) % TUNNEL_GROUP;
+  var h = mulberry32((runSeed*1000003 + g*104729) >>> 0);
+  if(h() >= 0.6) return 0;   // ~40% of groups have no tunnel
+  var start = 8 + Math.floor(h() * (TUNNEL_GROUP - 8 - TUNNEL_LEN));
+  if(off < start || off >= start + TUNNEL_LEN) return 0;
+  return 1;
+}
+/* Launch ramps + platforms (round 8): a ramp feature is a run of
+   segments — one ramp segment, then either a WIDE GAP (1 segment, a
+   full-width hole the ball must fly over — it cannot steer around it)
+   or a PLATFORM (5 segments of raised track the ball lands on and
+   rolls along). One hash per 45-segment group (its own stream, so the
+   obstacle rng is untouched); ~50% of groups have a ramp feature, so
+   roughly one every ~90 segments. Never in the safe start (segments
+   0-4 stay plain). The ramp pad sits near the START of its segment
+   (2 units in), so the ball has ~18 units of run-up before the gap /
+   platform: enough time to rise above the hole / ledge at every speed.
+   The ramp is a pad the ball rolls over: it is AUTOMATICALLY launched
+   (a vertical boost, no tap needed). The boost differs by target —
+   a wide gap needs LAUNCH_V_GAP 16; a platform needs LAUNCH_V_PLATFORM
+   12. Both are verified by the harness at 31.5 / 60 / 87 / 120. */
+var RAMP_GROUP = 45;
+var PLATFORM_LEN = 5;    // raised segments per platform
+var WIDEGAP_LEN = 1;     // segments per wide gap (a full-width hole, 1 segment)
+var PLATFORM_H = 1.2;    // platform height above the main track
+var LAUNCH_V_GAP = 16;   // boost over a wide gap (air time 1.26 s: the ball is above the hole for the whole 20-unit gap + margin at every speed 31.5-120)
+var LAUNCH_V_PLATFORM = 12;  // boost onto a platform (lands on the 5-segment platform at every speed — above the 1.2-high ledge at the platform start, descends onto it before the platform ends; verified by the harness at 31.5 / 60 / 87 / 120)
+/* Returns the ramp-feature role of segment idx, or null:
+   "ramp-gap" (ramp pad, boost LAUNCH_V_GAP), "ramp-platform" (ramp pad,
+   boost LAUNCH_V_PLATFORM), "widegap" (full-width hole), "platform"
+   (raised floor). The ramp is the segment just before its target. */
+function rampRoleFor(idx){
+  if(idx < 5) return null;  // safe start stays plain
+  var g = Math.floor((idx - 5) / RAMP_GROUP);
+  var off = (idx - 5) % RAMP_GROUP;
+  var h = mulberry32((runSeed*1000003 + g*262147) >>> 0);
+  if(h() >= 0.5) return null;   // ~50% of groups have no ramp feature
+  var isGap = h() < 0.5;        // wide gap or platform
+  var start = 10;               // feature starts at offset 10 in the group
+  /* A ramp feature never overlaps a tunnel (a tunnel is scenery on a
+     plain stretch; a wide gap / platform is a gameplay feature). If
+     any segment in the feature's range (offsets 10-15, the ramp plus
+     the longest feature, a platform) is a tunnel, this group has no
+     ramp feature at all — the whole group is plain. */
+  var base = g * RAMP_GROUP + 5;
+  for(var o = start; o <= start + PLATFORM_LEN; o++){
+    if(tunnelFor(base + o)) return null;
+  }
+  if(off === start) return isGap ? "ramp-gap" : "ramp-platform";
+  if(isGap){
+    if(off > start && off <= start + WIDEGAP_LEN) return "widegap";
+  } else {
+    if(off > start && off <= start + PLATFORM_LEN) return "platform";
+  }
+  return null;
+}
+/* Floor height of segment idx: PLATFORM_H on a platform segment, else 0.
+   The ball's hop lands on this height (its "ground" on that segment). */
+function floorHFor(idx){ return rampRoleFor(idx) === "platform" ? PLATFORM_H : 0; }
 function freeIntervals(blocks, gap){
-  /* Free x-intervals for the ball CENTRE on [-4.7, 4.7], after removing
-     blocks (inflated by BLOCK_HIT) and the gap (inset by GAP_HIT) —
-     the same thresholds the in-game collision code uses. */
-  var free = [[-4.7, 4.7]];
+  /* Free x-intervals for the ball CENTRE on [-5, 5] (the full track
+     width), after removing blocks (inflated by BLOCK_HIT) and the gap
+     (inset by GAP_HIT) — the same thresholds the in-game collision
+     code uses. Round 8: the old ±4.7 clamp is gone (the ball can now
+     use the whole track and falls off past ±5.3), so the free range
+     is the track itself. */
+  var free = [[-5, 5]];
   function cut(x0, x1){
     var out = [];
     for(var i=0;i<free.length;i++){
@@ -1098,13 +1312,25 @@ function maxFreeLane(blocks, gap){
 }
 function planSegment(idx, dist, rng, prevGap){
   var d = Math.min(1, dist/1500);
-  var plan = {blocks:[], gap:null, tile:null};
+  var plan = {blocks:[], gap:null, tile:null, bank:bankFor(idx), tunnel:tunnelFor(idx), ramp:0, widegap:false, floorH:0};
+  /* Ramp feature (round 8): a ramp segment, a wide gap, or a platform
+     segment overrides the normal obstacle generation — the feature
+     segments are purpose-built, so no random blocks/gaps/tiles land
+     on them. A wide gap is a full-width hole (the ball must fly over
+     it); a platform is raised track (the ball lands on it). The ramp
+     segment itself is plain except for the launch pad. */
+  var role = rampRoleFor(idx);
+  if(role === "ramp-gap"){ plan.ramp = LAUNCH_V_GAP; return plan; }
+  if(role === "ramp-platform"){ plan.ramp = LAUNCH_V_PLATFORM; return plan; }
+  if(role === "widegap"){ plan.widegap = true; plan.gap = {x0:-5, x1:5}; return plan; }
+  if(role === "platform"){ plan.floorH = PLATFORM_H; return plan; }
   /* Safe start: the first 5 segments (0-100 units) are plain track —
      no gaps, no blocks — so the ball never falls in a hole before the
      player has time to react. (A gap segment in the opening stretch
      was dropping the ball ~half of all runs.) Word tiles are still
-     allowed in the safe zone. */
-  if(idx >= 5){
+     allowed in the safe zone. Tunnel segments are plain too (a tunnel
+     never hides an obstacle, a gap, or a word tile). */
+  if(idx >= 5 && !plan.tunnel){
   var r = rng();
   /* Round 5: obstacle density down 25% (Brant: "I am dying quick") —
      gap and block spawn rates are both multiplied by 0.75. The safe
@@ -1141,7 +1367,7 @@ function planSegment(idx, dist, rng, prevGap){
      of sitting at a random x the player never visits (round 6: the
      old random placement meant most tiles were missed and free
      revives were nearly unearnable). */
-  if(!plan.gap && idx % 5 === 2){
+  if(!plan.gap && !plan.tunnel && idx % 5 === 2){
     var free = freeIntervals(plan.blocks, null);
     var widest = free[0], wMax = 0;
     for(var fi=0;fi<free.length;fi++){
@@ -1192,8 +1418,15 @@ function buildSegment(idx){
      slope angle so the far end drops a further SLOPE_DROP. Blocks,
      tiles and edges ride in group-local coordinates, so they sit on
      the sloped surface automatically. */
-  group.position.set(0, trackY(idx * SEG_LEN), -idx * SEG_LEN);
+  group.position.set(0, trackY(idx * SEG_LEN) + (plan.floorH || 0), -idx * SEG_LEN);   /* platform segments ride higher (the whole group lifts, so floor/skirts/rails/arch all rise together) */
   group.rotation.x = -SLOPE_ANGLE;
+  /* Banked section (round 8): the whole segment tilts sideways with the
+     bank — floor, grid, skirts, edges, blocks and tiles all ride in the
+     group, so they tilt together and the surface visibly angles left or
+     right. bank > 0 = right side low, so the group rotates the other
+     way (rotation.z = -bank). The camera stays level — only the track
+     tilts, so it never causes motion sickness. */
+  group.rotation.z = -plan.bank;
   var floorMats = [];   // per-floor materials/textures, disposed on removal
   /* Floor: one full plane, or two strips leaving the gap open. */
   if(plan.gap){
@@ -1242,6 +1475,16 @@ function buildSegment(idx){
   var eL = new THREE.Mesh(edgeGeo, edgeMatL); eL.position.set(-5, 0.04, -SEG_LEN/2); group.add(eL);
   var eR = new THREE.Mesh(edgeGeo, edgeMatR); eR.position.set(5, 0.04, -SEG_LEN/2); group.add(eR);
   var cr = new THREE.Mesh(crossGeo, crossMat); cr.position.set(0, 0.03, 0); group.add(cr);
+  /* Launch ramp pad (round 8): a yellow chevron pad across the full
+     track width at the segment centre. Rolling over it AUTOMATICALLY
+     launches the ball (see checkCollisions) — across a wide gap or
+     up onto a raised platform. Full-width so the ball can never miss
+     it and roll into the gap / platform face beyond. */
+  if(plan.ramp > 0){
+    var ramp = new THREE.Mesh(rampGeo, rampMat);
+    ramp.position.set(0, 0.06, -2);
+    group.add(ramp);
+  }
   /* Red blocks at the segment centre. */
   for(var b=0;b<plan.blocks.length;b++){
     var bl = plan.blocks[b];
@@ -1251,6 +1494,15 @@ function buildSegment(idx){
     group.add(m);
   }
   /* Word tile, floating and glowing. */
+  /* Tunnel arch (round 8): a neon ring the ball rolls through. The ring
+     rides in the segment group, so it tilts with the bank and descends
+     with the slope like everything else. Pure scenery — it never blocks
+     the ball and tunnel segments are always plain. */
+  if(plan.tunnel){
+    var arch = new THREE.Mesh(archGeo, archMat);
+    arch.position.set(0, 3, -SEG_LEN/2);
+    group.add(arch);
+  }
   var tileMesh = null;
   if(plan.tile){
     tileMesh = new THREE.Mesh(tileGeo, new THREE.MeshBasicMaterial({
@@ -1350,7 +1602,10 @@ for(var ti=0; ti<TET_COUNT; ti++){
 /* ---------- hop ---------- */
 function doHop(){
   if(state !== "playing") return;
-  if(ballHopY > 0) return;            // already airborne — no double-hop
+  /* Grounded means on the current floor — the main track (hopY 0) or
+     a raised platform (hopY == its floor height). No double-hop. */
+  var groundH = floorHFor(Math.floor(dist / SEG_LEN));
+  if(ballHopY > groundH + 0.01) return;   // already airborne — no double-hop
   if(nowSec() < nextHopAt) return;    // cooldown
   hideHopHint();   // first hop dismisses the run-start hint early
   ballHopV = HOP_V;
@@ -1519,11 +1774,12 @@ function gameOver(){
 function crash(cause){
   if(state !== "playing" || isInvincible()) return;
   sfxCrash();
-  if(cause === "gap"){
-    /* Falling into a hole: the ball tumbles down for a beat first
-       (state "falling") instead of freezing in place — then the
-       revive/game-over screen appears as normal. */
+  if(cause === "gap" || cause === "side"){
+    /* Falling into a hole or off the side: the ball tumbles down for a
+       beat first (state "falling") instead of freezing in place — then
+       the revive/game-over screen appears as normal. */
     state = "falling";
+    fallCause = cause;
     fallT = 0; fallDrop = 0; fallV = 0;
     return;
   }
@@ -1591,17 +1847,39 @@ function frame(){
     if(keys.right) steer += 1;
     if(steer === 0) steer = touchSteer;
     ballVX += ((steer * LAT_SPEED) - ballVX) * Math.min(1, dt*10);
-    ballX = clamp(ballX + ballVX*dt, -4.7, 4.7);
-    if(ballX === -4.7 || ballX === 4.7) ballVX = 0;
+    /* Banked track (round 8): the tilted surface pulls the ball toward
+       its low side (bank > 0 = right side low = pull toward +x). Steer
+       against it to hold your line — the pull is strong enough to feel
+       (up to ~4.4 units/s of drift at the steepest bank) but steering
+       (30 units/s) easily overcomes it when you steer against it. */
+    ballVX += BANK_G * Math.sin(bankAt(dist)) * dt;
+    ballX += ballVX*dt;
+    /* Round 8: the track edges are dangerous — there is no clamp any
+       more. Past EDGE_FALL the ball tumbles off the side (a crash, with
+       the falling animation, then the revive flow). Riding the very edge
+       is no longer a safe cheat, and on a banked stretch the pull toward
+       the low side is a real threat if you don't steer against it. */
+    if(ballX > EDGE_FALL || ballX < -EDGE_FALL){ crash("side"); }
     zBefore = ballZ;              // for swept collision checks (fast ball)
     dist += v*dt;
     rampDist += v*dt;   // ramp distance: reset on revive, drives the speed ramp
     ballZ = -dist;
-    /* Hop physics: integrate the bounce, land back on the track. */
-    if(ballHopV !== 0 || ballHopY > 0){
+    /* Hop physics: integrate the bounce, land back on the track. The
+       "ground" is the current segment's floor height — 0 on the main
+       track, PLATFORM_H on a raised platform — so the ball lands on a
+       platform it was launched onto, and drops back to the main track
+       when it rolls off the platform's end (the floor falls away
+       beneath it and gravity pulls it down). */
+    var groundH = floorHFor(Math.floor(dist / SEG_LEN));
+    if(ballHopV !== 0 || ballHopY > groundH){
+      var prevHopY = ballHopY;
       ballHopV -= HOP_G*dt;
       ballHopY += ballHopV*dt;
-      if(ballHopY <= 0){ ballHopY = 0; ballHopV = 0; }
+      /* Land only when crossing the floor level from above — if the
+         ball is already below the platform top it ran into the
+         platform's face (checkCollisions crashes it); never snap it
+         up onto the ledge. */
+      if(prevHopY > groundH && ballHopY <= groundH){ ballHopY = groundH; ballHopV = 0; }
     }
     score = Math.floor(dist);   // score is distance only — no points for words
     ensureSegments();
@@ -1609,18 +1887,26 @@ function frame(){
     updateHUD();
   }
   else if(state === "falling"){
-    /* Gap death: the ball tumbles down into the hole for a beat before
+    /* Gap death or side fall: the ball tumbles down for a beat before
        the crash/revive screen appears — it visibly falls instead of
-       just freezing in place. */
+       just freezing in place. A side fall keeps drifting outward off
+       the edge as it drops; the camera follows the ball down (see the
+       camera code below), then returns to normal on revive/respawn. */
     fallT += dt;
     fallV += 22*dt;
     fallDrop += fallV*dt;
-    if(fallT >= 0.65) afterCrash("gap");
+    if(fallCause === "side") ballX += ballVX*dt;
+    if(fallT >= FALL_TIME) afterCrash(fallCause);
   }
   /* Ball roll + lean, invincibility flash. The ball rides the slope:
      its height follows the track's descent at the current distance,
-     plus the hop height while bouncing. */
-  var ballY = BALL_R + trackY(dist);
+     plus the hop height while bouncing. Banked track (round 8): the
+     ball also rides the tilted surface — its height follows the bank
+     (higher on the high side, lower on the low side) and it leans
+     subtly with the surface. bankAt is interpolated between segment
+     centres, so the height never jumps at a segment boundary. */
+  var bankNow = bankAt(dist);
+  var ballY = BALL_R + trackY(dist) - ballX * Math.sin(bankNow);
   ballMesh.position.set(ballX, ballY + ballHopY - fallDrop, ballZ);
   /* The ball's visible roll follows its forward speed, slowed by
      SPIN_FACTOR and capped at SPIN_MAX rad/s so the skin art stays
@@ -1630,7 +1916,7 @@ function frame(){
   var spinRate = Math.min(curSpeed()*SPIN_FACTOR/BALL_R, SPIN_MAX);
   ballMesh.rotation.x -= spinRate*dt * (state === "playing" ? 1 : 0);
   if(state === "falling") ballMesh.rotation.x -= 8*dt;   // tumble while falling
-  ballMesh.rotation.z = -ballVX*0.03;
+  ballMesh.rotation.z = -ballVX*0.03 - bankNow*0.5;   // lean: steer + bank tilt
   ballMesh.visible = !(state === "playing" && isInvincible() && Math.floor(t*10) % 2 === 0);
   ballLight.position.set(ballX, ballY + ballHopY - fallDrop + 1.7, ballZ + 1);
   /* Word tiles bob gently. */
@@ -1672,11 +1958,16 @@ function frame(){
      too much, 1/6 too little) — the downhill reads clearly. The ball
      stays in the lower half of the screen, clearly visible. The camera
      does NOT follow the hop — it rides the track height, so the view
-     stays steady while the ball bounces. */
+     stays steady while the ball bounces. But it DOES follow the fall
+     (round 8): while the ball is tumbling down through a hole or off
+     the side, the camera descends with it (camDrop), so the player sees
+     the ball fall away instead of the view freezing — then it returns
+     to its normal position on revive/respawn, when fallDrop resets. */
+  var camDrop = (state === "falling") ? fallDrop : 0;
   camera.position.x += ((ballX*0.5) - camera.position.x) * Math.min(1, dt*6);
-  camera.position.y += ((ballY + CAM_HEIGHT) - camera.position.y) * Math.min(1, dt*6);
+  camera.position.y += ((ballY + CAM_HEIGHT - camDrop) - camera.position.y) * Math.min(1, dt*6);
   camera.position.z = ballZ + 12;
-  camera.lookAt(ballX*0.75, ballY + CAM_LOOK_HEIGHT, ballZ - 16);
+  camera.lookAt(ballX*0.75, ballY + CAM_LOOK_HEIGHT - camDrop, ballZ - 16);
   renderer.render(scene, camera);
 }
 function checkCollisions(){
@@ -1704,12 +1995,32 @@ function checkCollisions(){
     }
   }
   if(isInvincible()) return;
+  /* Launch ramp (round 8): rolling over the pad AUTOMATICALLY launches
+     the ball — no tap needed. The pad sits 2 units into its segment;
+     the boost (plan.ramp) carries the ball across the wide gap or up
+     onto the raised platform that follows. A swept check (like the
+     blocks) so a fast ball cannot tunnel past the pad. */
+  if(plan.ramp > 0){
+    var rampZ = -segIdx*SEG_LEN - 2;
+    if(ballZ <= rampZ && zBefore >= rampZ){
+      if(ballHopV < plan.ramp) ballHopV = plan.ramp;
+    }
+  }
+  /* Platform face (round 8): if the ball reaches a raised platform
+     segment while BELOW the platform top, it ran into the platform's
+     front face — a crash, like hitting a block. (The ramp always
+     launches the ball high enough to clear the face; this is the
+     safety net for a ball that somehow missed the ramp.) */
+  if(plan.floorH > 0 && ballHopY < plan.floorH - 0.05){
+    crash("block");
+    return;
+  }
   /* Hop: while the ball is high enough above the track it clears a
      block; while it is airborne at all it rides over a gap. Landing
      on a block or in a gap still crashes. */
   var airborne = ballHopY > 0.3;
   var clearsBlock = ballHopY > HOP_CLEAR;
-  /* Swept check: at 87 units/s the ball moves ~1.5 units a frame, so a
+  /* Swept check: at 120 units/s the ball moves ~2 units a frame, so a
      point check could tunnel straight through a block. Test whether the
      ball's swept path crossed the block zone this frame. */
   if(!clearsBlock && ballZ <= blockZ + 1.1 && zBefore >= blockZ - 1.1){
@@ -1807,7 +2118,9 @@ function startRevive(cause){
   reviveWordsArr = reviveWords(reviveNum);
   rqIdx = 0; rqCorrect = 0; rqResults = [];
   state = "revive";
-  reviveTitle.textContent = cause === "gap" ? "💥 You fell in a gap!" : "💥 You hit a block!";
+  reviveTitle.textContent = cause === "gap" ? "💥 You fell in a gap!"
+    : cause === "side" ? "💥 You fell off the side!"
+    : "💥 You hit a block!";
   reviveSub.textContent = "Answer 4 of 5 to keep rolling!  (Revive " + reviveNum +
     " · " + reviveLevelName(reviveNum) + ")";
   reviveResults.classList.add("hidden");
