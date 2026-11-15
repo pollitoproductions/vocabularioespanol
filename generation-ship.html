@@ -425,6 +425,7 @@
   <h2>SHIP STATUS // GENERATION SHIP</h2>
   <div id="menuScrollHint">↓ Scroll for more below</div>
   <button class="closeBtn" id="btn-menu-save" type="button">SAVE JOURNEY</button>
+  <button class="closeBtn" id="btn-menu-full" type="button">⛶ FULLSCREEN</button>
   <div id="menuSaveMsg"></div>
   <button class="subHead" data-sub="progress" data-label="PROGRESS" type="button">▾ PROGRESS</button><div class="subBody open" id="sub-progress">
   <div class="row"><span>PRACTICE SPOKEN</span><b id="progWords">0 / 1000</b></div>
@@ -8710,6 +8711,21 @@ document.getElementById('btn-menu-save').addEventListener('pointerdown', functio
   updateMenu();
   menuSaveMsg.textContent = 'Journey saved.';
 });
+
+function toggleFull(){
+  var el=document.documentElement;
+  try{
+    if(document.fullscreenElement||document.webkitFullscreenElement){
+      if(document.exitFullscreen) document.exitFullscreen();
+      else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+    }else if(el.requestFullscreen){
+      var p=el.requestFullscreen(); if(p&&p.catch) p.catch(function(){});
+    }else if(el.webkitRequestFullscreen){
+      el.webkitRequestFullscreen();
+    }
+  }catch(e){}
+}
+document.getElementById("btn-menu-full").addEventListener("pointerdown",function(e){ e.preventDefault(); e.target.blur(); toggleFull(); });
 document.getElementById('btn-menu-home').addEventListener('pointerdown', function (e) {
   e.preventDefault(); e.target.blur();
   if (crashed) return;
