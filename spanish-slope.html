@@ -2767,6 +2767,7 @@ function showReviveSpeak(){
   quizChoicesEl.innerHTML = "";
   quizSpeakRow.classList.remove("hidden");
   setQuizFb("", "");
+  sayBtn.disabled = false;   // re-enable after a correct hear disabled it (scoreHeard)
   sayBtn.textContent = "🎤 Say it";
   sayBtn.classList.remove("listening");
   /* Hear is available here: the answer is already given (they picked
@@ -2831,7 +2832,17 @@ function speakFb(msg, cls){
 
 /* ================= Say-it (speech recognition, from Dash) =================
    es-MX first, es-US fallback; exact match on the whole spoken phrase;
-   12 s timeout; tap the button to stop; wrong speaking retries forever. */
+   12 s timeout; tap the button to stop; wrong speaking retries forever.
+   INVARIANT (round 17 — the "it never hears me again" bug): every path
+   that ends a listen — result, error, timeout, tap-to-stop, overlay
+   close — goes through stopListen() and leaves listening=false,
+   recog=null, both buttons reset. NEVER rely on onend for cleanup:
+   onend may not fire at all (iOS Safari), and stop() on an already-
+   ended recognition fires nothing — the old tap-to-stop only called
+   recog.stop() and trusted onend's userStopped branch, but that branch
+   never reset listening, so one tap-to-stop after a mishear left
+   listening=true forever: every later tap re-entered the stop branch
+   on a dead recognition and no new listen ever started. */
 var recog = null, listenTimer = null, listening = false, userStopped = false;
 function stopListen(user){
   if(listenTimer){ clearTimeout(listenTimer); listenTimer = null; }
@@ -2860,6 +2871,11 @@ function scoreHeard(heard){
   if(got === want){
     sfxCorrect();
     setQuizFb("✓ Correct!", "ok");
+    /* No second listen during the 800 ms beat: a fresh recognition could
+       score this same question again and advanceRevive() twice, skipping
+       the next question. Re-enabled in showReviveSpeak. (Tile does the
+       same with tileSayBtn in tileCorrect.) */
+    sayBtn.disabled = true;
     setTimeout(function(){ if(state === "revive") advanceRevive(); }, 800);
   } else {
     sfxWrong();
@@ -2874,7 +2890,7 @@ function startListen(){
       : "Speech recognition isn't available in this browser. Keep playing with just the choices — turn off Speaking activities on the home menu — or use Chrome or Safari.", "bad");
     return;
   }
-  if(listening){ userStopped = true; try{ recog.stop(); }catch(e){} return; }
+  if(listening){ stopListen(false); speakFb("Didn't catch that — try again.", "bad"); return; }
   audioEnsure();
   stopListen(false);
   var langs = ["es-MX", "es-US"], li = 0, got = false, timer = null;
@@ -2912,7 +2928,7 @@ function startListen(){
     r.onend = function(){
       if(recog !== r) return;
       if(timer){ clearTimeout(timer); timer = null; }
-      if(userStopped){ userStopped = false; if(!got) speakFb("Didn't catch that — try again.", "bad"); return; }
+      if(userStopped){ userStopped = false; stopListen(false); if(!got) speakFb("Didn't catch that — try again.", "bad"); return; }
       if(listening){ stopListen(false); if(!got) speakFb("Didn't catch that — try again.", "bad"); }
     };
     try{ r.start(); }catch(e){
