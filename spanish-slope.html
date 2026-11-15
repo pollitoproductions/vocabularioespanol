@@ -1823,6 +1823,7 @@ function hideFreePassMsg(){
 function respawn(){
   stopListen(false);
   reviveEl.classList.add("hidden");
+  ballX = 0; ballVX = 0;    // respawn CENTRED on the track (never at the edge you fell off — else you'd fall off again at once)
   ballZ -= 10;               // roll past the crash site
   ballHopY = 0; ballHopV = 0; fallDrop = 0; fallV = 0; fallT = 0;
   rampDist = 0;              // speed resets to base — the ramp climbs again from here
