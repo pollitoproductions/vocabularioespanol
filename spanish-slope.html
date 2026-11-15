@@ -1552,9 +1552,12 @@ function planSegment(idx, dist, rng, prevGap){
      gap and block spawn rates are both multiplied by 0.75. Round 9:
      the gap base rate is raised 0.14 -> 0.22 (Brant: "more of those gaps
      with jumps") while the block rate is UNCHANGED — only gaps go up.
+     Round 21: obstacles down ANOTHER 25% (Brant) — the 0.75 density
+     factor applies twice now (0.75 * 0.75). Ramp features, tunnels and
+     word tiles are NOT obstacles and are untouched.
      The safe start and the reachability guarantees (free lane >= 2.4,
      a gap leaves >= 6.0 of solid track) are unchanged. */
-  var gapP = (0.28 + 0.06*d) * 0.75, blockP = gapP + (0.38 + 0.12*d) * 0.75;   // round 10: gap base 0.22 -> 0.28 (Brant: more jumping gaps); block rate unchanged
+  var gapP = (0.28 + 0.06*d) * 0.75 * 0.75, blockP = gapP + (0.38 + 0.12*d) * 0.75 * 0.75;   // round 21: gap AND block rates down another 25% (was x0.75, now x0.75 x0.75)
   if(!prevGap && r < gapP){
     /* Gap segment: a hole 2.6-3.6 wide, positioned so >= 6.0 of the
        10-wide track stays solid — always a wide way around it. */
@@ -2507,7 +2510,7 @@ function frame(){
   var camDrop = (state === "falling") ? fallDrop : 0;
   camera.position.x += ((ballX*0.5) - camera.position.x) * Math.min(1, dt*6);
   camera.position.y += ((ballY + CAM_HEIGHT - camDrop) - camera.position.y) * Math.min(1, dt*6);
-  camera.position.z = ballZ + 9;   // round 19: closer view of the ball (round-16 was 10.5, round-5 was 10)
+  camera.position.z = ballZ + 10.5;   // round 21: ball a little forward on screen (round-19 was 9) so more track shows behind it; ball ~84% down landscape, VP stays ~1/4
   camera.lookAt(ballX*0.75, ballY + CAM_LOOK_HEIGHT - camDrop, ballZ - 16);
   renderer.render(scene, camera);
 }
@@ -2519,10 +2522,15 @@ function checkCollisions(){
   var blockZ = -segIdx*SEG_LEN - SEG_LEN/2;
   /* Word tiles are ALWAYS collectible — invincibility blocks crash damage
      only, never pickups (round 7): a tile rolled through during the
-     post-revive blink still pauses the run for its Say-it. */
+     post-revive blink still pauses the run for its Say-it. Round 21:
+     hopping OVER a tile SKIPS it — the ball must be on the ground
+     (not airborne) to collect, so the player can choose to take the
+     word or jump past it. "Airborne" is the same threshold the gap
+     check below uses (ballHopY > 0.3). */
+  var airborne = ballHopY > 0.3;
   if(plan.tile && !seg.tileTaken){
     var tileZ = blockZ;
-    if(ballZ <= tileZ + 1.3 && zBefore >= tileZ - 1.3 && Math.abs(ballX - plan.tile.x) < 2.0){
+    if(!airborne && ballZ <= tileZ + 1.3 && zBefore >= tileZ - 1.3 && Math.abs(ballX - plan.tile.x) < 2.0){
       /* Collect the word: the game pauses and asks the player to SAY it.
          Saying it correctly earns ONE free revive (a "skip the quiz"
          pass for the next crash; passes stack, one per word). No
@@ -2558,9 +2566,9 @@ function checkCollisions(){
     return;
   }
   /* Hop: while the ball is high enough above the track it clears a
-     block; while it is airborne at all it rides over a gap. Landing
-     on a block or in a gap still crashes. */
-  var airborne = ballHopY > 0.3;
+     block; while it is airborne at all it rides over a gap — and over a
+     word tile too (the tile check above shares the airborne flag).
+     Landing on a block or in a gap still crashes. */
   var clearsBlock = ballHopY > HOP_CLEAR;
   /* Swept check: at 120 units/s the ball moves ~2 units a frame, so a
      point check could tunnel straight through a block. Test whether the
