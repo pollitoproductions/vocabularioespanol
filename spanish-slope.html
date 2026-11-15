@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- © 2026 Brant Fuller -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -258,6 +259,7 @@
       <button class="ghostBtn" id="btnHow" type="button">How to play</button>
       <div class="bestLine" id="menuBest"></div>
       <a class="homeLink" href="https://pollitoproductions.github.io/">← Back to Pollito Productions</a>
+      <p class="sub">© 2026 Brant Fuller</p>
     </div>
   </div>
 </div>
@@ -2970,11 +2972,12 @@ function startListen(){
 }
 
 /* ================= music (ORIGINAL chiptune, Web Audio — no audio files) =================
-   One energetic 152 BPM funk loop for the run: syncopated 16th-note
-   triangle bass (Am – F – C – G, one chord per bar — off-beat accents,
-   rests, octave pops), a stabbier square-wave lead (call-and-response
-   phrasing), a kick on every beat, a snare on beats 2 and 4, and a
-   hi-hat ticking the off-16ths with an open-hat pickup into each bar.
+   One energetic 152 BPM techno loop for the run: a driving 8th-note
+   sawtooth+sine bass (Am – F – C – G, one chord per bar), a deep
+   triangle lead two octaves down (long held quarter-notes, plenty of
+   space between phrases — warm, never a frantic xylophone), a kick
+   on every beat, a snare on beats 2 and 4, and a hi-hat ticking the
+   off-16ths with an open-hat pickup into each bar.
    Starts on game start, keeps playing through revives (never restarts
    on revive), stops on game over / back to menu. */
 var MUS_BPM = 152;
@@ -2987,14 +2990,17 @@ var MUS_BASS = [
   29,0,29,0, 41,0,29,0, 29,0,29,0, 41,0,36,0,
   36,0,36,0, 48,0,36,0, 36,0,36,0, 48,0,43,0,
   31,0,31,0, 43,0,31,0, 31,0,31,0, 43,0,38,0];
-/* Lead: 64 steps, A-minor, short stabs + rests (call-and-response).
-   Round 5: shifted an octave UP (brighter, more present treble) for
-   the techno feel. */
+/* Lead: 64 steps, A-minor chord tones, long held quarter-notes with
+   rests between phrases (14 notes per loop, was 28 short stabs).
+   Round 20: two octaves DOWN (MIDI 62-72, ~294-523 Hz) and triangle
+   instead of square — a deep warm melody that drives without
+   sounding like a frantic xylophone. Bars follow the bass chords
+   (Am - F - C - G); the low D at step 60 turns back into the A. */
 var MUS_LEAD = [
-  93,0,0,93, 0,88,0,91, 93,0,0,0, 91,0,88,0,
-  89,0,0,89, 0,93,0,91, 89,0,0,0, 88,0,89,0,
-  91,0,0,93, 0,96,0,93, 91,0,0,0, 88,0,91,0,
-  93,0,91,0, 88,0,0,86, 88,0,0,91, 93,0,0,0];
+  69,0,0,0, 72,0,0,0, 69,0,0,0, 64,0,0,0,
+  65,0,0,0, 69,0,0,0, 72,0,0,0, 0,0,0,0,
+  72,0,0,0, 67,0,0,0, 64,0,0,0, 67,0,0,0,
+  67,0,0,0, 71,0,0,0, 0,0,0,0, 62,0,0,0];
 var musTimer = null, musStep = 0, musNextTime = 0;
 function midiToFreq(m){ return 440*Math.pow(2,(m-69)/12); }
 function mnote(midi, dur, type, vol, when){
@@ -3074,9 +3080,10 @@ function musicScheduler(){
     var s = musStep % 64;
     var b = MUS_BASS[s], l = MUS_LEAD[s];
     /* Techno: the bass is a sawtooth pulse layered with a sine sub at
-       the same pitch (fat low end), the lead is brighter and louder. */
+       the same pitch (fat low end); the lead is a deep triangle,
+       held ~3 steps so it sings instead of stabbing. */
     if(b){ mnote(b, MUS_STEP*1.3, "sawtooth", 0.45, musNextTime); mnote(b, MUS_STEP*1.8, "sine", 0.3, musNextTime); }
-    if(l) mnote(l, MUS_STEP*1.1, "square", 0.18, musNextTime);
+    if(l) mnote(l, MUS_STEP*3.2, "triangle", 0.25, musNextTime);
     if(s % 4 === 0) mkick(musNextTime);                    /* kick on every beat (steady 4/4) */
     if(s % 16 === 4 || s % 16 === 12) msnare(musNextTime); /* snare on 2 and 4 */
     if(s % 16 === 15) mhat(musNextTime, 0.15, true);       /* open-hat pickup into the next bar */
@@ -3096,20 +3103,21 @@ function musicStart(){
 function musicStop(){
   if(musTimer){ clearInterval(musTimer); musTimer = null; }
 }
-/* Short jingle for a successful revive (rising A-minor arpeggio with a
-   syncopated tail, sawtooth to match the techno groove). */
+/* Short jingle for a successful revive (rising A-minor arpeggio, one
+   octave down to match the deeper lead — triangle, warm and short). */
 function jingleRevive(){
   if(!audioCtx) return;
   var t0 = audioCtx.currentTime + 0.02;
-  var n = [69, 72, 76, 79, 81];
+  var n = [57, 60, 64, 67, 69];
   var dt = [0, 0.08, 0.16, 0.26, 0.34];
-  for(var i=0;i<n.length;i++) mnote(n[i], 0.2, "sawtooth", 0.22, t0 + dt[i]);
+  for(var i=0;i<n.length;i++) mnote(n[i], 0.2, "triangle", 0.25, t0 + dt[i]);
 }
-/* Short sting for game over (falling line). */
+/* Short sting for game over (falling line, one octave down to match
+   the deeper tone — low and somber). */
 function stingOver(){
   if(!audioCtx) return;
   var t0 = audioCtx.currentTime + 0.02;
-  var n = [64, 60, 57, 52];
+  var n = [52, 48, 45, 40];
   for(var i=0;i<n.length;i++) mnote(n[i], 0.34, "triangle", 0.25, t0 + i*0.16);
 }
 
