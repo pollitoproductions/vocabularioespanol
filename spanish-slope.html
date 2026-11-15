@@ -502,17 +502,17 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.m
 var TRACK_W = 10;            // track width (x from -5 to +5)
 var SEG_LEN = 20;            // one track segment, in units
 var BALL_R = 0.5;
-var LAT_SPEED = 13;          // max lateral (steering) speed, units/s
-var BASE_SPEED = 14;         // starting forward speed
-var MAX_SPEED = 38;          // top forward speed (reached ~1440 m in)
+var LAT_SPEED = 16;          // max lateral (steering) speed, units/s
+var BASE_SPEED = 21;         // starting forward speed — Slope is FAST
+var MAX_SPEED = 58;          // top forward speed (reached ~925 m in)
 var BLOCK_HIT = 0.4;         // block half-width inflation for a hit (ball radius, forgiving)
 var GAP_HIT = 0.25;          // gap inset for a fall (ball centre must be this far inside the hole)
 var MAX_REVIVES = 3;
 var REVIVE_PASS = 4;         // correct answers needed out of 5 to revive
 /* The downhill: the track drops SLOPE_DROP units per 20-unit segment
-   (grade 0.14, ~8°) so the slope reads as a real descent, not a flat
+   (grade 0.21, ~12°) so the descent is unmistakable, not a flat
    plane. trackY(d) is the track surface height at distance d. */
-var SLOPE_DROP = 2.8;
+var SLOPE_DROP = 4.2;
 var SLOPE_GRADE = SLOPE_DROP / SEG_LEN;
 /* asin (not atan): sin(SLOPE_ANGLE) === SLOPE_GRADE exactly, so each
    segment's far end lands exactly on the next segment's near end —
@@ -531,7 +531,7 @@ try{ speakingOn = localStorage.getItem("slopeEspanol_speaking") === "1"; }catch(
 function saveSpeaking(){ try{ localStorage.setItem("slopeEspanol_speaking", speakingOn ? "1" : "0"); }catch(e){} }
 function nowSec(){ return performance.now()/1000; }
 function isInvincible(){ return nowSec() < invincibleUntil; }
-function curSpeed(){ return (BASE_SPEED + Math.min(MAX_SPEED - BASE_SPEED, dist/60)) * speedMul; }
+function curSpeed(){ return (BASE_SPEED + Math.min(MAX_SPEED - BASE_SPEED, dist/25)) * speedMul; }
 
 /* ---------- DOM ---------- */
 function el(id){ return document.getElementById(id); }
@@ -553,18 +553,30 @@ var renderer = new THREE.WebGLRenderer({canvas:canvas, antialias:true});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 var scene = new THREE.Scene();
-scene.background = new THREE.Color(0x050510);
-scene.fog = new THREE.Fog(0x050510, 60, 400);
+/* Neon-retro backdrop: a deep indigo-to-violet vertical gradient
+   instead of flat black, so the neon reads against a glow. */
+function makeSkyTexture(){
+  var c = document.createElement("canvas"); c.width = 4; c.height = 512;
+  var g = c.getContext("2d");
+  var grad = g.createLinearGradient(0, 0, 0, 512);
+  grad.addColorStop(0.0, "#1b1040");   /* deep indigo, top */
+  grad.addColorStop(0.45, "#12082e");  /* violet */
+  grad.addColorStop(1.0, "#070313");   /* near-black purple, bottom */
+  g.fillStyle = grad; g.fillRect(0, 0, 4, 512);
+  return new THREE.CanvasTexture(c);
+}
+scene.background = makeSkyTexture();
+scene.fog = new THREE.Fog(0x0d0724, 60, 400);
 var camera = new THREE.PerspectiveCamera(72, window.innerWidth/window.innerHeight, 0.1, 600);
 camera.position.set(0, 5, 10);
-scene.add(new THREE.AmbientLight(0x8899bb, 1.4));
-var dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+scene.add(new THREE.AmbientLight(0x99aaff, 1.5));
+var dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
 dirLight.position.set(4, 10, 6);
 scene.add(dirLight);
-var ballLight = new THREE.PointLight(0xffa040, 40, 22, 1.5);
+var ballLight = new THREE.PointLight(0xffa040, 70, 28, 1.5);
 scene.add(ballLight);
 
-var ballMat = new THREE.MeshStandardMaterial({color:0xf97316, emissive:0xea580c, emissiveIntensity:0.75, roughness:0.3});
+var ballMat = new THREE.MeshStandardMaterial({color:0xff7a1a, emissive:0xff5e00, emissiveIntensity:1.4, roughness:0.25});
 var ballMesh = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 24, 18), ballMat);
 ballMesh.position.set(0, BALL_R, 0);
 scene.add(ballMesh);
@@ -573,21 +585,37 @@ scene.add(ballMesh);
 var floorGeo = new THREE.PlaneGeometry(1, SEG_LEN);
 /* Neon grid texture for the track surface — the original Slope's
    signature: a glowing grid that scrolls toward the camera so the
-   motion reads. One canvas tile = one 2x2-unit cell (bright cyan lines
-   on the dark track); it is cloned per floor mesh so the repeat matches
-   that mesh's width (gap strips are narrower than the full track) and
-   the grid stays a uniform 2 units everywhere. The transverse lines
-   align across segments (20 is a multiple of 2), so the grid is
-   continuous down the whole track. */
+   motion reads. One canvas tile = 2 x 4 units. Longitudinal lines stay
+   bright cyan; transverse lines alternate cyan / hot magenta every
+   2 units, so the grid pops in two neon colours. Every line is drawn
+   twice — a wide coloured glow pass, then a thin near-white core —
+   and lines are drawn on BOTH edges of the tile, so the grid is
+   seamless when it repeats. The transverse lines align across
+   segments (20 is a multiple of 4), so the grid is continuous down
+   the whole track. */
 function makeGridTexture(){
-  var c = document.createElement("canvas"); c.width = 128; c.height = 128;
+  var c = document.createElement("canvas"); c.width = 128; c.height = 256;
   var g = c.getContext("2d");
-  g.fillStyle = "#0e0e26"; g.fillRect(0, 0, 128, 128);
-  g.strokeStyle = "#22d3ee"; g.lineWidth = 4;
-  g.shadowColor = "#22d3ee"; g.shadowBlur = 10;
-  /* Lines on the left + top edges tile into a continuous grid. */
-  g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 128); g.stroke();
-  g.beginPath(); g.moveTo(0, 0); g.lineTo(128, 0); g.stroke();
+  g.fillStyle = "#150b33"; g.fillRect(0, 0, 128, 256);
+  function hline(y, color, glow){
+    g.strokeStyle = color; g.lineWidth = 5;
+    g.shadowColor = glow; g.shadowBlur = 14;
+    g.beginPath(); g.moveTo(0, y); g.lineTo(128, y); g.stroke();
+    /* White-hot core so the line pops. */
+    g.strokeStyle = "#ffffff"; g.lineWidth = 1.5; g.shadowBlur = 0;
+    g.beginPath(); g.moveTo(0, y); g.lineTo(128, y); g.stroke();
+  }
+  function vline(x){
+    g.strokeStyle = "#22d3ee"; g.lineWidth = 5;
+    g.shadowColor = "#22d3ee"; g.shadowBlur = 14;
+    g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 256); g.stroke();
+    g.strokeStyle = "#e0faff"; g.lineWidth = 1.5; g.shadowBlur = 0;
+    g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 256); g.stroke();
+  }
+  vline(0); vline(128);
+  hline(0, "#22d3ee", "#22d3ee");      /* cyan, top edge (tiles into the next) */
+  hline(128, "#f472b6", "#ec4899");    /* hot magenta, middle */
+  hline(256, "#22d3ee", "#22d3ee");    /* cyan, bottom edge (tiles into the next) */
   var tex = new THREE.CanvasTexture(c);
   tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
   tex.anisotropy = 4;
@@ -598,16 +626,17 @@ var gridTex = makeGridTexture();
    both when the segment is removed. Returns {mat, tex}. */
 function floorMaterialFor(width){
   var t = gridTex.clone();
-  t.repeat.set(width/2, SEG_LEN/2);
+  t.repeat.set(width/2, SEG_LEN/4);   /* tile is 2 x 4 units */
   t.needsUpdate = true;
   return {mat: new THREE.MeshStandardMaterial({color:0xffffff, map:t, roughness:0.85, metalness:0.2}), tex: t};
 }
 var edgeGeo = new THREE.BoxGeometry(0.18, 0.08, SEG_LEN);
-var edgeMat = new THREE.MeshBasicMaterial({color:0x22d3ee});
+var edgeMatL = new THREE.MeshBasicMaterial({color:0x22d3ee});   /* cyan, left */
+var edgeMatR = new THREE.MeshBasicMaterial({color:0xec4899});   /* hot pink, right */
 var crossGeo = new THREE.BoxGeometry(TRACK_W, 0.06, 0.14);
-var crossMat = new THREE.MeshBasicMaterial({color:0x1e3a5f});
+var crossMat = new THREE.MeshBasicMaterial({color:0x7c3aed});
 var blockGeo = new THREE.BoxGeometry(1, 1, 1);
-var blockMat = new THREE.MeshStandardMaterial({color:0x7f1d1d, emissive:0xef4444, emissiveIntensity:0.9, roughness:0.4});
+var blockMat = new THREE.MeshStandardMaterial({color:0x991b1b, emissive:0xff2d55, emissiveIntensity:1.6, roughness:0.35});
 var tileGeo = new THREE.PlaneGeometry(2.6, 1.3);
 
 /* Word tiles cycle through the vocabulary: cognates first, then practice
@@ -701,7 +730,7 @@ function makeTileTexture(sp){
   var g = c.getContext("2d");
   g.fillStyle = "rgba(2,6,23,0.92)";
   g.beginPath(); g.roundRect(6, 6, 500, 244, 28); g.fill();
-  g.strokeStyle = "#f97316"; g.lineWidth = 10;
+  g.strokeStyle = "#ff7a1a"; g.lineWidth = 10;
   g.beginPath(); g.roundRect(6, 6, 500, 244, 28); g.stroke();
   g.fillStyle = "#ffffff"; g.textAlign = "center"; g.textBaseline = "middle";
   var fs = 76;
@@ -750,9 +779,10 @@ function buildSegment(idx){
     floor.position.set(0, 0, -SEG_LEN/2);
     group.add(floor);
   }
-  /* Glowing edges + a dim cross line at the segment start (the grid feel). */
-  var eL = new THREE.Mesh(edgeGeo, edgeMat); eL.position.set(-5, 0.04, -SEG_LEN/2); group.add(eL);
-  var eR = new THREE.Mesh(edgeGeo, edgeMat); eR.position.set(5, 0.04, -SEG_LEN/2); group.add(eR);
+  /* Glowing edges (cyan left, hot pink right) + a violet cross line
+     at the segment start (the grid feel). */
+  var eL = new THREE.Mesh(edgeGeo, edgeMatL); eL.position.set(-5, 0.04, -SEG_LEN/2); group.add(eL);
+  var eR = new THREE.Mesh(edgeGeo, edgeMatR); eR.position.set(5, 0.04, -SEG_LEN/2); group.add(eR);
   var cr = new THREE.Mesh(crossGeo, crossMat); cr.position.set(0, 0.03, 0); group.add(cr);
   /* Red blocks at the segment centre. */
   for(var b=0;b<plan.blocks.length;b++){
@@ -823,7 +853,7 @@ function resetParticle(i, zBase){
 for(var pi=0; pi<P_COUNT; pi++) resetParticle(pi, 0);
 pGeo.setAttribute("position", new THREE.BufferAttribute(pPos, 3));
 var points = new THREE.Points(pGeo, new THREE.PointsMaterial({
-  color:0x9be8ff, size:0.10, transparent:true, opacity:0.55,
+  color:0xa5f3fc, size:0.12, transparent:true, opacity:0.7,
   blending:THREE.AdditiveBlending, depthWrite:false}));
 scene.add(points);
 
@@ -1023,7 +1053,7 @@ function frame(){
   pGeo.attributes.position.needsUpdate = true;
   /* Camera follows the ball, looking forward and down the slope. The
      camera pitches down LESS steeply than the track descends (pitch
-     ~4.6° vs slope ~8°), so the track ahead visibly drops away below
+     ~4.6° vs slope ~12°), so the track ahead visibly drops away below
      the view centre — that is what makes the downhill read instead of
      looking like a flat plane. */
   camera.position.x += ((ballX*0.5) - camera.position.x) * Math.min(1, dt*6);
