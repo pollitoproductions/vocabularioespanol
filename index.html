@@ -49,6 +49,7 @@
         /* Three matching controls form a clean corner cluster. */
         #btn-action { bottom:34px; right:110px; width:68px; height:68px; font-size:0.72rem; }
         #btn-menu   { top:24px; right:24px; }
+        #btnFull    { top:24px; right:94px; font-size:1.5rem; }
         /* MENU is repositioned by layoutHUD() when the available screen space changes. */
 
         /* CORRER is on the outside/bottom-right, close to the corner. */
@@ -472,6 +473,9 @@
         <svg viewBox="0 0 24 24"><line x1="3" y1="6"  x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         <span>MENU</span>
     </button>
+
+    <!-- Full screen button (top-right, next to menu) -->
+    <button class="hud-btn" id="btnFull" title="Full screen">&#x26F6;</button>
 </div>
 
 <!-- ── OVERLAY PANELS ─────────────────────────────────── -->
@@ -3721,6 +3725,24 @@ document.getElementById('completion-continue')?.addEventListener('touchend', e=>
 
 layoutHUD();
 wireBtn('btn-menu', requestMenuOpen);
+
+// Full screen toggle (top-right button): fullscreen the whole page —
+// the Three.js canvas (#canvas-container) and the HUD (#ui-layer) are
+// siblings under <body>, so no single game container exists to target.
+function toggleFull(){
+  var el=document.documentElement;
+  try{
+    if(document.fullscreenElement||document.webkitFullscreenElement){
+      if(document.exitFullscreen) document.exitFullscreen();
+      else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+    }else if(el.requestFullscreen){
+      var p=el.requestFullscreen(); if(p&&p.catch) p.catch(function(){});
+    }else if(el.webkitRequestFullscreen){
+      el.webkitRequestFullscreen();
+    }
+  }catch(e){}
+}
+document.getElementById("btnFull").addEventListener("click",function(){ toggleFull(); });
 wireBtn('close-menu', closeMenu);
 // Settings button on the start screen: show the menu's settings panel above the start screen
 (function(){
