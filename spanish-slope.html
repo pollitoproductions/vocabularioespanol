@@ -235,6 +235,7 @@
   <div id="hudRight">
     <button class="iconBtn" id="btnMute" type="button" title="Mute">🔊</button>
     <button class="iconBtn" id="btnPause" type="button" title="Pause">⏸</button>
+    <button class="iconBtn" id="btnFull" type="button" title="Full screen">⛶</button>
   </div>
 </div>
 <div id="hopHint" class="hidden">↑ Tap to hop</div>
@@ -3240,6 +3241,22 @@ function syncSliders(){
   if(mv) mv.value = Math.round(musicVol*100);
   if(sv) sv.value = Math.round(sfxVol*100);
 }
+/* Full screen (same pattern as Spanish Dash): there is no wrapper
+   container — canvas, HUD and overlays are direct children of <body> —
+   so the whole page (documentElement) goes fullscreen. */
+function toggleFull(){
+  var root = document.documentElement;
+  try{
+    if(document.fullscreenElement||document.webkitFullscreenElement){
+      if(document.exitFullscreen) document.exitFullscreen();
+      else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+    }else if(root.requestFullscreen){
+      var p=root.requestFullscreen(); if(p&&p.catch) p.catch(function(){});
+    }else if(root.webkitRequestFullscreen){
+      root.webkitRequestFullscreen();
+    }
+  }catch(e){}
+}
 el("btnStart").addEventListener("click", function(){ audioEnsure(); startRun(); });
 el("btnHow").addEventListener("click", function(){
   menuEl.classList.add("hidden");
@@ -3251,6 +3268,7 @@ el("btnHowClose").addEventListener("click", function(){
 });
 el("btnPause").addEventListener("click", function(){ togglePause(); });
 el("btnMute").addEventListener("click", function(){ audioEnsure(); setMuted(!muted); });
+el("btnFull").addEventListener("click", function(){ toggleFull(); });
 el("btnResume").addEventListener("click", function(){ resumeGame(); });
 el("btnSaveQuit").addEventListener("click", function(){ if(saveRun()) showMenu(); });
 el("btnRestart").addEventListener("click", function(){ startRun(); });
