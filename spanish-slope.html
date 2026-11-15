@@ -40,6 +40,13 @@
     color:#fde68a; border-radius:999px; padding:8px 16px; font-size:1rem; font-weight:600;
     white-space:nowrap; opacity:1; transition:opacity .6s ease; }
   #freePassMsg.fade{ opacity:0; }
+  /* Same pill, used for the "tap to keep rolling" cue after a correct
+     speak (round 12 follow-up): the run stays paused on the live track
+     so the player can see what is coming, and taps to resume. */
+  #previewHint{ position:fixed; left:50%; bottom:14%; transform:translateX(-50%); z-index:6;
+    pointer-events:none; background:rgba(2,6,23,.55); border:1px solid rgba(14,165,233,.6);
+    color:#bae6fd; border-radius:999px; padding:8px 16px; font-size:1rem; font-weight:600;
+    white-space:nowrap; opacity:1; }
 
   /* ---------- ball skin picker (home menu) ---------- */
   .skinLabel{ font-size:.92rem; color:#cbd5e1; margin:14px 0 6px; }
@@ -96,6 +103,20 @@
   .hearBtn{ flex:0 0 96px; padding:14px 6px; font-size:1rem; font-weight:700; color:#fff;
     background:#0e7490; border:none; border-radius:12px; cursor:pointer; }
   .hearBtn.listening, .bigBtn.listening{ background:#b91c1c; }
+
+  /* ---------- tile pause box: techno blue theme (round 12) ----------
+     Only the tile box changes — these rules are scoped to #tilePause,
+     so the pause menu, revive quiz and game-over cards keep the orange
+     theme (card border #f97316, big buttons #f97316). Tile box: heading,
+     border and Say-it button go techno blue #0ea5e9; Hear goes orange
+     #f97316 so it stands out as the accent. Listening stays red. */
+  #tilePause .card{ border-color:#0ea5e9; box-shadow:0 10px 40px rgba(0,0,0,.6), 0 0 24px rgba(14,165,233,.35); }
+  #tilePause .card h2{ color:#0ea5e9; }
+  #tilePause .bigBtn{ background:#0ea5e9; }
+  #tilePause .bigBtn:active{ background:#0284c7; }
+  #tilePause .hearBtn{ background:#f97316; }
+  #tilePause .hearBtn:active{ background:#ea580c; }
+  #tilePause .hearBtn.listening, #tilePause .bigBtn.listening{ background:#b91c1c; }
   .resultRow{ display:flex; justify-content:space-between; gap:10px; text-align:left;
     padding:8px 10px; border-bottom:1px solid #1e293b; font-size:.98rem; }
   .resultRow .ok{ color:#4ade80; font-weight:700; }
@@ -140,6 +161,7 @@
 </div>
 <div id="hopHint" class="hidden">↑ Tap to hop</div>
 <div id="freePassMsg" class="hidden">🎟 Free revive used — back to rolling!</div>
+<div id="previewHint" class="hidden">👆 Tap to keep rolling</div>
 <div id="menu" class="overlay">
   <div class="card">
     <h1>Slope <span class="es">Español</span></h1>
@@ -689,7 +711,8 @@ var reviveTitle = el("reviveTitle"), reviveSub = el("reviveSub"),
     btnReviveOver = el("btnReviveOver"), btnGiveUp = el("btnGiveUp");
 var tileEl = el("tilePause"), tileWord = el("tileWord"), tileMeaning = el("tileMeaning"),
     tileMeter = el("tileMeter"), tileHearBtn = el("tileHearBtn"),
-    tileSayBtn = el("tileSayBtn"), tileFb = el("tileFb"), btnTileSkip = el("btnTileSkip");
+    tileSayBtn = el("tileSayBtn"), tileFb = el("tileFb"), btnTileSkip = el("btnTileSkip"),
+    previewHintEl = el("previewHint");
 
 /* ---------- Three.js setup ---------- */
 var renderer = new THREE.WebGLRenderer({canvas:canvas, antialias:true});
@@ -1770,10 +1793,23 @@ function doHop(){
 /* ---------- input: keyboard + touch drag steering + tap to hop ---------- */
 var keys = {left:false, right:false};
 var touchSteer = 0, touchStartX = null, touchStartT = 0, touchMoved = 0;
+/* Round 12 follow-up: after a touch tap resumes from the post-speak
+   preview pause, the browser fires a synthesised click for the SAME tap.
+   This flag swallows exactly that one click so the resume tap never
+   hops; a genuine next tap hops/steers normally. Cleared by a timer so
+   a missing synthesised click can never eat a later real tap. */
+var previewResumeGuard = false;
 window.addEventListener("keydown", function(e){
   if(e.key === "ArrowLeft" || e.key === "a" || e.key === "A"){ keys.left = true; e.preventDefault(); }
   else if(e.key === "ArrowRight" || e.key === "d" || e.key === "D"){ keys.right = true; e.preventDefault(); }
-  else if(e.key === " " || e.key === "ArrowUp" || e.key === "w" || e.key === "W"){ doHop(); e.preventDefault(); }
+  else if(e.key === " " || e.key === "ArrowUp" || e.key === "w" || e.key === "W"){
+    /* Round 12 follow-up: the same key resumes from the post-speak
+       preview pause (tap/click is the main resume path; this is the
+       keyboard equivalent). It only resumes — it never hops. */
+    if(state === "preview") resumePreview(false);
+    else doHop();
+    e.preventDefault();
+  }
   else if(e.key === "p" || e.key === "P" || e.key === "Escape"){ togglePause(); }
   else if(e.key === "m" || e.key === "M"){ setMuted(!muted); }
 });
@@ -1795,6 +1831,9 @@ canvas.addEventListener("touchmove", function(e){
   e.preventDefault();
 }, {passive:false});
 canvas.addEventListener("touchend", function(){
+  /* Round 12 follow-up: a tap during the post-speak preview pause
+     resumes the run (it never hops — the resume tap only resumes). */
+  if(state === "preview"){ resumePreview(true); return; }
   /* A quick tap with almost no drag is a hop; a drag is steering only. */
   if(state === "playing" && touchStartX !== null &&
      nowSec() - touchStartT < 0.30 && touchMoved < 16) doHop();
@@ -1805,8 +1844,15 @@ canvas.addEventListener("touchcancel", function(){
 });
 /* Click on the canvas is the desktop analogue of a tap. (A tap on a
    touch device also fires a click, but the hop cooldown makes the
-   second call a harmless no-op.) */
-canvas.addEventListener("click", function(){ doHop(); });
+   second call a harmless no-op.) Round 12 follow-up: a click during
+   the post-speak preview pause resumes the run instead of hopping,
+   and the click synthesised after a touch-resume is swallowed by
+   previewResumeGuard so the resume tap never hops. */
+canvas.addEventListener("click", function(){
+  if(state === "preview"){ resumePreview(false); return; }
+  if(previewResumeGuard){ previewResumeGuard = false; return; }
+  doHop();
+});
 
 /* ---------- HUD ---------- */
 function updateHUD(){
@@ -2425,13 +2471,49 @@ function tileCorrect(){
   updateHUD();
   sfxWin();
   setTileFb("✓ ¡Correcto! 🎟 Free revive earned — your next crash skips the quiz!", "ok");
-  setTimeout(function(){ if(state === "tile") resumeTile(); }, 900);
+  /* Round 12 follow-up: the run does NOT resume right away. After a
+     beat (so the player reads the feedback) the tile box goes away and
+     the game sits paused on the live track — enterPreview(). */
+  setTimeout(function(){ if(state === "tile") enterPreview(); }, 900);
 }
 function resumeTile(){
   stopListen(false);
   tileEl.classList.add("hidden");
   state = "playing";
   hudEl.classList.add("on");
+}
+
+/* ---------- post-speak preview pause (round 12 follow-up) ----------
+   After a CORRECT speak the free pass is already banked, but the run
+   does NOT resume right away. The tile box is gone and the game sits
+   paused on the LIVE track (not a black screen, not the menu), so the
+   player can see what blocks/gaps are coming up — they often need that
+   free revive right away — and tap to resume when ready. The frame
+   loop already freezes the world for any non-"playing" state while
+   still rendering it, so "preview" needs no loop changes: the ball
+   sits still, the track ahead reads, the HUD stays on. Skipping
+   (Keep rolling / tap-outside) still resumes immediately — the preview
+   pause happens only after a correct speak. It earns/spends nothing. */
+function enterPreview(){
+  stopListen(false);
+  tileEl.classList.add("hidden");
+  previewHintEl.classList.remove("hidden");
+  state = "preview";
+  hudEl.classList.add("on");
+}
+function resumePreview(fromTouch){
+  /* The resume tap only resumes — it must never hop. On touch, one tap
+     fires touchend AND a synthesised click: the touchend resumes, and
+     the click that follows is swallowed by previewResumeGuard. A mouse
+     click resumes with no guard (no second event follows it), so a fast
+     second click still hops. */
+  previewHintEl.classList.add("hidden");
+  state = "playing";
+  hudEl.classList.add("on");
+  if(fromTouch){
+    previewResumeGuard = true;
+    setTimeout(function(){ previewResumeGuard = false; }, 400);
+  }
 }
 
 /* ---------- portrait playability (round 11) ----------
@@ -2939,6 +3021,15 @@ sayBtn.addEventListener("click", function(){ speakMode = "revive"; startListen()
 tileHearBtn.addEventListener("click", function(){ if(tileTarget) speakSpanish(tileTarget); });
 tileSayBtn.addEventListener("click", function(){ speakMode = "tile"; startListen(); });
 btnTileSkip.addEventListener("click", function(){ if(state === "tile") resumeTile(); });
+/* Tap outside the tile box = keep rolling (round 12): the overlay covers
+   the whole screen, so a click whose target IS the overlay (not the card
+   or a button inside it) dismisses the pause with no free pass — exactly
+   like "Keep rolling". Clicks inside the box bubble up with a child as
+   the target, so Hear / Say it / Keep rolling are unaffected. The tap
+   never reaches the canvas, so it cannot hop. */
+tileEl.addEventListener("click", function(e){
+  if(e.target === tileEl && state === "tile") resumeTile();
+});
 el("musicVol").addEventListener("input", function(e){
   setMusicVol(parseInt(e.target.value, 10)/100);
 });
