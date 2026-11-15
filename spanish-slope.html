@@ -1245,13 +1245,15 @@ function bankAt(d){
    carrying a neon arch ring the ball rolls through. Pure scenery — the
    rings never block the ball, never cause a crash, and never hide an
    obstacle, a gap, or a word tile (tunnel segments are always plain:
-   no gaps, no blocks, no tiles). One hash per 15-segment group (its own
+   no gaps, no blocks, no tiles). One hash per 10-segment group (its own
    stream, so the obstacle rng is untouched); ~60% of groups have a
-   tunnel, so roughly one tunnel every ~25 segments (round 9: doubled
-   from one every ~49 — Brant asked for more tunnels). Never in the safe
-   start (segments 0-4 stay plain). The arches ride in the segment
-   group, so they tilt with the bank like everything else. */
-var TUNNEL_GROUP = 15;   // segments per tunnel group (round 9: was 30 — tunnels now ~twice as common)
+   tunnel, so roughly one tunnel every ~17 segments (round 10: was 15 —
+   Brant asked for even more tunnels). Never in the safe start
+   (segments 0-4 stay plain). The arches ride in the segment group, so
+   they tilt with the bank like everything else. Tunnels sit at group
+   offsets 5-7 (the ramp features sit at offsets 9,0,1,2,3,4, so the
+   two never overlap — see RAMP_START). */
+var TUNNEL_GROUP = 10;   // segments per tunnel group (round 10: was 15 — tunnels now ~1.7x as common)
 var TUNNEL_LEN = 3;      // arch rings per tunnel
 function tunnelFor(idx){
   if(idx < 5) return 0;  // safe start stays plain
@@ -1259,7 +1261,7 @@ function tunnelFor(idx){
   var off = (idx - 5) % TUNNEL_GROUP;
   var h = mulberry32((runSeed*1000003 + g*104729) >>> 0);
   if(h() >= 0.6) return 0;   // ~40% of groups have no tunnel
-  var start = 8 + Math.floor(h() * (TUNNEL_GROUP - 8 - TUNNEL_LEN));
+  var start = 5 + Math.floor(h() * (TUNNEL_GROUP - TUNNEL_LEN - 5));   // offsets 5-6 (tunnel spans 5-7)
   if(off < start || off >= start + TUNNEL_LEN) return 0;
   return 1;
 }
@@ -1281,25 +1283,36 @@ function tunnelFor(idx){
    RAMP_SLANTS): steeper ramps launch from higher up, so they take a
    slightly smaller platform boost to land on the same platform, and a
    bigger gap boost (the ball must clear the hole). All verified by the
-   launch sim at 31.5 / 60 / 100 for every slant class. */
-var RAMP_GROUP = 45;
-var RAMP_START = 14;     // feature starts at offset 14 in the group (round 9: was 10 — with tunnels now every ~25 segments, offset 10 sits inside a tunnel's possible range, so the tunnel guard would kill ~60% of ramp features; at offset 14 the feature (14-19) never overlaps a tunnel (tunnels end by offset 13 in their group), so the guard is only a safety net)
-var RAMP_FEATURE_P = 0.65;  // ~65% of groups have a ramp feature (round 9: was 0.5)
-var RAMP_GAP_P = 0.6;       // ~60% of features are wide gaps, the rest platforms (round 9: was 0.5)
+   launch sim at 31.5 / 60 / 100 for every slant class.
+   RAMP_GROUP is a multiple of TUNNEL_GROUP (40 = 4 x 10), so the ramp
+   feature's position relative to the tunnel groups never shifts with
+   the group index — with RAMP_START 19 the feature always sits at
+   tunnel-group offsets 9,0,1,2,3,4, and tunnels always sit at 5-7,
+   so the two never overlap (the guard below is only a safety net).
+   (Round 10: RAMP_GROUP was 45, an odd multiple, which shifted the
+   feature by 5 tunnel offsets on alternate groups and would have let
+   the denser tunnels suppress ~30% of ramp features.) */
+var RAMP_GROUP = 40;
+var RAMP_START = 19;     // feature starts at offset 19 in the group (round 10: was 14 — with tunnels now every ~17 segments, offset 14 would sit inside a tunnel's range; at offset 19 the feature (19-24) always lands on tunnel offsets 9,0,1,2,3,4, clear of the tunnels at 5-7)
+var RAMP_FEATURE_P = 0.75;  // ~75% of groups have a ramp feature (round 10: was 0.65 — Brant asked for more gaps with jumps)
+var RAMP_GAP_P = 0.7;       // ~70% of features are wide gaps, the rest platforms (round 10: was 0.6)
 var PLATFORM_LEN = 5;    // raised segments per platform
 var WIDEGAP_LEN = 1;     // segments per wide gap (a full-width hole, 1 segment)
 var PLATFORM_H = 1.2;    // platform height above the main track
 var WEDGE_LEN = 3;       // wedge length in units (the pad spans 3 units; the launch point is its far end, 3.5 into the segment)
-/* Ramp slant classes (round 9): the wedge rises H over WEDGE_LEN units
-   (angle atan(H/WEDGE_LEN)); steeper ramps launch from higher up, so
-   they take a slightly smaller platform boost to land on the same
-   platform, and a bigger gap boost (the ball must clear the hole).
-   40% gentle, 35% medium, 25% steep. Boosts verified by the launch sim
-   at 31.5 / 60 / 100 for every class. */
+/* Ramp slant classes (round 10): the wedge rises H over WEDGE_LEN units
+   (angle atan(H/WEDGE_LEN)). Gentle stays mild as-is (Brant: "It's OK
+   to keep some of them not tilted much"); medium is now clearly tilted
+   (~30 deg) and steep is DRAMATIC (~45 deg — a steep, obvious incline
+   nobody could mistake for flat). Steeper ramps launch from higher up,
+   so they take a smaller platform boost to land on the same platform,
+   and a bigger gap boost (the ball must clear the hole).
+   25% gentle, 30% medium, 45% steep — steep is the most common.
+   Boosts verified by the launch sim at 31.5 / 60 / 100 for every class. */
 var RAMP_SLANTS = [
-  {name:"gentle", h:0.53, gap:15.0, plat:12.0},   // gentle: ~10 deg
-  {name:"medium", h:1.09, gap:16.0, plat:13.0},   // medium: ~20 deg
-  {name:"steep",  h:1.73, gap:17.0, plat:13.5}    // steep: ~30 deg
+  {name:"gentle", h:0.53, gap:15.0, plat:12.0},   // gentle: ~10 deg (unchanged — the mild share)
+  {name:"medium", h:1.73, gap:17.0, plat:13.5},   // medium: ~30 deg (was the steep class — now clearly tilted)
+  {name:"steep",  h:3.00, gap:17.0, plat:12.5}    // steep: ~45 deg (dramatic — launches from 3 units up, so the platform boost is LOWER to land inside the platform at top speed)
 ];
 /* Returns the ramp feature for segment idx, or null:
    {role, slant} — role is "ramp-gap" (ramp pad, boost RAMP_SLANTS[slant].gap),
@@ -1318,16 +1331,18 @@ function rampFeatureFor(idx){
      plain stretch; a wide gap / platform is a gameplay feature). If
      any segment in the feature's range (the ramp plus the longest
      feature, a platform) is a tunnel, this group has no ramp feature
-     at all — the whole group is plain. (Round 9: with RAMP_START 14
-     the feature can never overlap a tunnel, so this is only a safety net.) */
+     at all — the whole group is plain. (Round 10: with RAMP_GROUP 40
+     and RAMP_START 19 the feature can never overlap a tunnel, so this
+     is only a safety net.) */
   var base = g * RAMP_GROUP + 5;
   for(var o = start; o <= start + PLATFORM_LEN; o++){
     if(tunnelFor(base + o)) return null;
   }
   /* Slant class, drawn after the presence + isGap draws so those are
-     unchanged: 40% gentle, 35% medium, 25% steep. */
+     unchanged: 25% gentle, 30% medium, 45% steep (round 10: was 40/35/25
+     — steep is now the most common, gentle keeps a real share). */
   var sr = h();
-  var slant = sr < 0.4 ? 0 : sr < 0.75 ? 1 : 2;
+  var slant = sr < 0.25 ? 0 : sr < 0.55 ? 1 : 2;
   if(off === start) return {role: isGap ? "ramp-gap" : "ramp-platform", slant: slant};
   if(isGap){
     if(off > start && off <= start + WIDEGAP_LEN) return {role:"widegap", slant: slant};
@@ -1423,7 +1438,7 @@ function planSegment(idx, dist, rng, prevGap){
      with jumps") while the block rate is UNCHANGED — only gaps go up.
      The safe start and the reachability guarantees (free lane >= 2.4,
      a gap leaves >= 6.0 of solid track) are unchanged. */
-  var gapP = (0.22 + 0.06*d) * 0.75, blockP = gapP + (0.38 + 0.12*d) * 0.75;
+  var gapP = (0.28 + 0.06*d) * 0.75, blockP = gapP + (0.38 + 0.12*d) * 0.75;   // round 10: gap base 0.22 -> 0.28 (Brant: more jumping gaps); block rate unchanged
   if(!prevGap && r < gapP){
     /* Gap segment: a hole 2.6-3.6 wide, positioned so >= 6.0 of the
        10-wide track stays solid — always a wide way around it. */
