@@ -34,7 +34,17 @@
     opacity:0; transition:opacity .25s; white-space:nowrap; max-width:92vw;
     overflow:hidden; text-overflow:ellipsis; }
   #toast.on{ opacity:1; }
+  #toast.tall{ white-space:normal; line-height:1.35; }
   #toast b{ color:#fdba74; }
+
+  /* ---------- ball skin picker (home menu) ---------- */
+  .skinLabel{ font-size:.92rem; color:#cbd5e1; margin:14px 0 6px; }
+  .skinRow{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  .skinBtn{ width:48px; height:48px; padding:0; border-radius:50%; border:2px solid #475569;
+    background:#1e293b; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .skinBtn.sel{ border-color:#f97316; box-shadow:0 0 0 2px #f97316, 0 0 12px rgba(249,115,22,.7); }
+  .skinBtn canvas{ width:44px; height:44px; border-radius:50%; display:block; }
+  .skinDot{ width:34px; height:34px; border-radius:50%; display:block; border:2px solid rgba(255,255,255,.6); }
 
   /* ---------- overlays ---------- */
   .overlay{ position:fixed; inset:0; z-index:10; display:flex; align-items:center; justify-content:center;
@@ -113,6 +123,7 @@
     <div class="big"><span id="hudDist">0</span> m</div>
     <div class="small">Score <b id="hudScore">0</b> &nbsp;·&nbsp; Speed <b id="hudSpeed">0</b></div>
     <div class="small">Words <b id="hudWords">0</b> &nbsp;·&nbsp; Best <b id="hudBest">0</b> m</div>
+    <div class="small">♥ <b id="hudMeter">0/5</b> to next free revive</div>
   </div>
   <div id="hudRight">
     <div class="hudBox"><span id="hearts">♥♥♥</span></div>
@@ -127,7 +138,10 @@
     <h1>Slope <span class="es">Español</span></h1>
     <p>Roll the ball down the endless slope. Steer to dodge the red blocks and the gaps — and grab the Spanish word tiles as you go!</p>
     <p class="sub">← → or A / D to steer &nbsp;·&nbsp; drag left / right on touch<br>
-    Crash and you get a quiz revive: answer 4 of 5 Spanish questions to keep rolling. You have 3 revives per run.</p>
+    Tap, Space, or ↑ to hop over a gap or a low block.<br>
+    Crash and you get a quiz revive: answer 4 of 5 Spanish questions to keep rolling. You start with 3 revives per run — collect 5 word tiles to earn a free extra revive (up to 5).</p>
+    <div class="skinLabel">Choose your ball:</div>
+    <div class="skinRow" id="skinRow"></div>
     <label class="checkRow"><input type="checkbox" id="chkSpeaking"> 🎤 Speaking activities — also say each answer out loud</label>
     <button class="bigBtn" id="btnStart" type="button">▶ Start rolling</button>
     <button class="ghostBtn" id="btnHow" type="button">How to play</button>
@@ -140,9 +154,10 @@
   <div class="card">
     <h2>How to play</h2>
     <p>Your ball rolls downhill on its own, faster and faster. Steer left and right to dodge the red blocks and the gaps in the track. If you roll off a gap or hit a block, you crash.</p>
-    <p>Glowing word tiles float over the track — roll through one to collect it (+10 points) and see what it means.</p>
-    <p>When you crash, you get a <b>quiz revive</b>: 5 Spanish questions. Get 4 or 5 right and you keep rolling, with a short head start and 2 seconds of flashing invincibility. You get 3 revives per run. The questions follow the same order as Spanish Dash — cognates, then practice words, then present tense, then possessive pronouns, then ser vs. estar — and then they start over, so there are 50 different revives.</p>
-    <p class="sub">Keyboard: ← → or A / D to steer, P or Esc to pause, M to mute.<br>Touch: drag left or right to steer.</p>
+    <p><b>Hop:</b> tap, press Space, or press ↑ to hop — a short bounce that clears a gap or a low block. You can hop about once every half second, so time it.</p>
+    <p>Glowing word tiles float over the track — roll through one to collect it (+10 points) and see what it means. Collect 5 tiles to earn a <b>free extra revive</b> (up to 5 hearts).</p>
+    <p>When you crash, you get a <b>quiz revive</b>: 5 Spanish questions. Get 4 or 5 right and you keep rolling, with a short head start and 2 seconds of flashing invincibility. You start with 3 revives per run. The questions follow the same order as Spanish Dash — cognates, then practice words, then present tense, then possessive pronouns, then ser vs. estar — and then they start over, so there are 50 different revives.</p>
+    <p class="sub">Keyboard: ← → or A / D to steer, Space or ↑ to hop, P or Esc to pause, M to mute.<br>Touch: drag left or right to steer, tap to hop.</p>
     <button class="bigBtn" id="btnHowClose" type="button">Got it</button>
   </div>
 </div>
@@ -508,7 +523,25 @@ var MAX_SPEED = 58;          // top forward speed (reached ~925 m in)
 var BLOCK_HIT = 0.4;         // block half-width inflation for a hit (ball radius, forgiving)
 var GAP_HIT = 0.25;          // gap inset for a fall (ball centre must be this far inside the hole)
 var MAX_REVIVES = 3;
+var MAX_HEARTS = 5;          // max hearts: 3 to start + bonus hearts from word tiles
+var TILES_PER_BONUS = 5;     // word tiles collected per free bonus revive
 var REVIVE_PASS = 4;         // correct answers needed out of 5 to revive
+/* Hop: tap / Space / Up makes the ball bounce. A small hop, not a high
+   jump — max height HOP_V^2/(2*HOP_G) ≈ 1.39, just enough to clear a
+   1.2-tall block (HOP_CLEAR) or ride over a gap while steering to safety.
+   Air time ≈ 0.65 s; cooldown 0.6 s between hop starts, and only from the
+   ground, so it can't be spammed or double-hopped mid-air. */
+var HOP_V = 8.5;
+var HOP_G = 26;
+var HOP_COOLDOWN = 0.6;
+var HOP_CLEAR = 1.25;        // ball this high above the track clears a block
+/* Camera: the vanishing point should sit ~1/3 of the screen height up
+   from the bottom (Brant: "right now I would say it is 1/6"). The track
+   descends at ~12.1°, so the camera pitches UP slightly (negative pitch)
+   — look target above camera height — making the track direction sit
+   ~13.6° below the view centre, i.e. the vanishing point at 1/3 up. */
+var CAM_HEIGHT = 3.5;        // camera height above the ball
+var CAM_LOOK_HEIGHT = 4.2;   // lookAt height above the ball, 16 ahead
 /* The downhill: the track drops SLOPE_DROP units per 20-unit segment
    (grade 0.21, ~12°) so the descent is unmistakable, not a flat
    plane. trackY(d) is the track surface height at distance d. */
@@ -522,8 +555,10 @@ function trackY(d){ return -d * SLOPE_GRADE; }
 
 /* ---------- state ---------- */
 var state = "menu";          // menu | playing | paused | revive | over
-var dist = 0, score = 0, wordsGot = 0, revivesLeft = MAX_REVIVES, reviveNum = 0;
+var dist = 0, score = 0, wordsGot = 0, tilesSinceBonus = 0;
+var revivesLeft = MAX_REVIVES, reviveNum = 0;
 var ballX = 0, ballVX = 0, ballZ = 0, speedMul = 1, invincibleUntil = 0;
+var ballHopY = 0, ballHopV = 0, nextHopAt = 0;   // hop state (height above track)
 var best = 0;
 try{ best = parseInt(localStorage.getItem("slopeEspanol_best") || "0", 10) || 0; }catch(e){}
 var speakingOn = false;
@@ -575,6 +610,107 @@ dirLight.position.set(4, 10, 6);
 scene.add(dirLight);
 var ballLight = new THREE.PointLight(0xffa040, 70, 28, 1.5);
 scene.add(ballLight);
+
+/* ---------- ball skins (choose your ball) ----------
+   Pollito (orange) is the default; the rest are solid neon colours plus
+   Dash-inspired designs drawn as canvas textures on the sphere. Each
+   skin sets the ball's colour/texture and its glow + light colour. The
+   choice is persisted in a Slope-specific localStorage key — Dash's
+   settings are never touched. */
+var SKIN_KEY = "slopeEspanol_skin";
+var skinName = "pollito";
+try{ skinName = localStorage.getItem(SKIN_KEY) || "pollito"; }catch(e){}
+function makeSkinTexture(draw){
+  var c = document.createElement("canvas"); c.width = 256; c.height = 128;
+  draw(c.getContext("2d"), 256, 128);
+  var tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = 4;
+  return tex;
+}
+function skinBlobs(g, W, H, base, cols, n, rMin, rMax){
+  g.fillStyle = base; g.fillRect(0, 0, W, H);
+  for(var i=0;i<n;i++){
+    g.fillStyle = cols[i % cols.length];
+    var x = Math.random()*W, y = Math.random()*H, r = rMin + Math.random()*(rMax-rMin);
+    g.beginPath(); g.ellipse(x, y, r, r*0.7, Math.random()*3, 0, 6.29); g.fill();
+  }
+}
+var skinTextures = {};
+function skinTexture(kind){
+  if(skinTextures[kind]) return skinTextures[kind];
+  var tex;
+  if(kind === "cow"){
+    /* White with black spots, like the Dash cow. */
+    tex = makeSkinTexture(function(g,W,H){ skinBlobs(g,W,H,"#f8fafc",["#111827"],14,9,20); });
+  } else if(kind === "snowman"){
+    /* White with coal dots and a couple of orange carrot triangles. */
+    tex = makeSkinTexture(function(g,W,H){
+      skinBlobs(g,W,H,"#f1f5f9",["#0f172a"],10,3,7);
+      g.fillStyle = "#f97316";
+      for(var i=0;i<3;i++){
+        var x = 30 + Math.random()*196, y = 30 + Math.random()*68;
+        g.beginPath(); g.moveTo(x, y); g.lineTo(x+16, y+6); g.lineTo(x, y+12); g.closePath(); g.fill();
+      }
+    });
+  } else if(kind === "turtle"){
+    /* Green with darker shell scutes (hexagon-ish outlines) + seams. */
+    tex = makeSkinTexture(function(g,W,H){
+      g.fillStyle = "#22c55e"; g.fillRect(0, 0, W, H);
+      g.strokeStyle = "#14532d"; g.lineWidth = 4;
+      for(var cx=0;cx<4;cx++) for(var cy=0;cy<2;cy++){
+        var x = 32 + cx*64, y = 32 + cy*64;
+        g.beginPath();
+        for(var k=0;k<6;k++){
+          var a = k*Math.PI/3 + Math.PI/6;
+          var px = x + 26*Math.cos(a), py = y + 26*Math.sin(a);
+          if(k === 0) g.moveTo(px, py); else g.lineTo(px, py);
+        }
+        g.closePath(); g.stroke();
+      }
+      g.fillStyle = "#86efac";
+      g.beginPath(); g.ellipse(128, 64, 18, 12, 0, 0, 6.29); g.fill();
+    });
+  } else { /* skull — sugar skull: cream with festive coloured dots + dark accents */
+    tex = makeSkinTexture(function(g,W,H){
+      skinBlobs(g,W,H,"#fef3c7",["#ec4899","#22d3ee","#facc15","#a78bfa"],18,4,9);
+      g.fillStyle = "#1f2937";
+      g.beginPath(); g.ellipse(86, 52, 16, 20, 0, 0, 6.29); g.fill();
+      g.beginPath(); g.ellipse(170, 52, 16, 20, 0, 0, 6.29); g.fill();
+      g.beginPath(); g.moveTo(128, 84); g.lineTo(138, 100); g.lineTo(118, 100); g.closePath(); g.fill();
+    });
+  }
+  skinTextures[kind] = tex;
+  return tex;
+}
+var SKINS = [
+  {id:"pollito", label:"Pollito", color:0xff7a1a, emissive:0xff5e00, emissiveIntensity:1.4, light:0xffa040},
+  {id:"cyan", label:"Cyan", color:0x22d3ee, emissive:0x0891b2, emissiveIntensity:1.4, light:0x67e8f9},
+  {id:"magenta", label:"Magenta", color:0xec4899, emissive:0xbe185d, emissiveIntensity:1.4, light:0xf472b6},
+  {id:"lime", label:"Lime", color:0xa3e635, emissive:0x65a30d, emissiveIntensity:1.4, light:0xbef264},
+  {id:"purple", label:"Purple", color:0xa78bfa, emissive:0x7c3aed, emissiveIntensity:1.4, light:0xc4b5fd},
+  {id:"cow", label:"Cow", tex:"cow", color:0xffffff, emissive:0x666666, emissiveIntensity:0.35, light:0xffffff},
+  {id:"snowman", label:"Snowman", tex:"snowman", color:0xffffff, emissive:0x94a3b8, emissiveIntensity:0.3, light:0xe0f2fe},
+  {id:"turtle", label:"Turtle", tex:"turtle", color:0xffffff, emissive:0x166534, emissiveIntensity:0.4, light:0x86efac},
+  {id:"skull", label:"Sugar skull", tex:"skull", color:0xffffff, emissive:0xec4899, emissiveIntensity:0.35, light:0xfbcfe8}
+];
+function applySkin(id){
+  var s = null;
+  for(var i=0;i<SKINS.length;i++) if(SKINS[i].id === id){ s = SKINS[i]; break; }
+  if(!s) s = SKINS[0];
+  skinName = s.id;
+  if(s.tex){
+    ballMat.map = skinTexture(s.tex);
+    ballMat.color.set(0xffffff);
+  } else {
+    ballMat.map = null;
+    ballMat.color.set(s.color);
+  }
+  ballMat.emissive.set(s.emissive);
+  ballMat.emissiveIntensity = s.emissiveIntensity;
+  ballMat.needsUpdate = true;
+  ballLight.color.set(s.light);
+  try{ localStorage.setItem(SKIN_KEY, skinName); }catch(e){}
+}
 
 var ballMat = new THREE.MeshStandardMaterial({color:0xff7a1a, emissive:0xff5e00, emissiveIntensity:1.4, roughness:0.25});
 var ballMesh = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 24, 18), ballMat);
@@ -683,6 +819,12 @@ function maxFreeLane(blocks, gap){
 function planSegment(idx, dist, rng, prevGap){
   var d = Math.min(1, dist/1500);
   var plan = {blocks:[], gap:null, tile:null};
+  /* Safe start: the first 5 segments (0-100 units) are plain track —
+     no gaps, no blocks — so the ball never falls in a hole before the
+     player has time to react. (A gap segment in the opening stretch
+     was dropping the ball ~half of all runs.) Word tiles are still
+     allowed in the safe zone. */
+  if(idx >= 5){
   var r = rng();
   if(!prevGap && r < 0.14 + 0.06*d){
     /* Gap segment: a hole 2.6-3.6 wide, positioned so >= 6.0 of the
@@ -706,6 +848,7 @@ function planSegment(idx, dist, rng, prevGap){
       plan.blocks.pop();
     }
   }
+  }   /* end safe-start guard (idx >= 5) */
   /* Word tile on quiet segments (every 5th segment, never on a gap,
      never overlapping a block). */
   if(!plan.gap && idx % 5 === 2){
@@ -857,12 +1000,23 @@ var points = new THREE.Points(pGeo, new THREE.PointsMaterial({
   blending:THREE.AdditiveBlending, depthWrite:false}));
 scene.add(points);
 
-/* ---------- input: keyboard + touch drag steering ---------- */
+/* ---------- hop ---------- */
+function doHop(){
+  if(state !== "playing") return;
+  if(ballHopY > 0) return;            // already airborne — no double-hop
+  if(nowSec() < nextHopAt) return;    // cooldown
+  ballHopV = HOP_V;
+  nextHopAt = nowSec() + HOP_COOLDOWN;
+  sfxDing();
+}
+
+/* ---------- input: keyboard + touch drag steering + tap to hop ---------- */
 var keys = {left:false, right:false};
-var touchSteer = 0, touchStartX = null;
+var touchSteer = 0, touchStartX = null, touchStartT = 0, touchMoved = 0;
 window.addEventListener("keydown", function(e){
   if(e.key === "ArrowLeft" || e.key === "a" || e.key === "A"){ keys.left = true; e.preventDefault(); }
   else if(e.key === "ArrowRight" || e.key === "d" || e.key === "D"){ keys.right = true; e.preventDefault(); }
+  else if(e.key === " " || e.key === "ArrowUp" || e.key === "w" || e.key === "W"){ doHop(); e.preventDefault(); }
   else if(e.key === "p" || e.key === "P" || e.key === "Escape"){ togglePause(); }
   else if(e.key === "m" || e.key === "M"){ setMuted(!muted); }
 });
@@ -873,21 +1027,29 @@ window.addEventListener("keyup", function(e){
 canvas.addEventListener("touchstart", function(e){
   if(state !== "playing") return;
   var t = e.changedTouches[0];
-  touchStartX = t.clientX; touchSteer = 0;
+  touchStartX = t.clientX; touchSteer = 0; touchStartT = nowSec(); touchMoved = 0;
   e.preventDefault();
 }, {passive:false});
 canvas.addEventListener("touchmove", function(e){
   if(state !== "playing" || touchStartX === null) return;
   var t = e.changedTouches[0];
+  touchMoved = Math.max(touchMoved, Math.abs(t.clientX - touchStartX));
   touchSteer = clamp((t.clientX - touchStartX)/70, -1, 1);
   e.preventDefault();
 }, {passive:false});
 canvas.addEventListener("touchend", function(){
+  /* A quick tap with almost no drag is a hop; a drag is steering only. */
+  if(state === "playing" && touchStartX !== null &&
+     nowSec() - touchStartT < 0.25 && touchMoved < 12) doHop();
   touchStartX = null; touchSteer = 0;
 });
 canvas.addEventListener("touchcancel", function(){
   touchStartX = null; touchSteer = 0;
 });
+/* Click on the canvas is the desktop analogue of a tap. (A tap on a
+   touch device also fires a click, but the hop cooldown makes the
+   second call a harmless no-op.) */
+canvas.addEventListener("click", function(){ doHop(); });
 
 /* ---------- HUD ---------- */
 function updateHUD(){
@@ -896,13 +1058,17 @@ function updateHUD(){
   hudSpeed.textContent = Math.round(curSpeed());
   hudWords.textContent = wordsGot;
   hudBest.textContent = best;
+  /* Bonus-revive meter: tiles toward the next free heart. */
+  var meter = el("hudMeter");
+  if(meter) meter.textContent = revivesLeft >= MAX_HEARTS ? "MAX" : (tilesSinceBonus + "/" + TILES_PER_BONUS);
 }
 function updateHearts(){
-  heartsEl.textContent = "♥".repeat(revivesLeft) + "♡".repeat(MAX_REVIVES - revivesLeft);
+  heartsEl.textContent = "♥".repeat(revivesLeft) + "♡".repeat(MAX_HEARTS - revivesLeft);
 }
 var toastTimer = null;
-function showToast(html){
+function showToast(html, tall){
   toastEl.innerHTML = html;
+  toastEl.classList.toggle("tall", !!tall);
   toastEl.classList.add("on");
   if(toastTimer) clearTimeout(toastTimer);
   toastTimer = setTimeout(function(){ toastEl.classList.remove("on"); }, 2200);
@@ -912,9 +1078,10 @@ function showToast(html){
 function startRun(){
   audioEnsure();
   musicStart();
-  dist = 0; score = 0; wordsGot = 0;
+  dist = 0; score = 0; wordsGot = 0; tilesSinceBonus = 0;
   revivesLeft = MAX_REVIVES; reviveNum = 0;
   ballX = 0; ballVX = 0; ballZ = 0; speedMul = 1; invincibleUntil = 0;
+  ballHopY = 0; ballHopV = 0; nextHopAt = 0;
   PAIR_USED = {};   // fresh question session each run
   tileIdx = 0;
   resetTrack();
@@ -955,7 +1122,7 @@ function showMenu(){
   hudEl.classList.remove("on");
   el("menuBest").textContent = best > 0 ? ("Best distance: " + best + " m") : "";
   /* Park the ball at the start so the menu shows the slope behind it. */
-  ballX = 0; ballZ = 0;
+  ballX = 0; ballZ = 0; ballHopY = 0; ballHopV = 0;
   resetTrack();
 }
 function gameOver(){
@@ -991,6 +1158,7 @@ function respawn(){
   stopListen(false);
   reviveEl.classList.add("hidden");
   ballZ -= 10;               // roll past the crash site
+  ballHopY = 0; ballHopV = 0;
   speedMul = 0.55;           // moderate speed again — ramps back up on its own
   invincibleUntil = nowSec() + 2;   // 2 s of flashing invincibility
   state = "playing";
@@ -1018,19 +1186,26 @@ function frame(){
     dist += v*dt;
     ballZ = -dist;
     speedMul = Math.min(1, speedMul + dt*0.12);   // ease back to full speed after a revive
+    /* Hop physics: integrate the bounce, land back on the track. */
+    if(ballHopV !== 0 || ballHopY > 0){
+      ballHopV -= HOP_G*dt;
+      ballHopY += ballHopV*dt;
+      if(ballHopY <= 0){ ballHopY = 0; ballHopV = 0; }
+    }
     score = Math.floor(dist) + wordsGot*10;
     ensureSegments();
     checkCollisions();
     updateHUD();
   }
   /* Ball roll + lean, invincibility flash. The ball rides the slope:
-     its height follows the track's descent at the current distance. */
+     its height follows the track's descent at the current distance,
+     plus the hop height while bouncing. */
   var ballY = BALL_R + trackY(dist);
-  ballMesh.position.set(ballX, ballY, ballZ);
+  ballMesh.position.set(ballX, ballY + ballHopY, ballZ);
   ballMesh.rotation.x -= curSpeed()*dt/BALL_R * (state === "playing" ? 1 : 0);
   ballMesh.rotation.z = -ballVX*0.03;
   ballMesh.visible = !(state === "playing" && isInvincible() && Math.floor(t*10) % 2 === 0);
-  ballLight.position.set(ballX, ballY + 1.7, ballZ + 1);
+  ballLight.position.set(ballX, ballY + ballHopY + 1.7, ballZ + 1);
   /* Word tiles bob gently. */
   segments.forEach(function(seg){
     if(seg.tileMesh && !seg.tileTaken){
@@ -1052,14 +1227,17 @@ function frame(){
   }
   pGeo.attributes.position.needsUpdate = true;
   /* Camera follows the ball, looking forward and down the slope. The
-     camera pitches down LESS steeply than the track descends (pitch
-     ~4.6° vs slope ~12°), so the track ahead visibly drops away below
-     the view centre — that is what makes the downhill read instead of
-     looking like a flat plane. */
+     camera pitches UP slightly (look target above camera height), so
+     the track direction sits ~13.6° below the view centre and the
+     vanishing point lands ~1/3 of the screen height up from the bottom
+     (was ~1/6) — the downhill reads much stronger. The ball stays in
+     the lower half of the screen, clearly visible. The camera does NOT
+     follow the hop — it rides the track height, so the view stays
+     steady while the ball bounces. */
   camera.position.x += ((ballX*0.5) - camera.position.x) * Math.min(1, dt*6);
-  camera.position.y += ((ballY + 4.5) - camera.position.y) * Math.min(1, dt*6);
+  camera.position.y += ((ballY + CAM_HEIGHT) - camera.position.y) * Math.min(1, dt*6);
   camera.position.z = ballZ + 10;
-  camera.lookAt(ballX*0.75, ballY + 2.4, ballZ - 16);
+  camera.lookAt(ballX*0.75, ballY + CAM_LOOK_HEIGHT, ballZ - 16);
   renderer.render(scene, camera);
 }
 function checkCollisions(){
@@ -1069,7 +1247,12 @@ function checkCollisions(){
   if(!seg) return;
   var plan = seg.plan;
   var blockZ = -segIdx*SEG_LEN - SEG_LEN/2;
-  if(Math.abs(ballZ - blockZ) < 1.1){
+  /* Hop: while the ball is high enough above the track it clears a
+     block; while it is airborne at all it rides over a gap. Landing
+     on a block or in a gap still crashes. */
+  var airborne = ballHopY > 0.3;
+  var clearsBlock = ballHopY > HOP_CLEAR;
+  if(!clearsBlock && Math.abs(ballZ - blockZ) < 1.1){
     for(var b=0;b<plan.blocks.length;b++){
       if(Math.abs(ballX - plan.blocks[b].x) < plan.blocks[b].w/2 + BLOCK_HIT){
         crash("block");
@@ -1077,7 +1260,7 @@ function checkCollisions(){
       }
     }
   }
-  if(plan.gap && ballX > plan.gap.x0 + GAP_HIT && ballX < plan.gap.x1 - GAP_HIT){
+  if(!airborne && plan.gap && ballX > plan.gap.x0 + GAP_HIT && ballX < plan.gap.x1 - GAP_HIT){
     crash("gap");
     return;
   }
@@ -1088,8 +1271,22 @@ function checkCollisions(){
       seg.tileMesh.visible = false;
       wordsGot++;
       score = Math.floor(dist) + wordsGot*10;
+      /* Bonus revive: every 5 word tiles earns a free extra heart,
+         up to 5 hearts total. */
+      var bonus = false;
+      tilesSinceBonus++;
+      if(tilesSinceBonus >= TILES_PER_BONUS){
+        tilesSinceBonus = 0;
+        if(revivesLeft < MAX_HEARTS){
+          revivesLeft++;
+          updateHearts();
+          sfxWin();
+          bonus = true;
+        }
+      }
       sfxDing();
-      showToast("<b>" + escapeHtml(plan.tile.sp) + "</b> — " + escapeHtml(plan.tile.en) + " &nbsp;·&nbsp; +10");
+      showToast("<b>" + escapeHtml(plan.tile.sp) + "</b> — " + escapeHtml(plan.tile.en) +
+        " &nbsp;·&nbsp; +10" + (bonus ? "<br>♥ <b>Free revive earned!</b>" : ""), bonus);
       updateHUD();
     }
   }
@@ -1332,24 +1529,28 @@ function startListen(){
 }
 
 /* ================= music (ORIGINAL chiptune, Web Audio — no audio files) =================
-   One energetic 152 BPM loop for the run: driving 8th-note triangle bass
-   (Am – F – C – G, one chord per bar), a square-wave lead melody, and a
-   kick on every beat. Starts on game start, keeps playing through revives
-   (never restarts on revive), stops on game over / back to menu. */
+   One energetic 152 BPM funk loop for the run: syncopated 16th-note
+   triangle bass (Am – F – C – G, one chord per bar — off-beat accents,
+   rests, octave pops), a stabbier square-wave lead (call-and-response
+   phrasing), a kick on every beat, a snare on beats 2 and 4, and a
+   hi-hat ticking the off-16ths with an open-hat pickup into each bar.
+   Starts on game start, keeps playing through revives (never restarts
+   on revive), stops on game over / back to menu. */
 var MUS_BPM = 152;
 var MUS_STEP = 60/MUS_BPM/4;   // one 16th note, in seconds
-/* Bass: 64 steps (4 bars x 16 16ths), 8th notes, 0 = rest. */
+/* Bass: 64 steps (4 bars x 16 16ths), syncopated funk, 0 = rest.
+   Roots: Am 45, F 41, C 48, G 43; +12 = octave pop, +7 = 5th. */
 var MUS_BASS = [
-  45,0,45,0,57,0,45,0, 45,0,57,0,45,0,52,0,
-  41,0,41,0,53,0,41,0, 41,0,53,0,41,0,48,0,
-  48,0,48,0,60,0,48,0, 48,0,60,0,48,0,55,0,
-  43,0,43,0,55,0,43,0, 43,0,55,0,43,0,50,0];
-/* Lead: 64 steps, A-minor melody, 0 = rest. */
+  45,0,0,45, 0,0,57,0, 45,0,0,52, 0,57,0,0,
+  41,0,0,41, 0,0,53,0, 41,0,0,48, 0,53,0,41,
+  48,0,0,48, 0,0,60,0, 48,0,0,55, 0,60,0,0,
+  43,0,0,43, 0,0,55,0, 43,0,0,50, 0,55,0,43];
+/* Lead: 64 steps, A-minor, short stabs + rests (call-and-response). */
 var MUS_LEAD = [
-  81,0,0,76, 0,0,79,0, 81,0,0,76, 79,0,76,0,
-  77,0,0,76, 0,0,77,0, 81,0,79,0, 77,0,76,0,
-  79,0,0,81, 0,0,79,0, 76,0,0,79, 81,0,0,0,
-  79,0,0,76, 0,0,74,0, 76,0,79,0, 81,0,79,0];
+  81,0,0,81, 0,76,0,79, 81,0,0,0, 79,0,76,0,
+  77,0,0,77, 0,81,0,79, 77,0,0,0, 76,0,77,0,
+  79,0,0,81, 0,84,0,81, 79,0,0,0, 76,0,79,0,
+  81,0,79,0, 76,0,0,74, 76,0,0,79, 81,0,0,0];
 var musTimer = null, musStep = 0, musNextTime = 0;
 function midiToFreq(m){ return 440*Math.pow(2,(m-69)/12); }
 function mnote(midi, dur, type, vol, when){
@@ -1379,14 +1580,63 @@ function mkick(when){
     o.start(t); o.stop(t+0.16);
   }catch(e){}
 }
+/* White-noise buffer (shared by hat + snare). */
+var noiseBuf = null;
+function getNoiseBuf(){
+  if(noiseBuf) return noiseBuf;
+  var len = Math.floor(audioCtx.sampleRate * 0.1);
+  noiseBuf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+  var d = noiseBuf.getChannelData(0);
+  for(var i=0;i<len;i++) d[i] = Math.random()*2 - 1;
+  return noiseBuf;
+}
+/* Hi-hat: short highpassed noise burst. open = longer (bar pickup). */
+function mhat(when, vol, open){
+  if(!audioCtx || !musicGain) return;
+  try{
+    var t = when || audioCtx.currentTime;
+    var src = audioCtx.createBufferSource();
+    src.buffer = getNoiseBuf();
+    var f = audioCtx.createBiquadFilter();
+    f.type = "highpass"; f.frequency.value = 7000;
+    var g = audioCtx.createGain();
+    var dur = open ? 0.12 : 0.04;
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f); f.connect(g); g.connect(musicGain);
+    src.start(t); src.stop(t + dur + 0.02);
+  }catch(e){}
+}
+/* Snare/clap on beats 2 and 4: bandpassed noise + a low body thump. */
+function msnare(when){
+  if(!audioCtx || !musicGain) return;
+  try{
+    var t = when || audioCtx.currentTime;
+    var src = audioCtx.createBufferSource();
+    src.buffer = getNoiseBuf();
+    var f = audioCtx.createBiquadFilter();
+    f.type = "bandpass"; f.frequency.value = 1800; f.Q.value = 0.8;
+    var g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.35, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
+    src.connect(f); f.connect(g); g.connect(musicGain);
+    src.start(t); src.stop(t + 0.16);
+    mnote(65, 0.08, "triangle", 0.18, t);   /* ~175 Hz body */
+  }catch(e){}
+}
 function musicScheduler(){
   if(!audioCtx || !musicGain) return;
   while(musNextTime < audioCtx.currentTime + 0.15){
     var s = musStep % 64;
     var b = MUS_BASS[s], l = MUS_LEAD[s];
-    if(b) mnote(b, MUS_STEP*1.8, "triangle", 0.5, musNextTime);
-    if(l) mnote(l, MUS_STEP*1.6, "square", 0.15, musNextTime);
-    if(s % 4 === 0) mkick(musNextTime);
+    /* Funk bass + lead are staccato (shorter notes than the old 8th-note drive). */
+    if(b) mnote(b, MUS_STEP*1.3, "triangle", 0.5, musNextTime);
+    if(l) mnote(l, MUS_STEP*1.1, "square", 0.15, musNextTime);
+    if(s % 4 === 0) mkick(musNextTime);                    /* kick on every beat */
+    if(s % 16 === 4 || s % 16 === 12) msnare(musNextTime); /* snare on 2 and 4 */
+    if(s % 16 === 15) mhat(musNextTime, 0.12, true);       /* open-hat pickup into the next bar */
+    else if(s % 4 === 2) mhat(musNextTime, 0.15, false);   /* off-beat 8th accent */
+    else if(s % 2 === 1) mhat(musNextTime, 0.07, false);   /* off-16th tick */
     musStep++;
     musNextTime += MUS_STEP;
   }
@@ -1401,12 +1651,14 @@ function musicStart(){
 function musicStop(){
   if(musTimer){ clearInterval(musTimer); musTimer = null; }
 }
-/* Short jingle for a successful revive (rising A-minor arpeggio). */
+/* Short jingle for a successful revive (rising A-minor arpeggio with a
+   syncopated tail, to match the funkier groove). */
 function jingleRevive(){
   if(!audioCtx) return;
   var t0 = audioCtx.currentTime + 0.02;
-  var n = [69, 72, 76, 81];
-  for(var i=0;i<n.length;i++) mnote(n[i], 0.22, "square", 0.22, t0 + i*0.09);
+  var n = [69, 72, 76, 79, 81];
+  var dt = [0, 0.08, 0.16, 0.26, 0.34];
+  for(var i=0;i<n.length;i++) mnote(n[i], 0.2, "square", 0.22, t0 + dt[i]);
 }
 /* Short sting for game over (falling line). */
 function stingOver(){
@@ -1414,6 +1666,43 @@ function stingOver(){
   var t0 = audioCtx.currentTime + 0.02;
   var n = [64, 60, 57, 52];
   for(var i=0;i<n.length;i++) mnote(n[i], 0.34, "triangle", 0.25, t0 + i*0.16);
+}
+
+/* ---------- ball skin picker (home menu) ---------- */
+function buildSkinPicker(){
+  var row = el("skinRow");
+  if(!row) return;
+  row.innerHTML = "";
+  SKINS.forEach(function(s){
+    var b = document.createElement("button");
+    b.className = "skinBtn" + (s.id === skinName ? " sel" : "");
+    b.type = "button";
+    b.title = s.label;
+    b.setAttribute("aria-label", s.label + " ball");
+    if(s.tex){
+      /* Preview: the skin's texture drawn into a round swatch. */
+      var cv = document.createElement("canvas");
+      cv.width = 44; cv.height = 44;
+      var cg = cv.getContext("2d");
+      cg.save();
+      cg.beginPath(); cg.arc(22, 22, 20, 0, 6.29); cg.clip();
+      cg.drawImage(skinTexture(s.tex).image, 0, 0, 44, 44);
+      cg.restore();
+      cg.strokeStyle = "#fff"; cg.lineWidth = 2;
+      cg.beginPath(); cg.arc(22, 22, 20, 0, 6.29); cg.stroke();
+      b.appendChild(cv);
+    } else {
+      var dot = document.createElement("span");
+      dot.className = "skinDot";
+      dot.style.background = "#" + s.color.toString(16).padStart(6, "0");
+      b.appendChild(dot);
+    }
+    b.addEventListener("click", function(){
+      applySkin(s.id);
+      buildSkinPicker();   // refresh the selection ring
+    });
+    row.appendChild(b);
+  });
 }
 
 /* ================= UI wiring ================= */
@@ -1468,6 +1757,8 @@ chkSpeaking.addEventListener("change", function(){
 
 /* ================= init ================= */
 applyAudio();
+applySkin(skinName);   // saved ball, or Pollito by default
+buildSkinPicker();
 syncSliders();
 updateHearts();
 el("menuBest").textContent = best > 0 ? ("Best distance: " + best + " m") : "";
