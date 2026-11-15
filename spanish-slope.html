@@ -1747,27 +1747,52 @@ scene.add(points);
 /* ---------- background tetrahedrons (scenery) ----------
    Round 5 (Brant, Nov 14): decorative 3D tetrahedra (triangular
    pyramids) drifting past off to the sides of the track, so the run
-   has scenery rolling by. They are NEVER on the track (x is always
-   10-24 units out, the track is 5 wide) and never cause a crash —
-   pure scenery, wireframe neon so they read as shapes, not obstacles.
-   A handful of shared geometries/materials, recycled as they pass
-   behind the ball. Their height follows the descending track. */
-var TET_COUNT = 12;
-var tetGeo = new THREE.TetrahedronGeometry(2.5);
+   has scenery rolling by. Round 14 (Brant, Nov 14): he studied the
+   original Slope and found it is the SIDE SCENERY that sells the
+   downhill — tall grid walls streaming past on both sides — so the
+   field is ramped up 4x (12 -> 48 tets), bigger (three sizes, up to
+   7), and closer to the track edges, forming tall walls on both
+   sides. The key: each tet's height is WORLD-ANCHORED — set once at
+   placement from the track height at ITS OWN position plus a wide
+   offset (-8..+55), then NEVER updated while the ball approaches.
+   The ball/camera descend with the track, so every tet streams
+   UPWARD past the player on both sides — that rising-past-the-sides
+   motion is what reads as "going downhill", instead of the old
+   2..9-above-the-track hug that moved with the slope. They are
+   NEVER on the track (inner edge always >= 6 units out, the track
+   is 5 wide, fall-off at 5.3) and never cause a crash — pure
+   scenery, wireframe neon so they read as shapes, not obstacles.
+   Three shared geometries / three shared materials, recycled as
+   they pass behind the ball. */
+var TET_COUNT = 48;
+var TET_SIZES = [2.5, 4.5, 7];
+var TET_Y_MIN = -8, TET_Y_MAX = 55;   // height offset above the track at the tet's own position
+var tetGeos = TET_SIZES.map(function(s){ return new THREE.TetrahedronGeometry(s); });
 var tetMats = [
   new THREE.MeshBasicMaterial({color:0x22d3ee, wireframe:true, transparent:true, opacity:0.55}),
   new THREE.MeshBasicMaterial({color:0xec4899, wireframe:true, transparent:true, opacity:0.55}),
   new THREE.MeshBasicMaterial({color:0x8b5cf6, wireframe:true, transparent:true, opacity:0.55})
 ];
 var tets = [];
-function placeTet(mesh, zMin, zMax){
-  mesh.position.x = (Math.random() < 0.5 ? -1 : 1) * (10 + Math.random()*14);
-  mesh.position.z = -(zMin + Math.random()*(zMax - zMin));
-  mesh.position.y = trackY(-mesh.position.z) + 2 + Math.random()*7;
+function placeTetXY(mesh){
+  /* Lateral position: inner edge stays >= 6 units from the centre
+     (6 + size + up to 8 out), clear of the track (5 wide) and the
+     fall-off line (5.3) for every size class. Height: WORLD-ANCHORED
+     (round 14) — a wide offset above the track at this tet's own
+     position, fixed at placement, so the tet streams upward past the
+     descending player instead of hugging the slope. */
+  var size = TET_SIZES[mesh.userData.size];
+  mesh.position.x = (Math.random() < 0.5 ? -1 : 1) * (6 + size + Math.random()*8);
+  mesh.position.y = trackY(-mesh.position.z) + TET_Y_MIN + Math.random()*(TET_Y_MAX - TET_Y_MIN);
   mesh.rotation.set(Math.random()*6.28, Math.random()*6.28, Math.random()*6.28);
 }
+function placeTet(mesh, zMin, zMax){
+  mesh.position.z = -(zMin + Math.random()*(zMax - zMin));
+  placeTetXY(mesh);
+}
 for(var ti=0; ti<TET_COUNT; ti++){
-  var tet = new THREE.Mesh(tetGeo, tetMats[ti % tetMats.length]);
+  var tet = new THREE.Mesh(tetGeos[ti % tetGeos.length], tetMats[ti % tetMats.length]);
+  tet.userData.size = ti % tetGeos.length;
   tet.userData.rx = 0.2 + Math.random()*0.4;
   tet.userData.ry = 0.2 + Math.random()*0.4;
   placeTet(tet, 50, 650);
@@ -2341,15 +2366,20 @@ function frame(){
   }
   pGeo.attributes.position.needsUpdate = true;
   /* Background tetrahedrons tumble slowly and recycle ahead once
-     they pass behind the ball — scenery, never obstacles. */
+     they pass behind the ball — scenery, never obstacles. Round 14:
+     the recycle re-rolls the lateral position and the WORLD-ANCHORED
+     height at the new spot (placeTetXY), so the wall field stays
+     varied and every tet keeps streaming upward past the descending
+     player. The jump is 650, so a recycled tet lands at most ~620
+     ahead of the ball — at the fog's far edge, fading in, never
+     popping into view. */
   for(var i=0;i<tets.length;i++){
     var tet = tets[i];
     tet.rotation.x += tet.userData.rx*dt;
     tet.rotation.y += tet.userData.ry*dt;
     if(tet.position.z > ballZ + 30){
       tet.position.z -= 650;
-      tet.position.x = (Math.random() < 0.5 ? -1 : 1) * (10 + Math.random()*14);
-      tet.position.y = trackY(-tet.position.z) + 2 + Math.random()*7;
+      placeTetXY(tet);
     }
   }
   /* Camera follows the ball, looking forward and down the slope. The
