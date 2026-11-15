@@ -22,7 +22,6 @@
   .hudBox .small{ font-size:.82rem; color:#cbd5e1; }
   .hudBox .small b{ color:#fdba74; }
   #hudRight{ display:flex; gap:8px; align-items:flex-start; pointer-events:auto; }
-  #hearts{ font-size:1.25rem; letter-spacing:2px; color:#f87171; }
   .iconBtn{ background:rgba(2,6,23,.62); border:1px solid rgba(148,163,184,.35); color:#fff;
     border-radius:12px; width:44px; height:44px; font-size:1.25rem; cursor:pointer; }
   .iconBtn:active{ background:rgba(249,115,22,.5); }
@@ -33,6 +32,14 @@
     color:#e2e8f0; border-radius:999px; padding:8px 16px; font-size:1rem; font-weight:600;
     white-space:nowrap; opacity:1; transition:opacity .6s ease; }
   #hopHint.fade{ opacity:0; }
+  /* Same pill, used for the "free revive used" message after a banked
+     pass is spent on a crash. Sits a touch higher so the two pills
+     never overlap if both ever show at once. */
+  #freePassMsg{ position:fixed; left:50%; bottom:22%; transform:translateX(-50%); z-index:6;
+    pointer-events:none; background:rgba(2,6,23,.55); border:1px solid rgba(250,204,21,.55);
+    color:#fde68a; border-radius:999px; padding:8px 16px; font-size:1rem; font-weight:600;
+    white-space:nowrap; opacity:1; transition:opacity .6s ease; }
+  #freePassMsg.fade{ opacity:0; }
 
   /* ---------- ball skin picker (home menu) ---------- */
   .skinLabel{ font-size:.92rem; color:#cbd5e1; margin:14px 0 6px; }
@@ -124,22 +131,22 @@
     <div class="big"><span id="hudDist">0</span> m</div>
     <div class="small">Score <b id="hudScore">0</b> &nbsp;·&nbsp; Speed <b id="hudSpeed">0</b></div>
     <div class="small">Words <b id="hudWords">0</b> &nbsp;·&nbsp; Best <b id="hudBest">0</b> m</div>
-    <div class="small">♥ <b id="hudMeter">0/5</b> to next free revive</div>
+    <div class="small hidden" id="hudPassRow">🎟 Free revive ×<b id="hudPasses">0</b></div>
   </div>
   <div id="hudRight">
-    <div class="hudBox"><span id="hearts">♥♥♥</span></div>
     <button class="iconBtn" id="btnMute" type="button" title="Mute">🔊</button>
     <button class="iconBtn" id="btnPause" type="button" title="Pause">⏸</button>
   </div>
 </div>
 <div id="hopHint" class="hidden">↑ Tap to hop</div>
+<div id="freePassMsg" class="hidden">🎟 Free revive used — back to rolling!</div>
 <div id="menu" class="overlay">
   <div class="card">
     <h1>Slope <span class="es">Español</span></h1>
     <p>Roll the ball down the endless slope. Steer to dodge the red blocks and the gaps — and grab the Spanish word tiles as you go!</p>
     <p class="sub">← → or A / D to steer &nbsp;·&nbsp; drag left / right on touch<br>
     Tap, Space, or ↑ to hop over a block or a gap.<br>
-    Crash and you get a quiz revive: answer 4 of 5 Spanish questions to keep rolling. You start with 3 revives per run — say 5 collected words correctly to earn a free extra revive (up to 5).</p>
+    Crash and you get a quiz revive: answer 4 of 5 Spanish questions to keep rolling. Revive as many times as you like — there are 50 different revives. Roll through a word tile and say the word correctly to earn a free revive: the next time you crash, you skip the quiz entirely.</p>
     <div class="skinLabel">Choose your ball:</div>
     <div class="skinRow" id="skinRow"></div>
     <label class="checkRow"><input type="checkbox" id="chkSpeaking"> 🎤 Speaking activities — also say each answer out loud</label>
@@ -155,8 +162,8 @@
     <h2>How to play</h2>
     <p>Your ball rolls downhill on its own, faster and faster. Steer left and right to dodge the red blocks and the gaps in the track. If you roll off a gap or hit a block, you crash.</p>
     <p><b>Hop:</b> tap, press Space, or press ↑ to hop — a big bounce that clears a block or a gap. You can hop about once every half second, so time it.</p>
-    <p>Glowing word tiles float over the track — roll through one and the game pauses so you can say the word out loud. Say 5 words correctly to earn a <b>free extra revive</b> (up to 5 hearts). Don't want to speak it? Tap “Keep rolling” to skip — skipping earns no progress.</p>
-    <p>When you crash, you get a <b>quiz revive</b>: 5 Spanish questions. Get 4 or 5 right and you keep rolling, with a short head start and 2 seconds of flashing invincibility. You start with 3 revives per run. The questions follow the same order as Spanish Dash — cognates, then common words, then present tense, then possessive pronouns, then ser vs. estar — ten revives of each, and then they start over, so there are 50 different revives.</p>
+    <p>Glowing word tiles float over the track — roll through one and the game pauses so you can say the word out loud. Say it correctly and you earn a <b>free revive</b>: the next time you crash you revive instantly with no quiz. Free revives stack — say more words, bank more skips. Don't want to speak it? Tap “Keep rolling” to skip — skipping earns nothing.</p>
+    <p>When you crash, you get a <b>quiz revive</b>: 5 Spanish questions. Get 4 or 5 right and you keep rolling, with a short head start and 2 seconds of flashing invincibility. You can revive as many times as you like. The questions follow the same order as Spanish Dash — cognates, then common words, then present tense, then possessive pronouns, then ser vs. estar — ten revives of each, and then they start over, so there are 50 different revives.</p>
     <p class="sub">Keyboard: ← → or A / D to steer, Space or ↑ to hop, P or Esc to pause, M to mute.<br>Touch: drag left or right to steer, tap to hop.</p>
     <button class="bigBtn" id="btnHowClose" type="button">Got it</button>
   </div>
@@ -199,7 +206,7 @@
 <div id="tilePause" class="overlay hidden">
   <div class="card">
     <h2>🎤 Say the word!</h2>
-    <p class="sub">Say it out loud to earn progress toward a free revive.</p>
+    <p class="sub">Say it out loud — say it right and you earn a free revive (your next crash skips the quiz)!</p>
     <div id="tileWord"></div>
     <div id="tileMeaning"></div>
     <div class="speakRow">
@@ -558,15 +565,20 @@ var BALL_R = 0.5;
    skull) were unreadable. The ball still rolls forward fast; only its
    spin is slowed, to 40% of the physically-accurate rate, so a design
    stays on screen long enough to read. */
-var SPIN_FACTOR = 0.4;
+var SPIN_FACTOR = 0.15;      // ball roll slowed so the skin art stays readable (round 6: was 0.4)
+var SPIN_MAX = 1.5;          // max visible roll, rad/s — at full speed the physical
+                             // roll is ~170 rad/s (a blur); the face must stay
+                             // recognisable, so the ball never tumbles faster
+                             // than a slow roll. Forward motion + track convey
+                             // the speed, not the spin.
 var LAT_SPEED = 24;          // max lateral (steering) speed, units/s — kept responsive at the new top speed 87
 var BASE_SPEED = 31.5;       // starting forward speed — round 5: 25% down from the doubled 42
 var MAX_SPEED = 87;          // top forward speed — round 5: 25% down from the doubled 116 (same ramp shape, ~23 s to top)
 var BLOCK_HIT = 0.4;         // block half-width inflation for a hit (ball radius, forgiving)
 var GAP_HIT = 0.25;          // gap inset for a fall (ball centre must be this far inside the hole)
-var MAX_REVIVES = 3;
-var MAX_HEARTS = 5;          // max hearts: 3 to start + bonus hearts from word tiles
-var TILES_PER_BONUS = 5;     // word tiles collected per free bonus revive
+/* Revives are UNLIMITED (Brant, round 6): every crash offers the quiz,
+   pass it (4 of 5) and you keep rolling, fail it and the run is over.
+   There is no heart count to run out of — no revive limit, no hearts. */
 var REVIVE_PASS = 4;         // correct answers needed out of 5 to revive
 /* Hop: tap / Space / Up makes the ball bounce — a BIG hop, not a small
    one. Max height HOP_V^2/(2*HOP_G) ≈ 2.2, well above a 1.2-tall block
@@ -583,14 +595,14 @@ var HOP_CLEAR = 1.25;        // ball this high above the track clears a block
    from the bottom (Brant: 1/3 was too much, 1/6 too little). The track
    descends at ~12.1°, so the camera pitches UP (negative pitch) — look
    target well above camera height — making the track direction sit ~20°
-   below the view centre, i.e. the vanishing point at 1/4 up. Round 5:
-   the camera is MORE ELEVATED (3.5, was 2.5) so the player sees much
-   further down the track to the vanishing point and the slope reads
-   better; the look height rises by the same amount (7.1), so the
-   look-target gap stays 3.6 and the vanishing point stays at 1/4 up.
-   The ball sits lower on screen (~85% down) but stays clearly visible. */
-var CAM_HEIGHT = 3.5;        // camera height above the ball (round 5: raised for a far-seeing, elevated view)
-var CAM_LOOK_HEIGHT = 7.1;   // lookAt height above the ball, 16 ahead (raised with CAM_HEIGHT, gap stays 3.6)
+   below the view centre, i.e. the vanishing point at 1/4 up. Round 6:
+   the camera is HIGHER still (4.5, was 3.5) and pulled a little further
+   back (12, was 10) so the downhill reads stronger — the player sees
+   more of the track from above and further ahead. The look height rises
+   with it (8.1), so the look-target gap stays 3.6 and the vanishing
+   point stays at ~1/4 up; the ball sits ~86% down, clearly visible. */
+var CAM_HEIGHT = 4.5;        // camera height above the ball (round 6: raised again for a stronger downhill feel)
+var CAM_LOOK_HEIGHT = 8.1;   // lookAt height above the ball, 16 ahead (raised with CAM_HEIGHT, gap stays 3.6)
 /* The downhill: the track drops SLOPE_DROP units per 20-unit segment
    (grade 0.21, ~12°) so the descent is unmistakable, not a flat
    plane. trackY(d) is the track surface height at distance d. */
@@ -606,8 +618,10 @@ function trackY(d){ return -d * SLOPE_GRADE; }
 var state = "menu";          // menu | playing | paused | revive | over | tile | falling
 var speakMode = "revive";    // which overlay the Say-it button belongs to ("revive" | "tile")
 var tileTarget = "";         // the Spanish word on the current word-tile pause
-var dist = 0, score = 0, wordsGot = 0, spokenSinceBonus = 0;
-var revivesLeft = MAX_REVIVES, reviveNum = 0;
+var dist = 0, score = 0, wordsGot = 0;
+var reviveNum = 0;   // how many times the player has revived this run (a count, never a limit)
+var freePasses = 0;  // banked free revives: one per correctly-spoken collected word;
+                     // each one skips the quiz on the next crash (round 6)
 var ballX = 0, ballVX = 0, ballZ = 0, speedMul = 1, invincibleUntil = 0;
 var ballHopY = 0, ballHopV = 0, nextHopAt = 0;   // hop state (height above track)
 var fallDrop = 0, fallV = 0, fallT = 0;   // gap-death fall animation
@@ -627,7 +641,9 @@ var canvas = el("game"), hudEl = el("hud"), hopHintEl = el("hopHint");
 var menuEl = el("menu"), howEl = el("howMenu"), pauseEl = el("pauseMenu"),
     reviveEl = el("revive"), overEl = el("over");
 var hudDist = el("hudDist"), hudScore = el("hudScore"), hudSpeed = el("hudSpeed"),
-    hudWords = el("hudWords"), hudBest = el("hudBest"), heartsEl = el("hearts");
+    hudWords = el("hudWords"), hudBest = el("hudBest"),
+    hudPassRow = el("hudPassRow"), hudPasses = el("hudPasses"),
+    freePassMsgEl = el("freePassMsg");
 var reviveTitle = el("reviveTitle"), reviveSub = el("reviveSub"),
     quizCount = el("quizCount"), quizStepEl = el("quizStep"),
     quizPrompt = el("quizPrompt"), quizTarget = el("quizTarget"),
@@ -698,37 +714,115 @@ function skinBlobs(g, W, H, base, cols, n, rMin, rMax, rng){
     g.beginPath(); g.ellipse(x, y, r, r*0.7, rng()*3, 0, 6.29); g.fill();
   }
 }
+/* Face helpers: every skin's character is drawn BIG and BOLD, centred
+   on the camera-facing side of the sphere (canvas x=128 is u=0.25, the
+   +Z side the camera sees; y~100 is the visible centre, slightly above
+   the equator because the camera sits above the ball). A second, smaller
+   design sits on the back (x=384, u=0.75) so the ball never shows a
+   blank side while it rolls. */
+function skinEyes(g, cx, cy, rx, ry){
+  g.fillStyle = "#0f172a";
+  g.beginPath(); g.ellipse(cx - 36, cy, rx, ry, 0, 0, 6.29); g.fill();
+  g.beginPath(); g.ellipse(cx + 36, cy, rx, ry, 0, 0, 6.29); g.fill();
+  g.fillStyle = "#ffffff";
+  g.beginPath(); g.ellipse(cx - 30, cy - 7, rx*0.35, ry*0.35, 0, 0, 6.29); g.fill();
+  g.beginPath(); g.ellipse(cx + 42, cy - 7, rx*0.35, ry*0.35, 0, 0, 6.29); g.fill();
+}
+function skinStar(g, x, y, rO, rI, points){
+  g.beginPath();
+  for(var i=0;i<points*2;i++){
+    var r = (i % 2 === 0) ? rO : rI;
+    var a = -Math.PI/2 + i*Math.PI/points;
+    var px = x + r*Math.cos(a), py = y + r*Math.sin(a);
+    if(i === 0) g.moveTo(px, py); else g.lineTo(px, py);
+  }
+  g.closePath(); g.fill();
+}
+function skinFlake(g, x, y, len, w){
+  g.strokeStyle = "#ffffff"; g.lineWidth = w; g.lineCap = "round";
+  for(var k=0;k<3;k++){
+    var a = k*Math.PI/3;
+    g.beginPath();
+    g.moveTo(x - len*Math.cos(a), y - len*Math.sin(a));
+    g.lineTo(x + len*Math.cos(a), y + len*Math.sin(a));
+    g.stroke();
+  }
+  g.fillStyle = "#ffffff";
+  g.beginPath(); g.ellipse(x, y, 12, 12, 0, 0, 6.29); g.fill();
+}
 var skinTextures = {};
 function skinTexture(kind){
   if(skinTextures[kind]) return skinTextures[kind];
   var tex;
-  if(kind === "cow"){
-    /* White with a few LARGE black patches — a cow at a glance. */
-    tex = makeSkinTexture(function(g,W,H){ skinBlobs(g,W,H,"#f8fafc",["#111827"],6,30,58, mulberry32(11)); });
+  if(kind === "pollito"){
+    /* Pollito himself: white chicken face — red comb, big black eyes,
+       orange beak. This is the default skin and it MUST read as Pollito. */
+    tex = makeSkinTexture(function(g,W,H){
+      g.fillStyle = "#f8fafc"; g.fillRect(0, 0, W, H);
+      /* comb: three red scallops across the top of the face */
+      g.fillStyle = "#ef4444";
+      g.beginPath(); g.ellipse(96, 42, 20, 24, 0, 0, 6.29); g.fill();
+      g.beginPath(); g.ellipse(128, 32, 22, 28, 0, 0, 6.29); g.fill();
+      g.beginPath(); g.ellipse(160, 42, 20, 24, 0, 0, 6.29); g.fill();
+      skinEyes(g, 128, 98, 17, 20);
+      /* beak: big orange diamond */
+      g.fillStyle = "#f97316";
+      g.beginPath(); g.moveTo(128, 124); g.lineTo(160, 142); g.lineTo(128, 164); g.lineTo(96, 142); g.closePath(); g.fill();
+      /* back of the head: orange tail feathers + a hint of comb */
+      g.fillStyle = "#f97316";
+      g.beginPath(); g.moveTo(384, 150); g.lineTo(410, 110); g.lineTo(420, 150); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(384, 150); g.lineTo(358, 110); g.lineTo(348, 150); g.closePath(); g.fill();
+      g.fillStyle = "#ef4444";
+      g.beginPath(); g.ellipse(384, 40, 20, 22, 0, 0, 6.29); g.fill();
+    });
+  } else if(kind === "cow"){
+    /* White with LARGE black patches and a pink muzzle face. */
+    tex = makeSkinTexture(function(g,W,H){
+      g.fillStyle = "#f8fafc"; g.fillRect(0, 0, W, H);
+      g.fillStyle = "#111827";
+      g.beginPath(); g.ellipse(310, 55, 48, 38, 0.4, 0, 6.29); g.fill();
+      g.beginPath(); g.ellipse(435, 160, 52, 44, -0.3, 0, 6.29); g.fill();
+      g.beginPath(); g.ellipse(52, 218, 42, 34, 0.2, 0, 6.29); g.fill();
+      g.beginPath(); g.ellipse(330, 228, 44, 30, 0, 0, 6.29); g.fill();
+      /* face: dark eyes + big pink muzzle with nostrils */
+      skinEyes(g, 128, 92, 15, 18);
+      g.fillStyle = "#f9a8d4";
+      g.beginPath(); g.ellipse(128, 152, 40, 24, 0, 0, 6.29); g.fill();
+      g.fillStyle = "#111827";
+      g.beginPath(); g.ellipse(112, 152, 6, 9, 0, 0, 6.29); g.fill();
+      g.beginPath(); g.ellipse(144, 152, 6, 9, 0, 0, 6.29); g.fill();
+      /* back: one more big patch */
+      g.beginPath(); g.ellipse(384, 110, 46, 40, 0.3, 0, 6.29); g.fill();
+    });
   } else if(kind === "snowman"){
     /* White with a big face: two large coal eyes, a big carrot nose,
-       a coal smile and a button — the face tumbles as the ball rolls. */
+       a coal smile and a button. */
     tex = makeSkinTexture(function(g,W,H){
       g.fillStyle = "#f1f5f9"; g.fillRect(0, 0, W, H);
-      g.fillStyle = "#0f172a";
-      g.beginPath(); g.ellipse(196, 96, 22, 26, 0, 0, 6.29); g.fill();
-      g.beginPath(); g.ellipse(316, 96, 22, 26, 0, 0, 6.29); g.fill();
+      skinEyes(g, 128, 96, 19, 22);
       g.fillStyle = "#f97316";
-      g.beginPath(); g.moveTo(246, 128); g.lineTo(330, 146); g.lineTo(246, 166); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(128, 122); g.lineTo(206, 140); g.lineTo(128, 160); g.closePath(); g.fill();
       g.fillStyle = "#0f172a";
       for(var i=0;i<5;i++){
-        g.beginPath(); g.ellipse(206 + i*25, 184 - Math.abs(i-2)*6, 9, 9, 0, 0, 6.29); g.fill();
+        g.beginPath(); g.ellipse(88 + i*20, 182 - Math.abs(i-2)*6, 8, 8, 0, 0, 6.29); g.fill();
       }
-      g.beginPath(); g.ellipse(256, 220, 12, 12, 0, 0, 6.29); g.fill();
+      g.beginPath(); g.ellipse(128, 224, 11, 11, 0, 0, 6.29); g.fill();
+      /* back: two more coal buttons */
+      g.beginPath(); g.ellipse(384, 90, 11, 11, 0, 0, 6.29); g.fill();
+      g.beginPath(); g.ellipse(384, 180, 11, 11, 0, 0, 6.29); g.fill();
     });
   } else if(kind === "turtle"){
-    /* Green with big shell scutes: thick dark outlines, light centres. */
+    /* Green shell: big scutes with thick dark outlines, light centres.
+       One scute is centred on the face (128, 100) and carries a cute
+       turtle face; the pattern tiles across the seam (x=-42 redrawn
+       at 470) so there is never a blank strip. */
     tex = makeSkinTexture(function(g,W,H){
       g.fillStyle = "#22c55e"; g.fillRect(0, 0, W, H);
       g.fillStyle = "#4ade80";
       g.strokeStyle = "#14532d"; g.lineWidth = 10;
-      for(var cx=0;cx<3;cx++) for(var cy=0;cy<2;cy++){
-        var x = 86 + cx*170, y = 64 + cy*128;
+      var xs = [-42, 128, 298, 470];
+      for(var xi=0;xi<xs.length;xi++) for(var cy=0;cy<2;cy++){
+        var x = xs[xi], y = 64 + cy*128;
         g.beginPath();
         for(var k=0;k<6;k++){
           var a = k*Math.PI/3 + Math.PI/6;
@@ -737,6 +831,72 @@ function skinTexture(kind){
         }
         g.closePath(); g.fill(); g.stroke();
       }
+      /* turtle face inside the centre scute */
+      g.fillStyle = "#14532d";
+      g.beginPath(); g.ellipse(112, 96, 8, 10, 0, 0, 6.29); g.fill();
+      g.beginPath(); g.ellipse(144, 96, 8, 10, 0, 0, 6.29); g.fill();
+      g.strokeStyle = "#14532d"; g.lineWidth = 5;
+      g.beginPath(); g.arc(128, 112, 16, 0.25*Math.PI, 0.75*Math.PI); g.stroke();
+    });
+  } else if(kind === "cyan"){
+    /* Cyan with a BIG white snowflake on the face. */
+    tex = makeSkinTexture(function(g,W,H){
+      g.fillStyle = "#22d3ee"; g.fillRect(0, 0, W, H);
+      skinFlake(g, 128, 110, 62, 14);
+      g.fillStyle = "#ffffff";
+      var rng = mulberry32(7);
+      for(var i=0;i<14;i++){
+        g.beginPath(); g.ellipse(rng()*512, rng()*256, 6, 6, 0, 0, 6.29); g.fill();
+      }
+      skinFlake(g, 384, 110, 34, 9);
+    });
+  } else if(kind === "magenta"){
+    /* Magenta with a BIG white star on the face. */
+    tex = makeSkinTexture(function(g,W,H){
+      g.fillStyle = "#ec4899"; g.fillRect(0, 0, W, H);
+      g.fillStyle = "#ffffff";
+      skinStar(g, 128, 110, 66, 28, 5);
+      var rng = mulberry32(9);
+      for(var i=0;i<14;i++){
+        g.beginPath(); g.ellipse(rng()*512, rng()*256, 6, 6, 0, 0, 6.29); g.fill();
+      }
+      skinStar(g, 384, 110, 36, 15, 5);
+    });
+  } else if(kind === "lime"){
+    /* Lime with a BIG dark lightning bolt on the face. */
+    tex = makeSkinTexture(function(g,W,H){
+      g.fillStyle = "#a3e635"; g.fillRect(0, 0, W, H);
+      g.fillStyle = "#3f6212";
+      g.beginPath();
+      g.moveTo(148, 40); g.lineTo(108, 130); g.lineTo(132, 130);
+      g.lineTo(104, 190); g.lineTo(158, 96); g.lineTo(132, 96);
+      g.closePath(); g.fill();
+      g.fillStyle = "#ffffff";
+      var rng = mulberry32(13);
+      for(var i=0;i<12;i++){
+        g.beginPath(); g.ellipse(rng()*512, rng()*256, 6, 6, 0, 0, 6.29); g.fill();
+      }
+      g.fillStyle = "#3f6212";
+      g.beginPath();
+      g.moveTo(396, 70); g.lineTo(372, 125); g.lineTo(388, 125);
+      g.lineTo(368, 165); g.lineTo(404, 105); g.lineTo(388, 105);
+      g.closePath(); g.fill();
+    });
+  } else if(kind === "purple"){
+    /* Purple with a BIG white crescent moon and stars on the face. */
+    tex = makeSkinTexture(function(g,W,H){
+      g.fillStyle = "#a78bfa"; g.fillRect(0, 0, W, H);
+      g.fillStyle = "#ffffff";
+      g.beginPath(); g.ellipse(128, 110, 56, 56, 0, 0, 6.29); g.fill();
+      g.fillStyle = "#a78bfa";
+      g.beginPath(); g.ellipse(152, 96, 50, 50, 0, 0, 6.29); g.fill();
+      g.fillStyle = "#ffffff";
+      skinStar(g, 210, 60, 14, 6, 4);
+      skinStar(g, 60, 170, 11, 5, 4);
+      skinStar(g, 200, 180, 9, 4, 4);
+      skinStar(g, 384, 110, 34, 15, 4);
+      g.beginPath(); g.ellipse(384, 60, 7, 7, 0, 0, 6.29); g.fill();
+      g.beginPath(); g.ellipse(384, 170, 7, 7, 0, 0, 6.29); g.fill();
     });
   } else { /* skull — sugar skull: cream with two BIG dark eye sockets, nose, teeth, festive dots */
     tex = makeSkinTexture(function(g,W,H){
@@ -748,21 +908,29 @@ function skinTexture(kind){
         g.beginPath(); g.ellipse(rng()*512, rng()*256, 10, 10, 0, 0, 6.29); g.fill();
       }
       g.fillStyle = "#1f2937";
-      g.beginPath(); g.ellipse(180, 104, 34, 42, 0, 0, 6.29); g.fill();
-      g.beginPath(); g.ellipse(332, 104, 34, 42, 0, 0, 6.29); g.fill();
-      g.beginPath(); g.moveTo(256, 156); g.lineTo(276, 188); g.lineTo(236, 188); g.closePath(); g.fill();
-      for(var t=0;t<5;t++) g.fillRect(196 + t*30, 208, 8, 34);
+      g.beginPath(); g.ellipse(88, 104, 34, 42, 0, 0, 6.29); g.fill();
+      g.beginPath(); g.ellipse(168, 104, 34, 42, 0, 0, 6.29); g.fill();
+      g.beginPath(); g.moveTo(128, 156); g.lineTo(148, 188); g.lineTo(108, 188); g.closePath(); g.fill();
+      for(var t=0;t<5;t++) g.fillRect(88 + t*20, 208, 7, 30);
+      /* back: a festive flower */
+      g.fillStyle = "#ec4899";
+      for(var p=0;p<6;p++){
+        var a = p*Math.PI/3;
+        g.beginPath(); g.ellipse(384 + 26*Math.cos(a), 110 + 26*Math.sin(a), 12, 12, 0, 0, 6.29); g.fill();
+      }
+      g.fillStyle = "#facc15";
+      g.beginPath(); g.ellipse(384, 110, 12, 12, 0, 0, 6.29); g.fill();
     });
   }
   skinTextures[kind] = tex;
   return tex;
 }
 var SKINS = [
-  {id:"pollito", label:"Pollito", color:0xff7a1a, emissive:0xff5e00, emissiveIntensity:1.4, light:0xffa040},
-  {id:"cyan", label:"Cyan", color:0x22d3ee, emissive:0x0891b2, emissiveIntensity:1.4, light:0x67e8f9},
-  {id:"magenta", label:"Magenta", color:0xec4899, emissive:0xbe185d, emissiveIntensity:1.4, light:0xf472b6},
-  {id:"lime", label:"Lime", color:0xa3e635, emissive:0x65a30d, emissiveIntensity:1.4, light:0xbef264},
-  {id:"purple", label:"Purple", color:0xa78bfa, emissive:0x7c3aed, emissiveIntensity:1.4, light:0xc4b5fd},
+  {id:"pollito", label:"Pollito", tex:"pollito", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xffa040},
+  {id:"cyan", label:"Cyan", tex:"cyan", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0x67e8f9},
+  {id:"magenta", label:"Magenta", tex:"magenta", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xf472b6},
+  {id:"lime", label:"Lime", tex:"lime", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xbef264},
+  {id:"purple", label:"Purple", tex:"purple", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xc4b5fd},
   {id:"cow", label:"Cow", tex:"cow", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xffffff},
   {id:"snowman", label:"Snowman", tex:"snowman", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xe0f2fe},
   {id:"turtle", label:"Turtle", tex:"turtle", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0x86efac},
@@ -956,9 +1124,21 @@ function planSegment(idx, dist, rng, prevGap){
   }
   }   /* end safe-start guard (idx >= 5) */
   /* Word tile on quiet segments (every 5th segment, never on a gap,
-     never overlapping a block). */
+     never overlapping a block). The tile sits at the centre of the
+     WIDEST free lane on its segment — the safe path the player is
+     already steering through — so it is actually collectable instead
+     of sitting at a random x the player never visits (round 6: the
+     old random placement meant most tiles were missed and free
+     revives were nearly unearnable). */
   if(!plan.gap && idx % 5 === 2){
-    var tx = -4 + rng()*8, ok = true;
+    var free = freeIntervals(plan.blocks, null);
+    var widest = free[0], wMax = 0;
+    for(var fi=0;fi<free.length;fi++){
+      if(free[fi][1] - free[fi][0] > wMax){ wMax = free[fi][1] - free[fi][0]; widest = free[fi]; }
+    }
+    var tx = (widest[0] + widest[1])/2 + (rng() - 0.5)*Math.min(1.2, wMax*0.4);
+    tx = Math.max(-4, Math.min(4, tx));
+    var ok = true;
     for(var b=0;b<plan.blocks.length;b++){
       if(Math.abs(tx - plan.blocks[b].x) < plan.blocks[b].w/2 + 1.0){ ok=false; break; }
     }
@@ -1215,12 +1395,16 @@ function updateHUD(){
   hudSpeed.textContent = Math.round(curSpeed());
   hudWords.textContent = wordsGot;
   hudBest.textContent = best;
-  /* Bonus-revive meter: tiles toward the next free heart. */
-  var meter = el("hudMeter");
-  if(meter) meter.textContent = revivesLeft >= MAX_HEARTS ? "MAX" : (spokenSinceBonus + "/" + TILES_PER_BONUS);
-}
-function updateHearts(){
-  heartsEl.textContent = "♥".repeat(revivesLeft) + "♡".repeat(MAX_HEARTS - revivesLeft);
+  /* Banked free revives (one per correctly-spoken collected word):
+     show the badge only while at least one is banked. */
+  if(hudPassRow){
+    if(freePasses > 0){
+      hudPassRow.classList.remove("hidden");
+      hudPasses.textContent = freePasses;
+    } else {
+      hudPassRow.classList.add("hidden");
+    }
+  }
 }
 /* ---------- run control ---------- */
 /* ---------- run-start hop hint: a small "Tap to hop" pill, low on the
@@ -1249,8 +1433,8 @@ function hideHopHint(){
 function startRun(){
   audioEnsure();
   musicStart();
-  dist = 0; score = 0; wordsGot = 0; spokenSinceBonus = 0;
-  revivesLeft = MAX_REVIVES; reviveNum = 0;
+  dist = 0; score = 0; wordsGot = 0;
+  reviveNum = 0; freePasses = 0;
   ballX = 0; ballVX = 0; ballZ = 0; speedMul = 1; invincibleUntil = 0;
   ballHopY = 0; ballHopV = 0; nextHopAt = 0; fallDrop = 0; fallV = 0; fallT = 0; zBefore = 0;
   PAIR_USED = {};   // fresh question session each run
@@ -1264,7 +1448,7 @@ function startRun(){
   howEl.classList.add("hidden");
   tileEl.classList.add("hidden");
   hudEl.classList.add("on");
-  updateHearts(); updateHUD();
+  updateHUD();
   state = "playing";
   showHopHint();
 }
@@ -1303,6 +1487,7 @@ function showMenu(){
 }
 function gameOver(){
   hideHopHint();
+  hideFreePassMsg();
   state = "over";
   musicStop();
   stingOver();
@@ -1334,13 +1519,39 @@ function crash(cause){
   afterCrash(cause);
 }
 function afterCrash(cause){
-  if(revivesLeft > 0){
-    revivesLeft--;
-    updateHearts();
-    startRevive(cause);
+  /* A banked free pass (earned by speaking a collected word correctly)
+     revives the player INSTANTLY with no quiz, and the pass is spent.
+     With no pass banked, the crash offers the revive quiz as normal —
+     revives themselves are unlimited (round 6). */
+  if(freePasses > 0){
+    freePasses--;
+    updateHUD();
+    respawn();
+    showFreePassMsg();
   } else {
-    gameOver();
+    startRevive(cause);
   }
+}
+/* Brief "free revive used" pill after a pass is spent on a crash —
+   same look as the hop hint, fades on its own, never blocks play. */
+var freePassMsgTimer = null, freePassMsgGen = 0;
+function showFreePassMsg(){
+  freePassMsgGen++;
+  freePassMsgEl.classList.remove("hidden");
+  freePassMsgEl.classList.remove("fade");
+  if(freePassMsgTimer) clearTimeout(freePassMsgTimer);
+  freePassMsgTimer = setTimeout(hideFreePassMsg, 2500);
+}
+function hideFreePassMsg(){
+  if(freePassMsgTimer){ clearTimeout(freePassMsgTimer); freePassMsgTimer = null; }
+  if(freePassMsgEl.classList.contains("hidden") || freePassMsgEl.classList.contains("fade")) return;
+  freePassMsgEl.classList.add("fade");
+  var gen = freePassMsgGen;
+  setTimeout(function(){
+    if(gen !== freePassMsgGen) return;
+    freePassMsgEl.classList.add("hidden");
+    freePassMsgEl.classList.remove("fade");
+  }, 650);
 }
 function respawn(){
   stopListen(false);
@@ -1401,8 +1612,12 @@ function frame(){
   var ballY = BALL_R + trackY(dist);
   ballMesh.position.set(ballX, ballY + ballHopY - fallDrop, ballZ);
   /* The ball's visible roll follows its forward speed, slowed by
-     SPIN_FACTOR so the skin art stays readable (round 5). */
-  ballMesh.rotation.x -= curSpeed()*dt/BALL_R*SPIN_FACTOR * (state === "playing" ? 1 : 0);
+     SPIN_FACTOR and capped at SPIN_MAX rad/s so the skin art stays
+     readable at any speed (round 6) — the face must be recognisable,
+     so the ball never tumbles faster than a slow roll; the forward
+     motion and the track convey the speed, not the spin. */
+  var spinRate = Math.min(curSpeed()*SPIN_FACTOR/BALL_R, SPIN_MAX);
+  ballMesh.rotation.x -= spinRate*dt * (state === "playing" ? 1 : 0);
   if(state === "falling") ballMesh.rotation.x -= 8*dt;   // tumble while falling
   ballMesh.rotation.z = -ballVX*0.03;
   ballMesh.visible = !(state === "playing" && isInvincible() && Math.floor(t*10) % 2 === 0);
@@ -1449,7 +1664,7 @@ function frame(){
      stays steady while the ball bounces. */
   camera.position.x += ((ballX*0.5) - camera.position.x) * Math.min(1, dt*6);
   camera.position.y += ((ballY + CAM_HEIGHT) - camera.position.y) * Math.min(1, dt*6);
-  camera.position.z = ballZ + 10;
+  camera.position.z = ballZ + 12;
   camera.lookAt(ballX*0.75, ballY + CAM_LOOK_HEIGHT, ballZ - 16);
   renderer.render(scene, camera);
 }
@@ -1482,10 +1697,11 @@ function checkCollisions(){
   }
   if(plan.tile && !seg.tileTaken){
     var tileZ = blockZ;
-    if(ballZ <= tileZ + 1.3 && zBefore >= tileZ - 1.3 && Math.abs(ballX - plan.tile.x) < 1.4){
+    if(ballZ <= tileZ + 1.3 && zBefore >= tileZ - 1.3 && Math.abs(ballX - plan.tile.x) < 2.0){
       /* Collect the word: the game pauses and asks the player to SAY it.
-         Speaking it correctly earns progress toward a free revive
-         (5 correct = 1 heart, max 5). No points — score is distance only. */
+         Saying it correctly earns ONE free revive (a "skip the quiz"
+         pass for the next crash; passes stack, one per word). No
+         points — score is distance only. */
       seg.tileTaken = true;
       seg.tileMesh.visible = false;
       wordsGot++;
@@ -1498,13 +1714,14 @@ function escapeHtml(s){
   return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
 
-/* ================= word-tile pause: say the word for a free revive =================
+/* ================= word-tile pause: say the word, earn a free revive =================
    Rolling through a word tile pauses the run and shows the word. Say it
    out loud (same speech pattern as the revive Say-it: es-MX -> es-US,
    exact match on the whole word, 12 s timeout, tap-to-stop, unlimited
-   retries) and it counts toward a free revive: 5 correctly-spoken words
-   = 1 extra heart (max 5). "Keep rolling" skips with no progress — the
-   tile never traps the player. */
+   retries) and it earns ONE free revive: the next crash revives you
+   instantly with no quiz. Free revives stack — say more words, bank
+   more skips. "Keep rolling" skips with no reward — the tile never
+   traps the player. */
 function setTileFb(msg, cls){
   tileFb.textContent = msg;
   tileFb.className = "feedback" + (cls ? " " + cls : "");
@@ -1513,9 +1730,10 @@ function startTilePause(tile){
   speakMode = "tile";
   tileTarget = tile.sp;
   tileWord.textContent = tile.sp;
-  tileMeaning.textContent = tile.en + "  ·  say it for progress toward a free revive";
-  tileMeter.textContent = "Say " + (TILES_PER_BONUS - spokenSinceBonus) + " more word" +
-    ((TILES_PER_BONUS - spokenSinceBonus) === 1 ? "" : "s") + " correctly for a free revive";
+  tileMeaning.textContent = tile.en + "  ·  say it right and earn a free revive!";
+  tileMeter.textContent = wordsGot + " word" + (wordsGot === 1 ? "" : "s") +
+    " collected this run" + (freePasses > 0 ? "  ·  🎟 " + freePasses + " free revive" +
+    (freePasses === 1 ? "" : "s") + " banked" : "");
   setTileFb("", "");
   tileSayBtn.disabled = false;
   tileSayBtn.classList.remove("listening");
@@ -1525,20 +1743,13 @@ function startTilePause(tile){
   tileEl.classList.remove("hidden");
 }
 function tileCorrect(){
+  /* One correct word = one free revive (round 6): the next crash is
+     revived instantly with no quiz. Passes stack, one per word. */
   tileSayBtn.disabled = true;   // no double-scoring while the resume timer runs
-  spokenSinceBonus++;
-  var earned = false;
-  if(spokenSinceBonus >= TILES_PER_BONUS){
-    spokenSinceBonus = 0;
-    if(revivesLeft < MAX_HEARTS){
-      revivesLeft++;
-      updateHearts();
-      sfxWin();
-      earned = true;
-    }
-  }
+  freePasses++;
   updateHUD();
-  setTileFb("✓ Correct!" + (earned ? "  ♥ Free revive earned!" : ""), "ok");
+  sfxWin();
+  setTileFb("✓ ¡Correcto! 🎟 Free revive earned — your next crash skips the quiz!", "ok");
   setTimeout(function(){ if(state === "tile") resumeTile(); }, 900);
 }
 function resumeTile(){
@@ -1575,6 +1786,7 @@ function setQuizFb(msg, cls){
 }
 function startRevive(cause){
   hideHopHint();
+  hideFreePassMsg();
   speakMode = "revive";
   reviveNum++;
   reviveWordsArr = reviveWords(reviveNum);
@@ -2047,7 +2259,6 @@ applyAudio();
 applySkin(skinName);   // saved ball, or Pollito by default
 buildSkinPicker();
 syncSliders();
-updateHearts();
 el("menuBest").textContent = best > 0 ? ("Best distance: " + best + " m") : "";
 resetTrack();
 frame();
