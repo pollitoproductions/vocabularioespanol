@@ -2178,7 +2178,13 @@ function startListen(){
   if(listening){ stopListen(false); setQuizFb("Didn't catch that — try again.","bad"); return; }
   audioEnsure();
   stopListen(false);
-  var langs=["es-MX","es-US"], li=0, got=false, timer=null;
+  /* Round 22 (same as Slope): three Spanish locales, most specific
+     first. iOS Safari silently substitutes the device language when
+     the requested locale has no dictation language on the phone — no
+     error fires — so the chain retries on a silent end (see onend),
+     giving a Spanish recognizer three chances (es-MX -> es-US -> es)
+     before we give up. */
+  var langs=["es-MX","es-US","es"], li=0, got=false, timer=null;
   function attempt(){
     var r;
     try{ r=new SR(); }catch(e){ setQuizFb("Speech recognition isn't available in this browser. Keep playing with just the choices — turn off Speaking activities on the home menu — or use Chrome or Safari.","bad"); return; }
@@ -2211,8 +2217,20 @@ function startListen(){
       if(recog!==r) return;
       if(timer){clearTimeout(timer);timer=null;}
       if(userStopped){ userStopped=false; if(!got) setQuizFb("Didn't catch that — try again.","bad"); return; }
-      if(listening){ stopListen(false); if(!got) setQuizFb("Didn't catch that — try again.","bad"); }
+      if(listening){
+        /* Round 22 (same as Slope): iOS Safari often ends recognition
+           silently (no result, no error) when the requested locale has
+           no dictation language on the device — retry the next Spanish
+           locale instead of giving up, so a Spanish recognizer gets a
+           chance. A tap-to-stop never reaches here (it resets
+           synchronously via stopListen), and a real result sets
+           got=true, so this only fires on a silent end with nothing
+           heard. */
+        if(!got&&li+1<langs.length){ li++; attempt(); return; }
+        stopListen(false); if(!got) setQuizFb("Didn't catch that — try again.","bad");
+      }
     };
+    r.lang=langs[li]; // re-assert immediately before start: the language must be Spanish at the moment listening begins
     try{ r.start(); }catch(e){ stopListen(false); setQuizFb("Speech recognition isn't available in this browser. Keep playing with just the choices — turn off Speaking activities on the home menu — or use Chrome or Safari.","bad"); return; }
     listening=true; userStopped=false;
     sayBtn.classList.add("listening"); sayBtn.textContent="🎤 Listening… — tap to stop";
