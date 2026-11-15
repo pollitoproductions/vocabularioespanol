@@ -149,6 +149,31 @@
     #tileWord{ font-size:1.7rem; }
     .choiceBtn{ font-size:.98rem; min-height:60px; }
   }
+
+  /* ---------- home menu in landscape (round 15) ----------
+     The menu card is tall (title, intro, controls, skins, checkbox,
+     4 buttons, best line, back link) and reads poorly as a narrow
+     column in a wide, short landscape viewport (e.g. iPhone landscape
+     844x390). In short landscape viewports only, the card goes wide
+     and two-column — intro/controls on the left, skins/buttons on the
+     right — with tighter spacing, so the whole menu reads at a glance
+     and every control stays reachable. Portrait layout and content
+     are untouched; the overlay still scrolls as a fallback. */
+  @media (orientation:landscape) and (max-height:500px){
+    #menu .card{ max-width:880px; padding:14px 20px; display:grid;
+      grid-template-columns:1.05fr 1fr; column-gap:24px; text-align:left; margin:auto; }
+    #menu .menuLeft h1{ font-size:1.55rem; text-align:center; }
+    #menu .menuLeft p{ font-size:.95rem; margin:8px 0; }
+    #menu .menuLeft .sub{ font-size:.85rem; }
+    #menu .skinLabel{ margin:2px 0 6px; text-align:center; }
+    #menu .skinBtn{ width:42px; height:42px; }
+    #menu .skinBtn canvas{ width:38px; height:38px; }
+    #menu .checkRow{ font-size:.92rem; margin:8px 0 2px; }
+    #menu .bigBtn{ padding:11px; font-size:1.05rem; margin-top:8px; }
+    #menu .ghostBtn{ padding:9px; margin-top:8px; }
+    #menu .bestLine{ text-align:center; }
+    #menu .homeLink{ text-align:center; }
+  }
 </style>
 </head>
 <body>
@@ -170,21 +195,25 @@
 <div id="freePassMsg" class="hidden">🎟 Free revive used — back to rolling!</div>
 <div id="previewHint" class="hidden">👆 Tap to keep rolling</div>
 <div id="menu" class="overlay">
-  <div class="card">
-    <h1>Slope <span class="es">Español</span></h1>
-    <p>Roll the ball down the endless slope. Steer to dodge the red blocks and the gaps — and grab the Spanish word tiles as you go!</p>
-    <p class="sub">← → or A / D to steer &nbsp;·&nbsp; drag left / right on touch<br>
-    Tap, Space, or ↑ to hop over a block or a gap.<br>
-    Crash and you get a quiz revive: answer 4 of 5 Spanish questions to keep rolling. Revive as many times as you like — there are 50 different revives. Roll through a word tile and say the word correctly to earn a free revive: the next time you crash, you skip the quiz entirely.</p>
-    <div class="skinLabel">Choose your ball:</div>
-    <div class="skinRow" id="skinRow"></div>
-    <label class="checkRow"><input type="checkbox" id="chkSpeaking"> 🎤 Speaking activities — also say each answer out loud</label>
-    <button class="bigBtn" id="btnStart" type="button">▶ Start rolling</button>
-    <button class="bigBtn hidden" id="btnContinue" type="button">▶ Continue</button>
-    <button class="ghostBtn" id="btnScores" type="button">🏆 High scores</button>
-    <button class="ghostBtn" id="btnHow" type="button">How to play</button>
-    <div class="bestLine" id="menuBest"></div>
-    <a class="homeLink" href="https://pollitoproductions.github.io/">← Back to Pollito Productions</a>
+  <div class="card menuCard">
+    <div class="menuLeft">
+      <h1>Slope <span class="es">Español</span></h1>
+      <p>Roll the ball down the endless slope. Steer to dodge the red blocks and the gaps — and grab the Spanish word tiles as you go!</p>
+      <p class="sub">← → or A / D to steer &nbsp;·&nbsp; drag left / right on touch<br>
+      Tap, Space, or ↑ to hop over a block or a gap.<br>
+      Crash and you get a quiz revive: answer 4 of 5 Spanish questions to keep rolling. Revive as many times as you like — there are 50 different revives. Roll through a word tile and say the word correctly to earn a free revive: the next time you crash, you skip the quiz entirely.</p>
+    </div>
+    <div class="menuRight">
+      <div class="skinLabel">Choose your ball:</div>
+      <div class="skinRow" id="skinRow"></div>
+      <label class="checkRow"><input type="checkbox" id="chkSpeaking"> 🎤 Speaking activities — also say each answer out loud</label>
+      <button class="bigBtn" id="btnStart" type="button">▶ Start rolling</button>
+      <button class="bigBtn hidden" id="btnContinue" type="button">▶ Continue</button>
+      <button class="ghostBtn" id="btnScores" type="button">🏆 High scores</button>
+      <button class="ghostBtn" id="btnHow" type="button">How to play</button>
+      <div class="bestLine" id="menuBest"></div>
+      <a class="homeLink" href="https://pollitoproductions.github.io/">← Back to Pollito Productions</a>
+    </div>
   </div>
 </div>
 
@@ -648,9 +677,14 @@ var HOP_CLEAR = 1.25;        // ball this high above the track clears a block
    back (12, was 10) so the downhill reads stronger — the player sees
    more of the track from above and further ahead. The look height rises
    with it (8.1), so the look-target gap stays 3.6 and the vanishing
-   point stays at ~1/4 up; the ball sits ~86% down, clearly visible. */
-var CAM_HEIGHT = 4.5;        // camera height above the ball (round 6: raised again for a stronger downhill feel)
-var CAM_LOOK_HEIGHT = 8.1;   // lookAt height above the ball, 16 ahead (raised with CAM_HEIGHT, gap stays 3.6)
+   point stays at ~1/4 up; the ball sits ~86% down, clearly visible.
+   Round 15: now that the downhill reads via the side scenery (round
+   14), the camera comes back DOWN a little toward the old framing —
+   a modest step, not a full revert (4.0 / 7.6 / back 11: between the
+   round-5 3.5/7.1/10 and the round-6 4.5/8.1/12). The VP stays ~1/4
+   up and the ball stays ~86% down. */
+var CAM_HEIGHT = 4.0;        // camera height above the ball (round 15: down a little from 4.5 now the side scenery sells the downhill)
+var CAM_LOOK_HEIGHT = 7.6;   // lookAt height above the ball, 16 ahead (gap stays 3.6)
 /* The downhill: the track drops SLOPE_DROP units per 20-unit segment
    (grade 0.21, ~12°) so the descent is unmistakable, not a flat
    plane. trackY(d) is the track surface height at distance d. */
@@ -1766,7 +1800,9 @@ scene.add(points);
    they pass behind the ball. */
 var TET_COUNT = 48;
 var TET_SIZES = [2.5, 4.5, 7];
-var TET_Y_MIN = -8, TET_Y_MAX = 55;   // height offset above the track at the tet's own position
+var TET_Y_MIN = -8;    // lowest offset (right at the ball)
+var TET_Y_RISE = 100;  // round 15: the wall CLIMBS this much over the 650-unit field ahead — a steeper rise than the flat random -8..+55 of round 14
+var TET_Y_JIT = 12;    // random jitter on top of the climb
 var tetGeos = TET_SIZES.map(function(s){ return new THREE.TetrahedronGeometry(s); });
 var tetMats = [
   new THREE.MeshBasicMaterial({color:0x22d3ee, wireframe:true, transparent:true, opacity:0.55}),
@@ -1777,13 +1813,17 @@ var tets = [];
 function placeTetXY(mesh){
   /* Lateral position: inner edge stays >= 6 units from the centre
      (6 + size + up to 8 out), clear of the track (5 wide) and the
-     fall-off line (5.3) for every size class. Height: WORLD-ANCHORED
-     (round 14) — a wide offset above the track at this tet's own
-     position, fixed at placement, so the tet streams upward past the
-     descending player instead of hugging the slope. */
+     fall-off line (5.3) for every size class. */
   var size = TET_SIZES[mesh.userData.size];
   mesh.position.x = (Math.random() < 0.5 ? -1 : 1) * (6 + size + Math.random()*8);
-  mesh.position.y = trackY(-mesh.position.z) + TET_Y_MIN + Math.random()*(TET_Y_MAX - TET_Y_MIN);
+  /* Height: WORLD-ANCHORED (round 14) — fixed at placement, so the tet
+     streams upward past the descending player instead of hugging the
+     slope. Round 15: the offset now CLIMBS with distance ahead
+     (-8 at the ball, rising ~100 over the 650-unit field, plus a
+     little jitter), so the wall rises at a steeper angle as it
+     recedes — the downhill cue is even stronger. */
+  var dAhead = Math.max(0, -mesh.position.z - dist);
+  mesh.position.y = trackY(-mesh.position.z) + TET_Y_MIN + (dAhead/650)*TET_Y_RISE + Math.random()*TET_Y_JIT;
   mesh.rotation.set(Math.random()*6.28, Math.random()*6.28, Math.random()*6.28);
 }
 function placeTet(mesh, zMin, zMax){
@@ -2397,7 +2437,7 @@ function frame(){
   var camDrop = (state === "falling") ? fallDrop : 0;
   camera.position.x += ((ballX*0.5) - camera.position.x) * Math.min(1, dt*6);
   camera.position.y += ((ballY + CAM_HEIGHT - camDrop) - camera.position.y) * Math.min(1, dt*6);
-  camera.position.z = ballZ + 12;
+  camera.position.z = ballZ + 11;   // round 15: a little more behind the ball than 10, a little less far than the round-6 12
   camera.lookAt(ballX*0.75, ballY + CAM_LOOK_HEIGHT - camDrop, ballZ - 16);
   renderer.render(scene, camera);
 }
