@@ -322,7 +322,7 @@
     <div class="sliderRow"><label for="sfxVol">🔊 Sound effects volume</label>
       <input type="range" id="sfxVol" min="0" max="100" value="100"></div>
     <button class="bigBtn" id="btnResume" type="button">▶ Resume</button>
-    <button class="ghostBtn" id="btnSaveQuit" type="button">💾 Save &amp; quit</button>
+    <button class="ghostBtn" id="btnSaveContinue" type="button">💾 Save &amp; continue</button>
     <button class="ghostBtn" id="btnRestart" type="button">↻ Restart run</button>
     <button class="ghostBtn" id="btnQuitMenu" type="button">← Back to menu</button>
   </div>
@@ -2582,14 +2582,20 @@ function startRun(){
   reviveEl.classList.add("hidden");
   howEl.classList.add("hidden");
   tileEl.classList.add("hidden");
+  previewHintEl.classList.add("hidden");   // round 41: no stale tap-to-keep-rolling hint on a fresh run after restarting from a preview pause
   scoresEl.classList.add("hidden");
   hudEl.classList.add("on");
   updateHUD();
   state = "playing";
   showHopHint();
 }
+var pauseFrom = "playing";   // round 41: which state the pause menu was opened from ("playing" or "preview")
 function pauseGame(){
-  if(state !== "playing") return;
+  /* Round 41 (Brant): the real pause button works in the post-speak
+     preview too — the ball is already stopped there, so pausing
+     costs nothing, and the player can save at that point. */
+  if(state !== "playing" && state !== "preview") return;
+  pauseFrom = state;
   state = "paused";
   pauseEl.classList.remove("hidden");
   hudEl.classList.remove("on");
@@ -2600,7 +2606,7 @@ function resumeGame(){
   audioEnsure();   // round 22: re-resume the AudioContext if iOS suspended it while the game was backgrounded/paused, so the music keeps playing after Resume
   pauseEl.classList.add("hidden");
   hudEl.classList.add("on");
-  state = "playing";
+  state = pauseFrom || "playing";   // round 41: back to the preview (tap to keep rolling), not straight to playing
 }
 function togglePause(){
   if(state === "playing") pauseGame();
@@ -2616,6 +2622,7 @@ function showMenu(){
   reviveEl.classList.add("hidden");
   howEl.classList.add("hidden");
   tileEl.classList.add("hidden");
+  previewHintEl.classList.add("hidden");   // round 41: no tap-to-keep-rolling hint over the home menu after pausing from a preview
   scoresEl.classList.add("hidden");
   hudEl.classList.remove("on");
   el("menuBest").textContent = best > 0 ? ("Best distance: " + best + " m") : "";
@@ -3631,7 +3638,7 @@ el("btnPause").addEventListener("click", function(){ togglePause(); });
 el("btnMute").addEventListener("click", function(){ audioEnsure(); setMuted(!muted); });
 el("btnFull").addEventListener("click", function(){ toggleFull(); });
 el("btnResume").addEventListener("click", function(){ resumeGame(); });
-el("btnSaveQuit").addEventListener("click", function(){ if(saveRun()) showMenu(); });
+el("btnSaveContinue").addEventListener("click", function(){ if(saveRun()) resumeGame(); });
 el("btnRestart").addEventListener("click", function(){ startRun(); });
 el("btnQuitMenu").addEventListener("click", function(){ showMenu(); });
 el("btnContinue").addEventListener("click", function(){ audioEnsure(); continueRun(); });
