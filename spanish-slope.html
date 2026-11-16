@@ -231,15 +231,18 @@
      wider than 760px AND taller than 500px — desktops and laptops
      the short-landscape block doesn't cover — the menu goes
      two-column too (intro on the left, skins/buttons on the right),
-     so it reads at a glance and fits without scrolling. Quiz, tile,
+     so it reads at a glance and fits without scrolling. Round 36:
+     the directions text is larger (easier to read) and the two
+     columns are vertically centred, so the left column's empty space
+     below the directions is gone. Quiz, tile,
      pause and game-over cards are untouched: their single-column
      cards already fit a desktop. */
   @media (orientation:landscape) and (min-width:760px) and (min-height:501px){
     #menu .card{ max-width:880px; padding:18px 24px; display:grid;
-      grid-template-columns:1.05fr 1fr; column-gap:28px; text-align:left; margin:auto; }
-    #menu .menuLeft h1{ font-size:1.8rem; text-align:center; }
-    #menu .menuLeft p{ font-size:1rem; margin:10px 0; }
-    #menu .menuLeft .sub{ font-size:.9rem; }
+      grid-template-columns:1.05fr 1fr; column-gap:28px; text-align:left; margin:auto; align-items:center; }
+    #menu .menuLeft h1{ font-size:2.1rem; text-align:center; }
+    #menu .menuLeft p{ font-size:1.15rem; margin:12px 0; line-height:1.55; }
+    #menu .menuLeft .sub{ font-size:1.05rem; line-height:1.55; }
     #menu .skinLabel{ margin:2px 0 8px; text-align:center; }
     #menu .skinBtn{ width:46px; height:46px; }
     #menu .skinBtn canvas{ width:42px; height:42px; }
@@ -260,6 +263,7 @@
     <div class="small">Score <b id="hudScore">0</b> &nbsp;·&nbsp; Speed <b id="hudSpeed">0</b></div>
     <div class="small">Words <b id="hudWords">0</b> &nbsp;·&nbsp; Best <b id="hudBest">0</b> m</div>
     <div class="small hidden" id="hudPassRow">🎟 Free revive ×<b id="hudPasses">0</b></div>
+    <div class="small" id="hudReviveRow">🔄 Revives left: <b id="hudRevives">50</b></div>
   </div>
   <div id="hudRight">
     <button class="iconBtn" id="btnMute" type="button" title="Mute">🔊</button>
@@ -303,7 +307,7 @@
     <p>Amber pads with chevrons are launch ramps — roll over one and it flings you into the air, across a wide gap or up onto a raised platform. Just ride onto it; no tap needed.</p>
     <p><b>Hop:</b> tap, press Space, or press ↑ to hop — a big bounce that clears a block or a gap. You can hop about once every half second, so time it.</p>
     <p>Glowing word tiles float over the track — roll through one and the game pauses so you can say the word out loud. Say it correctly and you earn a <b>free revive</b>: the next time you crash you revive instantly with no quiz. Free revives stack — say more words, bank more skips. Don't want to speak it? Tap “Keep rolling” to skip — skipping earns nothing.</p>
-    <p>When you crash, you get a <b>quiz revive</b>: 5 Spanish questions. Get 4 or 5 right and you keep rolling, with a short head start and 2 seconds of flashing invincibility. You can revive as many times as you like. The questions follow the same order as Spanish Dash — cognates, then common words, then present tense, then possessive pronouns, then ser vs. estar — ten revives of each, and then they start over, so there are 50 different revives.</p>
+    <p>When you crash, you get a <b>quiz revive</b>: 5 Spanish questions. Get 4 or 5 right and you keep rolling, with a short head start and 2 seconds of flashing invincibility. You get 50 revives per game — once they're used, the next crash ends the run. The questions follow the same order as Spanish Dash — cognates, then common words, then present tense, then possessive pronouns, then ser vs. estar — ten revives of each, 50 in all.</p>
     <p class="sub">Keyboard: ← → or A / D to steer, Space or ↑ to hop, P or Esc to pause, M to mute.<br>Touch: drag left or right to steer, tap to hop.</p>
     <button class="bigBtn" id="btnHowClose" type="button">Got it</button>
   </div>
@@ -801,7 +805,8 @@ var speakMode = "revive";    // which overlay the Say-it button belongs to ("rev
 var tileTarget = "";         // the Spanish word on the current word-tile pause
 var dist = 0, score = 0, wordsGot = 0;
 var rampDist = 0;   // distance since the run started or the last revive — drives the speed ramp (round 7)
-var reviveNum = 0;   // how many times the player has revived this run (a count, never a limit)
+var MAX_REVIVES = 50;   // round 36 (Brant): a run has 50 quiz revives — the 50 sets are the whole Dash scheme, then it's done; the next crash after that ends the run
+var reviveNum = 0;   // how many quiz revives the player has used this run (drives the quiz set order; saved with the run so Continue doesn't restart it)
 var freePasses = 0;  // banked free revives: one per correctly-spoken collected word;
                      // each one skips the quiz on the next crash (round 6)
 var ballX = 0, ballVX = 0, ballZ = 0, invincibleUntil = 0;
@@ -839,6 +844,7 @@ var menuEl = el("menu"), howEl = el("howMenu"), pauseEl = el("pauseMenu"),
 var hudDist = el("hudDist"), hudScore = el("hudScore"), hudSpeed = el("hudSpeed"),
     hudWords = el("hudWords"), hudBest = el("hudBest"),
     hudPassRow = el("hudPassRow"), hudPasses = el("hudPasses"),
+    hudRevives = el("hudRevives"),
     freePassMsgEl = el("freePassMsg");
 var reviveTitle = el("reviveTitle"), reviveSub = el("reviveSub"),
     quizCount = el("quizCount"), quizStepEl = el("quizStep"),
@@ -2310,6 +2316,9 @@ function updateHUD(){
   hudSpeed.textContent = Math.round(curSpeed());
   hudWords.textContent = wordsGot;
   hudBest.textContent = best;
+  /* Revives left (round 36 countdown): always shown, 50 at the start of
+     a run, 0 when the cap is reached and the next crash ends the run. */
+  if(hudRevives) hudRevives.textContent = Math.max(0, MAX_REVIVES - reviveNum);
   /* Banked free revives (one per correctly-spoken collected word):
      show the badge only while at least one is banked. */
   if(hudPassRow){
@@ -2587,6 +2596,7 @@ function showMenu(){
   ballX = 0; ballZ = 0; ballHopY = 0; ballHopV = 0; fallDrop = 0; fallV = 0; fallT = 0;
   resetTrack();
 }
+var overCap = false;   // round 36: true when the run ended because all 50 revives were used (set in afterCrash, read once in gameOver)
 function gameOver(){
   hideHopHint();
   hideFreePassMsg();
@@ -2604,7 +2614,9 @@ function gameOver(){
   el("overNew").textContent = hsRank > 0 ? ("🎉 New high score — #" + hsRank + "!") : "";
   el("overStats").textContent = "You rolled " + d + " m" +
     "  ·  " + wordsGot + " word" + (wordsGot === 1 ? "" : "s") + " collected  ·  " +
-    reviveNum + " revive" + (reviveNum === 1 ? "" : "s") + " used";
+    reviveNum + " revive" + (reviveNum === 1 ? "" : "s") + " used" +
+    (overCap ? " — that's all 50!" : "");
+  overCap = false;   // consumed (set only on the cap path in afterCrash)
   el("overBest").textContent = "Best distance: " + best + " m";
   overEl.classList.remove("hidden");
   hudEl.classList.remove("on");
@@ -2627,10 +2639,17 @@ function crash(cause){
   afterCrash(cause);
 }
 function afterCrash(cause){
+  /* Round 36: 50 revives per run, then the run is over — checked BEFORE
+     the free-pass branch, so a banked pass can't revive past the cap
+     either. reviveNum counts quiz revives (the 50 sets). */
+  if(reviveNum >= MAX_REVIVES){
+    overCap = true;
+    gameOver();
+    return;
+  }
   /* A banked free pass (earned by speaking a collected word correctly)
      revives the player INSTANTLY with no quiz, and the pass is spent.
-     With no pass banked, the crash offers the revive quiz as normal —
-     revives themselves are unlimited (round 6). */
+     With no pass banked, the crash offers the revive quiz as normal. */
   if(freePasses > 0){
     freePasses--;
     updateHUD();
@@ -3061,7 +3080,7 @@ function startRevive(cause){
     : cause === "side" ? "💥 You fell off the side!"
     : "💥 You hit an obstacle!";
   reviveSub.textContent = "Answer 4 of 5 to keep rolling!  (Revive " + reviveNum +
-    " · " + reviveLevelName(reviveNum) + ")";
+    " of 50 · " + reviveLevelName(reviveNum) + ")";
   reviveResults.classList.add("hidden");
   btnRevived.classList.add("hidden");
   btnReviveOver.classList.add("hidden");
