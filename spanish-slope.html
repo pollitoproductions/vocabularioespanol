@@ -1297,6 +1297,46 @@ var skirtMatR = new THREE.MeshBasicMaterial({color:0xbe185d});   /* hot pink, ri
    hides anything. Unlit cyan so it reads from a distance. */
 var archGeo = new THREE.TorusGeometry(6, 0.22, 10, 40);
 var archMat = new THREE.MeshBasicMaterial({color:0x22d3ee});
+/* Round 32: the tunnel grid — the Slope card art shows the tunnel as a
+   real tube with a cyan lattice (rings + long lines), not just separate
+   arches, so each tunnel segment also carries a grid sleeve: an
+   open-ended cylinder (radius 6, one segment long) textured with a
+   transparent canvas lattice. The grid is only lines — no solid surface
+   — so the track ahead stays visible through it, and it rides in the
+   segment group with the arch, so it banks and descends with the track.
+   depthWrite is off so the transparent parts of the texture never
+   occlude the track behind them; DoubleSide so it reads from inside
+   the tunnel too, when the ball rolls through it. Pure scenery, like
+   the arch: tunnel segments are always plain. Shared geometry/material
+   (no per-segment disposal). */
+function makeTunnelGridTexture(){
+  var c = document.createElement("canvas"); c.width = 512; c.height = 128;
+  var g = c.getContext("2d");
+  function vline(x){
+    g.strokeStyle = "#22d3ee"; g.lineWidth = 6;
+    g.shadowColor = "#22d3ee"; g.shadowBlur = 12;
+    g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 128); g.stroke();
+    g.strokeStyle = "#e0faff"; g.lineWidth = 2; g.shadowBlur = 0;
+    g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 128); g.stroke();
+  }
+  function hline(y){
+    g.strokeStyle = "#22d3ee"; g.lineWidth = 6;
+    g.shadowColor = "#22d3ee"; g.shadowBlur = 12;
+    g.beginPath(); g.moveTo(0, y); g.lineTo(512, y); g.stroke();
+    g.strokeStyle = "#e0faff"; g.lineWidth = 2; g.shadowBlur = 0;
+    g.beginPath(); g.moveTo(0, y); g.lineTo(512, y); g.stroke();
+  }
+  for(var i = 0; i < 12; i++) vline(i * 512 / 12);
+  vline(512);   /* completes the seam line at x=0 (wraps around) */
+  hline(3); hline(64); hline(125);   /* rings at both ends + middle */
+  var tex = new THREE.CanvasTexture(c);
+  tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+  tex.anisotropy = 4;
+  return tex;
+}
+var tunnelGridTex = makeTunnelGridTexture();
+var sleeveGeo = new THREE.CylinderGeometry(6, 6, SEG_LEN, 12, 1, true);
+var sleeveMat = new THREE.MeshBasicMaterial({map: tunnelGridTex, transparent: true, side: THREE.DoubleSide, depthWrite: false});
 var tileGeo = new THREE.PlaneGeometry(2.6, 1.3);
 
 /* Word tiles cycle through the vocabulary: cognates first, then practice
@@ -1900,6 +1940,13 @@ function buildSegmentFromPlan(idx, plan){
     var aL = surfLocal(0, dMid, 3, d0, bankNear);
     arch.position.set(aL[0], aL[1], aL[2]);
     group.add(arch);
+    /* Round 32: the grid sleeve — same centre as the arch, its axis
+       along the track (cylinder Y -> local Z), so the three sleeves of
+       a tunnel read as one continuous gridded tube. */
+    var sleeve = new THREE.Mesh(sleeveGeo, sleeveMat);
+    sleeve.rotation.x = Math.PI/2;
+    sleeve.position.set(aL[0], aL[1], aL[2]);
+    group.add(sleeve);
   }
   var tileMesh = null, tileBaseY = 1.4;
   if(plan.tile){
