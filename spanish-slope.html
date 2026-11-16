@@ -3747,6 +3747,8 @@ el("btnClearSave").addEventListener("click", function(){
     clearTimeout(clearArmTimer);
     clearArmed = false;
     this.textContent = "🗑 Clear saved game";
+    var s = loadSave();   // round 47 (Brant): a cleared run still banks its distance if it makes the top 5
+    if(s) recordHighscore(Math.floor(s.dist));
     clearSave();
     refreshContinueBtn();
   }
