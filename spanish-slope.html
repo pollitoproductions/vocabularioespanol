@@ -1399,7 +1399,15 @@ var tileGeo = new THREE.PlaneGeometry(2.6, 1.3);
 function buildTileWords(seed){
   var r = mulberry32(seed >>> 0);
   function sh(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(r()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
-  return sh(COG_POOL.slice()).concat(sh(PRAC_NC.slice()));
+  /* Round 44 (Brant): a word spoken for a free revive must never show
+     back up in the run — so the tile list holds each Spanish word
+     ONCE. (COG_POOL itself carries "regular" twice; the dedupe also
+     covers any word shared between the pools.) 1,015 distinct words;
+     the list only cycles after 1,015 tiles, far beyond any run. */
+  var all = sh(COG_POOL.slice()).concat(sh(PRAC_NC.slice()));
+  var seen = {}, out = [];
+  for(var i=0;i<all.length;i++){ if(!seen[all[i][0]]){ seen[all[i][0]] = true; out.push(all[i]); } }
+  return out;
 }
 var TILE_WORDS = buildTileWords(1);
 var tileIdx = 0;
