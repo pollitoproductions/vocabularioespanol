@@ -777,7 +777,7 @@ var freePasses = 0;  // banked free revives: one per correctly-spoken collected 
                      // each one skips the quiz on the next crash (round 6)
 var ballX = 0, ballVX = 0, ballZ = 0, invincibleUntil = 0;
 var ballHopY = 0, ballHopV = 0, nextHopAt = 0;   // hop state (height above track)
-var fallDrop = 0, fallV = 0, fallT = 0;   // fall animation (gap or side)
+var fallDrop = 0, fallV = 0, fallT = 0, fallSpeed = 0;   // fall animation (gap or side); fallSpeed = forward speed at the moment of the fall (round 30)
 var fallCause = "gap";                    // which fall is playing: "gap" | "side"
 const FALL_TIME = 0.9;                    // round 8: the fall lasts a touch longer
                                           // than the old 0.65 s, so the player
@@ -2547,6 +2547,7 @@ function crash(cause){
     state = "falling";
     fallCause = cause;
     fallT = 0; fallDrop = 0; fallV = 0;
+    fallSpeed = curSpeed();   // round 30: the ball keeps its forward speed into the fall
     return;
   }
   afterCrash(cause);
@@ -2659,13 +2660,18 @@ function frame(){
   else if(state === "falling"){
     /* Gap death or side fall: the ball tumbles down for a beat before
        the crash/revive screen appears — it visibly falls instead of
-       just freezing in place. A side fall keeps drifting outward off
-       the edge as it drops; the camera follows the ball down (see the
-       camera code below), then returns to normal on revive/respawn. */
+       just freezing in place. Round 30 (Brant): the ball keeps the
+       forward trajectory it had when it left the track — it carries
+       forward at its fall speed while gravity drops it, with NO
+       sideways drift. Before, a side fall kept drifting outward at
+       ballVX while the forward motion stopped dead, so it looked
+       thrown way off to the side; the camera chased the drift too.
+       Now ballX stays where it left the edge and ballZ carries on,
+       and the camera follows the forward fall instead. */
     fallT += dt;
     fallV += 22*dt;
     fallDrop += fallV*dt;
-    if(fallCause === "side") ballX += ballVX*dt;
+    ballZ -= fallSpeed*dt;
     if(fallT >= FALL_TIME) afterCrash(fallCause);
   }
   /* Ball roll + lean, invincibility flash. The ball rides the slope:
