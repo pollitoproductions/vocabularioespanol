@@ -753,6 +753,7 @@ var RAMP_DIST = 1340;        // ramp distance: top speed reached after this far 
                              // (round 7: concave ramp — see curSpeed)
 var BLOCK_HIT = 0.4;         // block half-width inflation for a hit (ball radius, forgiving)
 var GAP_HIT = 0.5;          // gap inset for a fall (round 33: was 0.25 — the ball's centre only 0.25 inside the hole meant half the ball was still over solid floor when it died, which read as a bogus death; now the centre must be a full ball-radius inside, so the ball is visibly over the hole before it falls)
+var GAP_EDGE = 1.0;         // round 49 (Brant): far-edge grace for a gap — a ball that lands within 1.0 of the segment's far edge has half of itself already on solid track, so it reads as having made it; only a ball clearly still over the hole (further than 1.0 from the far edge) falls in
 /* Revives are UNLIMITED (Brant, round 6): every crash offers the quiz,
    pass it (4 of 5) and you keep rolling, fail it and the run is over.
    There is no heart count to run out of — no revive limit, no hearts. */
@@ -2580,10 +2581,10 @@ function continueRun(){
   TILE_SPOKEN = {};   // round 45: restore before the replay (second-pass tiles skip these)
   (s.tileSpoken || []).forEach(function(w){ TILE_SPOKEN[w] = true; });
   rebuildTrackFromSave(s);
-  /* The save is consumed: once resumed, the run continues from here and
-     a fresh save must be made to store it again. (This also stops a
-     stale save from resurrecting an old run after it ends.) */
-  clearSave();
+  /* Round 48 (Brant): the save is NOT consumed on Continue — if the
+     player leaves without saving again, the run continues from this
+     last save. The save only goes away when the game ends (game over
+     clears it) or the player clears it with [Clear saved game]. */
   menuEl.classList.add("hidden");
   overEl.classList.add("hidden");
   pauseEl.classList.add("hidden");
@@ -3054,7 +3055,11 @@ function checkCollisions(){
       }
     }
   }
-  if(!airborne && plan.gap && ballX > plan.gap.x0 + GAP_HIT && ballX < plan.gap.x1 - GAP_HIT){
+  /* Round 49: the far edge is forgiving — distToFarEdge is how far the
+     ball still has to travel inside this segment before solid track
+     resumes; inside GAP_EDGE of it, the ball looks like it made it. */
+  var distToFarEdge = ballZ + (segIdx + 1) * SEG_LEN;
+  if(!airborne && plan.gap && distToFarEdge > GAP_EDGE && ballX > plan.gap.x0 + GAP_HIT && ballX < plan.gap.x1 - GAP_HIT){
     crash("gap");
     return;
   }
