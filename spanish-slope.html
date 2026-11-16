@@ -2853,8 +2853,16 @@ function frame(){
        more. Past EDGE_FALL the ball tumbles off the side (a crash, with
        the falling animation, then the revive flow). Riding the very edge
        is no longer a safe cheat, and on a banked stretch the pull toward
-       the low side is a real threat if you don't steer against it. */
-    if(ballX > EDGE_FALL || ballX < -EDGE_FALL){ crash("side"); }
+       the low side is a real threat if you don't steer against it.
+       Round 51 (Brant): the fall only starts when the ball is on/near
+       the ground — a side fall used to fire while the ball was airborne
+       at the top of a ramp launch (hopY up to ~8.8), so the fall began
+       way up at the tunnel roof and carried far forward. A ball can't
+       fall off the edge while it's in the air; it falls off when it
+       lands past the edge (or rolls past it on the ground). Same 0.3
+       tolerance as the gap check. If the ball steers back onto the
+       track before it lands, it saves itself. */
+    if(ballHopY <= groundHAt(dist) + 0.3 && (ballX > EDGE_FALL || ballX < -EDGE_FALL)){ crash("side"); }
     zBefore = ballZ;              // for swept collision checks (fast ball)
     dist += v*dt;
     rampDist += v*dt;   // ramp distance: reset on revive, drives the speed ramp
