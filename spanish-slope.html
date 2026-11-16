@@ -283,7 +283,8 @@
       Tap, Space, or ↑ to hop over a block or a gap.<br>
       Crash and you get a quiz revive: answer 4 of 5 Spanish questions to keep rolling. There are 50 possible revives per game. Roll through a word tile and say the word correctly to earn a free revive: the next time you crash, you skip the quiz entirely.</p>
       <p class="sub hidden" id="saveNote">Saved games must be completed to begin a new game.</p>
-      <p class="sub" id="crosNote">Chromebook: if Hear speaks in English or sounds like a robot, the Chromebook is missing a Spanish voice — add one in Settings → Accessibility → Text-to-Speech → Text-to-Speech voice settings.</p>
+      <button class="ghostBtn" id="btnCrosNote" type="button">Chromebook: Hear not speaking Spanish? ▸</button>
+      <p class="sub hidden" id="crosNote">If Hear speaks in English or sounds like a robot, the Chromebook is missing a Spanish voice — add one in Settings → Accessibility → Text-to-Speech → Text-to-Speech voice settings.</p>
       <button class="ghostBtn hidden" id="btnClearSave" type="button">🗑 Clear saved game</button>
     </div>
     <div class="menuRight">
@@ -3771,6 +3772,13 @@ el("btnClearSave").addEventListener("click", function(){
   }
 });
 el("btnScores").addEventListener("click", function(){ showScores(); });
+/* Round 54 (Brant): the Chromebook Spanish-voice note is collapsed by
+   default — a tap on the toggle reveals it, so it only takes up space
+   for the students who need it. */
+el("btnCrosNote").addEventListener("click", function(){
+  var hidden = el("crosNote").classList.toggle("hidden");
+  this.textContent = "Chromebook: Hear not speaking Spanish? " + (hidden ? "▸" : "▾");
+});
 el("btnScoresClose").addEventListener("click", function(){ hideScores(); });
 el("btnAgain").addEventListener("click", function(){ startRun(); });
 el("btnOverMenu").addEventListener("click", function(){ showMenu(); });
