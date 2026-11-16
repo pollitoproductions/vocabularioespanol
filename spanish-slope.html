@@ -2609,7 +2609,10 @@ function resumeGame(){
   state = pauseFrom || "playing";   // round 41: back to the preview (tap to keep rolling), not straight to playing
 }
 function togglePause(){
-  if(state === "playing") pauseGame();
+  /* Round 42: the button/key handler itself must route the preview
+     state to pauseGame — round 41 fixed pauseGame but left this gate
+     on "playing" only, so the button still did nothing in preview. */
+  if(state === "playing" || state === "preview") pauseGame();
   else if(state === "paused") resumeGame();
 }
 function showMenu(){
