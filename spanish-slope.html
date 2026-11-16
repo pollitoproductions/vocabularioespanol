@@ -972,6 +972,81 @@ function skinFlake(g, x, y, len, w){
   g.fillStyle = "#ffffff";
   g.beginPath(); g.ellipse(x, y, 12, 12, 0, 0, 6.29); g.fill();
 }
+/* Round 46 (Brant): the four Dash animal faces, ported to the ball.
+   Each helper draws the face from Dash's suit art (a 34x34 box centred
+   at 0,0) at the given centre/scale — front face big (scale 4, centre
+   128,108), back face smaller (scale 2, centre 384,108) — so the ball
+   reads as the character from every side, like Pollito and the cow. */
+function drawPandaFace(g, cx, cy, s){
+  g.save(); g.translate(cx, cy); g.scale(s, s);
+  g.fillStyle = "#1f2937";
+  g.beginPath(); g.arc(-11, -11, 5, 0, 6.29); g.arc(11, -11, 5, 0, 6.29); g.fill();
+  g.save(); g.translate(-6, 0); g.rotate(-0.4); g.beginPath(); g.ellipse(0, 0, 3.8, 5.5, 0, 0, 6.29); g.fill(); g.restore();
+  g.save(); g.translate(6, 0); g.rotate(0.4); g.beginPath(); g.ellipse(0, 0, 3.8, 5.5, 0, 0, 6.29); g.fill(); g.restore();
+  g.fillStyle = "#ffffff";
+  g.beginPath(); g.arc(-5, -1, 1.4, 0, 6.29); g.arc(7, -1, 1.4, 0, 6.29); g.fill();
+  g.fillStyle = "#1f2937";
+  g.beginPath(); g.ellipse(0, 8, 2.5, 1.8, 0, 0, 6.29); g.fill();
+  g.strokeStyle = "#1f2937"; g.lineWidth = 1.5; g.lineCap = "round";
+  g.beginPath(); g.arc(0, 8, 5, 0.15*Math.PI, 0.85*Math.PI); g.stroke();
+  g.fillStyle = "#fda4af";
+  g.beginPath(); g.arc(-10, 7, 2, 0, 6.29); g.arc(10, 7, 2, 0, 6.29); g.fill();
+  g.restore();
+}
+function drawFoxFace(g, cx, cy, s){
+  g.save(); g.translate(cx, cy); g.scale(s, s);
+  g.fillStyle = "#c2410c";
+  g.beginPath(); g.moveTo(-15, -8); g.lineTo(-5, -8); g.lineTo(-13, -17); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(5, -8); g.lineTo(15, -8); g.lineTo(13, -17); g.closePath(); g.fill();
+  g.fillStyle = "#ffffff";
+  g.beginPath(); g.moveTo(-12, -10); g.lineTo(-8, -10); g.lineTo(-11, -15); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(8, -10); g.lineTo(12, -10); g.lineTo(11, -15); g.closePath(); g.fill();
+  g.fillStyle = "#1f2937";
+  g.beginPath(); g.arc(-6, 0, 2.4, 0, 6.29); g.arc(6, 0, 2.4, 0, 6.29); g.fill();
+  g.fillStyle = "#ffffff";
+  g.beginPath(); g.arc(-5.2, -0.8, 0.9, 0, 6.29); g.arc(6.8, -0.8, 0.9, 0, 6.29); g.fill();
+  g.fillStyle = "#ffffff";
+  g.beginPath(); g.ellipse(0, 9, 8, 5.5, 0, 0, 6.29); g.fill();
+  g.fillStyle = "#1f2937";
+  g.beginPath(); g.arc(0, 6, 2.2, 0, 6.29); g.fill();
+  g.strokeStyle = "#1f2937"; g.lineWidth = 1.4; g.lineCap = "round";
+  g.beginPath(); g.moveTo(0, 8); g.quadraticCurveTo(0, 11, -4, 10); g.stroke();
+  g.beginPath(); g.moveTo(0, 8); g.quadraticCurveTo(0, 11, 4, 10); g.stroke();
+  g.restore();
+}
+function drawFrogFace(g, cx, cy, s){
+  g.save(); g.translate(cx, cy); g.scale(s, s);
+  g.fillStyle = "#ffffff";
+  g.beginPath(); g.arc(-7, -10, 5.5, 0, 6.29); g.arc(7, -10, 5.5, 0, 6.29); g.fill();
+  g.fillStyle = "#1f2937";
+  g.beginPath(); g.arc(-7, -10, 2.8, 0, 6.29); g.arc(7, -10, 2.8, 0, 6.29); g.fill();
+  g.fillStyle = "#ffffff";
+  g.beginPath(); g.arc(-6, -11, 1, 0, 6.29); g.arc(8, -11, 1, 0, 6.29); g.fill();
+  g.strokeStyle = "#1f2937"; g.lineWidth = 2; g.lineCap = "round";
+  g.beginPath(); g.arc(0, 2, 11, 0.15*Math.PI, 0.85*Math.PI); g.stroke();
+  g.fillStyle = "#1f2937";
+  g.beginPath(); g.arc(-3, 4, 1, 0, 6.29); g.arc(3, 4, 1, 0, 6.29); g.fill();
+  g.fillStyle = "#86efac";
+  g.beginPath(); g.arc(-12, 7, 2, 0, 6.29); g.arc(12, 7, 2, 0, 6.29); g.fill();
+  g.restore();
+}
+function drawAlienFace(g, cx, cy, s){
+  g.save(); g.translate(cx, cy); g.scale(s, s);
+  g.strokeStyle = "#16a34a"; g.lineWidth = 1.8; g.lineCap = "round";
+  g.beginPath(); g.moveTo(-6, -11); g.lineTo(-8, -15); g.moveTo(6, -11); g.lineTo(8, -15); g.stroke();
+  g.fillStyle = "#16a34a";
+  g.beginPath(); g.arc(-8, -15, 1.5, 0, 6.29); g.arc(8, -15, 1.5, 0, 6.29); g.fill();
+  g.fillStyle = "#1f2937";
+  g.save(); g.translate(-6, 0); g.rotate(-0.35); g.beginPath(); g.ellipse(0, 0, 4, 6.5, 0, 0, 6.29); g.fill(); g.restore();
+  g.save(); g.translate(6, 0); g.rotate(0.35); g.beginPath(); g.ellipse(0, 0, 4, 6.5, 0, 0, 6.29); g.fill(); g.restore();
+  g.fillStyle = "#ffffff";
+  g.beginPath(); g.arc(-7, -2, 1.2, 0, 6.29); g.arc(5, -2, 1.2, 0, 6.29); g.fill();
+  g.strokeStyle = "#1f2937"; g.lineWidth = 1.6; g.lineCap = "round";
+  g.beginPath(); g.arc(0, 7, 5, 0.15*Math.PI, 0.85*Math.PI); g.stroke();
+  g.fillStyle = "#16a34a";
+  g.beginPath(); g.arc(-11, 7, 1.8, 0, 6.29); g.arc(11, 7, 1.8, 0, 6.29); g.fill();
+  g.restore();
+}
 var skinTextures = {};
 function skinTexture(kind){
   if(skinTextures[kind]) return skinTextures[kind];
@@ -1068,65 +1143,33 @@ function skinTexture(kind){
       g.strokeStyle = "#14532d"; g.lineWidth = 5;
       g.beginPath(); g.arc(128, 112, 16, 0.25*Math.PI, 0.75*Math.PI); g.stroke();
     });
-  } else if(kind === "cyan"){
-    /* Cyan with a BIG white snowflake on the face. */
+  } else if(kind === "panda"){
+    /* Panda: Dash's panda face, big on the front, smaller on the back. */
     tex = makeSkinTexture(function(g,W,H){
-      g.fillStyle = "#22d3ee"; g.fillRect(0, 0, W, H);
-      skinFlake(g, 128, 110, 62, 14);
-      g.fillStyle = "#ffffff";
-      var rng = mulberry32(7);
-      for(var i=0;i<14;i++){
-        g.beginPath(); g.ellipse(rng()*512, rng()*256, 6, 6, 0, 0, 6.29); g.fill();
-      }
-      skinFlake(g, 384, 110, 34, 9);
+      g.fillStyle = "#f8fafc"; g.fillRect(0, 0, W, H);
+      drawPandaFace(g, 128, 108, 4);
+      drawPandaFace(g, 384, 108, 2);
     });
-  } else if(kind === "magenta"){
-    /* Magenta with a BIG white star on the face. */
+  } else if(kind === "fox"){
+    /* Fox: Dash's fox face, big on the front, smaller on the back. */
     tex = makeSkinTexture(function(g,W,H){
-      g.fillStyle = "#ec4899"; g.fillRect(0, 0, W, H);
-      g.fillStyle = "#ffffff";
-      skinStar(g, 128, 110, 66, 28, 5);
-      var rng = mulberry32(9);
-      for(var i=0;i<14;i++){
-        g.beginPath(); g.ellipse(rng()*512, rng()*256, 6, 6, 0, 0, 6.29); g.fill();
-      }
-      skinStar(g, 384, 110, 36, 15, 5);
+      g.fillStyle = "#f97316"; g.fillRect(0, 0, W, H);
+      drawFoxFace(g, 128, 108, 4);
+      drawFoxFace(g, 384, 108, 2);
     });
-  } else if(kind === "lime"){
-    /* Lime with a BIG dark lightning bolt on the face. */
+  } else if(kind === "frog"){
+    /* Frog: Dash's frog face, big on the front, smaller on the back. */
     tex = makeSkinTexture(function(g,W,H){
-      g.fillStyle = "#a3e635"; g.fillRect(0, 0, W, H);
-      g.fillStyle = "#3f6212";
-      g.beginPath();
-      g.moveTo(148, 40); g.lineTo(108, 130); g.lineTo(132, 130);
-      g.lineTo(104, 190); g.lineTo(158, 96); g.lineTo(132, 96);
-      g.closePath(); g.fill();
-      g.fillStyle = "#ffffff";
-      var rng = mulberry32(13);
-      for(var i=0;i<12;i++){
-        g.beginPath(); g.ellipse(rng()*512, rng()*256, 6, 6, 0, 0, 6.29); g.fill();
-      }
-      g.fillStyle = "#3f6212";
-      g.beginPath();
-      g.moveTo(396, 70); g.lineTo(372, 125); g.lineTo(388, 125);
-      g.lineTo(368, 165); g.lineTo(404, 105); g.lineTo(388, 105);
-      g.closePath(); g.fill();
+      g.fillStyle = "#22c55e"; g.fillRect(0, 0, W, H);
+      drawFrogFace(g, 128, 108, 4);
+      drawFrogFace(g, 384, 108, 2);
     });
-  } else if(kind === "purple"){
-    /* Purple with a BIG white crescent moon and stars on the face. */
+  } else if(kind === "alien"){
+    /* Alien: Dash's alien face, big on the front, smaller on the back. */
     tex = makeSkinTexture(function(g,W,H){
-      g.fillStyle = "#a78bfa"; g.fillRect(0, 0, W, H);
-      g.fillStyle = "#ffffff";
-      g.beginPath(); g.ellipse(128, 110, 56, 56, 0, 0, 6.29); g.fill();
-      g.fillStyle = "#a78bfa";
-      g.beginPath(); g.ellipse(152, 96, 50, 50, 0, 0, 6.29); g.fill();
-      g.fillStyle = "#ffffff";
-      skinStar(g, 210, 60, 14, 6, 4);
-      skinStar(g, 60, 170, 11, 5, 4);
-      skinStar(g, 200, 180, 9, 4, 4);
-      skinStar(g, 384, 110, 34, 15, 4);
-      g.beginPath(); g.ellipse(384, 60, 7, 7, 0, 0, 6.29); g.fill();
-      g.beginPath(); g.ellipse(384, 170, 7, 7, 0, 0, 6.29); g.fill();
+      g.fillStyle = "#4ade80"; g.fillRect(0, 0, W, H);
+      drawAlienFace(g, 128, 108, 4);
+      drawAlienFace(g, 384, 108, 2);
     });
   } else { /* skull — sugar skull: cream with two BIG dark eye sockets, nose, teeth, festive dots */
     tex = makeSkinTexture(function(g,W,H){
@@ -1157,10 +1200,10 @@ function skinTexture(kind){
 }
 var SKINS = [
   {id:"pollito", label:"Pollito", tex:"pollito", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xfacc15},
-  {id:"cyan", label:"Cyan", tex:"cyan", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0x67e8f9},
-  {id:"magenta", label:"Magenta", tex:"magenta", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xf472b6},
-  {id:"lime", label:"Lime", tex:"lime", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xbef264},
-  {id:"purple", label:"Purple", tex:"purple", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xc4b5fd},
+  {id:"panda", label:"Panda", tex:"panda", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xe2e8f0},
+  {id:"fox", label:"Fox", tex:"fox", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xfb923c},
+  {id:"frog", label:"Frog", tex:"frog", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0x4ade80},
+  {id:"alien", label:"Alien", tex:"alien", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0x86efac},
   {id:"cow", label:"Cow", tex:"cow", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xd97706},
   {id:"snowman", label:"Snowman", tex:"snowman", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xe0f2fe},
   {id:"turtle", label:"Turtle", tex:"turtle", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0x86efac},
@@ -3621,13 +3664,18 @@ function buildSkinPicker(){
     b.title = s.label;
     b.setAttribute("aria-label", s.label + " ball");
     if(s.tex){
-      /* Preview: the skin's texture drawn into a round swatch. */
+      /* Preview: the FACE of the skin's texture drawn into a round
+         swatch (round 46 — drawing the whole 512x256 texture into the
+         swatch squashed the face flat, so the picker never looked like
+         the ball; the face lives in the left 256x256 half, centred at
+         128,108, so that half fills the swatch at the right
+         proportions, like the ball itself). */
       var cv = document.createElement("canvas");
       cv.width = 44; cv.height = 44;
       var cg = cv.getContext("2d");
       cg.save();
       cg.beginPath(); cg.arc(22, 22, 20, 0, 6.29); cg.clip();
-      cg.drawImage(skinTexture(s.tex).image, 0, 0, 44, 44);
+      cg.drawImage(skinTexture(s.tex).image, 0, 0, 256, 256, 0, 0, 44, 44);
       cg.restore();
       cg.strokeStyle = "#fff"; cg.lineWidth = 2;
       cg.beginPath(); cg.arc(22, 22, 20, 0, 6.29); cg.stroke();
