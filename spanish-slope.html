@@ -283,6 +283,7 @@
       Tap, Space, or ↑ to hop over a block or a gap.<br>
       Crash and you get a quiz revive: answer 4 of 5 Spanish questions to keep rolling. There are 50 possible revives per game. Roll through a word tile and say the word correctly to earn a free revive: the next time you crash, you skip the quiz entirely.</p>
       <p class="sub hidden" id="saveNote">Saved games must be completed to begin a new game.</p>
+      <button class="ghostBtn hidden" id="btnClearSave" type="button">🗑 Clear saved game</button>
     </div>
     <div class="menuRight">
       <div class="skinLabel">Choose your ball:</div>
@@ -1423,6 +1424,26 @@ var tileIdx = 0;
    falls back to a star so a tile can never render blank. */
 var EMOJI_BY_SP = {"abajo":"⬇️", "abandonar":"🚪", "abrazar":"🤗", "absorber":"🧽", "abundante":"🌾", "académico":"🎓", "acción":"🎬", "aceptar":"✅", "acompañar":"👥", "activar":"🔛", "actividad":"🏃", "actor":"🎭", "actuar":"🎭", "acusar":"👉", "adaptar":"🔄", "admirar":"😍", "admitir":"🚪", "adoptar":"👶", "adorar":"😍", "afirmar":"✅", "agenda":"📅", "ambicioso":"🌟", "ambición":"🌟", "analizar":"🔍", "animal":"🐾", "aniversario":"🎉", "ansioso":"😰", "anticipar":"🔮", "anunciar":"📣", "aparente":"👀", "aplaudir":"👏", "aplicar":"📋", "apreciar":"🙏", "argumentar":"🗣️", "armonizar":"🎵", "aroma":"🌸", "arquitectura":"🏛️", "arrestar":"🚔", "arriba":"⬆️", "articular":"🗣️", "artificial":"🤖", "artista":"🎨", "artístico":"🎨", "asociar":"🔗", "asumir":"🤔", "atacar":"⚔️", "atención":"👀", "atlas":"🗺️", "atleta":"🏃", "atraer":"🧲", "ausente":"🚫", "automático":"🤖", "autor":"✍️", "autoridad":"👮", "autorizar":"✅", "avanzar":"⏩", "avenida":"🛣️", "aventura":"🗺️", "ayudar":"🤝", "banco":"🏦", "base":"🧱", "bautizar":"💧", "beber":"🥤", "besar":"😘", "bicicleta":"🚲", "bloquear":"🚧", "brillante":"✨", "buscar":"🔍", "café":"☕", "calcular":"🧮", "calidad":"💎", "caminar":"🚶", "canal":"🚣", "cancelar":"❌", "capacidad":"💪", "capital":"🏛️", "capturar":"🕸️", "caracterizar":"🎭", "celebración":"🎉", "celebrar":"🎉", "censurar":"🚫", "central":"📍", "centralizar":"🎯", "chocolate":"🍫", "cien":"💯", "científico":"🔬", "cinco":"5️⃣", "circular":"🔄", "citar":"💬", "civil":"🏛️", "clarificar":"💡", "clase":"🏫", "clasificar":"🗂️", "club":"🎉", "clásico":"🎻", "colaborar":"🤝", "coleccionar":"📦", "color":"🎨", "combinar":"🔀", "comentario":"💬", "comer":"🍽️", "comparar":"⚖️", "competente":"💪", "competir":"🏁", "completar":"✅", "componer":"🎵", "comprender":"🧠", "comunicación":"📣", "comunicar":"📣", "comunidad":"👥", "concentrar":"🎯", "concierto":"🎵", "concluir":"🏁", "condenar":"⚖️", "condición":"📋", "conectar":"🔌", "conferencia":"🎤", "confesar":"🙏", "confirmar":"✅", "congreso":"🏛️", "conquistar":"👑", "conservar":"🏺", "considerar":"🤔", "consistir":"🧱", "consonante":"🔤", "constante":"🔁", "constelación":"✨", "consultar":"📖", "contactar":"📞", "contener":"📦", "continente":"🌍", "continuar":"➡️", "contrato":"📝", "contribuir":"🎁", "control":"🎛️", "controlar":"🎛️", "conveniente":"👍", "conversación":"💬", "convertir":"🔄", "cooperar":"🤝", "coordinar":"📋", "copia":"📄", "copiar":"📄", "correcto":"✅", "correr":"🏃", "correr una carrera":"🏃‍♀️", "costo":"💰", "creación":"🎨", "creatividad":"🎨", "creer":"💭", "criminal":"🦹", "crisis":"🆘", "cuatro":"4️⃣", "cuidadosamente":"🔍", "cultura":"🎭", "cultural":"🎭", "curiosidad":"🤔", "curioso":"🤔", "curso":"📚", "cámara":"📷", "círculo":"⭕", "dar":"🎁", "de nuevo":"🔄", "debatir":"🗣️", "decidir":"☑️", "decir":"💬", "declarar":"📣", "dedicar":"❤️", "definir":"📖", "dejar":"🖐️", "delicioso":"😋", "dentista":"🦷", "depender":"🔗", "derecha":"➡️", "desarrollar":"💻", "desbloquear":"🔓", "describir":"📝", "descripción":"📝", "desertar":"🏜️", "despedirse":"👋", "destruir":"💥", "detallar":"🔍", "detectar":"🔍", "determinar":"🎯", "diagnosticar":"🩺", "dialogar":"💬", "diccionario":"📖", "dictar":"🗣️", "diez":"🔟", "diferente":"🔀", "digital":"💻", "dignidad":"👑", "diploma":"🎓", "directamente":"➡️", "director":"🎬", "discutir":"🗣️", "diseñar":"🖌️", "distante":"🔭", "distinguir":"🔍", "dividir":"✂️", "doctor":"🩺", "dominar":"👑", "doméstico":"🏠", "donar":"🎁", "dormir":"😴", "dos":"2️⃣", "drama":"🎭", "dramatizar":"🎭", "editar":"✏️", "editor":"✏️", "educación":"🎓", "educar":"🎓", "el abogado":"⚖️", "el abuelo":"👴", "el acantilado":"🪨", "el acuerdo":"🤝", "el agente de viajes":"🗺️", "el agua":"💧", "el aguacate":"🥑", "el ajedrez":"♟️", "el ajo":"🧄", "el alcalde":"🏛️", "el amanecer":"🌅", "el amarillo":"🟡", "el amigo":"🧑", "el amor":"❤️", "el anfitrión":"🧑‍💼", "el anillo":"💍", "el anochecer":"🌇", "el arbusto":"🌾", "el arcoíris":"🌈", "el arroyo":"💦", "el arroz":"🍚", "el arándano":"🫐", "el atardecer":"🌇", "el ave":"🐦", "el avión":"✈️", "el azul":"🔵", "el bailarín":"🕺", "el baloncesto":"🏀", "el barco":"🚢", "el barrio":"🏘️", "el barro":"🟤", "el baterista":"🥁🧑", "el baño":"🚽", "el bibliotecario":"📖", "el blanco":"⚪", "el boleto":"🎫", "el bolso":"👛", "el bombero":"👨‍🚒", "el bosque":"🌳", "el brillo":"✨", "el buzón":"📬", "el búho":"🦉", "el caballo":"🐴", "el cabello":"💇", "el caimán":"🐊", "el calcetín":"🧦", "el calor":"🔥", "el camarón":"🦐", "el camino":"🥾", "el camote":"🍠", "el campo":"🏞️", "el cangrejo":"🦀", "el cantante":"🎤🧑", "el caracol":"🐌", "el cariño":"😍", "el carnicero":"🥩", "el castor":"🦫", "el cepillo de dientes":"🪥", "el cerdo":"🐷", "el cerebro":"🧠", "el charco":"💧", "el chile":"🌶️", "el cielo":"☁️", "el ciervo":"🦌", "el cirujano":"🏥", "el cisne":"🦢", "el ciudadano":"🏙️", "el cliente":"🛒", "el cocinero":"👨‍🍳", "el cohete":"🚀", "el combate":"🥊🧑", "el compañero de clase":"📚", "el compañero de equipo":"🤝", "el compañero de trabajo":"💼", "el conductor":"🧑‍✈️", "el conejo":"🐇", "el copo de nieve":"❄️", "el corazón":"❤️", "el corazón roto":"💔", "el cuaderno":"📓", "el cuadrado":"⬛", "el cuchillo":"🔪", "el cumpleaños":"🎂", "el dado":"🎲", "el desarrollo":"💻", "el desayuno":"🍳", "el destornillador":"🪛", "el diente":"🦷", "el dinero":"💰", "el director de escuela":"🏫", "el dueño":"🔑", "el dulce":"🍬", "el durazno":"🍑", "el edificio":"🏛️", "el enchufe":"🔌", "el enfermero":"👨‍⚕️", "el entrenamiento":"🏆", "el equipo":"👥", "el escritor":"✍️🧑", "el esfuerzo":"💪", "el esposo":"💍", "el esquí":"🎿", "el estanque":"🫧", "el estudiante universitario":"🧑‍🎓", "el excursionista":"🥾🧑", "el extranjero":"🌎", "el extraño":"❓", "el frío":"🌡️", "el fuego":"🔥", "el futbolista":"⚽🧑", "el físico":"⚛️", "el fútbol":"⚽", "el gato":"🐱", "el gerente":"🧑‍💼", "el girasol":"🌻", "el globo":"🎈", "el gorrión":"🐦", "el granizo":"🌨️", "el granjero":"👨‍🌾", "el grillo":"🦗", "el gris":"🩶", "el guante":"🧤", "el guardia de seguridad":"💂", "el guiso":"🍲", "el gusano":"🐛", "el helado":"🍦", "el hermano":"👦", "el hielo":"❄️", "el hijo":"👶", "el hogar":"🏡", "el hombre":"👨", "el hongo":"🍄", "el huevo":"🥚", "el invitado":"🎟️", "el jabón":"🧼", "el jefe":"👔", "el joven":"🧑", "el juego":"🎮", "el jugo":"🧃", "el lagarto":"🦎", "el lago":"🌊", "el lapicero":"🖊️", "el libro":"📖", "el lobo":"🐺", "el lugar":"📍", "el lápiz":"✏️", "el maestro":"👨‍🏫", "el mapache":"🦝", "el maquillaje":"💄👩", "el marinero":"⚓", "el marrón":"🤎", "el martillo":"🔨", "el matrimonio":"💍", "el maíz":"🌽", "el mesero":"🧑‍🍽️", "el metro":"🚇", "el morado":"🟣", "el mundo":"🌎", "el murciélago":"🦇", "el médico":"👨‍⚕️", "el naranja":"🟠", "el negro":"⚫", "el nido":"🪺", "el nieto":"👦", "el niño":"👦", "el novio":"❤️", "el objetivo":"🎯", "el oso":"🐻", "el otoño":"🍂", "el padre":"👨", "el pan":"🍞", "el panadero":"🥖", "el panquecito":"🧁", "el papel higiénico":"🧻", "el partido de tenis":"🎾👩", "el pastel":"🎂", "el pastel de cumpleaños":"🎂", "el patinaje":"⛸️", "el pato":"🦆", "el payaso":"🤡", "el peluquero":"💈", "el pensamiento":"💭", "el periodista":"📰🧑", "el perrito caliente":"🌭", "el perro":"🐶", "el pescador":"🎣", "el pez":"🐟", "el piloto de avión":"🧑‍✈️", "el plátano":"🍌", "el pollo":"🍗", "el principiante":"🌱", "el profesor":"👨‍🏫", "el profesor de español":"👨‍🏫🇪🇸", "el profesor de música":"👨‍🏫🎵", "el puente":"🌉", "el pulgar":"👍", "el pulpo":"🐙", "el pájaro":"🦜", "el queso":"🧀", "el ratón":"🖱️", "el rayo":"⚡", "el refugio":"🏕️", "el regalo":"🎁", "el reloj":"⌚", "el reloj despertador":"⏰", "el reparto":"👩‍💼📦", "el rey":"👑", "el rojo":"🔴", "el rompecabezas":"🧩", "el rosa":"🩷", "el río":"🏞️", "el semáforo":"🚦", "el sendero":"🥾", "el señor":"🧔", "el sol":"☀️", "el tallo":"🌷", "el tambor":"🥁", "el taxista":"🚕", "el teclado":"⌨️", "el tenedor":"🍴", "el tiburón":"🦈", "el tocino":"🥓", "el trabajo":"💻", "el trigo":"🌾", "el trineo":"🛷", "el tronco":"🪵", "el vapor":"🌫️", "el vaso":"🥤", "el vecino":"🏠", "el velero":"⛵", "el verde":"🟢", "el vestido":"👗", "el vidrio":"🪟", "el viento":"💨", "el zapato":"👟", "el zorro":"🦊", "el águila":"🦅", "el árbitro":"🧑‍⚖️", "el árbol":"🌲", "el éxito":"✅", "electricidad":"⚡", "elegante":"💃", "elevar":"⬆️", "eliminar":"❌", "eléctrico":"⚡", "emoción":"😢", "encontrar":"🔎", "enfatizar":"❗", "enigma":"❓", "entrar":"🚪", "entrenar":"🏆", "envidioso":"😒", "error":"❌", "escalar":"🧗", "escapar":"🏃", "escribir":"✍️", "escuchar":"👂", "especial":"✨", "especialista":"🩺", "específico":"🎯", "esquiar":"⛷️", "establecer":"🏗️", "estación":"🚉", "estar":"📍", "estimar":"💭", "estratégico":"♟️", "estructura":"🏗️", "estudiar":"📚", "evaluar":"📝", "exactamente":"🎯", "examinar":"🔍", "exceder":"📈", "excelente":"🌟", "excitar":"🎉", "existir":"🌍", "expandir":"📈", "experiencia":"🌟", "experimentar":"🧪", "explicar":"💡", "explorar":"🧭", "exponer":"🖼️", "exportar":"📦", "expresar":"💬", "extender":"↔️", "exterior":"🌳", "extraordinario":"🌟", "exótico":"🌺", "fabricar":"🏭", "fabuloso":"🌟", "facilitar":"👍", "familia":"👨‍👩‍👧", "familiar":"👨‍👩‍👧", "famoso":"🌟", "fantástico":"✨", "farmacia":"💊", "fascinar":"😍", "favor":"🙏", "festival":"🎉", "filosofía":"🤔", "final":"🏁", "finalmente":"🏁", "financiar":"💰", "formal":"👔", "formular":"📝", "fortificar":"🏰", "foto":"📷", "fotografía":"📷", "funcionar":"⚙️", "función":"⚙️", "furioso":"😡", "fácilmente":"👍", "gala":"💃", "ganar":"🏆", "general":"🌐", "generalmente":"🌍", "generar":"⚡", "generoso":"🎁", "global":"🌍", "glorioso":"🏆", "guitarrista":"🎸", "gustar":"❤️", "hablar":"🗣️", "hacer":"🛠️", "heroico":"🦸", "histórico":"🏛️", "honestamente":"💛", "honor":"🏅", "hospital":"🏥", "hospitalizar":"🏥", "hotel":"🏨", "humor":"😂", "idea":"💡", "ideal":"✨", "identidad":"🪪", "identificación":"🪪", "identificar":"🔍", "ignorar":"🙈", "ilegal":"🚫", "iluminar":"💡", "imaginación":"💭", "imaginar":"💭", "imaginario":"🦄", "imitar":"🐵", "imperial":"👑", "importante":"❗", "importar":"📦", "impresionar":"😮", "incluir":"➕", "indicar":"👉", "individual":"🧍", "industrial":"🏭", "información":"ℹ️", "informal":"😎", "informar":"📰", "iniciar":"▶️", "inmediatamente":"⏰", "innovar":"💡", "inocente":"😇", "insistir":"❗", "inspeccionar":"🔍", "inspiración":"✨", "inspirar":"✨", "instalar":"🔧", "insultar":"😡", "integrar":"🧩", "inteligente":"🧠", "interesar":"🤔", "interior":"🏠", "internet":"🌐", "interpretar":"🎭", "interrumpir":"✋", "intervenir":"🤝", "introducir":"🚪", "inventar":"💡", "investigar":"🔎", "invitación":"💌", "invitar":"💌", "invocar":"🪄", "ir":"🚶", "irónico":"🙃", "izquierda":"⬅️", "jugar":"▶️", "justificar":"⚖️", "la abeja":"🐝", "la abogada":"⚖️", "la abuela":"👵", "la agente de viajes":"🗺️", "la alcaldesa":"🏛️", "la amiga":"🧑", "la amistad":"🤝", "la ardilla":"🐿️", "la bailarina":"💃", "la ballena":"🐳", "la bandera":"🚩", "la basura":"🗑️", "la baterista":"🥁👩", "la baya":"🫐", "la bañera":"🛁", "la bibliotecaria":"📖", "la boca":"👄", "la bombera":"👩‍🚒", "la bombilla":"💡", "la brisa":"🌬️", "la brújula":"🧭", "la bufanda":"🧣", "la cabra":"🐐", "la caja":"📦", "la caja de herramientas":"🧰", "la cama":"🛏️", "la camisa":"👕", "la campana":"🔔", "la canasta":"🧺", "la cantante":"🎤👩", "la carne":"🥩", "la carnicera":"🥩", "la carrera":"🏃", "la carretera":"🛣️", "la casa":"🏠", "la cascada":"💧", "la cebolla":"🧅", "la cereza":"🍒", "la cerradura":"🔒", "la chaqueta":"🧥", "la cirujana":"🏥", "la ciudad":"🏙️", "la ciudadana":"🏙️", "la clienta":"🛒", "la cocinera":"👩‍🍳", "la colina":"⛰️", "la comida":"🍽️", "la compañera":"🧑", "la compañera de clase":"📚", "la compañera de equipo":"🤝", "la compañera de trabajo":"💼", "la concha":"🐚", "la conductora":"👩‍✈️", "la corteza":"🟫", "la cuchara":"🥄", "la cueva":"🕳️", "la curita":"🩹", "la directora de escuela":"🏫", "la ducha":"🚿", "la duda":"❓", "la dueña":"🔑", "la enfermedad":"🤒", "la enfermera":"👩‍⚕️", "la escalada":"🧗‍♀️", "la escarcha":"❄️", "la escoba":"🧹", "la escritora":"✍️👩", "la escuela":"🏫", "la espera":"⏳", "la esposa":"💍", "la estrella":"⭐", "la estrella fugaz":"🌠", "la estudiante universitaria":"👩‍🎓", "la etiqueta":"🏷️", "la excursionista":"🥾👩", "la extranjera":"🌎", "la extraña":"❓", "la felicidad":"😊", "la foca":"🦭", "la fogata":"🔥", "la fresa":"🍓", "la fuerza":"💪", "la futbolista":"⚽👩", "la física":"⚛️", "la galleta":"🍪", "la gallina":"🐔", "la gente":"🧑‍🤝‍🧑", "la gerente":"👩‍💼", "la gorra":"🧢", "la granjera":"👩‍🌾", "la guardia de seguridad":"💂‍♀️", "la helada":"❄️", "la hermana":"👧", "la hierba":"🌿", "la hija":"👧", "la hoja":"🍃", "la hormiga":"🐜", "la iglesia":"⛪", "la impresora":"🖨️", "la investigación":"🔎", "la invitada":"🎟️", "la jefa":"👔", "la joven":"🧑", "la leche":"🥛", "la lechuga":"🥬", "la lengua":"👅", "la libertad":"🕊️", "la limpieza":"🧹", "la linterna":"🔦", "la llamada":"📞", "la llave":"🔑", "la lluvia":"🌧️", "la luna":"🌙", "la luz":"☀️", "la madera":"🪵", "la madre":"👩", "la maleta":"🧳", "la maleza":"🌱", "la manzana":"🍎", "la margarita":"🌼", "la marinera":"⚓", "la mariposa":"🦋", "la mariquita":"🐞", "la medida":"📏", "la mesera":"🍽️", "la meta":"🏁", "la mezquita":"🕌", "la miel":"🍯", "la mochila":"🎒", "la moneda":"🪙", "la montaña rusa":"🎢", "la mora":"🫐", "la mosca":"🪰", "la mujer":"👩", "la multitud":"👥", "la naranja":"🍊", "la nariz":"👃", "la natación":"🏊‍♀️", "la nevada":"❄️", "la niebla":"🌫️", "la nieta":"👧", "la nieve":"🌨️", "la niña":"👧", "la noche":"🌙", "la novia":"❤️", "la nube":"☁️", "la nuez":"🌰", "la ola":"🌊", "la oración":"🙏", "la oreja":"👂", "la orilla":"🏖️", "la oruga":"🐛", "la oscuridad":"🌑", "la oveja":"🐑", "la paleta":"🍭", "la panadera":"🥖", "la papa":"🥔", "la pareja":"💑", "la patineta":"🛹", "la payasa":"🤡", "la paz":"☮️", "la peluquera":"💇", "la película":"🎬", "la pendiente":"⛰️", "la periodista":"📰👩", "la pesca":"🎣", "la pescadora":"🎣", "la piedra":"🪨", "la piloto de avión":"👩‍✈️", "la playa":"🏖️", "la pluma":"🪶", "la pregunta":"🤔", "la principiante":"🌱", "la profesora":"👩‍🏫", "la profesora de español":"👩‍🏫🇪🇸", "la profesora de música":"👩‍🏫🎵", "la puerta":"🚪", "la pérdida":"😞", "la rabia":"😡", "la rana":"🐸", "la raíz":"🌿", "la regla":"📐", "la reina":"👑", "la respuesta":"✔️", "la risa":"😂", "la ropa":"👕", "la rueda de la fortuna":"🎡", "la salida":"🚪", "la sandía":"🍉", "la semilla":"🌱", "la serpiente":"🐍", "la señora":"👩", "la silla":"🪑", "la sonrisa":"😊", "la tarjeta":"💳", "la taxista":"🚕", "la taza":"☕", "la telaraña":"🕸️", "la tienda":"🏪", "la tierra":"🌍", "la tortuga":"🐢", "la tristeza":"😢", "la uva":"🍇", "la vaca":"🐮", "la vecina":"🏠", "la venta":"👩‍💼🛍️", "la ventana":"🪟", "la verdad":"✅", "la voz":"🗣️", "la zanahoria":"🥕", "la árbitra":"🧑‍⚖️", "las palomitas":"🍿", "las tijeras":"✂️", "leer":"📖", "legal":"⚖️", "legendario":"🏆", "liberal":"🕊️", "limpiar":"🧹", "literal":"📖", "literario":"📖", "literatura":"📚", "llamar":"📞", "llegar":"🏁", "llevar":"🎒", "local":"📍", "los anteojos":"👓", "los audífonos":"🎧", "los lentes":"😎", "los libros":"📚", "los ojos":"👀", "lógico":"🧠", "manual":"📖", "material":"🧱", "matrimonial":"💍", "medicina":"💊", "mental":"🧠", "metal":"🔩", "mineral":"💎", "misterioso":"🕵️", "montar en bicicleta":"🚴", "moral":"😇", "mosquito":"🦟", "musical":"🎵", "mágico":"🪄", "más":"➕", "música":"🎵", "nación":"🗺️", "nadar":"🏊", "nadar en una piscina":"🏊", "natural":"🌿", "naturaleza":"🌿", "naturalmente":"🌿", "naval":"⚓", "necesario":"✅", "necesidad":"🙏", "necesitar":"🙏", "nervioso":"😬", "noble":"🤴", "normal":"✅", "normalmente":"✅", "nueve":"9️⃣", "observación":"🔍", "ocho":"8️⃣", "operación":"🏥", "oportunidad":"🍀", "optimista":"😊", "organización":"🏢", "organizar":"🗂️", "original":"🌟", "oval":"🥚", "paciencia":"😌", "paciente":"😌", "pacífico":"☮️", "panda":"🐼", "panorama":"🌄", "participación":"🙋", "pasar":"➡️", "patinar":"🧑🛹", "patinar en patineta":"👩🛹", "pausar":"⏸️", "pensar":"🧠", "perder":"😞", "permitir":"✅", "personal":"🙋", "personalidad":"😊", "pescar":"🎣", "pesimista":"😞", "pianista":"🎹", "piano":"🎹", "pizza":"🍕", "plan":"📋", "planeta":"🪐", "plaza":"🏛️", "plural":"🔢", "plástico":"🧴", "poder":"💪", "poner":"📦", "popular":"👥", "posibilidad":"🤞", "posición":"📍", "postura":"🧍", "poético":"📝", "practicar":"🏃", "precioso":"💎", "preferir":"❤️", "preparar":"🍳", "presentación":"🎤", "presentar":"🎙️", "presente":"🎁", "principal":"🏫", "probabilidad":"🎲", "probablemente":"🤷", "probar":"🔬", "producción":"🎬", "programar":"👨‍💻", "protección":"🛡️", "proteger":"🛡️", "publicar":"📰", "público":"👥", "querer":"❤️", "radio":"📻", "realidad":"🌍", "recibir":"🎁", "reciente":"🆕", "recomendar":"👍", "reconocer":"👀", "recuperar":"💪", "reducir":"📉", "reformar":"🔧", "registrar":"📝", "regular":"🎛️", "relajar":"😌", "reparar":"🔧", "repartir":"🧑‍💼📦", "repetir":"🔁", "representar":"🎭", "reservar":"📅", "resistir":"💪", "resolver":"🧩", "respetar":"🙏", "responder":"💬", "restaurante":"🍽️", "restaurar":"🏛️", "resultar":"➡️", "revelar":"🔍", "ritual":"🕯️", "rival":"⚔️", "romántico":"💕", "rumor":"👂", "rápidamente":"💨", "saber":"💡", "sacrificar":"🕯️", "salir":"🚪", "saludar":"👋", "salvar":"🛟", "satisfacer":"😊", "secretario":"📝", "seguridad":"🔒", "seis":"6️⃣", "seleccionar":"👆", "separar":"✂️", "ser":"🧑", "serio":"😐", "servir":"🍽️", "simbólico":"🔣", "simple":"😊", "sinceridad":"💛", "sobrevivir":"💪", "social":"👥", "sociedad":"👥", "sofá":"🛋️", "solar":"☀️", "solo":"🎤", "solución":"💡", "sándwich":"🥪", "taco":"🌮", "taxi":"🚕", "teatro":"🎭", "televisión":"📺", "teléfono":"📱", "temperatura":"🌡️", "tener":"🤲", "teoría":"💭", "terror":"😱", "tesis":"📝", "tolerar":"🤝", "total":"💯", "trabajar":"👷", "tradición":"🎎", "traducción":"🌐", "transformar":"🦋", "tropical":"🌴", "trágico":"😢", "turista":"🧳", "universal":"🌍", "universidad":"🎓", "universo":"🌌", "uno":"1️⃣", "urgente":"🚨", "usar":"🔧", "utilizar":"🔧", "vender":"🧑‍💼🛍️", "venir":"👋", "ver":"👀", "verbal":"💬", "verificar":"✅", "vertical":"⬆️", "video":"🎬", "violinista":"🎻", "visible":"👀", "visitar":"🧳", "visual":"👁️", "vital":"❤️", "vivir":"🏠", "vocabulario":"📖", "vocal":"🎤", "vocalista":"🎤", "votar":"🗳️", "yoga":"🧘", "área":"🗺️"};
 function emojiFor(sp){ return EMOJI_BY_SP[sp] || "⭐"; }
+/* Round 45 (Brant): the tile list is 1,015 distinct words. Once a run
+   has passed all of them, the words the player has NOT collected and
+   spoken cycle again — so a word already spoken for a free revive
+   never comes back, but a word they hopped over or skipped gets
+   another chance. Later passes work the same way (the pointer keeps
+   cycling, skipping anything spoken by then). */
+var TILE_SPOKEN = {};   // Spanish words spoken correctly for a free revive (tileCorrect)
+var pass2Idx = 0;       // pointer into TILE_WORDS for the second (and later) pass
+function nextTileWord(){
+  if(tileIdx < TILE_WORDS.length) return TILE_WORDS[tileIdx];
+  var start = pass2Idx, w;
+  do{
+    w = TILE_WORDS[pass2Idx];
+    pass2Idx = (pass2Idx + 1) % TILE_WORDS.length;
+    if(!TILE_SPOKEN[w[0]]) return w;
+  }while(pass2Idx !== start);
+  /* Every word spoken (only reachable if all 1,015 were spoken) —
+     fall back to the plain cycle so tiles keep coming. */
+  return TILE_WORDS[tileIdx % TILE_WORDS.length];
+}
 /* Track plan: PURE functions (no THREE, no DOM) so the layout can be
    simulated in Node. One segment is 20 units long; blocks sit at the
    segment centre, a gap runs the whole segment length at one x-range.
@@ -1729,7 +1750,7 @@ function planSegment(idx, dist, rng, prevGap){
       if(Math.abs(tx - plan.blocks[b].x) < plan.blocks[b].w/2 + 1.0){ ok=false; break; }
     }
     if(ok){
-      var tw = TILE_WORDS[tileIdx % TILE_WORDS.length]; tileIdx++;
+      var tw = nextTileWord(); tileIdx++;
       plan.tile = {x:tx, sp:tw[0], en:tw[1], em:emojiFor(tw[0])};   // round 24: tile carries its emoji
     }
   }
@@ -2447,6 +2468,7 @@ function saveRun(){
     freePasses: freePasses,
     wordsGot: wordsGot,
     tileIdx: tileIdx,
+    tileSpoken: Object.keys(TILE_SPOKEN),   // round 45: words spoken for a free revive (second pass skips them)
     nextSegIdx: nextSegIdx,
     reviveQ: REVIVE_Q,
     pairUsed: PAIR_USED,
@@ -2481,6 +2503,7 @@ function rebuildTrackFromSave(s){
   TILE_WORDS = buildTileWords(runSeed);
   prevSegGap = false;
   tileIdx = 0;
+  pass2Idx = 0;   // round 45: the replay reproduces it (same as tileIdx)
   var ballSeg = Math.floor(s.dist / SEG_LEN);
   var firstIdx = Math.max(0, ballSeg - 3);   // a few segments behind for the view
   var lastIdx = Math.min(s.nextSegIdx - 1, ballSeg + 75);  // ~1500 ahead, like ensureSegments (round 26: was +39 / ~780)
@@ -2511,6 +2534,8 @@ function continueRun(){
   ballHopY = 0; ballHopV = 0; nextHopAt = 0; fallDrop = 0; fallV = 0; fallT = 0; zBefore = 0;
   PAIR_USED = s.pairUsed || {};
   REVIVE_Q = s.reviveQ || {};
+  TILE_SPOKEN = {};   // round 45: restore before the replay (second-pass tiles skip these)
+  (s.tileSpoken || []).forEach(function(w){ TILE_SPOKEN[w] = true; });
   rebuildTrackFromSave(s);
   /* The save is consumed: once resumed, the run continues from here and
      a fresh save must be made to store it again. (This also stops a
@@ -2534,20 +2559,24 @@ function continueRun(){
    run. The run can only end in-game (game over clears the save, so
    Start comes back); with no save, Start shows as normal. Round 40:
    the small saved-run note (saveNote) shows with a save too, so the
-   menu itself explains why Start is gone. */
+   menu itself explains why Start is gone. Round 45: the [Clear saved
+   game] button (btnClearSave) shows with a save too — the deliberate
+   way out, two taps so a curious tap can't wipe the run. */
 function refreshContinueBtn(){
   var s = loadSave();
-  var b = el("btnContinue"), st = el("btnStart"), n = el("saveNote");
+  var b = el("btnContinue"), st = el("btnStart"), n = el("saveNote"), c = el("btnClearSave");
   if(!b) return;
   if(s){
     b.classList.remove("hidden");
     b.textContent = "▶ Continue — " + Math.floor(s.dist) + " m";
     if(st) st.classList.add("hidden");
     if(n) n.classList.remove("hidden");
+    if(c) c.classList.remove("hidden");
   } else {
     b.classList.add("hidden");
     if(st) st.classList.remove("hidden");
     if(n) n.classList.add("hidden");
+    if(c) c.classList.add("hidden");
   }
 }
 /* High-scores screen (read-only list + Back). */
@@ -2583,6 +2612,8 @@ function startRun(){
   PAIR_USED = {};   // fresh question session each run
   REVIVE_Q = {};    // fresh revive queues (blocks of ten) each run
   tileIdx = 0;
+  TILE_SPOKEN = {};   // round 45: fresh spoken set each run
+  pass2Idx = 0;       // round 45: fresh second-pass pointer each run
   resetTrack();
   menuEl.classList.add("hidden");
   overEl.classList.add("hidden");
@@ -3022,6 +3053,7 @@ function tileCorrect(){
   /* One correct word = one free revive (round 6): the next crash is
      revived instantly with no quiz. Passes stack, one per word. */
   tileSayBtn.disabled = true;   // no double-scoring while the resume timer runs
+  TILE_SPOKEN[tileTarget] = true;   // round 45: spoken, so it never cycles back as a tile
   freePasses++;
   updateHUD();
   sfxWin();
@@ -3653,6 +3685,24 @@ el("btnSaveContinue").addEventListener("click", function(){ if(saveRun()) resume
 el("btnRestart").addEventListener("click", function(){ startRun(); });
 el("btnQuitMenu").addEventListener("click", function(){ showMenu(); });
 el("btnContinue").addEventListener("click", function(){ audioEnsure(); continueRun(); });
+/* Round 45 (Brant): a [Clear saved game] button sits under the
+   saved-run note. Two taps to actually clear it — a single curious
+   tap can't wipe a run (the Round 38 problem). */
+var clearArmed = false, clearArmTimer = null;
+el("btnClearSave").addEventListener("click", function(){
+  if(!clearArmed){
+    clearArmed = true;
+    this.textContent = "⚠️ Tap again to confirm — this deletes your saved run";
+    var self = this;
+    clearArmTimer = setTimeout(function(){ clearArmed = false; self.textContent = "🗑 Clear saved game"; }, 4000);
+  } else {
+    clearTimeout(clearArmTimer);
+    clearArmed = false;
+    this.textContent = "🗑 Clear saved game";
+    clearSave();
+    refreshContinueBtn();
+  }
+});
 el("btnScores").addEventListener("click", function(){ showScores(); });
 el("btnScoresClose").addEventListener("click", function(){ hideScores(); });
 el("btnAgain").addEventListener("click", function(){ startRun(); });
