@@ -3239,9 +3239,23 @@ function stopListen(user){
   tileSayBtn.classList.remove("listening");
   tileSayBtn.textContent = "🎤 Say it";
 }
-function scoreHeard(heard){
+/* Round 37 (Chromebooks): score every alternative the recognizer
+   returns, not just the top one. On Chromebooks the top result is
+   often an English mishearing ("Harry Store") while a lower
+   alternative is the right Spanish word ("arrestar"). The match is
+   still EXACT (normSp, whole word) — an alternative only counts if
+   it equals the target — so this never loosens the bar, it just
+   gives the right answer more chances to be heard. */
+function bestAlt(alts, want){
+  for(var i=0;i<alts.length;i++){ if(normSp(alts[i])===want) return alts[i]; }
+  return alts[0]||"";
+}
+function scoreHeard(alts){
+  var heard = "";
   if(speakMode === "tile"){
-    var gotT = normSp(heard), wantT = normSp(tileTarget);
+    var wantT = normSp(tileTarget);
+    heard = bestAlt(alts, wantT);
+    var gotT = normSp(heard);
     if(gotT === wantT){
       sfxCorrect();
       tileCorrect();
@@ -3253,7 +3267,9 @@ function scoreHeard(heard){
   }
   var w = reviveWordsArr[rqIdx];
   if(!w) return;
-  var got = normSp(heard), want = normSp(w.target);
+  var want = normSp(w.target);
+  heard = bestAlt(alts, want);
+  var got = normSp(heard);
   if(got === want){
     sfxCorrect();
     setQuizFb("✓ Correct!", "ok");
@@ -3294,14 +3310,20 @@ function startListen(){
       return;
     }
     recog = r;
-    r.lang = langs[li]; r.interimResults = false; r.continuous = false; r.maxAlternatives = 1;
+    r.lang = langs[li]; r.interimResults = false; r.continuous = false; r.maxAlternatives = 5;
     r.onresult = function(e){
       if(recog !== r) return;
       got = true; if(timer){ clearTimeout(timer); timer = null; }
-      var heard = "";
-      try{ heard = e.results[0][0].transcript || ""; }catch(err){}
+      /* Round 37: collect every alternative (up to 5) — scoreHeard
+         takes the first one that exactly matches the target, so a
+         right answer hiding below an English mishearing still counts. */
+      var alts = [];
+      try{
+        var res = e.results[0];
+        for(var i=0;i<res.length;i++){ if(res[i] && res[i].transcript) alts.push(res[i].transcript); }
+      }catch(err){}
       stopListen(false);
-      if(heard) scoreHeard(heard);
+      if(alts.length) scoreHeard(alts);
       else speakFb("Didn't catch that — try again.", "bad");
     };
     r.onerror = function(e){
