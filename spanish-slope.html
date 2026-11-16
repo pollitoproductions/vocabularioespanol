@@ -2502,16 +2502,22 @@ function continueRun(){
   invincibleUntil = nowSec() + 2;   // brief blink on resume, like a respawn
   state = "playing";
 }
-/* Show or hide the home-menu Continue button (with the saved distance). */
+/* Show or hide the home-menu Continue button (with the saved distance).
+   Round 38 (Brant): while a save exists, Start is hidden too — the
+   only way forward is Continue, so a tap can never wipe the saved
+   run. The run can only end in-game (game over clears the save, so
+   Start comes back); with no save, Start shows as normal. */
 function refreshContinueBtn(){
   var s = loadSave();
-  var b = el("btnContinue");
+  var b = el("btnContinue"), st = el("btnStart");
   if(!b) return;
   if(s){
     b.classList.remove("hidden");
     b.textContent = "▶ Continue — " + Math.floor(s.dist) + " m";
+    if(st) st.classList.add("hidden");
   } else {
     b.classList.add("hidden");
+    if(st) st.classList.remove("hidden");
   }
 }
 /* High-scores screen (read-only list + Back). */
