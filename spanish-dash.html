@@ -633,7 +633,10 @@ function _vPick(prefs){
 }
 var _speakGen=0;   // round 39: guards the delayed speak below (a stale timeout never speaks over a newer tap)
 function speakSpanish(text){
-  if(muted) return;
+  /* Round 52 (Brant): mute must NOT silence Hear — mute silences the
+     music and sound effects only. A student muting the music (or
+     hitting M) used to leave Hear dead for every later student on a
+     shared Chromebook, with no error or feedback. */
   try{
     if(!("speechSynthesis" in window)) return;
     var u=new SpeechSynthesisUtterance(text);
