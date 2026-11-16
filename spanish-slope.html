@@ -220,6 +220,35 @@
     #tileMeaning{ font-size:1rem; margin:4px 0 6px; }
     #tilePause .sub{ font-size:.85rem; }
   }
+
+  /* ---------- home menu on desktop landscape (round 34) ----------
+     Brant: the home menu doesn't fit well on a computer screen. The
+     two-column menu only kicked in for SHORT (<=500px) landscape
+     viewports (round 15, phones); on a desktop the menu stayed the
+     tall single phone column (560px wide, ~700px tall) — a narrow
+     column in the middle of a wide monitor, overflowing shorter
+     laptop screens and needing a scroll to reach Start. In landscape
+     wider than 760px AND taller than 500px — desktops and laptops
+     the short-landscape block doesn't cover — the menu goes
+     two-column too (intro on the left, skins/buttons on the right),
+     so it reads at a glance and fits without scrolling. Quiz, tile,
+     pause and game-over cards are untouched: their single-column
+     cards already fit a desktop. */
+  @media (orientation:landscape) and (min-width:760px) and (min-height:501px){
+    #menu .card{ max-width:880px; padding:18px 24px; display:grid;
+      grid-template-columns:1.05fr 1fr; column-gap:28px; text-align:left; margin:auto; }
+    #menu .menuLeft h1{ font-size:1.8rem; text-align:center; }
+    #menu .menuLeft p{ font-size:1rem; margin:10px 0; }
+    #menu .menuLeft .sub{ font-size:.9rem; }
+    #menu .skinLabel{ margin:2px 0 8px; text-align:center; }
+    #menu .skinBtn{ width:46px; height:46px; }
+    #menu .skinBtn canvas{ width:42px; height:42px; }
+    #menu .checkRow{ font-size:.95rem; margin:10px 0 2px; }
+    #menu .bigBtn{ padding:12px; font-size:1.05rem; margin-top:10px; }
+    #menu .ghostBtn{ padding:10px; margin-top:10px; }
+    #menu .bestLine{ text-align:center; }
+    #menu .homeLink{ text-align:center; }
+  }
 </style>
 </head>
 <body>
