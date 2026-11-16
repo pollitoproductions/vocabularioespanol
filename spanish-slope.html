@@ -283,6 +283,7 @@
       Tap, Space, or ↑ to hop over a block or a gap.<br>
       Crash and you get a quiz revive: answer 4 of 5 Spanish questions to keep rolling. There are 50 possible revives per game. Roll through a word tile and say the word correctly to earn a free revive: the next time you crash, you skip the quiz entirely.</p>
       <p class="sub hidden" id="saveNote">Saved games must be completed to begin a new game.</p>
+      <p class="sub hidden" id="crosNote">If Hear speaks in English or sounds like a robot, this Chromebook is missing a Spanish voice — add one in Settings → Accessibility → Text-to-Speech → Text-to-Speech voice settings.</p>
       <button class="ghostBtn hidden" id="btnClearSave" type="button">🗑 Clear saved game</button>
     </div>
     <div class="menuRight">
@@ -2713,6 +2714,12 @@ function showMenu(){
   hudEl.classList.remove("on");
   el("menuBest").textContent = best > 0 ? ("Best distance: " + best + " m") : "";
   refreshContinueBtn();
+  /* Round 50 (Brant): on Chromebooks, show the Spanish-voice note —
+     Hear speaks in English / robotic when the Chromebook has no
+     Spanish voice installed, and the fix is a device setting (add a
+     Spanish voice in the Text-to-Speech voice settings). Only ChromeOS
+     sees it (CrOS in the user agent). */
+  if(/CrOS/.test(navigator.userAgent)) el("crosNote").classList.remove("hidden");
   /* Park the ball at the start so the menu shows the slope behind it. */
   ballX = 0; ballZ = 0; ballHopY = 0; ballHopV = 0; fallDrop = 0; fallV = 0; fallT = 0;
   resetTrack();
