@@ -648,7 +648,11 @@ var _vCache=[];
 function _vLoad(){ try{ var v=speechSynthesis.getVoices(); if(v&&v.length) _vCache=v; }catch(e){} }
 if("speechSynthesis" in window){ _vLoad(); try{ speechSynthesis.onvoiceschanged=_vLoad; }catch(e){} setTimeout(_vLoad,500); }
 function _vPick(prefs){
-  var list=_vCache.length?_vCache:(function(){try{return speechSynthesis.getVoices()||[];}catch(e){return [];}})();
+  /* Round 39 (Chromebooks): always read the live voice list — the
+     cache can be stuck with the English-only voices that loaded
+     first, before a Spanish voice arrived. */
+  var fresh=(function(){try{return speechSynthesis.getVoices()||[];}catch(e){return [];}})();
+  var list=fresh.length?fresh:_vCache;
   for(var i=0;i<prefs.length;i++){
     for(var j=0;j<list.length;j++){
       var l=(list[j].lang||"").toLowerCase();
@@ -658,15 +662,28 @@ function _vPick(prefs){
   for(var k=0;k<list.length;k++){ if((list[k].lang||"").toLowerCase().indexOf("es")===0) return list[k]; }
   return null;
 }
+var _speakGen=0;   // round 39: guards the delayed speak below (a stale timeout never speaks over a newer tap)
 function speakSpanish(text){
   if(muted) return;
   try{
     if(!("speechSynthesis" in window)) return;
-    speechSynthesis.cancel();
     var u=new SpeechSynthesisUtterance(text);
     u.lang="es-MX"; u.rate=0.85;
     var v=_vPick(["es-mx","es-us","es"]);
     if(v) u.voice=v;
+    var busy=false;
+    try{ busy=speechSynthesis.speaking||speechSynthesis.pending; }catch(e){}
+    if(busy){
+      speechSynthesis.cancel();
+      if(window.chrome){
+        /* Round 39: Chromium drops a speak() issued in the same tick
+           as cancel() — wait 50 ms. (Safari speaks synchronously
+           here: iOS drops deferred speak, so no delay there.) */
+        var g=++_speakGen;
+        setTimeout(function(){ if(g!==_speakGen) return; try{ speechSynthesis.speak(u); }catch(e){} },50);
+        return;
+      }
+    }
     speechSynthesis.speak(u);
   }catch(e){}
 }
