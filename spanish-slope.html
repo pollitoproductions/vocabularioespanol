@@ -836,14 +836,14 @@ function makeSkyTexture(){
   var c = document.createElement("canvas"); c.width = 4; c.height = 512;
   var g = c.getContext("2d");
   var grad = g.createLinearGradient(0, 0, 0, 512);
-  grad.addColorStop(0.0, "#1b1040");   /* deep indigo, top */
-  grad.addColorStop(0.45, "#12082e");  /* violet */
-  grad.addColorStop(1.0, "#070313");   /* near-black purple, bottom */
+  grad.addColorStop(0.0, "#0e0620");   /* round 27: darker — deep indigo, top (was #1b1040) */
+  grad.addColorStop(0.45, "#08031a");  /* round 27: darker — violet (was #12082e) */
+  grad.addColorStop(1.0, "#02010a");   /* round 27: darker — near-black, bottom (was #070313); the neon track, grid and blocks pop more against it */
   g.fillStyle = grad; g.fillRect(0, 0, 4, 512);
   return new THREE.CanvasTexture(c);
 }
 scene.background = makeSkyTexture();
-scene.fog = new THREE.Fog(0x0d0724, 80, 1400);   // round 26: far edge 650 -> 1400 — the road reads much further down the track and fades in gradually over 1320 units instead of popping in at a hard edge (Brant Nov 15: see the road disappear, nothing popping up out of nowhere)
+scene.fog = new THREE.Fog(0x05020f, 80, 1400);   // round 27: fog colour darkened to match the new sky (was 0x0d0724); distances unchanged (round 26: 80/1400) so the road still fades in gradually over 1320 units instead of popping in at a hard edge (Brant Nov 15: see the road disappear, nothing popping up out of nowhere)
 var camera = new THREE.PerspectiveCamera(42, window.innerWidth/window.innerHeight, 0.1, 2000);   // round 26: far plane 900 -> 2000 — must clear the fog far edge (1400) and the mesh build distance (1500); round 23: base FOV 42 (was 56) — zoomed in so the ball reads 50% bigger (~52 px)
 camera.position.set(0, 5, 10);
 scene.add(new THREE.AmbientLight(0x99aaff, 1.5));
@@ -1144,8 +1144,11 @@ var ballMesh = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 24, 18), ballMat)
 ballMesh.position.set(0, BALL_R, 0);
 scene.add(ballMesh);
 
-/* Shared geometries/materials (reused by every segment — keeps it fast). */
-var floorGeo = new THREE.PlaneGeometry(1, SEG_LEN);
+/* Shared materials (reused by every segment — keeps it fast). Round 27:
+   the shared flat geometries (floorGeo / edgeGeo / gapEdgeGeo /
+   skirtGeo) are gone — the floor, rails and skirts are now twisted
+   ribbons built per segment through surfLocal, so each segment follows
+   the smooth bank instead of one rigid tilt. */
 /* Neon grid texture for the track surface — the original Slope's
    signature: a glowing grid that scrolls toward the camera so the
    motion reads. One canvas tile = 2 x 4 units. Longitudinal lines stay
@@ -1193,7 +1196,6 @@ function floorMaterialFor(width){
   t.needsUpdate = true;
   return {mat: new THREE.MeshStandardMaterial({color:0xffffff, map:t, roughness:0.85, metalness:0.2}), tex: t};
 }
-var edgeGeo = new THREE.BoxGeometry(0.18, 0.08, SEG_LEN);
 var edgeMatL = new THREE.MeshBasicMaterial({color:0x22d3ee});   /* cyan, left */
 var edgeMatR = new THREE.MeshBasicMaterial({color:0xec4899});   /* hot pink, right */
 var crossGeo = new THREE.BoxGeometry(TRACK_W, 0.06, 0.14);
@@ -1270,7 +1272,6 @@ var blockMat = new THREE.MeshStandardMaterial({map:blockGridTex, emissive:0xff00
    each gap gets a hot pink-red neon outline: two rails along its
    left/right edges plus a bar across its near end, where the hole
    starts. Shared geometry/material (no per-segment disposal). */
-var gapEdgeGeo = new THREE.BoxGeometry(0.16, 0.07, SEG_LEN);
 var gapBarGeo = new THREE.BoxGeometry(1, 0.07, 0.16);
 var gapEdgeMat = new THREE.MeshBasicMaterial({color:0xff2d55});
 /* Round 5 (Brant, Nov 14): the track is a RAISED RIBBON, not a flat
@@ -1283,7 +1284,6 @@ var gapEdgeMat = new THREE.MeshBasicMaterial({color:0xff2d55});
    visual only, the track stays fully solid and playable. Skipped on
    gap segments (a hole has no floor to hang from; the glowing gap
    edges mark the hole instead). */
-var skirtGeo = new THREE.BoxGeometry(0.15, 2.5, SEG_LEN);
 var skirtMatL = new THREE.MeshBasicMaterial({color:0x0891b2});   /* cyan, left */
 var skirtMatR = new THREE.MeshBasicMaterial({color:0xbe185d});   /* hot pink, right */
 /* Round 8: tunnel arches — a neon ring the ball rolls through. A tunnel
@@ -1376,9 +1376,10 @@ function bankFor(idx){
 }
 function bankAt(d){
   /* Smooth bank at distance d: lerp between segment-CENTRE banks, so the
-     ball's height and the pull never jump at a segment boundary. The
-     segment mesh itself rotates by its own bank (a small kink between
-     segments is fine — the original Slope's track hinges the same way). */
+     ball's height and the pull never jump at a segment boundary. Round 27:
+     the segment MESHES now follow this same smooth bank (surfLocal), so
+     the track no longer hinges at the joints — before round 27 each mesh
+     rotated rigidly by its own bank and the floor edge stepped ~1 unit. */
   var f = d / SEG_LEN - 0.5;
   var i0 = Math.floor(f);
   var frac = f - i0;
@@ -1698,6 +1699,78 @@ function buildSegment(idx){
   prevSegGap = !!plan.gap;
   return buildSegmentFromPlan(idx, plan);
 }
+/* ---------- Round 27: smooth-bank track geometry ----------
+   The ball already rides a SMOOTH surface — ballY = BALL_R + trackY(d)
+   - ballX*sin(bankAt(d)), and bankAt lerps between segment-centre
+   banks — but the segment MESHES were each rotated rigidly by
+   plan.bank (one bank per segment), so at every joint the floor edge
+   stepped by up to ~1.0 unit and the neon rails kinked: the track read
+   as hinged plates and the ball looked like it clipped the lip
+   (sim-r27.js: old max lip 1.007 units over 2000 joints).
+   Round 27 makes the meshes follow bankAt along the segment. The
+   group is rotated by the bank at the segment's NEAR end, and every
+   surface point is placed through surfLocal — the EXACT inverse of
+   the group transform — so its world position lands on the smooth
+   physics surface at its distance d. Consecutive segments then share
+   their boundary curve exactly (sim-r27.js: boundary error 2.3e-13,
+   effectively zero). Physics is untouched: bankAt, bankFor, trackY,
+   gaps, blocks, ramps, tunnels, collision and gravity are exactly
+   as before — only the meshes moved. */
+var COS_SLOPE = Math.cos(SLOPE_ANGLE);
+function surfLocal(x, d, yAbove, d0, bankNear){
+  /* Local (X, Y, Z) in a group at (0, trackY(d0) + floorH, -d0),
+     rotated z by -bankNear then x by -SLOPE_ANGLE, for the point at
+     world lateral x, track distance d, sitting yAbove above the
+     smooth surface trackY(d) - x*sin(bankAt(d)). Solves all three
+     forward equations — the local x is NOT the world x, the bank
+     rotation mixes them (X = x*cos b - Yp*sin b). */
+  var s = d - d0;
+  var sinB = Math.sin(bankAt(d));
+  var cb = Math.cos(bankNear), sb = Math.sin(bankNear);
+  var Yp = s * Math.sin(SLOPE_ANGLE) * (1 - COS_SLOPE) - x * sinB * COS_SLOPE + yAbove * COS_SLOPE;
+  var Z  = -s * (Math.sin(SLOPE_ANGLE) * Math.sin(SLOPE_ANGLE) + COS_SLOPE) - x * sinB * Math.sin(SLOPE_ANGLE) + yAbove * Math.sin(SLOPE_ANGLE);
+  return [x * cb - Yp * sb, x * sb + Yp * cb, Z];
+}
+/* A twisted ribbon: a cross-section (world-x / height-above-surface
+   pairs, left to right) swept along the segment in distance steps,
+   every vertex placed through surfLocal so the ribbon follows the
+   smooth bank. Used for the floor, the neon edge rails, the side
+   skirts and the gap rails — one shared builder, so all of them share
+   the same boundary curves and the track reads as one continuous
+   piece. Cross-section points in order [top-left, top-right,
+   bottom-right, bottom-left] for a closed bar (rails/skirts), or
+   [left, right] for a flat sheet (floor); closed=true wraps the
+   last point back to the first so the bar has all four faces.
+   UVs: u across the cross-section, v along the segment — the floor
+   keeps the same grid tiling as the old flat plane (u 0..1 across,
+   v 0..1 along, texture repeat unchanged). */
+var TWIST_STEPS = 8;
+function twistStripGeo(cross, d0, bankNear, closed){
+  var rows = TWIST_STEPS + 1, n = cross.length;
+  var positions = [], uvs = [], indices = [];
+  var xMin = cross[0][0], xMax = cross[n-1][0];
+  for(var r=0;r<rows;r++){
+    var d = d0 + r / TWIST_STEPS * SEG_LEN;
+    for(var c=0;c<n;c++){
+      var L = surfLocal(cross[c][0], d, cross[c][1], d0, bankNear);
+      positions.push(L[0], L[1], L[2]);
+      uvs.push((cross[c][0] - xMin) / (xMax - xMin || 1), (d - d0) / SEG_LEN);
+    }
+  }
+  var faces = closed ? n : n - 1;
+  for(var r2=0;r2<TWIST_STEPS;r2++){
+    for(var c2=0;c2<faces;c2++){
+      var a = r2*n + c2, b = r2*n + (c2+1)%n, c3 = (r2+1)*n + c2, d3 = (r2+1)*n + (c2+1)%n;
+      indices.push(a, b, d3, a, d3, c3);
+    }
+  }
+  var g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  g.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+  g.setIndex(indices);
+  g.computeVertexNormals();
+  return g;
+}
 /* Build the meshes for a segment from an already-computed plan (used by
    the normal path above, and by resume — which replays the plan chain
    and builds meshes only for the segments near the ball). */
@@ -1710,60 +1783,71 @@ function buildSegmentFromPlan(idx, plan){
      the sloped surface automatically. */
   group.position.set(0, trackY(idx * SEG_LEN) + (plan.floorH || 0), -idx * SEG_LEN);   /* platform segments ride higher (the whole group lifts, so floor/skirts/rails/arch all rise together) */
   group.rotation.x = -SLOPE_ANGLE;
-  /* Banked section (round 8): the whole segment tilts sideways with the
-     bank — floor, grid, skirts, edges, blocks and tiles all ride in the
-     group, so they tilt together and the surface visibly angles left or
-     right. bank > 0 = right side low, so the group rotates the other
-     way (rotation.z = -bank). The camera stays level — only the track
-     tilts, so it never causes motion sickness. */
-  group.rotation.z = -plan.bank;
+  /* Banked section (round 8, smoothed round 27): the group rotates by
+     the bank at the segment's NEAR end (bankAt, the same smooth bank
+     the ball rides), and every surface is built through surfLocal so
+     it follows bankAt along the segment — no more rigid per-segment
+     tilt, no lip at the joints. plan.bank is still computed (it
+     defines the centre banks bankAt lerps between); it just no longer
+     rotates the group. bank > 0 = right side low, so the group rotates
+     the other way (rotation.z = -bank). The camera stays level — only
+     the track tilts, so it never causes motion sickness. */
+  var d0 = idx * SEG_LEN;
+  var bankNear = bankAt(d0);
+  group.rotation.z = -bankNear;
   var floorMats = [];   // per-floor materials/textures, disposed on removal
-  /* Floor: one full plane, or two strips leaving the gap open. */
+  var twistGeos = [];   // per-segment twisted geometries, disposed on removal
+  /* Floor: one twisted ribbon, or two strips leaving the gap open. */
   if(plan.gap){
     var lw = plan.gap.x0 + 5, rw = 5 - plan.gap.x1;
     if(lw > 0.05){
       var fmL = floorMaterialFor(lw); floorMats.push(fmL);
-      var left = new THREE.Mesh(floorGeo, fmL.mat);
-      left.rotation.x = -Math.PI/2; left.scale.x = lw;
-      left.position.set(-5 + lw/2, 0, -SEG_LEN/2);
-      group.add(left);
+      var leftGeo = twistStripGeo([[-5, 0], [plan.gap.x0, 0]], d0, bankNear, false); twistGeos.push(leftGeo);
+      group.add(new THREE.Mesh(leftGeo, fmL.mat));
     }
     if(rw > 0.05){
       var fmR = floorMaterialFor(rw); floorMats.push(fmR);
-      var right = new THREE.Mesh(floorGeo, fmR.mat);
-      right.rotation.x = -Math.PI/2; right.scale.x = rw;
-      right.position.set(5 - rw/2, 0, -SEG_LEN/2);
-      group.add(right);
+      var rightGeo = twistStripGeo([[plan.gap.x1, 0], [5, 0]], d0, bankNear, false); twistGeos.push(rightGeo);
+      group.add(new THREE.Mesh(rightGeo, fmR.mat));
     }
   } else {
     var fm = floorMaterialFor(TRACK_W); floorMats.push(fm);
-    var floor = new THREE.Mesh(floorGeo, fm.mat);
-    floor.rotation.x = -Math.PI/2; floor.scale.x = TRACK_W;
-    floor.position.set(0, 0, -SEG_LEN/2);
-    group.add(floor);
+    var floorGeoT = twistStripGeo([[-TRACK_W/2, 0], [TRACK_W/2, 0]], d0, bankNear, false); twistGeos.push(floorGeoT);
+    group.add(new THREE.Mesh(floorGeoT, fm.mat));
   }
   /* Glowing gap edges (round 5): a hot pink-red neon outline around
      each hole — rails along its left/right edges plus a bar across its
      near end, so the player spots a hole from a distance and can hop
-     or steer around it. */
+     or steer around it. The rails are twisted bars (round 27) following
+     the smooth bank; the bar sits at the near end (z=0), where the
+     group bank already matches the surface, so it stays a rigid box. */
   if(plan.gap){
-    var gL = new THREE.Mesh(gapEdgeGeo, gapEdgeMat); gL.position.set(plan.gap.x0, 0.05, -SEG_LEN/2); group.add(gL);
-    var gR = new THREE.Mesh(gapEdgeGeo, gapEdgeMat); gR.position.set(plan.gap.x1, 0.05, -SEG_LEN/2); group.add(gR);
+    var gLGeo = twistStripGeo([[plan.gap.x0-0.08, 0.085], [plan.gap.x0+0.08, 0.085], [plan.gap.x0+0.08, 0.015], [plan.gap.x0-0.08, 0.015]], d0, bankNear, true); twistGeos.push(gLGeo);
+    group.add(new THREE.Mesh(gLGeo, gapEdgeMat));
+    var gRGeo = twistStripGeo([[plan.gap.x1-0.08, 0.085], [plan.gap.x1+0.08, 0.085], [plan.gap.x1+0.08, 0.015], [plan.gap.x1-0.08, 0.015]], d0, bankNear, true); twistGeos.push(gRGeo);
+    group.add(new THREE.Mesh(gRGeo, gapEdgeMat));
     var gB = new THREE.Mesh(gapBarGeo, gapEdgeMat);
     gB.scale.x = plan.gap.x1 - plan.gap.x0;
     gB.position.set((plan.gap.x0 + plan.gap.x1)/2, 0.05, 0);
     group.add(gB);
   }
   /* Side skirts (round 5): the track's visible thickness — a raised
-     ribbon with a side you can see down, not a flat plane. */
+     ribbon with a side you can see down, not a flat plane. Twisted
+     bars (round 27) so the side stays flush with the floor edge. */
   if(!plan.gap){
-    var skL = new THREE.Mesh(skirtGeo, skirtMatL); skL.position.set(-TRACK_W/2 - 0.075, -1.25, -SEG_LEN/2); group.add(skL);
-    var skR = new THREE.Mesh(skirtGeo, skirtMatR); skR.position.set(TRACK_W/2 + 0.075, -1.25, -SEG_LEN/2); group.add(skR);
+    var skLGeo = twistStripGeo([[-TRACK_W/2-0.15, 0], [-TRACK_W/2, 0], [-TRACK_W/2, -2.5], [-TRACK_W/2-0.15, -2.5]], d0, bankNear, true); twistGeos.push(skLGeo);
+    group.add(new THREE.Mesh(skLGeo, skirtMatL));
+    var skRGeo = twistStripGeo([[TRACK_W/2, 0], [TRACK_W/2+0.15, 0], [TRACK_W/2+0.15, -2.5], [TRACK_W/2, -2.5]], d0, bankNear, true); twistGeos.push(skRGeo);
+    group.add(new THREE.Mesh(skRGeo, skirtMatR));
   }
   /* Glowing edges (cyan left, hot pink right) + a violet cross line
-     at the segment start (the grid feel). */
-  var eL = new THREE.Mesh(edgeGeo, edgeMatL); eL.position.set(-5, 0.04, -SEG_LEN/2); group.add(eL);
-  var eR = new THREE.Mesh(edgeGeo, edgeMatR); eR.position.set(5, 0.04, -SEG_LEN/2); group.add(eR);
+     at the segment start (the grid feel). The rails are twisted bars
+     (round 27); the cross line sits at the near end (z=0), so it stays
+     a rigid box. */
+  var eLGeo = twistStripGeo([[-5-0.09, 0.08], [-5+0.09, 0.08], [-5+0.09, 0], [-5-0.09, 0]], d0, bankNear, true); twistGeos.push(eLGeo);
+  group.add(new THREE.Mesh(eLGeo, edgeMatL));
+  var eRGeo = twistStripGeo([[5-0.09, 0.08], [5+0.09, 0.08], [5+0.09, 0], [5-0.09, 0]], d0, bankNear, true); twistGeos.push(eRGeo);
+  group.add(new THREE.Mesh(eRGeo, edgeMatR));
   var cr = new THREE.Mesh(crossGeo, crossMat); cr.position.set(0, 0.03, 0); group.add(cr);
   /* Launch ramp wedge (round 8, wedge round 9): an amber chevron wedge
      across the full track width, rising from the track to its peak at
@@ -1773,37 +1857,61 @@ function buildSegmentFromPlan(idx, plan){
      into the gap / platform face beyond. The wedge slant varies by
      class (gentle / medium / steep) — see RAMP_SLANTS. */
   if(plan.ramp > 0){
-    var ramp = new THREE.Mesh(rampPrismGeo[plan.rampSlant], rampMat);
-    ramp.position.set(0, 0, 0);   // the prism vertices are already group-local
+    /* Round 27: the wedge is twisted to the smooth bank too — its base
+       corners sit at x=±5, where the twist is largest, so a rigid
+       wedge would float a corner on a banked ramp. Clone the shared
+       prism (never mutate it) and move each vertex through surfLocal:
+       its distance from its z (z=-0.5 -> d0+0.5, z=-3.5 -> d0+3.5),
+       its height above the surface from its y (0 base, H peak). */
+    var wedgeGeo = rampPrismGeo[plan.rampSlant].clone();
+    var wp = wedgeGeo.attributes.position.array;
+    for(var wi=0; wi<wp.length; wi+=3){
+      var wL = surfLocal(wp[wi], d0 - wp[wi+2], wp[wi+1], d0, bankNear);
+      wp[wi] = wL[0]; wp[wi+1] = wL[1]; wp[wi+2] = wL[2];
+    }
+    wedgeGeo.computeVertexNormals();
+    twistGeos.push(wedgeGeo);
+    var ramp = new THREE.Mesh(wedgeGeo, rampMat);
+    ramp.position.set(0, 0, 0);
     group.add(ramp);
   }
-  /* Red blocks at the segment centre. */
+  /* Red blocks at the segment centre — placed on the smooth surface
+     (surfLocal at d0+10) and tilted to the centre bank, so they sit
+     flush instead of floating a corner on a banked section. */
+  var dMid = d0 + SEG_LEN/2, bankMid = bankAt(dMid);
   for(var b=0;b<plan.blocks.length;b++){
     var bl = plan.blocks[b];
     var m = new THREE.Mesh(blockGeo, blockMat);
     m.scale.set(bl.w, 1.2, 1.2);
-    m.position.set(bl.x, 0.6, -SEG_LEN/2);
+    var bL = surfLocal(bl.x, dMid, 0.6, d0, bankNear);
+    m.position.set(bL[0], bL[1], bL[2]);
+    m.rotation.z = bankNear - bankMid;   // group gives -bankNear, so the total tilt is the centre bank
     group.add(m);
   }
   /* Word tile, floating and glowing. */
   /* Tunnel arch (round 8): a neon ring the ball rolls through. The ring
      rides in the segment group, so it tilts with the bank and descends
      with the slope like everything else. Pure scenery — it never blocks
-     the ball and tunnel segments are always plain. */
+     the ball and tunnel segments are always plain. Round 27: centred
+     on the smooth surface (surfLocal keeps it at world x=0 even on a
+     bank, where a plain local (0,3,-10) would sit up to ~0.9 off). */
   if(plan.tunnel){
     var arch = new THREE.Mesh(archGeo, archMat);
-    arch.position.set(0, 3, -SEG_LEN/2);
+    var aL = surfLocal(0, dMid, 3, d0, bankNear);
+    arch.position.set(aL[0], aL[1], aL[2]);
     group.add(arch);
   }
-  var tileMesh = null;
+  var tileMesh = null, tileBaseY = 1.4;
   if(plan.tile){
     tileMesh = new THREE.Mesh(tileGeo, new THREE.MeshBasicMaterial({
       map: makeTileTexture(plan.tile.em), transparent: true, side: THREE.DoubleSide}));   // round 24: emoji tile
-    tileMesh.position.set(plan.tile.x, 1.4, -SEG_LEN/2);
+    var tL = surfLocal(plan.tile.x, dMid, 1.4, d0, bankNear);
+    tileMesh.position.set(tL[0], tL[1], tL[2]);
+    tileBaseY = tL[1];   // the frame loop bobs around this base height (round 27: was a flat 1.4)
     group.add(tileMesh);
   }
   scene.add(group);
-  segments.set(idx, {group:group, plan:plan, tileMesh:tileMesh, tileTaken:false, phase:Math.random()*6.28, floorMats:floorMats});
+  segments.set(idx, {group:group, plan:plan, tileMesh:tileMesh, tileTaken:false, phase:Math.random()*6.28, floorMats:floorMats, twistGeos:twistGeos, tileBaseY:tileBaseY});
   return plan;
 }
 function disposeSegment(seg){
@@ -1815,6 +1923,9 @@ function disposeSegment(seg){
       seg.floorMats[i].tex.dispose();
       seg.floorMats[i].mat.dispose();
     }
+  }
+  if(seg.twistGeos){   // round 27: per-segment twisted floor/rails/skirts/wedge
+    for(var j=0;j<seg.twistGeos.length;j++) seg.twistGeos[j].dispose();
   }
 }
 function ensureSegments(){
@@ -1907,18 +2018,79 @@ var TET_BIG_Y_MIN = -10;  // biggest tets sit low (round 18): centres -10..+5, s
 var TET_BIG_Y_SPAN = 15;
 var tetGeos = TET_SIZES.map(function(s){ return new THREE.TetrahedronGeometry(s); });
 var tetMats = [
-  new THREE.MeshBasicMaterial({color:0x22d3ee, wireframe:true, transparent:true, opacity:0.55}),
-  new THREE.MeshBasicMaterial({color:0xec4899, wireframe:true, transparent:true, opacity:0.55}),
-  new THREE.MeshBasicMaterial({color:0x8b5cf6, wireframe:true, transparent:true, opacity:0.55})
+  new THREE.MeshBasicMaterial({color:0x22d3ee, wireframe:true, transparent:true, opacity:0.75}),
+  new THREE.MeshBasicMaterial({color:0xec4899, wireframe:true, transparent:true, opacity:0.75}),
+  new THREE.MeshBasicMaterial({color:0x8b5cf6, wireframe:true, transparent:true, opacity:0.75})
+];   /* round 27: wireframe opacity 0.55 -> 0.75 — the faces read brighter against the darker sky */
+/* Round 27: THICK edges, for real. LineBasicMaterial.linewidth is
+   ignored by WebGL on most platforms (lines stay 1px), so raising a
+   linewidth does nothing — the edges are instead REAL geometry: thin
+   hexagonal cylinders along each of the tetrahedron's 6 edges, one
+   shared geometry per size class, in the same neon colours but opaque
+   (no transparency), so they read as thick glowing rods. Each tet
+   gets its size class's tube mesh as a CHILD, so it inherits the
+   tet's position and tumble for free, and the recycle logic is
+   untouched. MeshBasicMaterial is unlit, so no normals are needed. */
+function makeTetTubeGeo(baseGeo, size){
+  var pos = baseGeo.attributes.position.array, verts = [];
+  for(var i=0;i<pos.length;i+=3){
+    var v = [pos[i], pos[i+1], pos[i+2]], found = false;
+    for(var j=0;j<verts.length;j++){
+      if(Math.abs(verts[j][0]-v[0])<0.001 && Math.abs(verts[j][1]-v[1])<0.001 && Math.abs(verts[j][2]-v[2])<0.001){ found = true; break; }
+    }
+    if(!found) verts.push(v);
+  }
+  var r = size * 0.02, RAD = 6, positions = [], indices = [], vi = 0;
+  function addTube(p, q){
+    var dx = q[0]-p[0], dy = q[1]-p[1], dz = q[2]-p[2];
+    var len = Math.sqrt(dx*dx + dy*dy + dz*dz); dx/=len; dy/=len; dz/=len;
+    var ax = Math.abs(dx) < 0.9 ? 1 : 0, ay = Math.abs(dx) < 0.9 ? 0 : 1, az = 0;   /* a vector not parallel to the edge */
+    var ux = ay*dz - az*dy, uy = az*dx - ax*dz, uz = ax*dy - ay*dx;   /* u = a x d */
+    var ul = Math.sqrt(ux*ux + uy*uy + uz*uz); ux/=ul; uy/=ul; uz/=ul;
+    var vx = dy*uz - dz*uy, vy = dz*ux - dx*uz, vz = dx*uy - dy*ux;   /* v = d x u */
+    var b0 = vi;
+    for(var k=0;k<RAD;k++){
+      var a = k/RAD * Math.PI*2, c = Math.cos(a), s = Math.sin(a);
+      positions.push(p[0] + r*(ux*c + vx*s), p[1] + r*(uy*c + vy*s), p[2] + r*(uz*c + vz*s));
+      positions.push(q[0] + r*(ux*c + vx*s), q[1] + r*(uy*c + vy*s), q[2] + r*(uz*c + vz*s));
+      vi += 2;
+    }
+    for(var k2=0;k2<RAD;k2++){
+      var n2 = (k2+1)%RAD;
+      indices.push(b0+k2*2, b0+k2*2+1, b0+n2*2, b0+n2*2, b0+k2*2+1, b0+n2*2+1);
+    }
+  }
+  for(var e1=0;e1<verts.length;e1++) for(var e2=e1+1;e2<verts.length;e2++) addTube(verts[e1], verts[e2]);
+  var g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  g.setIndex(indices);
+  return g;
+}
+var tetTubeGeos = tetGeos.map(function(g, i){ return makeTetTubeGeo(g, TET_SIZES[i]); });
+var tetTubeMats = [
+  new THREE.MeshBasicMaterial({color:0x22d3ee}),
+  new THREE.MeshBasicMaterial({color:0xec4899}),
+  new THREE.MeshBasicMaterial({color:0x8b5cf6})
 ];
 var tets = [];
 function placeTetXY(mesh){
+  var size = TET_SIZES[mesh.userData.size];
+  if(mesh.userData.sky){
+    /* Round 27 sky population: a wider lateral spread and a HIGH offset
+       (+25..+90 above the track), so they float in the upper sky around
+       the road instead of hugging it — the top of the frame was empty.
+       Still world-anchored, still clear of the track, and recycled
+       through the same path as the side cloud. */
+    mesh.position.x = (Math.random() < 0.5 ? -1 : 1) * (12 + size + Math.random()*40);
+    mesh.position.y = trackY(-mesh.position.z) + 25 + Math.random()*65;
+    mesh.rotation.set(Math.random()*6.28, Math.random()*6.28, Math.random()*6.28);
+    return;
+  }
   /* Lateral position: inner edge stays >= 10 units from the centre
      (round 23: was >= 6 — the tets sit FURTHER OUT now, like the
      original Slope's buildings; 10 + size + up to 12 out), clear of
      the track (5 wide) and the fall-off line (5.3) for every size
      class, and clear of the camera's view of the track. */
-  var size = TET_SIZES[mesh.userData.size];
   mesh.position.x = (Math.random() < 0.5 ? -1 : 1) * (10 + size + Math.random()*12);
   /* Height: WORLD-ANCHORED (round 14) — fixed at placement, so the tet
      streams upward past the descending player instead of hugging the
@@ -1948,9 +2120,27 @@ for(var ti=0; ti<TET_COUNT; ti++){
   tet.userData.size = ti % tetGeos.length;
   tet.userData.rx = 0.2 + Math.random()*0.4;
   tet.userData.ry = 0.2 + Math.random()*0.4;
+  tet.add(new THREE.Mesh(tetTubeGeos[tet.userData.size], tetTubeMats[tet.userData.size]));   // round 27: thick tube edges ride along as a child
   placeTet(tet, 50, 1400);   // round 26: was 50..650 — spread the field out to the new fog far edge
   scene.add(tet);
   tets.push(tet);
+}
+/* Round 27: a second population floating HIGH in the sky above the
+   track (60 more, 120 -> 180 total) — the upper sky was empty, so the
+   cloud read as side walls only. Same sizes, wireframe and tube edges;
+   placeTetXY gives them the high offset and wide spread, and they
+   recycle through the same path. */
+var TET_SKY_COUNT = 60;
+for(var si=0; si<TET_SKY_COUNT; si++){
+  var stet = new THREE.Mesh(tetGeos[si % tetGeos.length], tetMats[si % tetMats.length]);
+  stet.userData.size = si % tetGeos.length;
+  stet.userData.sky = true;
+  stet.userData.rx = 0.2 + Math.random()*0.4;
+  stet.userData.ry = 0.2 + Math.random()*0.4;
+  stet.add(new THREE.Mesh(tetTubeGeos[stet.userData.size], tetTubeMats[stet.userData.size]));
+  placeTet(stet, 50, 1400);
+  scene.add(stet);
+  tets.push(stet);
 }
 
 /* ---------- hop ---------- */
@@ -2502,7 +2692,7 @@ function frame(){
   /* Word tiles bob gently. */
   segments.forEach(function(seg){
     if(seg.tileMesh && !seg.tileTaken){
-      seg.tileMesh.position.y = 1.4 + Math.sin(t*2 + seg.phase)*0.15;
+      seg.tileMesh.position.y = (seg.tileBaseY !== undefined ? seg.tileBaseY : 1.4) + Math.sin(t*2 + seg.phase)*0.15;
     }
   });
   /* Speed particles stream past the camera. */
