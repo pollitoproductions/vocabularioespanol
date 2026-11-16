@@ -78,6 +78,7 @@
   .ghostBtn{ display:block; width:100%; margin:10px 0 0; padding:12px; font-size:1rem; font-weight:600;
     color:#e2e8f0; background:#1e293b; border:1px solid #475569; border-radius:12px; cursor:pointer; }
   #btnCrosNote{ font-size:.85rem; }   /* round 56 (Brant): a little smaller so the long label fits on one line */
+  #crosNote{ font-size:.75rem; }   /* round 57 (Brant): the Chromebook instructions smaller too */
   .homeLink{ display:block; margin-top:14px; color:#94a3b8; text-decoration:none; font-size:.92rem; }
   .checkRow{ display:flex; align-items:center; justify-content:center; gap:8px; margin:12px 0 2px;
     font-size:1rem; color:#e2e8f0; cursor:pointer; }
@@ -1154,28 +1155,28 @@ function skinTexture(kind){
     /* Panda: Dash's panda face, big on the front, smaller on the back. */
     tex = makeSkinTexture(function(g,W,H){
       g.fillStyle = "#f8fafc"; g.fillRect(0, 0, W, H);
-      drawPandaFace(g, 128, 108, 4);
+      drawPandaFace(g, 128, 108, 6);
       drawPandaFace(g, 384, 108, 2);
     });
   } else if(kind === "fox"){
     /* Fox: Dash's fox face, big on the front, smaller on the back. */
     tex = makeSkinTexture(function(g,W,H){
       g.fillStyle = "#f97316"; g.fillRect(0, 0, W, H);
-      drawFoxFace(g, 128, 108, 4);
+      drawFoxFace(g, 128, 108, 6);
       drawFoxFace(g, 384, 108, 2);
     });
   } else if(kind === "frog"){
     /* Frog: Dash's frog face, big on the front, smaller on the back. */
     tex = makeSkinTexture(function(g,W,H){
       g.fillStyle = "#22c55e"; g.fillRect(0, 0, W, H);
-      drawFrogFace(g, 128, 108, 4);
+      drawFrogFace(g, 128, 108, 6);
       drawFrogFace(g, 384, 108, 2);
     });
   } else if(kind === "alien"){
     /* Alien: Dash's alien face, big on the front, smaller on the back. */
     tex = makeSkinTexture(function(g,W,H){
       g.fillStyle = "#4ade80"; g.fillRect(0, 0, W, H);
-      drawAlienFace(g, 128, 108, 4);
+      drawAlienFace(g, 128, 108, 6);
       drawAlienFace(g, 384, 108, 2);
     });
   } else { /* skull — sugar skull: cream with two BIG dark eye sockets, nose, teeth, festive dots */
