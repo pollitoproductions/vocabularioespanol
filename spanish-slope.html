@@ -77,8 +77,13 @@
   .bigBtn:active{ background:#0284c7; }
   .ghostBtn{ display:block; width:100%; margin:10px 0 0; padding:12px; font-size:1rem; font-weight:600;
     color:#e2e8f0; background:#1e293b; border:1px solid #475569; border-radius:12px; cursor:pointer; }
-  #btnCrosNote{ font-size:.85rem; }   /* round 56 (Brant): a little smaller so the long label fits on one line */
-  #crosNote{ font-size:.75rem; }   /* round 57 (Brant): the Chromebook instructions smaller too */
+  /* round 59 (Brant): the Chromebook note is ONE expanding box — the button
+     is the box header and the instructions live INSIDE the box, same size
+     as the header text. (Round 57's .75rem never showed on desktop: the
+     #menu .menuLeft p/.sub rules outrank a bare #id, so it rendered 1.05rem.) */
+  #crosBox{ background:#1e293b; border:1px solid #475569; border-radius:12px; margin:10px 0 0; overflow:hidden; }
+  #menu .menuLeft #btnCrosNote{ display:block; width:100%; padding:12px; background:none; border:none; color:#e2e8f0; font-size:.85rem; font-weight:600; text-align:center; cursor:pointer; }
+  #menu .menuLeft #crosNote{ font-size:.85rem; color:#cbd5e1; margin:0; padding:0 12px 12px; line-height:1.5; }
   .homeLink{ display:block; margin:14px 0 0; padding:12px; font-size:.95rem; font-weight:600; text-align:center;
     color:#e2e8f0; background:#1e293b; border:1px solid #475569; border-radius:12px; text-decoration:none; cursor:pointer; }   /* round 58 (Brant): a real button, not a plain grey link */
   .checkRow{ display:flex; align-items:center; justify-content:center; gap:8px; margin:12px 0 2px;
@@ -286,8 +291,10 @@
       Tap, Space, or ↑ to hop over a block or a gap.<br>
       Crash and you get a quiz revive: answer 4 of 5 Spanish questions to keep rolling. There are 50 possible revives per game. Roll through a word tile and say the word correctly to earn a free revive: the next time you crash, you skip the quiz entirely.</p>
       <p class="sub hidden" id="saveNote">Saved games must be completed to begin a new game.</p>
-      <button class="ghostBtn" id="btnCrosNote" type="button">Chromebook: If Hear button is not speaking Spanish ▸</button>
-      <p class="sub hidden" id="crosNote">If Hear speaks in English or sounds like a robot, the Chromebook is missing a Spanish voice — add one in Settings → Accessibility → Text-to-Speech → Text-to-Speech voice settings.</p>
+      <div id="crosBox">
+        <button id="btnCrosNote" type="button">Chromebook: If Hear button is not speaking Spanish ▸</button>
+        <p id="crosNote" class="hidden">If Hear speaks in English or sounds like a robot, the Chromebook is missing a Spanish voice — add one in Settings → Accessibility → Text-to-Speech → Text-to-Speech voice settings.</p>
+      </div>
       <button class="ghostBtn hidden" id="btnClearSave" type="button">🗑 Clear saved game</button>
     </div>
     <div class="menuRight">
