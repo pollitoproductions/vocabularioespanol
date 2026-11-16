@@ -700,7 +700,7 @@ var MAX_SPEED = 85;          // top forward speed — round 24: Brant asked for 
 var RAMP_DIST = 1340;        // ramp distance: top speed reached after this far — 1340 so 85 still arrives in ~21.3 s, same feel as round 9
                              // (round 7: concave ramp — see curSpeed)
 var BLOCK_HIT = 0.4;         // block half-width inflation for a hit (ball radius, forgiving)
-var GAP_HIT = 0.25;          // gap inset for a fall (ball centre must be this far inside the hole)
+var GAP_HIT = 0.5;          // gap inset for a fall (round 33: was 0.25 — the ball's centre only 0.25 inside the hole meant half the ball was still over solid floor when it died, which read as a bogus death; now the centre must be a full ball-radius inside, so the ball is visibly over the hole before it falls)
 /* Revives are UNLIMITED (Brant, round 6): every crash offers the quiz,
    pass it (4 of 5) and you keep rolling, fail it and the run is over.
    There is no heart count to run out of — no revive limit, no hearts. */
@@ -782,11 +782,9 @@ var fallCause = "gap";                    // which fall is playing: "gap" | "sid
 const FALL_TIME = 0.9;                    // round 8: the fall lasts a touch longer
                                           // than the old 0.65 s, so the player
                                           // sees the ball tumble away
-const EDGE_FALL = 5.3;                    // round 8: the ball falls off the side
-                                          // past the track half-width (5.0) plus
-                                          // a small 0.3 margin — the edge is a
-                                          // real boundary, not a clamp
+const EDGE_FALL = 5.5;                    // round 33: was 5.3 — the ball's centre only 0.3 past the edge meant a sliver of the ball was still over the track when it died, which read as a bogus death; now the centre must be a full ball-radius (0.5) past the half-width (5.0), so the ball is visibly off the track before it falls
 var zBefore = 0;   // ball z at the start of the frame (swept collision checks)
+var xBefore = 0, hopYBefore = 0;   // round 33: ball x and hop height at the start of the frame — the swept checks interpolate to the crossing instant (see checkCollisions)
 var best = 0;
 try{ best = parseInt(localStorage.getItem("slopeEspanol_best") || "0", 10) || 0; }catch(e){}
 var speakingOn = false;
@@ -830,20 +828,20 @@ var renderer = new THREE.WebGLRenderer({canvas:canvas, antialias:true});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 var scene = new THREE.Scene();
-/* Neon-retro backdrop: a deep indigo-to-violet vertical gradient
-   instead of flat black, so the neon reads against a glow. */
+/* Neon-retro backdrop: pure black (round 33 — Brant: black, not purple,
+   so the neon pops harder). The gradient stays as a solid black fill. */
 function makeSkyTexture(){
   var c = document.createElement("canvas"); c.width = 4; c.height = 512;
   var g = c.getContext("2d");
   var grad = g.createLinearGradient(0, 0, 0, 512);
-  grad.addColorStop(0.0, "#04020c");   /* round 29: borderline black — near-black, top (was #0a0416) */
-  grad.addColorStop(0.45, "#020109");  /* round 29: borderline black (was #050213) */
-  grad.addColorStop(1.0, "#070410");   /* round 29: borderline black, faintest dawn glow at the horizon (was #010007) — like the sun is just coming up, not 100% black */
+  grad.addColorStop(0.0, "#000000");   /* round 33: black (was #04020c) */
+  grad.addColorStop(0.45, "#000000");  /* round 33: black (was #020109) */
+  grad.addColorStop(1.0, "#000000");   /* round 33: black — the round-29 dawn glow is gone (was #070410) */
   g.fillStyle = grad; g.fillRect(0, 0, 4, 512);
   return new THREE.CanvasTexture(c);
 }
 scene.background = makeSkyTexture();
-scene.fog = new THREE.Fog(0x03020a, 80, 1400);   // round 29: fog colour matched to the borderline-black dawn sky (was 0x03010a); distances unchanged (round 26: 80/1400) so the road still fades in gradually over 1320 units instead of popping in at a hard edge (Brant Nov 15: see the road disappear, nothing popping up out of nowhere)
+scene.fog = new THREE.Fog(0x000000, 80, 1400);   // round 33: fog black to match (was 0x03020a); distances unchanged (round 26: 80/1400) so the road still fades in gradually over 1320 units instead of popping in at a hard edge (Brant Nov 15: see the road disappear, nothing popping up out of nowhere)
 var camera = new THREE.PerspectiveCamera(42, window.innerWidth/window.innerHeight, 0.1, 2000);   // round 26: far plane 900 -> 2000 — must clear the fog far edge (1400) and the mesh build distance (1500); round 23: base FOV 42 (was 56) — zoomed in so the ball reads 50% bigger (~52 px)
 camera.position.set(0, 5, 10);
 scene.add(new THREE.AmbientLight(0x99aaff, 1.5));
@@ -2656,6 +2654,7 @@ function frame(){
   var t = now/1000;
   if(state === "playing"){
     var v = curSpeed();
+    xBefore = ballX; hopYBefore = ballHopY;   /* round 33: start-of-frame position for the swept-collision interpolation (see checkCollisions) — sampled BEFORE steering moves the ball */
     /* Steering: keys win over touch; smooth acceleration. Round 31:
        keyboard is binary (full-on/full-off) so it felt twitchy — a
        gentler ramp for keys (dt*6 instead of dt*10); touch is analog
@@ -2799,7 +2798,7 @@ function frame(){
      to its normal position on revive/respawn, when fallDrop resets. */
   var camDrop = (state === "falling") ? fallDrop : 0;
   camera.position.x += ((ballX*0.5) - camera.position.x) * Math.min(1, dt*6);
-  camera.position.y += ((ballY + (camera.aspect < 1 ? PORTRAIT_CAM_HEIGHT : CAM_HEIGHT) - camDrop) - camera.position.y) * Math.min(1, dt*40);   // round 25: lerp dt*6 -> dt*40 — the slow Y lerp lagged ~3 units high at top speed while the ball descended, pushing it off the bottom in landscape (round 24: 110% down); the tight lerp tracks the descent, ball ~91% down at top speed. X lerp stays dt*6 (lateral follow is smoothed, not a constant drift).
+  camera.position.y += ((ballY + (camera.aspect < 1 ? PORTRAIT_CAM_HEIGHT : CAM_HEIGHT) - camDrop*0.35) - camera.position.y) * Math.min(1, dt*40);   // round 33: the camera used to plunge WITH the ball (full camDrop), so the view fell too and the player couldn't tell where they fell — now it only drops a third as far and tilts down to watch the ball fall away, so the track stays in frame and the death reads clearly. The lookAt below still drops the full fallDrop, so the ball stays in frame.
   camera.position.z = ballZ + (camera.aspect < 1 ? PORTRAIT_CAM_BACK : 9.2);   // round 26: landscape back 9.5 -> 9.2 (solver value for the VP/ball targets); portrait back 5.85
   camera.lookAt(ballX*0.75, ballY + (camera.aspect < 1 ? PORTRAIT_CAM_LOOK_HEIGHT : CAM_LOOK_HEIGHT) - camDrop, ballZ - 16);   // round 26: portrait look -1.6, landscape look 1.0 — the view pitches DOWN now (portrait ~14 deg, landscape ~7 deg), lifting the VP to ~47% down (portrait) / ~62% (landscape) — the angle Brant drew — while the raised camera keeps the ball big, round, and low on screen
   renderer.render(scene, camera);
@@ -2810,17 +2809,29 @@ function checkCollisions(){
   if(!seg) return;
   var plan = seg.plan;
   var blockZ = -segIdx*SEG_LEN - SEG_LEN/2;
+  /* Round 33 — test the crossing instant, not the end of the frame: at
+     top speed the ball moves ~1.5 units sideways and ~0.5 up/down in a
+     single frame, so a block or tile whose z the ball crossed mid-frame
+     was judged with the ball's END-of-frame position — a hit the player
+     never saw (steered clear by the crossing, hopped clear by the
+     crossing) could still kill, and a real hit could be missed. f is
+     the fraction of the frame at which the ball's z equalled blockZ;
+     xAtCross/hopYAtCross are the ball's position at that instant. */
+  var crossF = (zBefore - blockZ) / ((zBefore - ballZ) || 1);
+  crossF = Math.max(0, Math.min(1, crossF));
+  var xAtCross = xBefore + (ballX - xBefore) * crossF;
+  var hopYAtCross = hopYBefore + (ballHopY - hopYBefore) * crossF;
+  var airborne = ballHopY > 0.3;
+  var airborneAtCross = hopYAtCross > 0.3;
   /* Word tiles are ALWAYS collectible — invincibility blocks crash damage
      only, never pickups (round 7): a tile rolled through during the
      post-revive blink still pauses the run for its Say-it. Round 21:
      hopping OVER a tile SKIPS it — the ball must be on the ground
      (not airborne) to collect, so the player can choose to take the
-     word or jump past it. "Airborne" is the same threshold the gap
-     check below uses (ballHopY > 0.3). */
-  var airborne = ballHopY > 0.3;
+     word or jump past it. */
   if(plan.tile && !seg.tileTaken){
     var tileZ = blockZ;
-    if(!airborne && ballZ <= tileZ + 1.3 && zBefore >= tileZ - 1.3 && Math.abs(ballX - plan.tile.x) < 2.0){
+    if(!airborneAtCross && ballZ <= tileZ + 1.3 && zBefore >= tileZ - 1.3 && Math.abs(xAtCross - plan.tile.x) < 2.0){
       /* Collect the word: the game pauses and asks the player to SAY it.
          Saying it correctly earns ONE free revive (a "skip the quiz"
          pass for the next crash; passes stack, one per word). No
@@ -2858,14 +2869,18 @@ function checkCollisions(){
   /* Hop: while the ball is high enough above the track it clears a
      block; while it is airborne at all it rides over a gap — and over a
      word tile too (the tile check above shares the airborne flag).
-     Landing on a block or in a gap still crashes. */
-  var clearsBlock = ballHopY > HOP_CLEAR;
+     Landing on a block or in a gap still crashes. The clear test uses
+     the hop height AT the crossing instant (hopYAtCross), not the
+     end-of-frame height — see the round-33 note above. */
+  var clearsBlock = hopYAtCross > HOP_CLEAR;
   /* Swept check: at 120 units/s the ball moves ~2 units a frame, so a
      point check could tunnel straight through a block. Test whether the
-     ball's swept path crossed the block zone this frame. */
+     ball's swept path crossed the block zone this frame — and judge the
+     lateral overlap at the crossing instant (xAtCross), not where the
+     ball ended up after steering on through the frame. */
   if(!clearsBlock && ballZ <= blockZ + 1.1 && zBefore >= blockZ - 1.1){
     for(var b=0;b<plan.blocks.length;b++){
-      if(Math.abs(ballX - plan.blocks[b].x) < plan.blocks[b].w/2 + BLOCK_HIT){
+      if(Math.abs(xAtCross - plan.blocks[b].x) < plan.blocks[b].w/2 + BLOCK_HIT){
         crash("block");
         return;
       }
