@@ -836,14 +836,14 @@ function makeSkyTexture(){
   var c = document.createElement("canvas"); c.width = 4; c.height = 512;
   var g = c.getContext("2d");
   var grad = g.createLinearGradient(0, 0, 0, 512);
-  grad.addColorStop(0.0, "#0a0416");   /* round 28: blackish purple — deep purple-black, top (was #0e0620) */
-  grad.addColorStop(0.45, "#050213");  /* round 28: blackish purple (was #08031a) */
-  grad.addColorStop(1.0, "#010007");   /* round 28: blackish purple — near-black, bottom (was #02010a); the neon pops hard against it */
+  grad.addColorStop(0.0, "#04020c");   /* round 29: borderline black — near-black, top (was #0a0416) */
+  grad.addColorStop(0.45, "#020109");  /* round 29: borderline black (was #050213) */
+  grad.addColorStop(1.0, "#070410");   /* round 29: borderline black, faintest dawn glow at the horizon (was #010007) — like the sun is just coming up, not 100% black */
   g.fillStyle = grad; g.fillRect(0, 0, 4, 512);
   return new THREE.CanvasTexture(c);
 }
 scene.background = makeSkyTexture();
-scene.fog = new THREE.Fog(0x03010a, 80, 1400);   // round 28: fog colour darkened to match the blackish-purple sky (was 0x05020f); distances unchanged (round 26: 80/1400) so the road still fades in gradually over 1320 units instead of popping in at a hard edge (Brant Nov 15: see the road disappear, nothing popping up out of nowhere)
+scene.fog = new THREE.Fog(0x03020a, 80, 1400);   // round 29: fog colour matched to the borderline-black dawn sky (was 0x03010a); distances unchanged (round 26: 80/1400) so the road still fades in gradually over 1320 units instead of popping in at a hard edge (Brant Nov 15: see the road disappear, nothing popping up out of nowhere)
 var camera = new THREE.PerspectiveCamera(42, window.innerWidth/window.innerHeight, 0.1, 2000);   // round 26: far plane 900 -> 2000 — must clear the fog far edge (1400) and the mesh build distance (1500); round 23: base FOV 42 (was 56) — zoomed in so the ball reads 50% bigger (~52 px)
 camera.position.set(0, 5, 10);
 scene.add(new THREE.AmbientLight(0x99aaff, 1.5));
