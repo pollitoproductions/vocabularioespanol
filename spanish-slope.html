@@ -282,6 +282,7 @@
       <p class="sub">← → or A / D to steer &nbsp;·&nbsp; drag left / right on touch<br>
       Tap, Space, or ↑ to hop over a block or a gap.<br>
       Crash and you get a quiz revive: answer 4 of 5 Spanish questions to keep rolling. There are 50 possible revives per game. Roll through a word tile and say the word correctly to earn a free revive: the next time you crash, you skip the quiz entirely.</p>
+      <p class="sub hidden" id="saveNote">Your saved run is waiting — Continue is the only way back in. To start a new game, finish that run in the game first.</p>
     </div>
     <div class="menuRight">
       <div class="skinLabel">Choose your ball:</div>
@@ -2523,18 +2524,22 @@ function continueRun(){
    Round 38 (Brant): while a save exists, Start is hidden too — the
    only way forward is Continue, so a tap can never wipe the saved
    run. The run can only end in-game (game over clears the save, so
-   Start comes back); with no save, Start shows as normal. */
+   Start comes back); with no save, Start shows as normal. Round 40:
+   the small saved-run note (saveNote) shows with a save too, so the
+   menu itself explains why Start is gone. */
 function refreshContinueBtn(){
   var s = loadSave();
-  var b = el("btnContinue"), st = el("btnStart");
+  var b = el("btnContinue"), st = el("btnStart"), n = el("saveNote");
   if(!b) return;
   if(s){
     b.classList.remove("hidden");
     b.textContent = "▶ Continue — " + Math.floor(s.dist) + " m";
     if(st) st.classList.add("hidden");
+    if(n) n.classList.remove("hidden");
   } else {
     b.classList.add("hidden");
     if(st) st.classList.remove("hidden");
+    if(n) n.classList.add("hidden");
   }
 }
 /* High-scores screen (read-only list + Back). */
