@@ -2609,12 +2609,17 @@ function frame(){
   var t = now/1000;
   if(state === "playing"){
     var v = curSpeed();
-    /* Steering: keys win over touch; smooth acceleration. */
+    /* Steering: keys win over touch; smooth acceleration. Round 31:
+       keyboard is binary (full-on/full-off) so it felt twitchy — a
+       gentler ramp for keys (dt*6 instead of dt*10); touch is analog
+       and keeps the snappy rate. Top lateral speed stays 30, so a
+       held key still dodges and beats the bank pull the same. */
     var steer = 0;
     if(keys.left) steer -= 1;
     if(keys.right) steer += 1;
     if(steer === 0) steer = touchSteer;
-    ballVX += ((steer * LAT_SPEED) - ballVX) * Math.min(1, dt*10);
+    var latRate = (keys.left || keys.right) ? 6 : 10;
+    ballVX += ((steer * LAT_SPEED) - ballVX) * Math.min(1, dt*latRate);
     /* Banked track (round 8): the tilted surface pulls the ball toward
        its low side (bank > 0 = right side low = pull toward +x). Steer
        against it to hold your line — the pull is strong enough to feel
