@@ -1885,7 +1885,6 @@ function draw(){
     ctx.fillStyle=cp.passed?"#22c55e":"#f97316";
     ctx.fillRect(cx-3,GROUND_Y-110,6,110);
     ctx.beginPath(); ctx.moveTo(cx+3,GROUND_Y-110); ctx.lineTo(cx+44,GROUND_Y-96); ctx.lineTo(cx+3,GROUND_Y-82); ctx.closePath(); ctx.fill();
-    ctx.fillStyle="#fff"; ctx.font="bold 20px sans-serif"; ctx.fillText("🎤",cx+8,GROUND_Y-118);
   }
   // platforms (floating, one-way) — bright orange top, dark body
   var platsD=lv.platforms||[];
