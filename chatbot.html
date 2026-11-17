@@ -180,20 +180,31 @@ async function send() {
   const typing = addMsg(learning === "english" ? "Pollito is writing…" : "Pollito está escribiendo…", "bot typing");
   sendBtn.disabled = true;
   textEl.disabled = true;
+  // FIX Nov 17: a slow/hung reply used to leave "Pollito is writing..." on
+  // screen forever with the input locked. Give up after 30 s so the student
+  // can retry, and say so in the language they are learning in.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30000);
   try {
     const res = await fetch(BACKEND_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ message: text, history: history.slice(-12), mode, topic: topic ? topic.name : null, learning })
+      body: JSON.stringify({ message: text, history: history.slice(-12), mode, topic: topic ? topic.name : null, learning }),
+      signal: controller.signal
     });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
     typing.remove();
-    const reply = (data && data.reply) ? data.reply : "Lo siento, no entendí. ¿Puedes intentarlo de nuevo?";
-    addMsg(reply, "bot");
-    history.push({ role: "bot", text: reply });
+    if (!data || !data.reply) throw new Error("empty reply");
+    addMsg(data.reply, "bot");
+    history.push({ role: "bot", text: data.reply });
   } catch (err) {
+    clearTimeout(timer);
     typing.remove();
-    addMsg("Hmm, I couldn't reach Pollito right now. Check your connection and try again.", "sys");
+    addMsg(learning === "english"
+      ? "Pollito didn't answer in time — tap Send again to retry. 🙂"
+      : "Pollito no respondió a tiempo — toca Enviar otra vez para intentarlo. 🙂", "sys");
   } finally {
     sendBtn.disabled = false;
     textEl.disabled = false;
