@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat with Pollito — Practice Spanish | Pollito Productions</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #f6f1e7; color: #222; min-height: 100vh; display: flex; flex-direction: column; }
+  header { background: #0f766e; color: #fff; padding: 18px 20px; text-align: center; }
+  header h1 { font-size: 1.6rem; }
+  header p { opacity: .9; margin-top: 4px; font-size: .95rem; }
+  header a { color: #fde68a; }
+  main { flex: 1; max-width: 720px; width: 100%; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .modes { display: flex; gap: 8px; }
+  .lang { display: flex; gap: 8px; align-items: center; justify-content: center; font-weight: 700; color: #444; }
+  .lang button { padding: 8px 14px; font-size: .95rem; border-radius: 999px; border: 2px solid #d97706; background: #fff; color: #92400e; cursor: pointer; font-weight: 700; }
+  .lang button.active { background: #d97706; color: #fff; }
+  .modes button { flex: 1; padding: 12px; font-size: 1rem; border-radius: 12px; border: 2px solid #0f766e; background: #fff; color: #0f766e; cursor: pointer; font-weight: 700; }
+  .modes button.active { background: #0f766e; color: #fff; }
+  .topics { display: none; flex-wrap: wrap; gap: 8px; }
+  .topics.show { display: flex; }
+  .topics button { padding: 8px 14px; font-size: .95rem; border-radius: 999px; border: 2px solid #d97706; background: #fff; color: #92400e; cursor: pointer; font-weight: 600; }
+  .topics button.active { background: #d97706; color: #fff; }
+  #chat { flex: 1; min-height: 320px; max-height: 55vh; overflow-y: auto; background: #fff; border: 1px solid #e5ddd0; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .msg { max-width: 85%; padding: 10px 14px; border-radius: 16px; line-height: 1.45; white-space: pre-wrap; word-wrap: break-word; }
+  .msg.bot { background: #e0f2f1; color: #134e4a; align-self: flex-start; border-bottom-left-radius: 4px; }
+  .msg.user { background: #0f766e; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+  .msg.sys { background: #fef3c7; color: #92400e; align-self: center; font-size: .9rem; text-align: center; max-width: 95%; }
+  .msg.typing { opacity: .7; font-style: italic; }
+  .inputrow { display: flex; gap: 8px; }
+  #text { flex: 1; padding: 12px 14px; font-size: 1rem; border-radius: 12px; border: 2px solid #0f766e; outline: none; }
+  #text:focus { border-color: #14b8a6; }
+  #send, #newchat { padding: 12px 18px; font-size: 1rem; border-radius: 12px; border: none; cursor: pointer; font-weight: 700; }
+  #send { background: #0f766e; color: #fff; }
+  #send:disabled { opacity: .5; cursor: wait; }
+  #newchat { background: #e5ddd0; color: #444; }
+  .hint { font-size: .9rem; color: #666; text-align: center; }
+  footer { text-align: center; padding: 14px; font-size: .85rem; color: #666; }
+  footer a { color: #0f766e; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🐣 Chat with Pollito</h1>
+  <p>Practice Spanish with a friendly chatbot — in Spanish, with English help when you need it. <a href="../index.html">← Back to Pollito Productions</a></p>
+</header>
+<main>
+  <div class="lang">I'm learning:
+    <button id="langEs" class="active">🇪🇸 Spanish</button>
+    <button id="langEn">🇺🇸 English</button>
+  </div>
+  <div class="modes">
+    <button id="modeFree" class="active">💬 Free chat</button>
+    <button id="modePractice">🎯 Practice a topic</button>
+  </div>
+  <div class="topics" id="topics"></div>
+  <div id="chat"></div>
+  <div class="inputrow">
+    <input id="text" type="text" placeholder="Escribe en español… (or in English if you're stuck)" autocomplete="off">
+    <button id="send">Send</button>
+    <button id="newchat" title="Start a new chat">↺ New</button>
+  </div>
+  <p class="hint">Pollito is an AI tutor. It can make mistakes — if something looks wrong, ask your teacher. Nothing you type is saved on this site.</p>
+</main>
+<footer>© 2026 Brant Fuller · Pollito Productions · <a href="../index.html">Home</a></footer>
+
+<script>
+// ============================================================================
+// SETUP: paste your Apps Script web app URL here (after you deploy Code.gs).
+// It looks like: https://script.google.com/macros/s/AKfyc.../exec
+// Until you paste it in, the chat shows a friendly "not set up yet" note.
+// ============================================================================
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycby7dsQZSJPF-IRly7LeU7fmq957lks7OH6h2gbgJnavbQdo56qMYFQQGC0RbK0r-ktD/exec";
+
+const TOPICS = [
+  { id: "greetings", label: "👋 Greetings", name: "greetings and introductions" },
+  { id: "family", label: "👨‍👩‍👧 Family", name: "family" },
+  { id: "food", label: "🍕 Food", name: "food and drinks" },
+  { id: "school", label: "🏫 School", name: "school" },
+  { id: "hobbies", label: "⚽ Hobbies", name: "hobbies and free time" },
+  { id: "weather", label: "☀️ Weather", name: "the weather" },
+  { id: "numbers", label: "🔢 Numbers & time", name: "numbers and telling time" },
+  { id: "descriptions", label: "🧑 Descriptions", name: "describing people" }
+];
+
+let mode = "free";
+let topic = null;
+let learning = "spanish"; // "spanish" or "english" — which language the student is learning
+let history = []; // {role: "user"|"bot", text: "..."} — sent to the backend for context
+
+const chatEl = document.getElementById("chat");
+const textEl = document.getElementById("text");
+const sendBtn = document.getElementById("send");
+const topicsEl = document.getElementById("topics");
+const modeFreeBtn = document.getElementById("modeFree");
+const modePracticeBtn = document.getElementById("modePractice");
+const langEsBtn = document.getElementById("langEs");
+const langEnBtn = document.getElementById("langEn");
+
+function setLearning(l) {
+  learning = l;
+  langEsBtn.classList.toggle("active", l === "spanish");
+  langEnBtn.classList.toggle("active", l === "english");
+  textEl.placeholder = l === "english"
+    ? "Write in English… (or in Spanish if you're stuck)"
+    : "Escribe en español… (or in English if you're stuck)";
+  startChat();
+}
+langEsBtn.addEventListener("click", () => setLearning("spanish"));
+langEnBtn.addEventListener("click", () => setLearning("english"));
+
+TOPICS.forEach(t => {
+  const b = document.createElement("button");
+  b.textContent = t.label;
+  b.dataset.id = t.id;
+  b.addEventListener("click", () => pickTopic(t.id));
+  topicsEl.appendChild(b);
+});
+
+function addMsg(text, who) {
+  const d = document.createElement("div");
+  d.className = "msg " + who;
+  d.textContent = text;
+  chatEl.appendChild(d);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  return d;
+}
+
+function setMode(m) {
+  mode = m;
+  modeFreeBtn.classList.toggle("active", m === "free");
+  modePracticeBtn.classList.toggle("active", m === "practice");
+  topicsEl.classList.toggle("show", m === "practice");
+  if (m === "free") { topic = null; }
+  startChat();
+}
+modeFreeBtn.addEventListener("click", () => setMode("free"));
+modePracticeBtn.addEventListener("click", () => setMode("practice"));
+
+function pickTopic(id) {
+  topic = TOPICS.find(t => t.id === id) || null;
+  topicsEl.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.id === id));
+  startChat();
+}
+
+function startChat() {
+  history = [];
+  chatEl.innerHTML = "";
+  const en = learning === "english";
+  if (mode === "practice" && !topic) {
+    addMsg(en
+      ? "Pick a topic above and I'll ask you questions about it — one at a time, in English. 🇺🇸"
+      : "Pick a topic above and I'll ask you questions about it — one at a time, in Spanish. 🇪🇸", "sys");
+    return;
+  }
+  const greet = mode === "practice"
+    ? (en
+      ? "Hi! I'm Pollito. Let's practice " + topic.name + ". I'll ask you questions, one at a time. Let's go!"
+      : "¡Hola! Soy Pollito. Vamos a practicar " + topic.name + ". Te voy a hacer preguntas, una a la vez. ¡Empezamos!")
+    : (en
+      ? "Hi! I'm Pollito 🐣. What do you want to talk about today? You can write in English — and if you get stuck, write in Spanish and I'll help."
+      : "¡Hola! Soy Pollito 🐣. ¿De qué quieres hablar hoy? Puedes escribir en español — y si te atascas, escribe en inglés y te ayudo.");
+  addMsg(greet, "bot");
+  history.push({ role: "bot", text: greet });
+}
+
+async function send() {
+  const text = textEl.value.trim();
+  if (!text) return;
+  textEl.value = "";
+  addMsg(text, "user");
+  history.push({ role: "user", text });
+
+  if (!BACKEND_URL || BACKEND_URL.indexOf("PASTE_YOUR") === 0) {
+    addMsg("The chatbot isn't connected yet — your teacher is still setting it up. Check back soon! 🐣", "sys");
+    return;
+  }
+
+  const typing = addMsg(learning === "english" ? "Pollito is writing…" : "Pollito está escribiendo…", "bot typing");
+  sendBtn.disabled = true;
+  textEl.disabled = true;
+  try {
+    const res = await fetch(BACKEND_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ message: text, history: history.slice(-12), mode, topic: topic ? topic.name : null, learning })
+    });
+    const data = await res.json();
+    typing.remove();
+    const reply = (data && data.reply) ? data.reply : "Lo siento, no entendí. ¿Puedes intentarlo de nuevo?";
+    addMsg(reply, "bot");
+    history.push({ role: "bot", text: reply });
+  } catch (err) {
+    typing.remove();
+    addMsg("Hmm, I couldn't reach Pollito right now. Check your connection and try again.", "sys");
+  } finally {
+    sendBtn.disabled = false;
+    textEl.disabled = false;
+    textEl.focus();
+  }
+}
+
+sendBtn.addEventListener("click", send);
+textEl.addEventListener("keydown", e => { if (e.key === "Enter") send(); });
+document.getElementById("newchat").addEventListener("click", startChat);
+
+startChat();
+</script>
+</body>
+</html>
