@@ -822,6 +822,100 @@ starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
 exteriorCell.add(new THREE.Points(starGeo, new THREE.PointsMaterial({
   color: 0xffffff, size: 1.8, sizeAttenuation: false, transparent: true, opacity: 0.95, depthWrite: false
 })));
+// Nebula skybox: a giant sphere with a procedural canvas texture — a
+// galactic cluster with a bright core, spiral arms and soft nebula
+// clouds in purple/blue/pink/teal — wrapped around the whole sky, so
+// it's visible from every angle while flying in the shuttle. It lives
+// in the exterior cell (flying only), behind the star, the starfield,
+// the ship and the asteroids. The texture stays dark overall so the
+// ship, the word tiles and the asteroids stay readable.
+function makeNebulaTexture() {
+  const W = 2048, H = 1024;
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  g.fillStyle = '#020208';
+  g.fillRect(0, 0, W, H);
+  // a faint band, slightly lighter at the equator (where you look most)
+  const band = g.createLinearGradient(0, 0, 0, H);
+  band.addColorStop(0, 'rgba(4, 6, 18, 0)');
+  band.addColorStop(0.5, 'rgba(10, 14, 34, 0.55)');
+  band.addColorStop(1, 'rgba(4, 6, 18, 0)');
+  g.fillStyle = band;
+  g.fillRect(0, 0, W, H);
+  g.globalCompositeOperation = 'lighter';
+  // soft nebula clouds (large, low-alpha radial gradients; drawn at
+  // x, x-W and x+W so the left/right edges tile with no seam)
+  const cloudCols = ['123, 47, 190', '47, 95, 208', '209, 74, 143', '47, 168, 160', '90, 63, 212', '180, 60, 160'];
+  for (let i = 0; i < 16; i++) {
+    const x = Math.random() * W;
+    const y = H * 0.5 + (Math.random() * 2 - 1) * H * 0.32;
+    const r = 120 + Math.random() * 260;
+    const col = cloudCols[(Math.random() * cloudCols.length) | 0];
+    [x - W, x, x + W].forEach(cx => {
+      const grad = g.createRadialGradient(cx, y, 0, cx, y, r);
+      grad.addColorStop(0, `rgba(${col}, 0.28)`);
+      grad.addColorStop(0.6, `rgba(${col}, 0.12)`);
+      grad.addColorStop(1, `rgba(${col}, 0)`);
+      g.fillStyle = grad;
+      g.beginPath(); g.arc(cx, y, r, 0, Math.PI * 2); g.fill();
+    });
+  }
+  // galactic cluster: a bright core with sweeping spiral arms
+  const coreX = W * 0.68, coreY = H * 0.46;
+  const core = g.createRadialGradient(coreX, coreY, 0, coreX, coreY, 260);
+  core.addColorStop(0, 'rgba(255, 244, 214, 0.95)');
+  core.addColorStop(0.25, 'rgba(255, 220, 160, 0.5)');
+  core.addColorStop(0.6, 'rgba(200, 160, 255, 0.18)');
+  core.addColorStop(1, 'rgba(200, 160, 255, 0)');
+  g.fillStyle = core;
+  g.beginPath(); g.arc(coreX, coreY, 260, 0, Math.PI * 2); g.fill();
+  const armCols = ['209, 74, 143', '47, 95, 208', '150, 90, 255'];
+  for (let a = 0; a < 3; a++) {
+    const startAng = a * (Math.PI * 2 / 3) + 0.4;
+    g.strokeStyle = `rgba(${armCols[a]}, 0.30)`;
+    g.lineWidth = 26 + Math.random() * 20;
+    g.lineCap = 'round';
+    g.beginPath();
+    for (let s = 0; s <= 1.001; s += 0.05) {
+      const ang = startAng + s * 2.2;
+      const rad = 60 + s * 380;
+      const x = coreX + Math.cos(ang) * rad;
+      const y = coreY + Math.sin(ang) * rad * 0.55;
+      if (s === 0) g.moveTo(x, y); else g.lineTo(x, y);
+    }
+    g.stroke();
+  }
+  // a dense sprinkle of bright stars around the core
+  for (let i = 0; i < 220; i++) {
+    const ang = Math.random() * Math.PI * 2;
+    const rad = Math.pow(Math.random(), 0.5) * 320;
+    const x = coreX + Math.cos(ang) * rad;
+    const y = coreY + Math.sin(ang) * rad * 0.55;
+    const r = 0.6 + Math.random() * 1.6;
+    g.fillStyle = `rgba(255, 255, 255, ${0.35 + Math.random() * 0.55})`;
+    g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+  }
+  // faint stars scattered across the whole sky
+  for (let i = 0; i < 900; i++) {
+    const x = Math.random() * W;
+    const y = Math.random() * H;
+    const r = 0.4 + Math.random() * 1.1;
+    g.fillStyle = `rgba(255, 255, 255, ${0.15 + Math.random() * 0.5})`;
+    g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+  }
+  g.globalCompositeOperation = 'source-over';
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const nebulaSky = new THREE.Mesh(
+  new THREE.SphereGeometry(100000, 48, 32),
+  new THREE.MeshBasicMaterial({ map: makeNebulaTexture(), side: THREE.BackSide, depthWrite: false, fog: false })
+);
+nebulaSky.renderOrder = -1;
+exteriorCell.add(nebulaSky);
+
 
 // ---------- The ship: one rotating group, long axis along Z ----------
 // CELLS: ship is the rotating container; its children split into two
