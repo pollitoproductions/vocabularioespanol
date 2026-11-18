@@ -401,7 +401,7 @@ async function send() {
     const res = await fetch(BACKEND_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ message: text, history: history.slice(-12), mode, topic: topic ? topic.name : null, learning }),
+      body: JSON.stringify({ message: text, history: history.slice(-12), mode, topic: topic ? topic.name : null, learning, site: "public" }),
       signal: controller.signal
     });
     clearTimeout(timer);
