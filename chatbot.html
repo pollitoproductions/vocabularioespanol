@@ -331,11 +331,11 @@ function startChat() {
   }
   const greet = mode === "practice"
     ? (en
-      ? "Hi! I'm Pollito. Let's practice " + topic.name + ". I'll ask you questions, one at a time. Let's go!"
-      : "¡Hola! Soy Pollito. Vamos a practicar " + topic.name + ". Te voy a hacer preguntas, una a la vez. ¡Empezamos!")
+      ? "Hi! I'm Pollito. (¡Hola! Soy Pollito.) Let's practice " + topic.name + ". (Vamos a practicar " + topic.name + ".)"
+      : "¡Hola! Soy Pollito. (Hi! I'm Pollito.) Vamos a practicar " + topic.name + ". (Let's practice " + topic.name + ".)")
     : (en
-      ? "Hi! I'm Pollito 🐣. What do you want to talk about today? You can write in English — and if you get stuck, write in Spanish and I'll help."
-      : "¡Hola! Soy Pollito 🐣. ¿De qué quieres hablar hoy? Puedes escribir en español — y si te atascas, escribe en inglés y te ayudo.");
+      ? "Hi! I'm Pollito 🐣. (¡Hola! Soy Pollito.) How are you? (¿Cómo estás?)"
+      : "¡Hola! Soy Pollito 🐣. (Hi! I'm Pollito.) ¿Cómo estás? (How are you?)");
   addMsg(greet, "bot");
   history.push({ role: "bot", text: greet });
 }
