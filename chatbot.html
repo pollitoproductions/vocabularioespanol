@@ -28,13 +28,18 @@
   .msg.user { background: #f97316; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
   .msg.sys { background: #fef3c7; color: #92400e; align-self: center; font-size: .9rem; text-align: center; max-width: 95%; }
   .msg.typing { opacity: .7; font-style: italic; }
-  .inputrow { display: flex; gap: 8px; }
-  #text { flex: 1; padding: 12px 14px; font-size: 1rem; border-radius: 12px; border: 2px solid #f97316; outline: none; }
+  .inputrow { display: flex; gap: 8px; align-items: stretch; }
+  #text { flex: 1; padding: 12px 14px; font-size: 1rem; line-height: 1.4; border-radius: 12px; border: 2px solid #f97316; outline: none; min-width: 0; resize: none; font-family: inherit; }
   #text:focus { border-color: #ea580c; }
-  #send, #newchat { padding: 12px 18px; font-size: 1rem; border-radius: 12px; border: none; cursor: pointer; font-weight: 700; }
-  #send { background: #f97316; color: #fff; }
+  .inputSide { display: flex; flex-direction: column; gap: 6px; flex: 0 0 88px; }
+  .voiceRow { display: flex; gap: 6px; }
+  #send { flex: 1; padding: 10px 12px; font-size: 1rem; border-radius: 12px; border: none; background: #f97316; color: #fff; cursor: pointer; font-weight: 700; }
   #send:disabled { opacity: .5; cursor: wait; }
-  #newchat { background: #e5ddd0; color: #444; }
+  /* Accent letters (Nov 18): tap to insert á é í ó ú ñ ü ¡ ¿ at the cursor. */
+  .accents { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .accents button { padding: 7px 13px; font-size: 1.05rem; border-radius: 10px; border: 2px solid #f97316; background: #fff; color: #c2410c; cursor: pointer; font-weight: 700; line-height: 1; }
+  .accents button:hover { background: #ffedd5; }
+  .accents button:active { background: #f97316; color: #fff; }
   .hint { font-size: .9rem; color: #666; text-align: center; }
   /* Pollito voice avatar pop-up (Nov 17): small avatar beside the reply card, so it doesn't distract inside the text. */
   #pollitoPop { display: none; align-items: flex-start; gap: 8px; position: relative; overflow: visible; }
@@ -48,7 +53,7 @@
   #pollitoPop .popBtn { flex: 0 0 auto; background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #999; padding: 2px 4px; line-height: 1; }
   #pollitoPop .popBtn:hover { color: #f97316; }
   /* Voice buttons (mic + speaker toggle) in the input row. */
-  .voiceBtn { padding: 12px 14px; font-size: 1.1rem; border-radius: 12px; border: 2px solid #f97316; background: #fff; cursor: pointer; line-height: 1; }
+  .voiceBtn { flex: 1; padding: 10px 4px; font-size: 1.1rem; border-radius: 12px; border: 2px solid #f97316; background: #fff; cursor: pointer; line-height: 1; }
   .voiceBtn.on { background: #f97316; color: #fff; }
   .voiceBtn.listening { background: #dc2626; border-color: #dc2626; color: #fff; animation: pulse 1s ease-in-out infinite alternate; }
   @keyframes pulse { from { opacity: 1; } to { opacity: .55; } }
@@ -56,10 +61,12 @@
   @media (max-width: 520px) {
     main { padding: 12px; }
     .inputrow { gap: 6px; }
-    .voiceBtn { padding: 10px 10px; font-size: 1rem; }
-    #send { padding: 10px 12px; font-size: .95rem; }
-    #newchat { padding: 10px 10px; font-size: .95rem; }
-    #newchat .newLabel { display: none; }
+    .inputSide { flex-basis: 76px; gap: 5px; }
+    .voiceRow { gap: 5px; }
+    .voiceBtn { padding: 8px 2px; font-size: 1rem; }
+    #send { padding: 8px 10px; font-size: .95rem; }
+    .accents { gap: 5px; margin-bottom: 6px; }
+    .accents button { padding: 6px 11px; font-size: 1rem; }
     #text { padding: 10px 12px; min-width: 0; }
     #pollitoPop { gap: 6px; }
     #pollitoPop .avatar { flex: 0 0 36px; width: 36px; height: 36px; }
@@ -95,12 +102,18 @@
       <button class="popBtn" id="pollitoRepeat" type="button" title="Hear it again" aria-label="Hear it again">🔁</button><button class="popBtn" id="pollitoPopClose" type="button" aria-label="Close Pollito">✕</button>
     </div>
   </div>
+  <div class="accents" id="accents">
+    <button type="button" data-ch="á">á</button><button type="button" data-ch="é">é</button><button type="button" data-ch="í">í</button><button type="button" data-ch="ó">ó</button><button type="button" data-ch="ú">ú</button><button type="button" data-ch="ñ">ñ</button><button type="button" data-ch="ü">ü</button><button type="button" data-ch="¡">¡</button><button type="button" data-ch="¿">¿</button>
+  </div>
   <div class="inputrow">
-    <button class="voiceBtn" id="mic" type="button" title="Talk to Pollito" aria-label="Talk to Pollito">🎤</button>
-    <button class="voiceBtn" id="speakToggle" type="button" title="Pollito speaks the reply out loud" aria-label="Pollito speaks the reply out loud" aria-pressed="false">🔇</button>
-    <input id="text" type="text" placeholder="Escribe en español… (or in English if you're stuck)" autocomplete="off">
-    <button id="send">Send</button>
-    <button id="newchat" title="Start a new chat">↺ <span class="newLabel">New</span></button>
+    <textarea id="text" rows="2" placeholder="Escribe en español… (or in English if you're stuck)" autocomplete="off"></textarea>
+    <div class="inputSide">
+      <div class="voiceRow">
+        <button class="voiceBtn" id="mic" type="button" title="Talk to Pollito" aria-label="Talk to Pollito">🎤</button>
+        <button class="voiceBtn" id="speakToggle" type="button" title="Pollito speaks the reply out loud" aria-label="Pollito speaks the reply out loud" aria-pressed="false">🔇</button>
+      </div>
+      <button id="send">Send</button>
+    </div>
   </div>
   <p class="hint">Pollito is an AI tutor. It can make mistakes — if something looks wrong, ask your teacher. <span id="hintWrite">Write in Spanish, or in English if you're stuck.</span> Nothing you type is saved on this site.</p>
   <p class="hint">🔒 Privacy: your messages are sent to Groq (the AI service that powers Pollito) only to generate a reply. Groq does not use your messages to train its models, and Pollito Productions does not store them. Pollito never asks for your name or personal information — please don't share anything sensitive. See our <a href="../privacy-policy.html">Privacy Policy</a>.</p>
@@ -401,8 +414,18 @@ async function send() {
 }
 
 sendBtn.addEventListener("click", send);
-textEl.addEventListener("keydown", e => { if (e.key === "Enter") send(); });
-document.getElementById("newchat").addEventListener("click", startChat);
+textEl.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
+// Accent letters: tap one to insert it at the cursor in the message box.
+document.querySelectorAll("#accents button").forEach(b => {
+  b.addEventListener("click", () => {
+    const ch = b.getAttribute("data-ch");
+    const start = textEl.selectionStart || 0;
+    const end = textEl.selectionEnd || 0;
+    textEl.value = textEl.value.slice(0, start) + ch + textEl.value.slice(end);
+    textEl.focus();
+    textEl.setSelectionRange(start + 1, start + 1);
+  });
+});
 
 startChat();
 </script>
