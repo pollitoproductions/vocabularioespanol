@@ -141,6 +141,53 @@ const TOPICS = [
   { id: "descriptions", label: "🧑 Descriptions", labelEs: "🧑 Descripciones", name: "describing people" }
 ];
 
+// Daily message limit: 25 messages per device per day. The count lives in
+// localStorage, so it follows the browser — and because the full page and the
+// widget share one origin, they share one count. It resets at midnight local
+// time. This is a soft limit: a student who clears browser data gets a fresh
+// count, and it can't tell two students apart on a shared device. It keeps
+// normal classroom use inside the Groq free tier.
+const DAILY_LIMIT = 25;
+const LIMIT_KEY = "pollito_daily_msgs";
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function getDailyCount() {
+  try {
+    const v = JSON.parse(localStorage.getItem(LIMIT_KEY) || "null");
+    if (v && v.date === todayStr()) return v.count || 0;
+  } catch (e) {}
+  return 0;
+}
+function bumpDailyCount() {
+  try {
+    localStorage.setItem(LIMIT_KEY, JSON.stringify({ date: todayStr(), count: getDailyCount() + 1 }));
+  } catch (e) {}
+}
+// How long until the daily limit resets at midnight, in the given language.
+function resetInText(en) {
+  const now = new Date();
+  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const mins = Math.max(1, Math.ceil((midnight - now) / 60000));
+  const h = Math.floor(mins / 60), m = mins % 60;
+  if (en) {
+    if (h === 0) return m + (m === 1 ? " minute" : " minutes");
+    if (m === 0) return h + (h === 1 ? " hour" : " hours");
+    return h + (h === 1 ? " hour" : " hours") + " and " + m + (m === 1 ? " minute" : " minutes");
+  }
+  if (h === 0) return m + (m === 1 ? " minuto" : " minutos");
+  if (m === 0) return h + (h === 1 ? " hora" : " horas");
+  return h + (h === 1 ? " hora" : " horas") + " y " + m + (m === 1 ? " minuto" : " minutos");
+}
+// Message shown when the student has used today's 25 messages. Main text in
+// the learning language, translation in parentheses (same rule as replies).
+function limitMsg(en) {
+  return en
+    ? "You've used your 25 messages for today. They reset in " + resetInText(true) + " — come back then to keep practicing! (Ya usaste tus 25 mensajes de hoy. Se reinician en " + resetInText(false) + ". ¡Vuelve entonces para seguir practicando!)"
+    : "Ya usaste tus 25 mensajes de hoy. Se reinician en " + resetInText(false) + ". ¡Vuelve entonces para seguir practicando! (You've used your 25 messages for today. They reset in " + resetInText(true) + ". Come back then to keep practicing!)";
+}
+
 let mode = "free";
 let topic = null;
 let learning = "spanish"; // "spanish" or "english" — which language the student is learning
@@ -407,6 +454,10 @@ function startChat() {
 async function send() {
   const text = textEl.value.trim();
   if (!text) return;
+  if (getDailyCount() >= DAILY_LIMIT) {
+    addMsg(limitMsg(learning === "english"), "sys");
+    return;
+  }
   lastUserMsg = text;
   textEl.value = "";
   addMsg(text, "user");
@@ -439,6 +490,7 @@ async function send() {
     if (!data || !data.reply) throw new Error("empty reply");
     addMsg(data.reply, "bot");
     history.push({ role: "bot", text: data.reply });
+    bumpDailyCount();
     showPollito(data.reply);
   } catch (err) {
     clearTimeout(timer);
