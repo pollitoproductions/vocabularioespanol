@@ -36,6 +36,21 @@
   #send:disabled { opacity: .5; cursor: wait; }
   #newchat { background: #e5ddd0; color: #444; }
   .hint { font-size: .9rem; color: #666; text-align: center; }
+  /* Pollito voice avatar pop-up (Nov 17): small avatar beside the reply card, so it doesn't distract inside the text. */
+  #pollitoPop { display: none; align-items: flex-start; gap: 8px; }
+  #pollitoPop.show { display: flex; }
+  #pollitoPop .avatar { flex: 0 0 44px; width: 44px; height: 44px; margin-top: 2px; }
+  #pollitoPop .avatar img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; display: block; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
+  #pollitoPop .avatar.speaking img { animation: bob .35s ease-in-out infinite alternate; }
+  @keyframes bob { from { transform: translateY(0); } to { transform: translateY(-3px); } }
+  #pollitoPop .popCard { flex: 1; display: flex; align-items: flex-start; gap: 8px; background: #fff; border: 2px solid #f97316; border-radius: 16px; padding: 10px 12px; box-shadow: 0 4px 16px rgba(249,115,22,.25); min-width: 0; }
+  #pollitoPop .popText { flex: 1; line-height: 1.45; color: #7c2d12; white-space: pre-wrap; word-wrap: break-word; min-width: 0; }
+  #pollitoPop .popClose { flex: 0 0 auto; background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #999; padding: 2px 4px; line-height: 1; }
+  /* Voice buttons (mic + speaker toggle) in the input row. */
+  .voiceBtn { padding: 12px 14px; font-size: 1.1rem; border-radius: 12px; border: 2px solid #f97316; background: #fff; cursor: pointer; line-height: 1; }
+  .voiceBtn.on { background: #f97316; color: #fff; }
+  .voiceBtn.listening { background: #dc2626; border-color: #dc2626; color: #fff; animation: pulse 1s ease-in-out infinite alternate; }
+  @keyframes pulse { from { opacity: 1; } to { opacity: .55; } }
   footer { text-align: center; padding: 14px; font-size: .85rem; color: #666; }
   footer a { color: #ea580c; }
 </style>
@@ -43,7 +58,7 @@
 <body>
 <header>
   <h1>🐣 Chat with Pollito</h1>
-  <p>Practice Spanish with a friendly chatbot — in Spanish, with English help when you need it. Ask about anything — in Spanish or English. <a href="../index.html">← Back to Pollito Productions</a></p>
+  <p>Practice Spanish with a friendly chatbot — in Spanish, with English help when you need it. <a href="../index.html">← Back to Pollito Productions</a></p>
 </header>
 <main>
   <div class="lang">I'm learning:
@@ -56,7 +71,18 @@
   </div>
   <div class="topics" id="topics"></div>
   <div id="chat"></div>
+  <div id="pollitoPop" role="status" aria-label="Pollito speaking">
+    <div class="avatar" id="pollitoAvatar">
+      <img src="data:image/jpeg;base64,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" alt="Pollito wearing a graduation cap" style="width:72px;height:72px;border-radius:50%;object-fit:cover;display:block;">
+    </div>
+    <div class="popCard">
+      <div class="popText" id="pollitoPopText"></div>
+      <button class="popClose" id="pollitoPopClose" type="button" aria-label="Close Pollito">✕</button>
+    </div>
+  </div>
   <div class="inputrow">
+    <button class="voiceBtn" id="mic" type="button" title="Talk to Pollito" aria-label="Talk to Pollito">🎤</button>
+    <button class="voiceBtn" id="speakToggle" type="button" title="Pollito speaks the reply out loud" aria-label="Pollito speaks the reply out loud" aria-pressed="false">🔇</button>
     <input id="text" type="text" placeholder="Escribe en español… (or in English if you're stuck)" autocomplete="off">
     <button id="send">Send</button>
     <button id="newchat" title="Start a new chat">↺ New</button>
@@ -97,6 +123,103 @@ const modeFreeBtn = document.getElementById("modeFree");
 const modePracticeBtn = document.getElementById("modePractice");
 const langEsBtn = document.getElementById("langEs");
 const langEnBtn = document.getElementById("langEn");
+
+// --- Pollito voice avatar (Nov 17): pop-up + mic input + optional spoken replies. ---
+const popEl = document.getElementById("pollitoPop");
+const popTextEl = document.getElementById("pollitoPopText");
+const avatarEl = document.getElementById("pollitoAvatar");
+const micBtn = document.getElementById("mic");
+const speakBtn = document.getElementById("speakToggle");
+let speakOn = false; // Pollito speaks replies out loud — OFF by default.
+let recog = null;
+let listening = false;
+
+function showPollito(text) {
+  popTextEl.textContent = text;
+  popEl.classList.add("show");
+  if (speakOn) speakText(text);
+}
+document.getElementById("pollitoPopClose").addEventListener("click", () => {
+  popEl.classList.remove("show");
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  avatarEl.classList.remove("speaking");
+});
+
+function pickVoice() {
+  if (!("speechSynthesis" in window)) return null;
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices.length) return null;
+  const want = learning === "english" ? ["en-US", "en-GB", "en"] : ["es-MX", "es-US", "es"];
+  for (const prefix of want) {
+    const v = voices.find(v => v.lang && v.lang.toLowerCase().indexOf(prefix.toLowerCase()) === 0);
+    if (v) return v;
+  }
+  return null;
+}
+function speakText(text) {
+  if (!("speechSynthesis" in window)) return;
+  window.speechSynthesis.cancel();
+  const clean = text.replace(/\*\*/g, "").replace(/\*/g, "").replace(/_/g, "");
+  const u = new SpeechSynthesisUtterance(clean);
+  const v = pickVoice();
+  if (v) u.voice = v;
+  u.lang = learning === "english" ? "en-US" : "es-MX";
+  u.onstart = () => avatarEl.classList.add("speaking");
+  u.onend = () => avatarEl.classList.remove("speaking");
+  u.onerror = () => avatarEl.classList.remove("speaking");
+  window.speechSynthesis.speak(u);
+}
+speakBtn.addEventListener("click", () => {
+  speakOn = !speakOn;
+  speakBtn.textContent = speakOn ? "🔊" : "🔇";
+  speakBtn.classList.toggle("on", speakOn);
+  speakBtn.setAttribute("aria-pressed", String(speakOn));
+  if (!speakOn && "speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+    avatarEl.classList.remove("speaking");
+  }
+});
+
+// Voice input: tap the mic, talk, and the words go to Pollito.
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (!SR) {
+  micBtn.style.display = "none"; // this browser can't do voice input
+} else {
+  micBtn.addEventListener("click", () => {
+    if (listening) { try { recog.stop(); } catch (e) {} return; }
+    recog = new SR();
+    recog.lang = learning === "english" ? "en-US" : "es-MX";
+    recog.interimResults = true;
+    recog.maxAlternatives = 1;
+    recog.onresult = (e) => {
+      let interim = "", final = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) final += e.results[i][0].transcript;
+        else interim += e.results[i][0].transcript;
+      }
+      textEl.value = final || interim;
+      if (final) { stopListen(); send(); }
+    };
+    recog.onend = () => stopListen();
+    recog.onerror = () => stopListen();
+    try {
+      recog.start();
+      listening = true;
+      micBtn.classList.add("listening");
+      micBtn.textContent = "🔴";
+      textEl.placeholder = learning === "english" ? "Listening… speak now" : "Escuchando… habla ahora";
+    } catch (e) { stopListen(); }
+  });
+}
+function stopListen() {
+  listening = false;
+  micBtn.classList.remove("listening");
+  micBtn.textContent = "🎤";
+  textEl.placeholder = learning === "english"
+    ? "Write in English… (or in Spanish if you're stuck)"
+    : "Escribe en español… (or in English if you're stuck)";
+}
+if ("speechSynthesis" in window) window.speechSynthesis.onvoiceschanged = () => {}; // warm the voice list
 
 function setLearning(l) {
   learning = l;
@@ -147,6 +270,9 @@ function pickTopic(id) {
 function startChat() {
   history = [];
   chatEl.innerHTML = "";
+  popEl.classList.remove("show");
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  avatarEl.classList.remove("speaking");
   const en = learning === "english";
   if (mode === "practice" && !topic) {
     addMsg(en
@@ -199,6 +325,7 @@ async function send() {
     if (!data || !data.reply) throw new Error("empty reply");
     addMsg(data.reply, "bot");
     history.push({ role: "bot", text: data.reply });
+    showPollito(data.reply);
   } catch (err) {
     clearTimeout(timer);
     typing.remove();
