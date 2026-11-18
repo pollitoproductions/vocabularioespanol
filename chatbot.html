@@ -73,7 +73,7 @@
 <body>
 <header>
   <h1>🐣 Chat with Pollito</h1>
-  <p>Practice Spanish with a friendly chatbot — in Spanish, with English help when you need it. <a href="../index.html">← Back to Pollito Productions</a></p>
+  <p id="pageSub">Practice Spanish with a friendly chatbot — in Spanish, with English help when you need it. <a href="../index.html">← Back to Pollito Productions</a></p>
 </header>
 <main>
   <div class="lang">I'm learning:
@@ -98,7 +98,7 @@
   <div class="inputrow">
     <button class="voiceBtn" id="mic" type="button" title="Talk to Pollito" aria-label="Talk to Pollito">🎤</button>
     <button class="voiceBtn" id="speakToggle" type="button" title="Pollito speaks the reply out loud" aria-label="Pollito speaks the reply out loud" aria-pressed="false">🔇</button>
-    <input id="text" type="text" placeholder="Escribe en español…" autocomplete="off">
+    <input id="text" type="text" placeholder="Escribe en español… (or in English if you're stuck)" autocomplete="off">
     <button id="send">Send</button>
     <button id="newchat" title="Start a new chat">↺ <span class="newLabel">New</span></button>
   </div>
@@ -283,6 +283,12 @@ function setLearning(l) {
   document.getElementById("hintWrite").textContent = l === "english"
     ? "Write in English, or in Spanish if you're stuck."
     : "Write in Spanish, or in English if you're stuck.";
+  document.getElementById("pageSub").firstChild.textContent = l === "english"
+    ? "Practice English with a friendly chatbot — in English, with Spanish help when you need it. "
+    : "Practice Spanish with a friendly chatbot — in Spanish, with English help when you need it. ";
+  document.title = l === "english"
+    ? "Chat with Pollito — Practice English | Pollito Productions"
+    : "Chat with Pollito — Practice Spanish | Pollito Productions";
   startChat();
 }
 langEsBtn.addEventListener("click", () => setLearning("spanish"));
