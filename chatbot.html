@@ -37,15 +37,16 @@
   #newchat { background: #e5ddd0; color: #444; }
   .hint { font-size: .9rem; color: #666; text-align: center; }
   /* Pollito voice avatar pop-up (Nov 17): small avatar beside the reply card, so it doesn't distract inside the text. */
-  #pollitoPop { display: none; align-items: flex-start; gap: 8px; }
+  #pollitoPop { display: none; align-items: flex-start; gap: 8px; position: relative; overflow: visible; }
   #pollitoPop.show { display: flex; }
-  #pollitoPop .avatar { flex: 0 0 44px; width: 44px; height: 44px; margin-top: 2px; }
-  #pollitoPop .avatar img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; display: block; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
+  #pollitoPop .avatar { flex: 0 0 44px; width: 44px; height: 44px; margin-top: 2px; position: relative; z-index: 2; flex-shrink: 0; }
+  #pollitoPop .avatar img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; display: block; background: #fff; border: 2px solid #f97316; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
   #pollitoPop .avatar.speaking img { animation: bob .35s ease-in-out infinite alternate; }
   @keyframes bob { from { transform: translateY(0); } to { transform: translateY(-3px); } }
   #pollitoPop .popCard { flex: 1; display: flex; align-items: flex-start; gap: 8px; background: #fff; border: 2px solid #f97316; border-radius: 16px; padding: 10px 12px; box-shadow: 0 4px 16px rgba(249,115,22,.25); min-width: 0; }
   #pollitoPop .popText { flex: 1; line-height: 1.45; color: #7c2d12; white-space: pre-wrap; word-wrap: break-word; min-width: 0; }
-  #pollitoPop .popClose { flex: 0 0 auto; background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #999; padding: 2px 4px; line-height: 1; }
+  #pollitoPop .popBtn { flex: 0 0 auto; background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #999; padding: 2px 4px; line-height: 1; }
+  #pollitoPop .popBtn:hover { color: #f97316; }
   /* Voice buttons (mic + speaker toggle) in the input row. */
   .voiceBtn { padding: 12px 14px; font-size: 1.1rem; border-radius: 12px; border: 2px solid #f97316; background: #fff; cursor: pointer; line-height: 1; }
   .voiceBtn.on { background: #f97316; color: #fff; }
@@ -91,7 +92,7 @@
     </div>
     <div class="popCard">
       <div class="popText" id="pollitoPopText"></div>
-      <button class="popClose" id="pollitoPopClose" type="button" aria-label="Close Pollito">✕</button>
+      <button class="popBtn" id="pollitoRepeat" type="button" title="Hear it again" aria-label="Hear it again">🔁</button><button class="popBtn" id="pollitoPopClose" type="button" aria-label="Close Pollito">✕</button>
     </div>
   </div>
   <div class="inputrow">
@@ -147,12 +148,19 @@ const speakBtn = document.getElementById("speakToggle");
 let speakOn = false; // Pollito speaks replies out loud — OFF by default.
 let recog = null;
 let listening = false;
+let lastReply = ""; // the latest bot reply, so the repeat button can play it again.
 
 function showPollito(text) {
+  lastReply = text;
   popTextEl.textContent = text;
   popEl.classList.add("show");
   if (speakOn) speakText(text);
 }
+document.getElementById("pollitoRepeat").addEventListener("click", () => {
+  if (!lastReply) return;
+  popEl.classList.add("show");
+  speakText(lastReply);
+});
 document.getElementById("pollitoPopClose").addEventListener("click", () => {
   popEl.classList.remove("show");
   if ("speechSynthesis" in window) window.speechSynthesis.cancel();
