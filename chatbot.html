@@ -51,6 +51,20 @@
   .voiceBtn.on { background: #f97316; color: #fff; }
   .voiceBtn.listening { background: #dc2626; border-color: #dc2626; color: #fff; animation: pulse 1s ease-in-out infinite alternate; }
   @keyframes pulse { from { opacity: 1; } to { opacity: .55; } }
+  /* Mobile: shrink the input row and pop-up so everything fits on a phone. */
+  @media (max-width: 520px) {
+    main { padding: 12px; }
+    .inputrow { gap: 6px; }
+    .voiceBtn { padding: 10px 10px; font-size: 1rem; }
+    #send { padding: 10px 12px; font-size: .95rem; }
+    #newchat { padding: 10px 10px; font-size: .95rem; }
+    #newchat .newLabel { display: none; }
+    #text { padding: 10px 12px; min-width: 0; }
+    #pollitoPop { gap: 6px; }
+    #pollitoPop .avatar { flex: 0 0 36px; width: 36px; height: 36px; }
+    #pollitoPop .avatar img { width: 36px; height: 36px; }
+    #pollitoPop .popCard { padding: 8px 10px; }
+  }
   footer { text-align: center; padding: 14px; font-size: .85rem; color: #666; }
   footer a { color: #ea580c; }
 </style>
@@ -85,7 +99,7 @@
     <button class="voiceBtn" id="speakToggle" type="button" title="Pollito speaks the reply out loud" aria-label="Pollito speaks the reply out loud" aria-pressed="false">🔇</button>
     <input id="text" type="text" placeholder="Escribe en español… (or in English if you're stuck)" autocomplete="off">
     <button id="send">Send</button>
-    <button id="newchat" title="Start a new chat">↺ New</button>
+    <button id="newchat" title="Start a new chat">↺ <span class="newLabel">New</span></button>
   </div>
   <p class="hint">Pollito is an AI tutor. It can make mistakes — if something looks wrong, ask your teacher. Nothing you type is saved on this site.</p>
 </main>
