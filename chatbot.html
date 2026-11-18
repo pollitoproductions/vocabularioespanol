@@ -184,7 +184,7 @@ function pickVoice() {
   // male Spanish voices sound fine). For English, natural wins over male
   // (the male-only pick landed on a robotic English voice). In both cases a
   // male natural voice is best.
-  const isNatural = v => /natural|neural/i.test(v.name || "") || /^google/i.test(v.name || "");
+  const isNatural = v => /natural|neural|online|enhanced/i.test(v.name || "") || /^google/i.test(v.name || "");
   const isMale = v => MALE_NAME.test(v.name || "");
   const natural = matches.filter(isNatural);
   const maleNatural = natural.find(isMale);
@@ -194,9 +194,11 @@ function pickVoice() {
     if (male) return male;
     if (natural.length) return natural[0];
   } else {
+    // English (Nov 18): Brant would rather have a natural English voice than
+    // a robotic male one ("sounds like Stephen Hawking's"). Natural wins, and
+    // if no natural voice is detected by name, fall back to the first voice
+    // (usually the system default, a natural one) — NOT the first male voice.
     if (natural.length) return natural[0];
-    const male = matches.find(isMale);
-    if (male) return male;
   }
   return matches[0];
 }
