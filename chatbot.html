@@ -179,17 +179,26 @@ function pickVoice() {
     }
   }
   if (!matches.length) return null;
-  // Prefer a natural-sounding voice (Nov 17): a male-only pick could land on
-  // a robotic male voice when a natural voice was available. Prefer a male
-  // voice among the natural ones, then any natural voice, then any male voice.
+  // Voice pick (Nov 17): Brant wants Pollito male. For Spanish, male wins over
+  // "natural" (the natural Spanish voices on his device are female, and the
+  // male Spanish voices sound fine). For English, natural wins over male
+  // (the male-only pick landed on a robotic English voice). In both cases a
+  // male natural voice is best.
   const isNatural = v => /natural|neural/i.test(v.name || "") || /^google/i.test(v.name || "");
   const isMale = v => MALE_NAME.test(v.name || "");
   const natural = matches.filter(isNatural);
   const maleNatural = natural.find(isMale);
   if (maleNatural) return maleNatural;
-  if (natural.length) return natural[0];
-  const male = matches.find(isMale);
-  return male || matches[0];
+  if (learning === "spanish") {
+    const male = matches.find(isMale);
+    if (male) return male;
+    if (natural.length) return natural[0];
+  } else {
+    if (natural.length) return natural[0];
+    const male = matches.find(isMale);
+    if (male) return male;
+  }
+  return matches[0];
 }
 const MALE_NAME = /(male|david|guy|jorge|carlos|diego|daniel|alex|fred|aaron|james|john|michael|robert|william|thomas|joseph|mark|paul|george|ryan|brian|kevin|jason|jeffrey|gary|nicholas|eric|stephen|jonathan|larry|justin|scott|brandon|benjamin|samuel|gregory|alexander|patrick|frank|raymond|jack|dennis|jerry|tyler|jose|nathan|adam|henry|douglas|zachary|kyle|noah|ethan|jeremy|harold|keith|christian|roger|gerald|carl|terry|sean|austin|arthur|lawrence|jesse|jordan|dylan|bryan|billy|bruce|gabriel|logan|alan|juan|wayne|ralph|roy|eugene|randy|vincent|russell|elijah|louis|bobby|philip|johnny|miguel|luis|pedro|pablo|fernando|ricardo|roberto|eduardo|javier|alejandro|manuel|francisco|antonio|rafael|sergio|andrés|óscar|rubén|iván|adrián|gonzalo|héctor|raúl|esteban|emilio|ignacio|tomás|vicente|alfonso|salvador|enrique|federico|gustavo|hugo|leonardo|mario|martín|nicolás|rodrigo|santiago|sebastián|víctor|álvaro)/i;
 function speakText(text) {
