@@ -99,7 +99,7 @@
     </div>
     <div class="popCard">
       <div class="popText" id="pollitoPopText"></div>
-      <button class="popBtn" id="pollitoRepeat" type="button" title="Hear it again" aria-label="Hear it again">🔁</button><button class="popBtn" id="pollitoPopClose" type="button" aria-label="Close Pollito">✕</button>
+      <button class="popBtn" id="pollitoRepeat" type="button" title="Hear it again" aria-label="Hear it again">🔁</button><button class="popBtn" id="pollitoReport" type="button" title="Report this reply" aria-label="Report this reply">🚩</button><button class="popBtn" id="pollitoPopClose" type="button" aria-label="Close Pollito">✕</button>
     </div>
   </div>
   <div class="accents" id="accents">
@@ -115,6 +115,7 @@
       <button id="send">Send</button>
     </div>
   </div>
+  <p class="hint">🛡️ Pollito is a robot, not a real person. Never share personal information. If you feel unsafe, tell a trusted adult right away.</p>
   <p class="hint">Pollito is an AI tutor. It can make mistakes — if something looks wrong, ask your teacher. <span id="hintWrite">Write in Spanish, or in English if you're stuck.</span></p>
   <p class="hint">🔒 Privacy: your messages are sent to Groq (the AI service that powers Pollito) only to generate a reply. Groq does not use your messages to train its models. Your teacher keeps a private log of chats to keep students safe — only the teacher can see it. Pollito never asks for your name or personal information — please don't share anything sensitive. See our <a href="../privacy-policy.html">Privacy Policy</a>.</p>
 </main>
@@ -164,9 +165,12 @@ let speakToken = 0; // guards the delayed speak() in speakText.
 let recog = null;
 let listening = false;
 let lastReply = ""; // the latest bot reply, so the repeat button can play it again.
+let lastUserMsg = ""; // the student message that prompted it, for the report button.
 
 function showPollito(text) {
   lastReply = text;
+  reportBtn.textContent = "🚩";
+  reportBtn.disabled = false;
   popTextEl.textContent = text;
   popEl.classList.add("show");
   if (speakOn) speakText(text);
@@ -175,6 +179,22 @@ document.getElementById("pollitoRepeat").addEventListener("click", () => {
   if (!lastReply) return;
   popEl.classList.add("show");
   speakText(lastReply);
+});
+// Report button (v20): flags this reply in the teacher log + emails the teacher.
+const reportBtn = document.getElementById("pollitoReport");
+reportBtn.addEventListener("click", async () => {
+  if (!lastReply || reportBtn.disabled) return;
+  reportBtn.disabled = true;
+  try {
+    await fetch(BACKEND_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "report", message: lastUserMsg, reply: lastReply, learning, mode, topic: topic ? topic.name : null, site: "public" })
+    });
+    reportBtn.textContent = "✓";
+  } catch (e) {
+    reportBtn.disabled = false;
+  }
 });
 document.getElementById("pollitoPopClose").addEventListener("click", () => {
   popEl.classList.remove("show");
@@ -380,6 +400,7 @@ function startChat() {
 async function send() {
   const text = textEl.value.trim();
   if (!text) return;
+  lastUserMsg = text;
   textEl.value = "";
   addMsg(text, "user");
   history.push({ role: "user", text });
