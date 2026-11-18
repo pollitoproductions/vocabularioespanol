@@ -160,6 +160,7 @@ const avatarEl = document.getElementById("pollitoAvatar");
 const micBtn = document.getElementById("mic");
 const speakBtn = document.getElementById("speakToggle");
 let speakOn = false; // Pollito speaks replies out loud — OFF by default.
+let speakToken = 0; // guards the delayed speak() in speakText.
 let recog = null;
 let listening = false;
 let lastReply = ""; // the latest bot reply, so the repeat button can play it again.
@@ -177,6 +178,7 @@ document.getElementById("pollitoRepeat").addEventListener("click", () => {
 });
 document.getElementById("pollitoPopClose").addEventListener("click", () => {
   popEl.classList.remove("show");
+  speakToken++;
   if ("speechSynthesis" in window) window.speechSynthesis.cancel();
   avatarEl.classList.remove("speaking");
 });
@@ -225,6 +227,7 @@ function speakText(text) {
   // with a Spanish accent — the translation stays on screen to read.
   const clean = text.replace(/\([^)]*\)/g, "").replace(/\*\*/g, "").replace(/\*/g, "").replace(/_/g, "").replace(/\s{2,}/g, " ").trim();
   if (!clean) return;
+  const myToken = ++speakToken;
   const u = new SpeechSynthesisUtterance(clean);
   const v = pickVoice();
   if (v) u.voice = v;
@@ -232,7 +235,15 @@ function speakText(text) {
   u.onstart = () => avatarEl.classList.add("speaking");
   u.onend = () => avatarEl.classList.remove("speaking");
   u.onerror = () => avatarEl.classList.remove("speaking");
-  window.speechSynthesis.speak(u);
+  // FIX Nov 18: cancel() then speak() in the same task drops the utterance
+  // in Chrome and iOS Safari (the cancel eats the new one), and the
+  // synthesizer can get stuck paused. Speak a beat later, resume first,
+  // and only if no newer speak() has superseded this one.
+  setTimeout(() => {
+    if (myToken !== speakToken) return;
+    window.speechSynthesis.resume();
+    window.speechSynthesis.speak(u);
+  }, 100);
 }
 speakBtn.addEventListener("click", () => {
   speakOn = !speakOn;
@@ -240,6 +251,7 @@ speakBtn.addEventListener("click", () => {
   speakBtn.classList.toggle("on", speakOn);
   speakBtn.setAttribute("aria-pressed", String(speakOn));
   if (!speakOn && "speechSynthesis" in window) {
+    speakToken++;
     window.speechSynthesis.cancel();
     avatarEl.classList.remove("speaking");
   }
