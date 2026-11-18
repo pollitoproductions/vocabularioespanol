@@ -130,15 +130,15 @@
 const BACKEND_URL = "https://script.google.com/macros/s/AKfycby7dsQZSJPF-IRly7LeU7fmq957lks7OH6h2gbgJnavbQdo56qMYFQQGC0RbK0r-ktD/exec";
 
 const TOPICS = [
-  { id: "grammar", label: "📝 Grammar", name: "grammar" },
-  { id: "greetings", label: "👋 Greetings", name: "greetings and introductions" },
-  { id: "family", label: "👨‍👩‍👧 Family", name: "family" },
-  { id: "food", label: "🍕 Food", name: "food and drinks" },
-  { id: "school", label: "🏫 School", name: "school" },
-  { id: "hobbies", label: "⚽ Hobbies", name: "hobbies and free time" },
-  { id: "weather", label: "☀️ Weather", name: "the weather" },
-  { id: "numbers", label: "🔢 Numbers & time", name: "numbers and telling time" },
-  { id: "descriptions", label: "🧑 Descriptions", name: "describing people" }
+  { id: "grammar", label: "📝 Grammar", labelEs: "📝 Gramática", name: "grammar" },
+  { id: "greetings", label: "👋 Greetings", labelEs: "👋 Saludos", name: "greetings and introductions" },
+  { id: "family", label: "👨‍👩‍👧 Family", labelEs: "👨‍👩‍👧 Familia", name: "family" },
+  { id: "food", label: "🍕 Food", labelEs: "🍕 Comida", name: "food and drinks" },
+  { id: "school", label: "🏫 School", labelEs: "🏫 Escuela", name: "school" },
+  { id: "hobbies", label: "⚽ Hobbies", labelEs: "⚽ Pasatiempos", name: "hobbies and free time" },
+  { id: "weather", label: "☀️ Weather", labelEs: "☀️ El tiempo", name: "the weather" },
+  { id: "numbers", label: "🔢 Numbers & time", labelEs: "🔢 Números y la hora", name: "numbers and telling time" },
+  { id: "descriptions", label: "🧑 Descriptions", labelEs: "🧑 Descripciones", name: "describing people" }
 ];
 
 let mode = "free";
@@ -335,6 +335,12 @@ function setLearning(l) {
   document.title = l === "english"
     ? "Chat with Pollito — Practice English | Pollito Productions"
     : "Chat with Pollito — Practice Spanish | Pollito Productions";
+  // Topic chips show in the student's native language: English when learning
+  // Spanish, Spanish when learning English.
+  topicsEl.querySelectorAll("button").forEach(b => {
+    const t = TOPICS.find(x => x.id === b.dataset.id);
+    if (t) b.textContent = l === "english" ? t.labelEs : t.label;
+  });
   startChat();
 }
 langEsBtn.addEventListener("click", () => setLearning("spanish"));
