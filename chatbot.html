@@ -268,7 +268,7 @@ function stopListen() {
   micBtn.classList.remove("listening");
   micBtn.textContent = "🎤";
   textEl.placeholder = learning === "english"
-    ? "Write in English… (or in Spanish if you're stuck)"
+    ? "Write in English… (o en español si te atoras)"
     : "Escribe en español… (or in English if you're stuck)";
 }
 if ("speechSynthesis" in window) window.speechSynthesis.onvoiceschanged = () => {}; // warm the voice list
@@ -278,10 +278,10 @@ function setLearning(l) {
   langEsBtn.classList.toggle("active", l === "spanish");
   langEnBtn.classList.toggle("active", l === "english");
   textEl.placeholder = l === "english"
-    ? "Write in English… (or in Spanish if you're stuck)"
+    ? "Write in English… (o en español si te atoras)"
     : "Escribe en español… (or in English if you're stuck)";
   document.getElementById("hintWrite").textContent = l === "english"
-    ? "Write in English, or in Spanish if you're stuck."
+    ? "Write in English, o en español si te atoras."
     : "Write in Spanish, or in English if you're stuck.";
   document.getElementById("pageSub").firstChild.textContent = l === "english"
     ? "Practice English with a friendly chatbot — in English, with Spanish help when you need it. "
