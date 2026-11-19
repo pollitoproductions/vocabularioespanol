@@ -185,7 +185,7 @@ for(var i=0;i<moreBtns.length;i++){moreBtns[i].addEventListener('click',function
 /* Nov 19: ONE full-width input box — textarea, mic and send arrow all live
    inside it. No side column, no speaker toggle (each bot message already
    has its own listen button). */
-#chatWidget .cwInput{display:flex;gap:0;align-items:stretch;border:2px solid #f97316;border-radius:10px;background:#fff;overflow:hidden}
+#chatWidget .cwInput{display:flex;flex-shrink:0;gap:0;align-items:stretch;border:2px solid #f97316;border-radius:10px;background:#fff;overflow:hidden}
 #chatWidget .cwInput:focus-within{border-color:#ea580c}
 #chatWidget .cwAccents{display:flex;gap:4px;flex-wrap:wrap}
 #chatWidget .cwAccents button{padding:5px 9px;font-size:.9rem;border-radius:8px;border:2px solid #f97316;background:#fff;color:#c2410c;cursor:pointer;font-weight:700;line-height:1}
@@ -197,7 +197,7 @@ for(var i=0;i<moreBtns.length;i++){moreBtns[i].addEventListener('click',function
 #chatWidget #cwSend{background:#f97316;color:#fff;border-radius:50%;width:32px;height:32px;padding:0;margin:0 6px 0 2px;font-size:.95rem;display:flex;align-items:center;justify-content:center}
 #chatWidget #cwSend:hover{background:#ea580c;color:#fff}
 #chatWidget #cwSend:disabled{opacity:.5;cursor:wait}
-#chatWidget .cwFoot{font-size:.75rem;color:#666;text-align:center}
+#chatWidget .cwFoot{font-size:.75rem;color:#666;text-align:center;margin:0}
 #chatWidget .cwFoot a{color:#ea580c}
 #chatWidget .cwInBoxBtn.listening{background:#dc2626;color:#fff;border-radius:50%;animation:cwPulse 1s ease-in-out infinite alternate}
 @keyframes cwPulse{from{opacity:1}to{opacity:.55}}
@@ -582,6 +582,7 @@ document.querySelectorAll("#cwAccents button").forEach(function(b){
 startChat();
 })();
 </script>
+
 
 
 
