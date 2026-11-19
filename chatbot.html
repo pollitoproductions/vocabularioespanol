@@ -51,7 +51,7 @@
   /* Nov 19: ONE full-width input box — the textarea, mic and send arrow
      all live inside it. No side column, no speaker toggle (each bot
      message already has its own listen button). */
-  .inputrow { display: flex; gap: 0; align-items: stretch; border: 2px solid #f97316; border-radius: 12px; background: #fff; overflow: hidden; }
+  .inputrow { display: flex; flex-shrink: 0; gap: 0; align-items: stretch; border: 2px solid #f97316; border-radius: 12px; background: #fff; overflow: hidden; }
   .inputrow:focus-within { border-color: #ea580c; }
   #text { flex: 1; padding: 12px 6px 12px 14px; font-size: 1rem; line-height: 1.4; border: none; outline: none; min-width: 0; resize: none; font-family: inherit; background: transparent; }
   .inBoxBtn { flex: 0 0 auto; align-self: center; background: none; border: none; cursor: pointer; font-size: 1.25rem; padding: 8px 6px; line-height: 1; color: #c2410c; }
@@ -64,7 +64,7 @@
   .accents button { padding: 7px 13px; font-size: 1.05rem; border-radius: 10px; border: 2px solid #f97316; background: #fff; color: #c2410c; cursor: pointer; font-weight: 700; line-height: 1; }
   .accents button:hover { background: #ffedd5; }
   .accents button:active { background: #f97316; color: #fff; }
-  .hint { font-size: .9rem; color: #666; text-align: center; }
+  .hint { font-size: .9rem; color: #666; text-align: center; margin: 4px 0; }
   .inBoxBtn.listening { background: #dc2626; color: #fff; border-radius: 50%; animation: pulse 1s ease-in-out infinite alternate; }
   @keyframes pulse { from { opacity: 1; } to { opacity: .55; } }
   /* Mobile: shrink the input row and pop-up so everything fits on a phone. */
