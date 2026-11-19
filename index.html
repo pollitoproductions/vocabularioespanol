@@ -164,6 +164,12 @@ for(var i=0;i<moreBtns.length;i++){moreBtns[i].addEventListener('click',function
 #chatWidget .cwMsg.user{background:#f97316;color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
 #chatWidget .cwMsg.sys{background:#fef3c7;color:#92400e;align-self:center;font-size:.85rem;text-align:center;max-width:96%}
 #chatWidget .cwMsg.typing{opacity:.7;font-style:italic}
+/* Per-message actions (Nov 18): every bot reply gets a listen + report row
+   in the chat. Buttons sit at opposite ends so they can't be hit together. */
+#chatWidget .cwMsgActions{display:flex;justify-content:space-between;margin-top:6px}
+#chatWidget .cwMsgActions button{background:none;border:none;cursor:pointer;font-size:1rem;opacity:.55;padding:2px 6px;line-height:1}
+#chatWidget .cwMsgActions button:hover{opacity:1;color:#f97316}
+#chatWidget .cwMsgActions button:disabled{opacity:.3;cursor:default}
 #chatWidget .cwInput{display:flex;gap:8px;align-items:stretch}
 #chatWidget .cwAccents{display:flex;gap:4px;flex-wrap:wrap}
 #chatWidget .cwAccents button{padding:5px 9px;font-size:.9rem;border-radius:8px;border:2px solid #f97316;background:#fff;color:#c2410c;cursor:pointer;font-weight:700;line-height:1}
@@ -224,7 +230,7 @@ for(var i=0;i<moreBtns.length;i++){moreBtns[i].addEventListener('click',function
       </div>
       <div class="popCard">
         <div class="popText" id="cwPollitoPopText"></div>
-        <button class="popBtn" id="cwPollitoRepeat" type="button" title="Hear it again" aria-label="Hear it again">🔁</button><button class="popBtn" id="cwPollitoReport" type="button" title="Report this reply" aria-label="Report this reply">🚩</button><button class="popBtn" id="cwPollitoPopClose" type="button" aria-label="Close Pollito">✕</button>
+        <button class="popBtn" id="cwPollitoPopClose" type="button" aria-label="Close Pollito">✕</button>
       </div>
     </div>
     <div class="cwAccents" id="cwAccents">
@@ -285,7 +291,6 @@ var cwSpeakToken = 0; // guards the delayed speak() in cwSpeakText. // Pollito s
 var cwRecog = null;
 var cwListening = false;
 var cwLastReply = ""; // the latest bot reply, so the repeat button can play it again.
-var cwLastUserMsg = ""; // the student message that prompted it, for the report button.
 // Linkify (v21): bot replies can now include practice-page links. Escape HTML
 // first, then turn bare https:// URLs into clickable links.
 function cwLinkify(text) {
@@ -297,33 +302,14 @@ function cwLinkify(text) {
 
 function cwShowPollito(text){
   cwLastReply = text;
-  cwReportBtn.textContent = "🚩";
-  cwReportBtn.disabled = false;
+  // Nov 18: when the speaker is OFF, the reply text is already in the chat,
+  // so don't pop up a box repeating it. The pop-up only appears when Pollito
+  // is actually speaking the reply.
+  if (!cwSpeakOn) return;
   cwPopTextEl.innerHTML = cwLinkify(text);
   cwPopEl.classList.add("show");
-  if (cwSpeakOn) cwSpeakText(text);
+  cwSpeakText(text);
 }
-document.getElementById("cwPollitoRepeat").addEventListener("click", function(){
-  if (!cwLastReply) return;
-  cwPopEl.classList.add("show");
-  cwSpeakText(cwLastReply);
-});
-// Report button (v20): flags this reply in the teacher log + emails the teacher.
-var cwReportBtn = document.getElementById("cwPollitoReport");
-cwReportBtn.addEventListener("click", async function(){
-  if (!cwLastReply || cwReportBtn.disabled) return;
-  cwReportBtn.disabled = true;
-  try {
-    await fetch(BACKEND_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action: "report", message: cwLastUserMsg, reply: cwLastReply, learning: learning, mode: mode, topic: topic ? topic.name : null, site: "public" })
-    });
-    cwReportBtn.textContent = "✓";
-  } catch (e) {
-    cwReportBtn.disabled = false;
-  }
-});
 document.getElementById("cwPollitoPopClose").addEventListener("click", function(){
   cwPopEl.classList.remove("show");
   cwSpeakToken++;
@@ -476,10 +462,54 @@ TOPICS.forEach(function(t){
   b.addEventListener("click", function(){ pickTopic(t.id); });
   topicsEl.appendChild(b);
 });
-function addMsg(text, who){
+function addMsg(text, who, userMsg){
   var d = document.createElement("div");
   d.className = "cwMsg " + who;
-  d.innerHTML = cwLinkify(text);
+  var body = document.createElement("div");
+  body.innerHTML = cwLinkify(text);
+  d.appendChild(body);
+  // Nov 18: every bot reply gets a listen + report row in the chat, so a
+  // student can hear or flag any past reply. The two buttons sit at opposite
+  // ends of the row so they can't be hit by accident. The report button only
+  // appears on replies to a student message (not the greeting).
+  if (who === "bot") {
+    var row = document.createElement("div");
+    row.className = "cwMsgActions";
+    var hear = document.createElement("button");
+    hear.type = "button";
+    hear.textContent = "🔊";
+    hear.title = "Hear this message";
+    hear.setAttribute("aria-label", "Hear this message");
+    hear.addEventListener("click", function(){
+      cwPopTextEl.innerHTML = cwLinkify(text);
+      cwPopEl.classList.add("show");
+      cwSpeakText(text);
+    });
+    row.appendChild(hear);
+    if (userMsg) {
+      var flag = document.createElement("button");
+      flag.type = "button";
+      flag.textContent = "🚩";
+      flag.title = "Report this reply";
+      flag.setAttribute("aria-label", "Report this reply");
+      flag.addEventListener("click", async function(){
+        if (flag.disabled) return;
+        flag.disabled = true;
+        try {
+          await fetch(BACKEND_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "report", message: userMsg, reply: text, learning: learning, mode: mode, topic: topic ? topic.name : null, site: "public" })
+          });
+          flag.textContent = "✓";
+        } catch (e) {
+          flag.disabled = false;
+        }
+      });
+      row.appendChild(flag);
+    }
+    d.appendChild(row);
+  }
   chatEl.appendChild(d);
   chatEl.scrollTop = chatEl.scrollHeight;
   return d;
@@ -521,7 +551,6 @@ function startChat(){
 async function send(){
   var text = textEl.value.trim();
   if (!text) return;
-  cwLastUserMsg = text;
   textEl.value = "";
   addMsg(text, "user");
   history.push({ role: "user", text: text });
@@ -545,7 +574,7 @@ async function send(){
     var data = await res.json();
     typing.remove();
     if (!data || !data.reply) throw new Error("empty reply");
-    addMsg(data.reply, "bot");
+    addMsg(data.reply, "bot", text);
     history.push({ role: "bot", text: data.reply });
     cwShowPollito(data.reply);
   } catch (err) {
@@ -576,6 +605,7 @@ document.querySelectorAll("#cwAccents button").forEach(function(b){
 startChat();
 })();
 </script>
+
 
 
 
