@@ -286,11 +286,20 @@ var cwRecog = null;
 var cwListening = false;
 var cwLastReply = ""; // the latest bot reply, so the repeat button can play it again.
 var cwLastUserMsg = ""; // the student message that prompted it, for the report button.
+// Linkify (v21): bot replies can now include practice-page links. Escape HTML
+// first, then turn bare https:// URLs into clickable links.
+function cwLinkify(text) {
+  var esc = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return esc.replace(/https?:\/\/[^\s<>"']+/g, function (u) {
+    return '<a href="' + u + '" target="_blank" rel="noopener">' + u + '</a>';
+  });
+}
+
 function cwShowPollito(text){
   cwLastReply = text;
   cwReportBtn.textContent = "🚩";
   cwReportBtn.disabled = false;
-  cwPopTextEl.textContent = text;
+  cwPopTextEl.innerHTML = cwLinkify(text);
   cwPopEl.classList.add("show");
   if (cwSpeakOn) cwSpeakText(text);
 }
@@ -470,7 +479,7 @@ TOPICS.forEach(function(t){
 function addMsg(text, who){
   var d = document.createElement("div");
   d.className = "cwMsg " + who;
-  d.textContent = text;
+  d.innerHTML = cwLinkify(text);
   chatEl.appendChild(d);
   chatEl.scrollTop = chatEl.scrollHeight;
   return d;
@@ -567,6 +576,7 @@ document.querySelectorAll("#cwAccents button").forEach(function(b){
 startChat();
 })();
 </script>
+
 
 
 
