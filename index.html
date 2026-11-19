@@ -279,7 +279,14 @@ var cwMicBase = ""; // text already in the box when this listen started.
 function cwLinkify(text) {
   var esc = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   return esc.replace(/https?:\/\/[^\s<>"']+/g, function (u) {
-    return '<a href="' + u + '" target="_blank" rel="noopener">' + u + '</a>';
+    // Strip trailing punctuation (a period, comma, or closing paren the
+    // bot may have left on the link) so the address stays clean.
+    var tail = "";
+    while (u.length && /[.,;:!?)\]}]/.test(u.slice(-1))) { tail = u.slice(-1) + tail; u = u.slice(0, -1); }
+    // Safety net: the bot sometimes writes the folder as "Español" with ñ,
+    // but the real address has no ñ — fix it so the link still works.
+    u = u.replace(/Vocabulario-Espa(\u00f1|%C3%B1)ol/g, "Vocabulario-Espanol");
+    return '<a href="' + u + '" target="_blank" rel="noopener">' + u + '</a>' + tail;
   });
 }
 
@@ -582,6 +589,7 @@ document.querySelectorAll("#cwAccents button").forEach(function(b){
 startChat();
 })();
 </script>
+
 
 
 
