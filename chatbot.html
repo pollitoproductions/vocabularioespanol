@@ -169,11 +169,20 @@ let listening = false;
 let lastReply = ""; // the latest bot reply, so the repeat button can play it again.
 let lastUserMsg = ""; // the student message that prompted it, for the report button.
 
+// Linkify (v21): bot replies can now include practice-page links. Escape HTML
+// first, then turn bare https:// URLs into clickable links.
+function linkify(text) {
+  var esc = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return esc.replace(/https?:\/\/[^\s<>"']+/g, function (u) {
+    return '<a href="' + u + '" target="_blank" rel="noopener">' + u + '</a>';
+  });
+}
+
 function showPollito(text) {
   lastReply = text;
   reportBtn.textContent = "🚩";
   reportBtn.disabled = false;
-  popTextEl.textContent = text;
+  popTextEl.innerHTML = linkify(text);
   popEl.classList.add("show");
   if (speakOn) speakText(text);
 }
@@ -358,7 +367,7 @@ TOPICS.forEach(t => {
 function addMsg(text, who) {
   const d = document.createElement("div");
   d.className = "msg " + who;
-  d.textContent = text;
+  d.innerHTML = linkify(text);
   chatEl.appendChild(d);
   chatEl.scrollTop = chatEl.scrollHeight;
   return d;
