@@ -227,7 +227,10 @@ function speakText(text, avatar) {
   // Speak only the target language: drop the parenthetical translations
   // (the English in parentheses) so the Spanish voice never reads English
   // with a Spanish accent — the translation stays on screen to read.
-  const clean = text.replace(/\([^)]*\)/g, "").replace(/\*\*/g, "").replace(/\*/g, "").replace(/_/g, "").replace(/\s{2,}/g, " ").trim();
+  // Nov 19: the correction at the end of a reply is for reading, not for
+  // hearing — strip it (and any practice-page link) before speaking, so
+  // Pollito never reads the correction or a URL aloud.
+  const clean = text.replace(/\s*(Correction|Corrección):[\s\S]*$/i, "").replace(/https?:\/\/\S+/g, "").replace(/\([^)]*\)/g, "").replace(/\*\*/g, "").replace(/\*/g, "").replace(/_/g, "").replace(/\s{2,}/g, " ").trim();
   if (!clean) return;
   const myToken = ++speakToken;
   const u = new SpeechSynthesisUtterance(clean);
