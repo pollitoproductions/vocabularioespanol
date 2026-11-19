@@ -28,6 +28,12 @@
   .msg.user { background: #f97316; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
   .msg.sys { background: #fef3c7; color: #92400e; align-self: center; font-size: .9rem; text-align: center; max-width: 95%; }
   .msg.typing { opacity: .7; font-style: italic; }
+  /* Per-message actions (Nov 18): every bot reply gets a listen + report row
+     in the chat. Buttons sit at opposite ends so they can't be hit together. */
+  .msgActions { display: flex; justify-content: space-between; margin-top: 6px; }
+  .msgActions button { background: none; border: none; cursor: pointer; font-size: 1rem; opacity: .55; padding: 2px 6px; line-height: 1; }
+  .msgActions button:hover { opacity: 1; color: #f97316; }
+  .msgActions button:disabled { opacity: .3; cursor: default; }
   .inputrow { display: flex; gap: 8px; align-items: stretch; }
   #text { flex: 1; padding: 12px 14px; font-size: 1rem; line-height: 1.4; border-radius: 12px; border: 2px solid #f97316; outline: none; min-width: 0; resize: none; font-family: inherit; }
   #text:focus { border-color: #ea580c; }
@@ -99,7 +105,7 @@
     </div>
     <div class="popCard">
       <div class="popText" id="pollitoPopText"></div>
-      <button class="popBtn" id="pollitoRepeat" type="button" title="Hear it again" aria-label="Hear it again">🔁</button><button class="popBtn" id="pollitoReport" type="button" title="Report this reply" aria-label="Report this reply">🚩</button><button class="popBtn" id="pollitoPopClose" type="button" aria-label="Close Pollito">✕</button>
+      <button class="popBtn" id="pollitoPopClose" type="button" aria-label="Close Pollito">✕</button>
     </div>
   </div>
   <div class="accents" id="accents">
@@ -167,7 +173,6 @@ let speakToken = 0; // guards the delayed speak() in speakText.
 let recog = null;
 let listening = false;
 let lastReply = ""; // the latest bot reply, so the repeat button can play it again.
-let lastUserMsg = ""; // the student message that prompted it, for the report button.
 
 // Linkify (v21): bot replies can now include practice-page links. Escape HTML
 // first, then turn bare https:// URLs into clickable links.
@@ -180,33 +185,14 @@ function linkify(text) {
 
 function showPollito(text) {
   lastReply = text;
-  reportBtn.textContent = "🚩";
-  reportBtn.disabled = false;
+  // Nov 18: when the speaker is OFF, the reply text is already in the chat,
+  // so don't pop up a box repeating it. The pop-up only appears when Pollito
+  // is actually speaking the reply.
+  if (!speakOn) return;
   popTextEl.innerHTML = linkify(text);
   popEl.classList.add("show");
-  if (speakOn) speakText(text);
+  speakText(text);
 }
-document.getElementById("pollitoRepeat").addEventListener("click", () => {
-  if (!lastReply) return;
-  popEl.classList.add("show");
-  speakText(lastReply);
-});
-// Report button (v20): flags this reply in the teacher log + emails the teacher.
-const reportBtn = document.getElementById("pollitoReport");
-reportBtn.addEventListener("click", async () => {
-  if (!lastReply || reportBtn.disabled) return;
-  reportBtn.disabled = true;
-  try {
-    await fetch(BACKEND_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action: "report", message: lastUserMsg, reply: lastReply, learning, mode, topic: topic ? topic.name : null, site: "public" })
-    });
-    reportBtn.textContent = "✓";
-  } catch (e) {
-    reportBtn.disabled = false;
-  }
-});
 document.getElementById("pollitoPopClose").addEventListener("click", () => {
   popEl.classList.remove("show");
   speakToken++;
@@ -364,10 +350,54 @@ TOPICS.forEach(t => {
   topicsEl.appendChild(b);
 });
 
-function addMsg(text, who) {
+function addMsg(text, who, userMsg) {
   const d = document.createElement("div");
   d.className = "msg " + who;
-  d.innerHTML = linkify(text);
+  const body = document.createElement("div");
+  body.innerHTML = linkify(text);
+  d.appendChild(body);
+  // Nov 18: every bot reply gets a listen + report row in the chat, so a
+  // student can hear or flag any past reply. The two buttons sit at opposite
+  // ends of the row so they can't be hit by accident. The report button only
+  // appears on replies to a student message (not the greeting).
+  if (who === "bot") {
+    const row = document.createElement("div");
+    row.className = "msgActions";
+    const hear = document.createElement("button");
+    hear.type = "button";
+    hear.textContent = "🔊";
+    hear.title = "Hear this message";
+    hear.setAttribute("aria-label", "Hear this message");
+    hear.addEventListener("click", () => {
+      popTextEl.innerHTML = linkify(text);
+      popEl.classList.add("show");
+      speakText(text);
+    });
+    row.appendChild(hear);
+    if (userMsg) {
+      const flag = document.createElement("button");
+      flag.type = "button";
+      flag.textContent = "🚩";
+      flag.title = "Report this reply";
+      flag.setAttribute("aria-label", "Report this reply");
+      flag.addEventListener("click", async () => {
+        if (flag.disabled) return;
+        flag.disabled = true;
+        try {
+          await fetch(BACKEND_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "report", message: userMsg, reply: text, learning, mode, topic: topic ? topic.name : null, site: "public" })
+          });
+          flag.textContent = "✓";
+        } catch (e) {
+          flag.disabled = false;
+        }
+      });
+      row.appendChild(flag);
+    }
+    d.appendChild(row);
+  }
   chatEl.appendChild(d);
   chatEl.scrollTop = chatEl.scrollHeight;
   return d;
@@ -417,7 +447,6 @@ function startChat() {
 async function send() {
   const text = textEl.value.trim();
   if (!text) return;
-  lastUserMsg = text;
   textEl.value = "";
   addMsg(text, "user");
   history.push({ role: "user", text });
@@ -447,7 +476,7 @@ async function send() {
     const data = await res.json();
     typing.remove();
     if (!data || !data.reply) throw new Error("empty reply");
-    addMsg(data.reply, "bot");
+    addMsg(data.reply, "bot", text);
     history.push({ role: "bot", text: data.reply });
     showPollito(data.reply);
   } catch (err) {
