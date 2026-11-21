@@ -2329,6 +2329,50 @@ for(var si=0; si<TET_SKY_COUNT; si++){
   tets.push(stet);
 }
 
+/* ---------- raining tetrahedrons (round 61, Brant) ----------
+   Tiny tetrahedrons raining straight down out of the clouds. Unlike
+   the world-anchored cloud tets, these actually FALL: each drop sinks
+   in pure world -Y at its own steady rate, then teleports back to the
+   top of its fall column. The fall line is true vertical, so against
+   the banked, tilting track it reads as the direction downhill really
+   is — that was Brant's ask. They are TINY (0.6/0.9/1.2, versus the
+   cloud's 6/12/24) and wireframe-only (no tube edges — at this size
+   the tubes would be invisible), in the same three neon colours.
+   They NEVER fall on the track itself (|x| 7..30 out, clear of the
+   5-wide track and the 5.3 fall-off) and never cause a crash — pure
+   scenery, like the cloud. They recycle ahead the same way the cloud
+   does once they pass behind the ball. */
+var RAIN_COUNT = 48;
+var RAIN_SIZES = [0.6, 0.9, 1.2];
+var RAIN_FALL_MIN = 7, RAIN_FALL_MAX = 11;   // steady fall speed, units/s — varies per drop
+var RAIN_TOP_MIN = 15, RAIN_TOP_SPAN = 30;  // respawn height above the track: 15..45
+var RAIN_SPREAD_MIN = 0, RAIN_SPREAD_SPAN = 45;   // first scatter: spread through the whole fall band, 0..45 above the track, so rain is at every height from the first frame
+var RAIN_X_MIN = 7, RAIN_X_SPAN = 23;   // 7..30 out on either side — clear of the track
+var rainGeos = RAIN_SIZES.map(function(s){ return new THREE.TetrahedronGeometry(s); });
+var rains = [];
+function placeRainXY(drop, topOnly){
+  drop.position.x = (Math.random() < 0.5 ? -1 : 1) * (RAIN_X_MIN + Math.random()*RAIN_X_SPAN);
+  /* Respawn goes to the top of the fall column; the first scatter
+     spreads through the whole band so the rain reads from frame one. */
+  var h = topOnly ? (RAIN_TOP_MIN + Math.random()*RAIN_TOP_SPAN)
+                  : (RAIN_SPREAD_MIN + Math.random()*RAIN_SPREAD_SPAN);
+  drop.position.y = trackY(-drop.position.z) + h;
+  drop.rotation.set(Math.random()*6.28, Math.random()*6.28, Math.random()*6.28);
+}
+function placeRain(drop, zMin, zMax){
+  drop.position.z = -(zMin + Math.random()*(zMax - zMin));
+  placeRainXY(drop, false);
+}
+for(var ri=0; ri<RAIN_COUNT; ri++){
+  var drop = new THREE.Mesh(rainGeos[ri % rainGeos.length], tetMats[ri % tetMats.length]);
+  drop.userData.rx = 0.2 + Math.random()*0.4;
+  drop.userData.ry = 0.2 + Math.random()*0.4;
+  drop.userData.fall = RAIN_FALL_MIN + Math.random()*(RAIN_FALL_MAX - RAIN_FALL_MIN);
+  placeRain(drop, 50, 1400);
+  scene.add(drop);
+  rains.push(drop);
+}
+
 /* ---------- hop ---------- */
 /* Ground height at distance d: the platform height on a raised platform
    segment, or the wedge height while on a launch-ramp wedge (the ball
@@ -2674,6 +2718,14 @@ function startRun(){
   TILE_SPOKEN = {};   // round 45: fresh spoken set each run
   pass2Idx = 0;       // round 45: fresh second-pass pointer each run
   resetTrack();
+  /* Round 61: re-scatter the background tetrahedrons around the new
+     start. The tets are world-anchored and only recycle when they pass
+     BEHIND the ball — after a long run they all sit 1400+ units ahead,
+     fully fogged to black, so a fresh run started with an empty black
+     background until the ball travelled ~1600 units to catch the field
+     (seen on Chromebook, and once on Brant's phone). Re-placing them
+     here restores the full cloud instantly on every fresh run. */
+  tets.forEach(function(tet){ placeTet(tet, 50, 1400); });
   menuEl.classList.add("hidden");
   overEl.classList.add("hidden");
   pauseEl.classList.add("hidden");
@@ -2974,6 +3026,27 @@ function frame(){
     if(tet.position.z > ballZ + 30){
       tet.position.z -= 1400;   // round 26: was 650 — must land at the new fog far edge or the tet pops in visibly mid-fade
       placeTetXY(tet);
+    }
+  }
+  /* Raining tetrahedrons (round 61): each drop falls STRAIGHT DOWN in
+     world space at its own steady rate and tumbles slowly. When one
+     falls below the track it teleports back to the top of its fall
+     column; when it passes behind the ball it jumps 1400 ahead like
+     the cloud tets and starts falling again there. The fall is pure
+     -Y — never sloped with the track — so the rain line is the true
+     downhill direction. Runs every frame like the cloud tumble, so
+     the rain falls on the menu too. */
+  for(var ri2=0; ri2<rains.length; ri2++){
+    var drop = rains[ri2];
+    drop.position.y -= drop.userData.fall*dt;
+    drop.rotation.x += drop.userData.rx*dt;
+    drop.rotation.y += drop.userData.ry*dt;
+    if(drop.position.y < trackY(-drop.position.z) - 8){
+      placeRainXY(drop, true);   // fell past the track — back to the top of its column
+    }
+    if(drop.position.z > ballZ + 30){
+      drop.position.z -= 1400;   // passed behind the ball — jump ahead to the fog far edge
+      placeRainXY(drop, true);
     }
   }
   /* Camera follows the ball, looking forward and down the slope. Round 26:
