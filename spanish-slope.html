@@ -2197,11 +2197,11 @@ scene.add(points);
    obstacles. Three shared geometries / three shared materials,
    recycled as they pass behind the ball. */
 var TET_COUNT = 120;
-var TET_SIZES = [6, 12, 24];   // round 23: 2.5/4.5/10 -> 6/12/24 — a LOT bigger, like the original Slope's tall buildings; the biggest class spans from well below the track to ~29 above it
+var TET_SIZES = [6, 12, 24];   // round 23: 2.5/4.5/10 -> 6/12/24 — a LOT bigger, like the original Slope's tall buildings; round 64: the biggest class floats up in the sky now (centres 20..40 above the track) instead of rising from below it
 var TET_Y_MIN = -50;   // cloud band (round 18): lowest offset — well BELOW the track
 var TET_Y_MAX = 50;    // cloud band (round 18): highest offset — well above the track
-var TET_BIG_Y_MIN = -10;  // biggest tets sit low (round 18): centres -10..+5, so a size-24 tet spans from well below the track to ~29 above it
-var TET_BIG_Y_SPAN = 15;
+var TET_BIG_Y_MIN = 20;  // round 64 (Brant): biggest tets are ELEVATED now — centres 20..40 above the track, so a size-24 tet spans ~8..52 above it, floating up in the sky level with where the rain falls from (30..70), instead of rising from below the track like buildings
+var TET_BIG_Y_SPAN = 20;
 var tetGeos = TET_SIZES.map(function(s){ return new THREE.TetrahedronGeometry(s); });
 var tetMats = [
   new THREE.MeshBasicMaterial({color:0x22d3ee, wireframe:true, transparent:true, opacity:0.75}),
@@ -2285,9 +2285,9 @@ function placeTetXY(mesh){
      (-50..+50 for small/medium tets), not a climb — the round-15
      climb (offset rising with distance ahead) pushed every far tet
      up high and made the field read as clouds floating above the
-     road, with empty space underneath. The biggest tets sit low
-     (-10..+5) so each one rises from below the track up past it,
-     like the buildings in the original Slope. */
+     road, with empty space underneath. Round 64: the biggest tets sit
+     HIGH (20..40) so the row floats up in the sky level with where the
+     rain falls from, instead of rising from below the track. */
   var off;
   if(mesh.userData.size === 2){
     off = TET_BIG_Y_MIN + Math.random()*TET_BIG_Y_SPAN;
