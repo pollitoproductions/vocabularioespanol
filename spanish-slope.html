@@ -2336,8 +2336,8 @@ for(var si=0; si<TET_SKY_COUNT; si++){
 var RAIN_COUNT = 96;   // round 65: doubled from 48 — Brant wants even more rain; the drops are cheap wireframe meshes and everything is delta-time, so this stays light
 var RAIN_SIZES = [1.5, 2.2, 3.0];   // round 66: was 0.6/0.9/1.2 — on a phone the drops were only a couple of pixels each, so the sky just read as more clouds; still clearly tiny next to the cloud tets (6/12/24), but big enough to actually read as rain
 var RAIN_FALL_MIN = 6, RAIN_FALL_MAX = 12;   // steady fall speed, units/s — wider range (was 7..11) so drops separate vertically over time
-var RAIN_TOP_MIN = 30, RAIN_TOP_SPAN = 40;  // round 62: respawn height above the track 30..70 (was 15..45) — the rain falls OUT OF the clouds above, not fog hugging the track sides
-var RAIN_SPREAD_MIN = 5, RAIN_SPREAD_SPAN = 65;   // first scatter: spread through the whole fall band, 5..70 above the track, so rain is at every height from the first frame
+var RAIN_TOP_MIN = 25, RAIN_TOP_SPAN = 20;  // round 71: respawn height above the BALL 25..45 — eye level, like the cloud layers (was 30..70 above the local track, which put far-ahead drops far below eye level)
+var RAIN_SPREAD_MIN = -5, RAIN_SPREAD_SPAN = 50;   // first scatter: spread through the whole eye-level band, -5..45 above the ball, so rain is at every height from the first frame
 var RAIN_X_MIN = 7, RAIN_X_SPAN = 33;   // round 62: 7..40 out on either side (was 7..30) — wider spread, clear of the track
 var rainGeos = RAIN_SIZES.map(function(s){ return new THREE.TetrahedronGeometry(s); });
 var rains = [];
@@ -2345,18 +2345,19 @@ function placeRainXY(drop, topOnly){
   drop.position.x = (Math.random() < 0.5 ? -1 : 1) * (RAIN_X_MIN + Math.random()*RAIN_X_SPAN);
   /* Respawn goes to the top of the fall column; the first scatter
      spreads through the whole band so the rain reads from frame one.
-     Round 67: the base is the ball's CURRENT height, so the rain falls
-     out of the level cloud layers, not out of a track-parallel band.
-     Round 68: REVERTED — that base stranded the drops: a drop 1000
-     ahead spawns at the ball's height but the track under it is 210
-     lower (grade 0.21), so it had to fall hundreds of units and just
-     hung up in the clouds, far away and barely visible. Back to the
-     track at the drop's OWN position, so each drop falls a short,
-     visible distance and respawns quickly. */
+     Round 71: the base is the ball's CURRENT height again — eye level,
+     like the cloud layers (Brant: bring the clouds' perspective, a
+     little more eye level). Round 68 reverted this same base because
+     a WORLD-ANCHORED drop 1000 ahead had to fall hundreds of units to
+     reach its local track and hung in the clouds — that failure does
+     not apply now: round 70 locks the drops to the ball, and the fall
+     is measured in height above the BALL, so each drop falls a short
+     50-unit band (25..45 down to -5) and respawns quickly, never
+     having to reach a track hundreds of units below it. */
   var h = topOnly ? (RAIN_TOP_MIN + Math.random()*RAIN_TOP_SPAN)
                   : (RAIN_SPREAD_MIN + Math.random()*RAIN_SPREAD_SPAN);
-  drop.userData.h = h;   // round 70: height above the local track — the fall is measured in height, not raw y, so a drop falls the same short distance at any speed
-  drop.position.y = trackY(-drop.position.z) + h;
+  drop.userData.h = h;   // round 71: height above the BALL (was the local track) — the fall is measured in height, not raw y, so a drop falls the same short distance at any speed
+  drop.position.y = ballY + h;
   drop.rotation.set(Math.random()*6.28, Math.random()*6.28, Math.random()*6.28);
 }
 function placeRain(drop, zMin, zMax){
@@ -2368,7 +2369,7 @@ for(var ri=0; ri<RAIN_COUNT; ri++){
   drop.userData.rx = 0.2 + Math.random()*0.4;
   drop.userData.ry = 0.2 + Math.random()*0.4;
   drop.userData.fall = RAIN_FALL_MIN + Math.random()*(RAIN_FALL_MAX - RAIN_FALL_MIN);
-  placeRain(drop, 50, 1400);
+  placeRain(drop, 40, 400);   // round 71: was 50..1400 — the far drops were tiny and fogged and never came closer (round 70 locks them to the ball), so the rain read as gone; 40..400 keeps them big and visible
   scene.add(drop);
   rains.push(drop);
 }
@@ -2734,7 +2735,7 @@ function startRun(){
      (Brant: after reviving and restarting a couple of times, the rain
      wasn't even there). Re-placing them here restores the rain
      instantly on every fresh run. */
-  rains.forEach(function(drop){ placeRain(drop, 50, 1400); });
+  rains.forEach(function(drop){ placeRain(drop, 40, 400); });   // round 71: was 50..1400 (see the load scatter)
   menuEl.classList.add("hidden");
   overEl.classList.add("hidden");
   pauseEl.classList.add("hidden");
@@ -3061,19 +3062,22 @@ function frame(){
      the drop would never reach the track. When the height drops below
      the track it teleports back to the top of its fall column; the
      behind-ball recycle stays as a safety net. Runs every frame like
-     the cloud tumble, so the rain falls on the menu too. */
+     the cloud tumble, so the rain falls on the menu too.
+     Round 71: the drops sit at EYE LEVEL now — heights above the ball
+     (like the cloud layers), 40..400 ahead, so they read as rain again
+     instead of vanishing into the fog far below the ball's line of sight. */
   for(var ri2=0; ri2<rains.length; ri2++){
     var drop = rains[ri2];
     drop.position.z += frameDZ;   // round 70: travel forward with the ball — the drop's distance from the camera never changes, so it can no longer rush at the camera
-    drop.userData.h -= drop.userData.fall*dt;   // the fall is the height above the local track shrinking
-    drop.position.y = trackY(-drop.position.z) + drop.userData.h;
+    drop.userData.h -= drop.userData.fall*dt;   // the fall is the height above the ball shrinking
+    drop.position.y = ballY + drop.userData.h;
     drop.rotation.x += drop.userData.rx*dt;
     drop.rotation.y += drop.userData.ry*dt;
-    if(drop.userData.h < -8){
-      placeRainXY(drop, true);   // fell past the track — back to the top of its column
+    if(drop.userData.h < -5){
+      placeRainXY(drop, true);   // fell past the bottom of the eye-level band — back to the top of its column
     }
     if(drop.position.z > ballZ + 30){
-      drop.position.z -= 1400;   // passed behind the ball — jump ahead to the fog far edge
+      drop.position.z -= 360;   // round 71: was 1400 — the rain band is 40..400 now (span 360), so a jump of 360 lands back in the band
       placeRainXY(drop, true);
     }
   }
