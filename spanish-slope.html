@@ -2343,18 +2343,23 @@ var rains = [];
 function placeRainXY(drop, topOnly){
   drop.position.x = (Math.random() < 0.5 ? -1 : 1) * (RAIN_X_MIN + Math.random()*RAIN_X_SPAN);
   /* Respawn goes to the top of the fall column; the first scatter
-     spreads through the whole fall so the rain reads from frame one.
-     Round 73: the fall runs from the CLOUDS all the way down to the
-     track. The top is 50..80 above the ball (the sky layer), expressed
-     as height above the drop's LOCAL track — the track under a drop
-     40..400 ahead sits 8..84 below the ball, so the top of the column
-     is 58..164 above that track and each drop falls the whole way down
-     (Brant: they should fall from those clouds all the way down, not
-     disappear after a short fall). The drop's distance ahead never
-     changes (round 70 locks it to the ball), so its column height is
-     constant and the fall can never strand it the way round 68 did. */
+     starts in the TOP HALF of the fall. Round 73: the fall runs from
+     the CLOUDS all the way down to the track — the top is 50..80 above
+     the ball (the sky layer), expressed as height above the drop's
+     LOCAL track (the track under a drop 40..400 ahead sits 8..84 below
+     the ball, so the top of the column is 58..164 above that track).
+     The drop's distance ahead never changes (round 70 locks it to the
+     ball), so its column height is constant and the fall can never
+     strand it the way round 68 did. Round 74: the first scatter used
+     to spread through the whole fall (0..topH), so at game start a
+     NEAR drop could spawn low, right in front of the camera — big,
+     close, and gone in ~2 seconds when it hit the track and respawned
+     above the frame (Brant: blue squares flying at you right when the
+     game starts and disappear after two seconds). Starting in the top
+     half, every drop falls DOWN into view on both sides instead,
+     along with the rest of the rain. */
   var topH = (RAIN_CLOUD_MIN + Math.random()*RAIN_CLOUD_SPAN) + SLOPE_GRADE*(-drop.position.z);
-  var h = topOnly ? topH : Math.random()*topH;
+  var h = topOnly ? topH : topH * (0.5 + Math.random()*0.5);
   drop.userData.h = h;   // round 73: height above the LOCAL track again (round 71 used height above the ball, which capped the fall at a 50-unit band) — the fall is measured in height, not raw y, so a drop falls the same long distance at any speed
   drop.position.y = trackY(-drop.position.z) + h;
   drop.rotation.set(Math.random()*6.28, Math.random()*6.28, Math.random()*6.28);
