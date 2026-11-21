@@ -844,7 +844,7 @@ var MAX_REVIVES = 50;   // round 36 (Brant): a run has 50 quiz revives — the 5
 var reviveNum = 0;   // how many quiz revives the player has used this run (drives the quiz set order; saved with the run so Continue doesn't restart it)
 var freePasses = 0;  // banked free revives: one per correctly-spoken collected word;
                      // each one skips the quiz on the next crash (round 6)
-var ballX = 0, ballVX = 0, ballZ = 0, invincibleUntil = 0;
+var ballX = 0, ballVX = 0, ballZ = 0, ballY = BALL_R, invincibleUntil = 0;   // round 72: ballY is module-level now — round 71 used it in placeRainXY (module scope) but it was only a frame-local var, so the whole script died at load with "ballY is not defined" and the Start button did nothing on both live sites
 var ballHopY = 0, ballHopV = 0, nextHopAt = 0;   // hop state (height above track)
 var fallDrop = 0, fallV = 0, fallT = 0, fallSpeed = 0;   // fall animation (gap or side); fallSpeed = forward speed at the moment of the fall (round 30)
 var fallCause = "gap";                    // which fall is playing: "gap" | "side"
@@ -2989,7 +2989,7 @@ function frame(){
      subtly with the surface. bankAt is interpolated between segment
      centres, so the height never jumps at a segment boundary. */
   var bankNow = bankAt(dist);
-  var ballY = BALL_R + trackY(dist) - ballX * Math.sin(bankNow);
+  ballY = BALL_R + trackY(dist) - ballX * Math.sin(bankNow);   // round 72: was "var ballY" — the var is module-level now (see the ballX declaration)
   ballMesh.position.set(ballX, ballY + ballHopY - fallDrop, ballZ);
   /* The ball's visible roll follows its forward speed, slowed by
      SPIN_FACTOR and capped at SPIN_MAX rad/s so the skin art stays
