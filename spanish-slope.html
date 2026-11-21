@@ -2342,7 +2342,7 @@ for(var si=0; si<TET_SKY_COUNT; si++){
    5-wide track and the 5.3 fall-off) and never cause a crash — pure
    scenery, like the cloud. They recycle ahead the same way the cloud
    does once they pass behind the ball. */
-var RAIN_COUNT = 32;   // round 62: was 48 — the drops clumped and merged on screen; thinner now, each one reads separate
+var RAIN_COUNT = 48;   // round 63: back to 48 — Brant liked the fuller rain; the clumping is fixed by the wider spread/speeds/band instead of by cutting drops
 var RAIN_SIZES = [0.6, 0.9, 1.2];
 var RAIN_FALL_MIN = 6, RAIN_FALL_MAX = 12;   // steady fall speed, units/s — wider range (was 7..11) so drops separate vertically over time
 var RAIN_TOP_MIN = 30, RAIN_TOP_SPAN = 40;  // round 62: respawn height above the track 30..70 (was 15..45) — the rain falls OUT OF the clouds above, not fog hugging the track sides
