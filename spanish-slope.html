@@ -763,8 +763,8 @@ var SPIN_MAX = 2.5;          // max visible roll, rad/s — at full speed the ph
                              // the speed, not the spin.
 var LAT_SPEED = 30;          // max lateral (steering) speed, units/s — raised for the old top speed 120 (was 24 at 87); kept at 100 (round 9)
 var BASE_SPEED = 31.5;       // starting forward speed — round 5: 25% down from the doubled 42
-var MAX_SPEED = 85;          // top forward speed — round 24: Brant asked for 85 (was 100)
-var RAMP_DIST = 1340;        // ramp distance: top speed reached after this far — 1340 so 85 still arrives in ~21.3 s, same feel as round 9
+var MAX_SPEED = 92;          // top forward speed — round 60: Brant asked for 92 (was 85; the 0.92c nod)
+var RAMP_DIST = 1420;        // ramp distance: top speed reached after this far — 1420 so 92 still arrives in ~21.3 s, same feel as round 24
                              // (round 7: concave ramp — see curSpeed)
 var BLOCK_HIT = 0.4;         // block half-width inflation for a hit (ball radius, forgiving)
 var GAP_HIT = 0.5;          // gap inset for a fall (round 33: was 0.25 — the ball's centre only 0.25 inside the hole meant half the ball was still over solid floor when it died, which read as a bogus death; now the centre must be a full ball-radius inside, so the ball is visibly over the hole before it falls)
