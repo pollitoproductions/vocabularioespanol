@@ -2199,9 +2199,24 @@ scene.add(points);
    recycled as they pass behind the ball. */
 var TET_COUNT = 120;
 var TET_SIZES = [6, 12, 24];   // round 23: 2.5/4.5/10 -> 6/12/24 — a LOT bigger, like the original Slope's tall buildings; round 64: the biggest class floats up in the sky now (centres 20..40 above the track) instead of rising from below it
-/* Round 67 (Brant): LEVELED LAYERS — the cloud used to be a track-parallel band (each tet's height = the track height at ITS OWN position + a random offset in -50..+50), so the layers ran parallel to the descending track and the colours were all jumbled in one compacted band. Now each size class is its own horizontal stratum, level with the BALL's current height — cyan low, pink mid, purple high, sky highest — with gaps between them, not one compacted band. Every tet's height is re-set from the ball's height each frame (see the frame loop), so the layers stay flat across the screen while the track falls away beneath them. That contrast is what shows the descent. [min, span] of height above the ball's height, per size class (0 = cyan 6, 1 = pink 12, 2 = purple 24). */
-var TET_LAYER = [[2, 6], [14, 8], [30, 12]];   // round 68: lowered — was [[6, 6], [24, 8], [44, 12]]; Brant said the cloud layer sat a little high
-var TET_SKY_MIN = 50, TET_SKY_SPAN = 30;   // sky population: 50..80 above the ball (round 68: lowered from 70..100 — the cloud layer sat a little high)
+/* Round 75 (Brant): the cloud tets FALL now, like the rain. They were
+   world-anchored and only recycled when they passed BEHIND the ball, so
+   a tet ahead approached at the ball's speed and rushed AT the camera,
+   then vanished when it recycled (Brant, three times: the blue squares
+   fly at you right when the game starts and disappear after two seconds
+   — I want them coming down on both sides along with the falling
+   tetrahedrons). Rounds 73-74 fixed the RAIN's fall and spawn, but the
+   blue squares were never the rain — the rain has been ball-locked and
+   falling since round 70. The squares are the CLOUD tets. So now the
+   cloud tets ride the ball (frameDZ, like the rain) and fall from the
+   clouds to the track, respawning at the top — their only on-screen
+   motion is straight DOWN, on both sides, alongside the rain. The level
+   layers (round 67-68) are gone: a falling tet can't also sit in a
+   fixed stratum, but the colours stay (cyan/pink/purple by size) and
+   the sky stays full, because the tets are spread through the whole
+   fall at any moment. */
+var TET_CLOUD_MIN = 50, TET_CLOUD_SPAN = 30;   // round 75: the fall starts IN the clouds, 50..80 above the ball (the sky layer) — same top as the rain, so the cloud tets fall alongside the rain
+var TET_FALL_MIN = 6, TET_FALL_MAX = 12;   // round 75: steady fall speed, units/s — same range as the rain, so the cloud tets fall alongside the rain instead of at a different rate
 var tetGeos = TET_SIZES.map(function(s){ return new THREE.TetrahedronGeometry(s); });
 var tetMats = [
   new THREE.MeshBasicMaterial({color:0x22d3ee, wireframe:true, transparent:true, opacity:0.75}),
@@ -2259,44 +2274,44 @@ var tetTubeMats = [
   new THREE.MeshBasicMaterial({color:0x8b5cf6})
 ];
 var tets = [];
-function placeTetXY(mesh){
+function placeTetXY(mesh, topOnly){
   var size = TET_SIZES[mesh.userData.size];
-  var off;
+  /* Lateral position (unchanged): sky tets spread wide (round 27 — the
+     top of the frame was empty), side tets sit clear of the track
+     (inner edge >= 10 from the centre, round 23 — like the original
+     Slope's buildings, clear of the 5-wide track and the 5.3 fall-off
+     line for every size class). */
   if(mesh.userData.sky){
-    /* Round 27 sky population: a wider lateral spread and a HIGH offset
-       so they float in the upper sky around the road instead of hugging
-       it — the top of the frame was empty. Round 67: the offset is now
-       above the BALL's current height (level), not above the track at
-       the tet's own position (track-parallel). */
     mesh.position.x = (Math.random() < 0.5 ? -1 : 1) * (12 + size + Math.random()*40);
-    off = TET_SKY_MIN + Math.random()*TET_SKY_SPAN;
   } else {
-    /* Lateral position: inner edge stays >= 10 units from the centre
-       (round 23: was >= 6 — the tets sit FURTHER OUT now, like the
-       original Slope's buildings; 10 + size + up to 12 out), clear of
-       the track (5 wide) and the fall-off line (5.3) for every size
-       class, and clear of the camera's view of the track. */
     mesh.position.x = (Math.random() < 0.5 ? -1 : 1) * (10 + size + Math.random()*12);
-    /* Height (round 67): the tet's stratum from TET_LAYER — level with
-       the ball's CURRENT height, not with the track at the tet's own
-       position. Stored as layerOff so the frame loop can hold it level
-       every frame as the ball descends. */
-    var lay = TET_LAYER[mesh.userData.size];
-    off = lay[0] + Math.random()*lay[1];
   }
-  mesh.userData.layerOff = off;
-  mesh.position.y = trackY(dist) + off;
+  /* Round 75: the fall runs from the CLOUDS all the way down to the
+     track. The top is 50..80 above the ball (the sky layer), expressed
+     as height above the tet's LOCAL track — the track under a tet
+     50..1400 ahead sits 10..294 below the ball, so the top of the
+     column is 60..374 above that track. The tet's distance ahead never
+     changes (round 75 locks it to the ball, like the rain), so its
+     column height is constant. Respawn goes to the top of the column;
+     the first scatter starts in the TOP HALF of the fall, so a big tet
+     never spawns low and near right in front of the camera at game
+     start (the round-74 rain lesson, applied to the cloud tets). */
+  var topH = (TET_CLOUD_MIN + Math.random()*TET_CLOUD_SPAN) + SLOPE_GRADE*(-mesh.position.z);
+  var h = topOnly ? topH : topH * (0.5 + Math.random()*0.5);
+  mesh.userData.h = h;   // round 75: height above the LOCAL track — the fall is measured in height, not raw y, so a tet falls the same way at any speed
+  mesh.position.y = trackY(-mesh.position.z) + h;
   mesh.rotation.set(Math.random()*6.28, Math.random()*6.28, Math.random()*6.28);
 }
 function placeTet(mesh, zMin, zMax){
   mesh.position.z = -(zMin + Math.random()*(zMax - zMin));
-  placeTetXY(mesh);
+  placeTetXY(mesh, false);
 }
 for(var ti=0; ti<TET_COUNT; ti++){
   var tet = new THREE.Mesh(tetGeos[ti % tetGeos.length], tetMats[ti % tetMats.length]);
   tet.userData.size = ti % tetGeos.length;
   tet.userData.rx = 0.2 + Math.random()*0.4;
   tet.userData.ry = 0.2 + Math.random()*0.4;
+  tet.userData.fall = TET_FALL_MIN + Math.random()*(TET_FALL_MAX - TET_FALL_MIN);   // round 75: each tet falls at its own steady rate, alongside the rain
   tet.add(new THREE.Mesh(tetTubeGeos[tet.userData.size], tetTubeMats[tet.userData.size]));   // round 27: thick tube edges ride along as a child
   placeTet(tet, 50, 1400);   // round 26: was 50..650 — spread the field out to the new fog far edge
   scene.add(tet);
@@ -2314,6 +2329,7 @@ for(var si=0; si<TET_SKY_COUNT; si++){
   stet.userData.sky = true;
   stet.userData.rx = 0.2 + Math.random()*0.4;
   stet.userData.ry = 0.2 + Math.random()*0.4;
+  stet.userData.fall = TET_FALL_MIN + Math.random()*(TET_FALL_MAX - TET_FALL_MIN);   // round 75: each sky tet falls at its own steady rate, alongside the rain
   stet.add(new THREE.Mesh(tetTubeGeos[stet.userData.size], tetTubeMats[stet.userData.size]));
   placeTet(stet, 50, 1400);
   scene.add(stet);
@@ -2724,12 +2740,13 @@ function startRun(){
   pass2Idx = 0;       // round 45: fresh second-pass pointer each run
   resetTrack();
   /* Round 61: re-scatter the background tetrahedrons around the new
-     start. The tets are world-anchored and only recycle when they pass
-     BEHIND the ball — after a long run they all sit 1400+ units ahead,
-     fully fogged to black, so a fresh run started with an empty black
-     background until the ball travelled ~1600 units to catch the field
-     (seen on Chromebook, and once on Brant's phone). Re-placing them
-     here restores the full cloud instantly on every fresh run. */
+     start. The tets ride the ball, so after a long run they sit at
+     their old world positions — thousands of units ahead of the fresh
+     start, fully fogged to black — and a fresh run would start with an
+     empty black background. Re-placing them here restores the full
+     cloud instantly on every fresh run. Round 75: the tets fall now
+     (see the frame loop), so the re-scatter also re-spreads them
+     through the top half of the fall. */
   tets.forEach(function(tet){ placeTet(tet, 50, 1400); });
   /* Round 69: re-scatter the RAIN too — same bug as the tets in round
      61, missed for the rain. The drops only recycle when they pass
@@ -3026,29 +3043,32 @@ function frame(){
     pp[i*3+1] = pp[i*3+2]*SLOPE_GRADE + pH[i];
   }
   pGeo.attributes.position.needsUpdate = true;
-  /* Background tetrahedrons tumble slowly and recycle ahead once
-     they pass behind the ball — scenery, never obstacles. Round 14:
-     the recycle re-rolls the lateral position and the height at the new
-     spot (placeTetXY), so the cloud field stays varied. Round 67: the
-     heights are NO LONGER world-anchored — each tet's height is its
-     stratum offset above the ball's CURRENT height, re-set every frame
-     below, so the colour layers stay level while the track falls away
-     beneath them. The jump is 1400 (round 26: was 650), so a recycled tet
-     lands at most ~1370 ahead of the ball — at the fog's far edge,
-     fading in, never popping into view. (The field spreads over a
-     longer range now, so it reads sparser — the price of the long view.) */
+  /* Background tetrahedrons tumble slowly and FALL, like the rain —
+     scenery, never obstacles. Round 75: they ride the ball (frameDZ)
+     and fall from the clouds to the track, respawning at the top, so
+     their only on-screen motion is straight DOWN on both sides,
+     alongside the rain. Before, they sat still in world space and only
+     recycled when they passed BEHIND the ball — a tet ahead approached
+     at the ball's speed, rushed AT the camera, and vanished when it
+     recycled (Brant: the blue squares fly at you right when the game
+     starts and disappear after two seconds). The recycle re-rolls the
+     lateral position and the height at the new spot (placeTetXY), so
+     the field stays varied. The jump is 1400 (round 26: was 650), so a
+     recycled tet lands at most ~1370 ahead of the ball — at the fog's
+     far edge, fading in, never popping into view. */
   for(var i=0;i<tets.length;i++){
     var tet = tets[i];
     tet.rotation.x += tet.userData.rx*dt;
     tet.rotation.y += tet.userData.ry*dt;
-    /* Round 67: hold the tet level with the ball — its height is the
-       ball's CURRENT height + its stratum offset, re-set every frame,
-       so the layers stay flat across the screen while the track falls
-       away beneath them (instead of sloping down with the track). */
-    tet.position.y = trackY(dist) + tet.userData.layerOff;
+    tet.position.z += frameDZ;   // round 75: travel forward WITH the ball (like the rain) — before, the cloud tets sat still in world space, so a tet ahead approached at the ball's speed and rushed AT the camera, then vanished when it recycled. Locked to the ball, a tet's distance from the camera never changes, so its only on-screen motion is straight DOWN.
+    tet.userData.h -= tet.userData.fall*dt;   // the fall is the height above the local track shrinking
+    tet.position.y = trackY(-tet.position.z) + tet.userData.h;
+    if(tet.userData.h < -2){
+      placeTetXY(tet, true);   // reached the track — back to the clouds
+    }
     if(tet.position.z > ballZ + 30){
-      tet.position.z -= 1400;   // round 26: was 650 — must land at the new fog far edge or the tet pops in visibly mid-fade
-      placeTetXY(tet);
+      tet.position.z -= 1400;   // safety net: a jump of 1400 lands back in the 50..1400 band
+      placeTetXY(tet, true);
     }
   }
   /* Raining tetrahedrons (round 61): each drop falls at its own steady
