@@ -853,6 +853,7 @@ const FALL_TIME = 0.9;                    // round 8: the fall lasts a touch lon
                                           // sees the ball tumble away
 const EDGE_FALL = 5.5;                    // round 33: was 5.3 — the ball's centre only 0.3 past the edge meant a sliver of the ball was still over the track when it died, which read as a bogus death; now the centre must be a full ball-radius (0.5) past the half-width (5.0), so the ball is visibly off the track before it falls
 var zBefore = 0;   // ball z at the start of the frame (swept collision checks)
+var frameDZ = 0;   // round 70: this frame's forward travel (ballZ - zBefore, negative) — the rain rides it so the drops move with the ball instead of rushing at the camera
 var xBefore = 0, hopYBefore = 0;   // round 33: ball x and hop height at the start of the frame — the swept checks interpolate to the crossing instant (see checkCollisions)
 var best = 0;
 try{ best = parseInt(localStorage.getItem("slopeEspanol_best") || "0", 10) || 0; }catch(e){}
@@ -2354,6 +2355,7 @@ function placeRainXY(drop, topOnly){
      visible distance and respawns quickly. */
   var h = topOnly ? (RAIN_TOP_MIN + Math.random()*RAIN_TOP_SPAN)
                   : (RAIN_SPREAD_MIN + Math.random()*RAIN_SPREAD_SPAN);
+  drop.userData.h = h;   // round 70: height above the local track — the fall is measured in height, not raw y, so a drop falls the same short distance at any speed
   drop.position.y = trackY(-drop.position.z) + h;
   drop.rotation.set(Math.random()*6.28, Math.random()*6.28, Math.random()*6.28);
 }
@@ -2895,6 +2897,7 @@ function frame(){
   var dt = Math.min(0.05, (now - lastT)/1000);
   lastT = now;
   var t = now/1000;
+  frameDZ = 0;   // round 70: reset each frame — the playing branch sets it to this frame's forward travel below; menu/paused frames leave it 0, so the rain never drifts when the ball isn't moving
   if(state === "playing"){
     var v = curSpeed();
     xBefore = ballX; hopYBefore = ballHopY;   /* round 33: start-of-frame position for the swept-collision interpolation (see checkCollisions) — sampled BEFORE steering moves the ball */
@@ -2934,6 +2937,7 @@ function frame(){
     dist += v*dt;
     rampDist += v*dt;   // ramp distance: reset on revive, drives the speed ramp
     ballZ = -dist;
+    frameDZ = ballZ - zBefore;   // round 70: this frame's forward travel (negative) — the rain rides it
     /* Hop physics: integrate the bounce, land back on the track. The
        "ground" is the current segment's floor height — 0 on the main
        track, PLATFORM_H on a raised platform, or the wedge height on a
@@ -3042,20 +3046,30 @@ function frame(){
       placeTetXY(tet);
     }
   }
-  /* Raining tetrahedrons (round 61): each drop falls STRAIGHT DOWN in
-     world space at its own steady rate and tumbles slowly. When one
-     falls below the track it teleports back to the top of its fall
-     column; when it passes behind the ball it jumps 1400 ahead like
-     the cloud tets and starts falling again there. The fall is pure
-     -Y — never sloped with the track — so the rain line is the true
-     downhill direction. Runs every frame like the cloud tumble, so
-     the rain falls on the menu too. */
+  /* Raining tetrahedrons (round 61): each drop falls at its own steady
+     rate and tumbles slowly. Round 70: the drops now travel forward
+     WITH the ball (frameDZ) instead of sitting still in world space —
+     before, a drop ahead approached at the ball's speed (up to 92 u/s)
+     while falling at only 6..12 u/s, so on screen the rain rushed AT
+     the camera instead of falling down (Brant: the little blue squares
+     come towards the camera — they should go down, the direction of
+     the rain). Locked to the ball, a drop's distance from the camera
+     never changes, so its only on-screen motion is straight DOWN.
+     The fall is measured as height above the local track (userData.h),
+     not raw y, because the track under a moving drop falls away at
+     grade 0.21 × speed — at top speed that outruns a raw-y fall, so
+     the drop would never reach the track. When the height drops below
+     the track it teleports back to the top of its fall column; the
+     behind-ball recycle stays as a safety net. Runs every frame like
+     the cloud tumble, so the rain falls on the menu too. */
   for(var ri2=0; ri2<rains.length; ri2++){
     var drop = rains[ri2];
-    drop.position.y -= drop.userData.fall*dt;
+    drop.position.z += frameDZ;   // round 70: travel forward with the ball — the drop's distance from the camera never changes, so it can no longer rush at the camera
+    drop.userData.h -= drop.userData.fall*dt;   // the fall is the height above the local track shrinking
+    drop.position.y = trackY(-drop.position.z) + drop.userData.h;
     drop.rotation.x += drop.userData.rx*dt;
     drop.rotation.y += drop.userData.ry*dt;
-    if(drop.position.y < trackY(-drop.position.z) - 8){
+    if(drop.userData.h < -8){
       placeRainXY(drop, true);   // fell past the track — back to the top of its column
     }
     if(drop.position.z > ballZ + 30){
