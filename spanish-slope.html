@@ -2724,6 +2724,15 @@ function startRun(){
      (seen on Chromebook, and once on Brant's phone). Re-placing them
      here restores the full cloud instantly on every fresh run. */
   tets.forEach(function(tet){ placeTet(tet, 50, 1400); });
+  /* Round 69: re-scatter the RAIN too — same bug as the tets in round
+     61, missed for the rain. The drops only recycle when they pass
+     BEHIND the ball, so after a long run they all sat thousands of
+     units ahead, fully fogged — a fresh run started with no rain at
+     all until the ball travelled thousands of units to catch them
+     (Brant: after reviving and restarting a couple of times, the rain
+     wasn't even there). Re-placing them here restores the rain
+     instantly on every fresh run. */
+  rains.forEach(function(drop){ placeRain(drop, 50, 1400); });
   menuEl.classList.add("hidden");
   overEl.classList.add("hidden");
   pauseEl.classList.add("hidden");
@@ -3067,10 +3076,10 @@ function frame(){
      the ball fall away instead of the view freezing — then it returns
      to its normal position on revive/respawn, when fallDrop resets. */
   var camDrop = (state === "falling") ? fallDrop : 0;
-  camera.position.x += ((ballX*0.5) - camera.position.x) * Math.min(1, dt*6);
+  camera.position.x += ((ballX*0.9) - camera.position.x) * Math.min(1, dt*20);   // round 69: was ballX*0.5 at dt*6 — the camera lagged so far behind a hard steer that the ball left the frame at the track edges in portrait (Brant: all the way left or right, you can't even see it). The camera now rides almost on the ball's line, and fast enough to keep up, so the ball stays in frame at both edges (sim-verified at the track edge in edge/flick/weave steers).
   camera.position.y += ((ballY + (camera.aspect < 1 ? PORTRAIT_CAM_HEIGHT : CAM_HEIGHT) - camDrop*0.35) - camera.position.y) * Math.min(1, dt*40);   // round 33: the camera used to plunge WITH the ball (full camDrop), so the view fell too and the player couldn't tell where they fell — now it only drops a third as far and tilts down to watch the ball fall away, so the track stays in frame and the death reads clearly. The lookAt below still drops the full fallDrop, so the ball stays in frame.
   camera.position.z = ballZ + (camera.aspect < 1 ? PORTRAIT_CAM_BACK : 9.2);   // round 26: landscape back 9.5 -> 9.2 (solver value for the VP/ball targets); portrait back 5.85
-  camera.lookAt(ballX*0.75, ballY + (camera.aspect < 1 ? PORTRAIT_CAM_LOOK_HEIGHT : CAM_LOOK_HEIGHT) - camDrop, ballZ - 16);   // round 26: portrait look -1.6, landscape look 1.0 — the view pitches DOWN now (portrait ~14 deg, landscape ~7 deg), lifting the VP to ~47% down (portrait) / ~62% (landscape) — the angle Brant drew — while the raised camera keeps the ball big, round, and low on screen
+  camera.lookAt(ballX, ballY + (camera.aspect < 1 ? PORTRAIT_CAM_LOOK_HEIGHT : CAM_LOOK_HEIGHT) - camDrop, ballZ - 16);   // round 69: was ballX*0.75 — the view now looks straight at the ball's line, so the ball stays centred laterally while the track ahead stays fully visible; round 26: portrait look -1.6, landscape look 1.0 — the view pitches DOWN now (portrait ~14 deg, landscape ~7 deg), lifting the VP to ~47% down (portrait) / ~62% (landscape) — the angle Brant drew — while the raised camera keeps the ball big, round, and low on screen
   renderer.render(scene, camera);
 }
 function checkCollisions(){
