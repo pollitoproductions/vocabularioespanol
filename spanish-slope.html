@@ -2199,8 +2199,8 @@ scene.add(points);
 var TET_COUNT = 120;
 var TET_SIZES = [6, 12, 24];   // round 23: 2.5/4.5/10 -> 6/12/24 — a LOT bigger, like the original Slope's tall buildings; round 64: the biggest class floats up in the sky now (centres 20..40 above the track) instead of rising from below it
 /* Round 67 (Brant): LEVELED LAYERS — the cloud used to be a track-parallel band (each tet's height = the track height at ITS OWN position + a random offset in -50..+50), so the layers ran parallel to the descending track and the colours were all jumbled in one compacted band. Now each size class is its own horizontal stratum, level with the BALL's current height — cyan low, pink mid, purple high, sky highest — with gaps between them, not one compacted band. Every tet's height is re-set from the ball's height each frame (see the frame loop), so the layers stay flat across the screen while the track falls away beneath them. That contrast is what shows the descent. [min, span] of height above the ball's height, per size class (0 = cyan 6, 1 = pink 12, 2 = purple 24). */
-var TET_LAYER = [[6, 6], [24, 8], [44, 12]];
-var TET_SKY_MIN = 70, TET_SKY_SPAN = 30;   // sky population: 70..100 above the ball
+var TET_LAYER = [[2, 6], [14, 8], [30, 12]];   // round 68: lowered — was [[6, 6], [24, 8], [44, 12]]; Brant said the cloud layer sat a little high
+var TET_SKY_MIN = 50, TET_SKY_SPAN = 30;   // sky population: 50..80 above the ball (round 68: lowered from 70..100 — the cloud layer sat a little high)
 var tetGeos = TET_SIZES.map(function(s){ return new THREE.TetrahedronGeometry(s); });
 var tetMats = [
   new THREE.MeshBasicMaterial({color:0x22d3ee, wireframe:true, transparent:true, opacity:0.75}),
@@ -2345,10 +2345,16 @@ function placeRainXY(drop, topOnly){
   /* Respawn goes to the top of the fall column; the first scatter
      spreads through the whole band so the rain reads from frame one.
      Round 67: the base is the ball's CURRENT height, so the rain falls
-     out of the level cloud layers, not out of a track-parallel band. */
+     out of the level cloud layers, not out of a track-parallel band.
+     Round 68: REVERTED — that base stranded the drops: a drop 1000
+     ahead spawns at the ball's height but the track under it is 210
+     lower (grade 0.21), so it had to fall hundreds of units and just
+     hung up in the clouds, far away and barely visible. Back to the
+     track at the drop's OWN position, so each drop falls a short,
+     visible distance and respawns quickly. */
   var h = topOnly ? (RAIN_TOP_MIN + Math.random()*RAIN_TOP_SPAN)
                   : (RAIN_SPREAD_MIN + Math.random()*RAIN_SPREAD_SPAN);
-  drop.position.y = trackY(dist) + h;
+  drop.position.y = trackY(-drop.position.z) + h;
   drop.rotation.set(Math.random()*6.28, Math.random()*6.28, Math.random()*6.28);
 }
 function placeRain(drop, zMin, zMax){
