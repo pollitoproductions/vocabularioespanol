@@ -2343,7 +2343,7 @@ for(var si=0; si<TET_SKY_COUNT; si++){
    scenery, like the cloud. They recycle ahead the same way the cloud
    does once they pass behind the ball. */
 var RAIN_COUNT = 96;   // round 65: doubled from 48 — Brant wants even more rain; the drops are cheap wireframe meshes and everything is delta-time, so this stays light
-var RAIN_SIZES = [0.6, 0.9, 1.2];
+var RAIN_SIZES = [1.5, 2.2, 3.0];   // round 66: was 0.6/0.9/1.2 — on a phone the drops were only a couple of pixels each, so the sky just read as more clouds; still clearly tiny next to the cloud tets (6/12/24), but big enough to actually read as rain
 var RAIN_FALL_MIN = 6, RAIN_FALL_MAX = 12;   // steady fall speed, units/s — wider range (was 7..11) so drops separate vertically over time
 var RAIN_TOP_MIN = 30, RAIN_TOP_SPAN = 40;  // round 62: respawn height above the track 30..70 (was 15..45) — the rain falls OUT OF the clouds above, not fog hugging the track sides
 var RAIN_SPREAD_MIN = 5, RAIN_SPREAD_SPAN = 65;   // first scatter: spread through the whole fall band, 5..70 above the track, so rain is at every height from the first frame
