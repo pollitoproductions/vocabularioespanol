@@ -2342,12 +2342,12 @@ for(var si=0; si<TET_SKY_COUNT; si++){
    5-wide track and the 5.3 fall-off) and never cause a crash — pure
    scenery, like the cloud. They recycle ahead the same way the cloud
    does once they pass behind the ball. */
-var RAIN_COUNT = 48;
+var RAIN_COUNT = 32;   // round 62: was 48 — the drops clumped and merged on screen; thinner now, each one reads separate
 var RAIN_SIZES = [0.6, 0.9, 1.2];
-var RAIN_FALL_MIN = 7, RAIN_FALL_MAX = 11;   // steady fall speed, units/s — varies per drop
-var RAIN_TOP_MIN = 15, RAIN_TOP_SPAN = 30;  // respawn height above the track: 15..45
-var RAIN_SPREAD_MIN = 0, RAIN_SPREAD_SPAN = 45;   // first scatter: spread through the whole fall band, 0..45 above the track, so rain is at every height from the first frame
-var RAIN_X_MIN = 7, RAIN_X_SPAN = 23;   // 7..30 out on either side — clear of the track
+var RAIN_FALL_MIN = 6, RAIN_FALL_MAX = 12;   // steady fall speed, units/s — wider range (was 7..11) so drops separate vertically over time
+var RAIN_TOP_MIN = 30, RAIN_TOP_SPAN = 40;  // round 62: respawn height above the track 30..70 (was 15..45) — the rain falls OUT OF the clouds above, not fog hugging the track sides
+var RAIN_SPREAD_MIN = 5, RAIN_SPREAD_SPAN = 65;   // first scatter: spread through the whole fall band, 5..70 above the track, so rain is at every height from the first frame
+var RAIN_X_MIN = 7, RAIN_X_SPAN = 33;   // round 62: 7..40 out on either side (was 7..30) — wider spread, clear of the track
 var rainGeos = RAIN_SIZES.map(function(s){ return new THREE.TetrahedronGeometry(s); });
 var rains = [];
 function placeRainXY(drop, topOnly){
