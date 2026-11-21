@@ -2409,22 +2409,28 @@ for(var ri=0; ri<RAIN_COUNT; ri++){
    the track (|x| 7..40, clear of the 5-wide track) and never cause a
    crash — pure scenery, like the rain and the cloud. */
 var MATRIX_COUNT = 200;   // round 76: a bunch — denser than the 96 rain drops, so the square texture reads as a field, not a sprinkle
-var MATRIX_SIZE_MIN = 0.7, MATRIX_SIZE_MAX = 1.4;   // small squares — finer than the rain tets (1.5..3.0), so they read as texture, not as more tetrahedrons
+var MATRIX_SIZE_MIN = 0.35, MATRIX_SIZE_MAX = 0.7;   // round 77: was 0.7..1.4 — Brant: the squares were too big, a fog you go through at the start. Tinier now, about half the size, so they read as a fine texture, not as big squares
 var MATRIX_FALL_MIN = 6, MATRIX_FALL_MAX = 12;   // steady fall speed, units/s — same range as the rain and the cloud tets, so the squares fall in the same line as everything else
 var MATRIX_CLOUD_MIN = 50, MATRIX_CLOUD_SPAN = 30;   // the fall starts IN the clouds, 50..80 above the ball — same top as the rain and the cloud tets
 var MATRIX_X_MIN = 7, MATRIX_X_SPAN = 33;   // 7..40 out on either side (same as the rain) — clear of the track, on both sides
 var matrixGeo = new THREE.BoxGeometry(1, 1, 1);   // one shared cube geometry — each square's size comes from its mesh scale, not a new geometry
-var matrixMat = new THREE.MeshBasicMaterial({color:0x38bdf8});   // electric blue — distinct from the cyan rain, the same family
+var matrixMat = new THREE.MeshBasicMaterial({color:0x38bdf8, transparent:true, opacity:0.45});   // round 77: electric blue, now translucent — Brant: a little more translucent, so the squares read as a fine rain texture, not a solid fog
 var matrix = [];
 function placeMatrixXY(sq, topOnly){
   sq.position.x = (Math.random() < 0.5 ? -1 : 1) * (MATRIX_X_MIN + Math.random()*MATRIX_X_SPAN);
-  /* Respawn goes to the top of the fall column; the first scatter
-     starts in the TOP HALF of the fall (the round-74 rain lesson — a
-     near square spawning low at game start would pop in big right in
-     front of the camera and vanish in ~2 seconds). The top is 50..80
-     above the ball, expressed as height above the square's LOCAL track. */
+  /* Respawn goes to the top of the fall column. Round 77: the FIRST
+     scatter spreads through the WHOLE fall (0..topH), not just the top
+     half — the top-half scatter packed all 200 squares into a dense band
+     at the top at game start, a strong cloud you go through that then
+     disperses as they fall (Brant). Spreading through the whole fall, the
+     texture is uniform from the first frame and stays that way. The
+     round-74 near-low worry doesn't apply here: these squares are tiny
+     and translucent, so a low near square is a small faint square that
+     drops away, not a big blue square flying at the camera. The top is
+     50..80 above the ball, expressed as height above the square's LOCAL
+     track. */
   var topH = (MATRIX_CLOUD_MIN + Math.random()*MATRIX_CLOUD_SPAN) + SLOPE_GRADE*(-sq.position.z);
-  var h = topOnly ? topH : topH * (0.5 + Math.random()*0.5);
+  var h = topOnly ? topH : topH * Math.random();
   sq.userData.h = h;   // height above the LOCAL track — the fall is measured in height, not raw y, so a square falls the same long distance at any speed
   sq.position.y = trackY(-sq.position.z) + h;
 }
