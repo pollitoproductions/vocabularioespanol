@@ -2185,12 +2185,12 @@ scene.add(points);
    is now 120 tets (was 48), sizes 6 / 12 / 24 (was 2.5 / 4.5 / 10
    — the biggest is now a proper tall building, spanning from well
    below the track to ~29 above it), and every tet sits further out
-   (inner edge >= 10, was >= 6). The key is unchanged: each tet's height is
-   WORLD-ANCHORED — set once at placement from the track height at
-   ITS OWN position plus the offset, then NEVER updated while the
-   ball approaches. The ball/camera descend with the track, so every
-   tet streams UPWARD past the player on both sides — that
-   rising-past-the-sides motion is what reads as "going downhill".
+   (inner edge >= 10, was >= 6). Round 67: the heights are NO LONGER
+   world-anchored — each size class is its own level stratum above the
+   BALL's current height (cyan low, pink mid, purple high, sky
+   highest), re-set every frame, so the layers stay flat across the
+   screen while the track falls away beneath them. That contrast — level
+   layers against the descending track — is what reads as "going downhill" now.
    They are NEVER on the track (inner edge always >= 10 units out,
    round 23, was >= 6 — the track is 5 wide, fall-off at 5.3) and never cause a crash —
    pure scenery, wireframe neon so they read as shapes, not
@@ -2198,10 +2198,9 @@ scene.add(points);
    recycled as they pass behind the ball. */
 var TET_COUNT = 120;
 var TET_SIZES = [6, 12, 24];   // round 23: 2.5/4.5/10 -> 6/12/24 — a LOT bigger, like the original Slope's tall buildings; round 64: the biggest class floats up in the sky now (centres 20..40 above the track) instead of rising from below it
-var TET_Y_MIN = -50;   // cloud band (round 18): lowest offset — well BELOW the track
-var TET_Y_MAX = 50;    // cloud band (round 18): highest offset — well above the track
-var TET_BIG_Y_MIN = 20;  // round 64 (Brant): biggest tets are ELEVATED now — centres 20..40 above the track, so a size-24 tet spans ~8..52 above it, floating up in the sky level with where the rain falls from (30..70), instead of rising from below the track like buildings
-var TET_BIG_Y_SPAN = 20;
+/* Round 67 (Brant): LEVELED LAYERS — the cloud used to be a track-parallel band (each tet's height = the track height at ITS OWN position + a random offset in -50..+50), so the layers ran parallel to the descending track and the colours were all jumbled in one compacted band. Now each size class is its own horizontal stratum, level with the BALL's current height — cyan low, pink mid, purple high, sky highest — with gaps between them, not one compacted band. Every tet's height is re-set from the ball's height each frame (see the frame loop), so the layers stay flat across the screen while the track falls away beneath them. That contrast is what shows the descent. [min, span] of height above the ball's height, per size class (0 = cyan 6, 1 = pink 12, 2 = purple 24). */
+var TET_LAYER = [[6, 6], [24, 8], [44, 12]];
+var TET_SKY_MIN = 70, TET_SKY_SPAN = 30;   // sky population: 70..100 above the ball
 var tetGeos = TET_SIZES.map(function(s){ return new THREE.TetrahedronGeometry(s); });
 var tetMats = [
   new THREE.MeshBasicMaterial({color:0x22d3ee, wireframe:true, transparent:true, opacity:0.75}),
@@ -2261,40 +2260,31 @@ var tetTubeMats = [
 var tets = [];
 function placeTetXY(mesh){
   var size = TET_SIZES[mesh.userData.size];
+  var off;
   if(mesh.userData.sky){
     /* Round 27 sky population: a wider lateral spread and a HIGH offset
-       (+25..+90 above the track), so they float in the upper sky around
-       the road instead of hugging it — the top of the frame was empty.
-       Still world-anchored, still clear of the track, and recycled
-       through the same path as the side cloud. */
+       so they float in the upper sky around the road instead of hugging
+       it — the top of the frame was empty. Round 67: the offset is now
+       above the BALL's current height (level), not above the track at
+       the tet's own position (track-parallel). */
     mesh.position.x = (Math.random() < 0.5 ? -1 : 1) * (12 + size + Math.random()*40);
-    mesh.position.y = trackY(-mesh.position.z) + 25 + Math.random()*65;
-    mesh.rotation.set(Math.random()*6.28, Math.random()*6.28, Math.random()*6.28);
-    return;
-  }
-  /* Lateral position: inner edge stays >= 10 units from the centre
-     (round 23: was >= 6 — the tets sit FURTHER OUT now, like the
-     original Slope's buildings; 10 + size + up to 12 out), clear of
-     the track (5 wide) and the fall-off line (5.3) for every size
-     class, and clear of the camera's view of the track. */
-  mesh.position.x = (Math.random() < 0.5 ? -1 : 1) * (10 + size + Math.random()*12);
-  /* Height: WORLD-ANCHORED (round 14) — fixed at placement, so the tet
-     streams upward past the descending player instead of hugging the
-     slope. Round 18: we are going down THROUGH a cloud of
-     tetrahedrons, so the offset is a flat wide band around the track
-     (-50..+50 for small/medium tets), not a climb — the round-15
-     climb (offset rising with distance ahead) pushed every far tet
-     up high and made the field read as clouds floating above the
-     road, with empty space underneath. Round 64: the biggest tets sit
-     HIGH (20..40) so the row floats up in the sky level with where the
-     rain falls from, instead of rising from below the track. */
-  var off;
-  if(mesh.userData.size === 2){
-    off = TET_BIG_Y_MIN + Math.random()*TET_BIG_Y_SPAN;
+    off = TET_SKY_MIN + Math.random()*TET_SKY_SPAN;
   } else {
-    off = TET_Y_MIN + Math.random()*(TET_Y_MAX - TET_Y_MIN);
+    /* Lateral position: inner edge stays >= 10 units from the centre
+       (round 23: was >= 6 — the tets sit FURTHER OUT now, like the
+       original Slope's buildings; 10 + size + up to 12 out), clear of
+       the track (5 wide) and the fall-off line (5.3) for every size
+       class, and clear of the camera's view of the track. */
+    mesh.position.x = (Math.random() < 0.5 ? -1 : 1) * (10 + size + Math.random()*12);
+    /* Height (round 67): the tet's stratum from TET_LAYER — level with
+       the ball's CURRENT height, not with the track at the tet's own
+       position. Stored as layerOff so the frame loop can hold it level
+       every frame as the ball descends. */
+    var lay = TET_LAYER[mesh.userData.size];
+    off = lay[0] + Math.random()*lay[1];
   }
-  mesh.position.y = trackY(-mesh.position.z) + off;
+  mesh.userData.layerOff = off;
+  mesh.position.y = trackY(dist) + off;
   mesh.rotation.set(Math.random()*6.28, Math.random()*6.28, Math.random()*6.28);
 }
 function placeTet(mesh, zMin, zMax){
@@ -2353,10 +2343,12 @@ var rains = [];
 function placeRainXY(drop, topOnly){
   drop.position.x = (Math.random() < 0.5 ? -1 : 1) * (RAIN_X_MIN + Math.random()*RAIN_X_SPAN);
   /* Respawn goes to the top of the fall column; the first scatter
-     spreads through the whole band so the rain reads from frame one. */
+     spreads through the whole band so the rain reads from frame one.
+     Round 67: the base is the ball's CURRENT height, so the rain falls
+     out of the level cloud layers, not out of a track-parallel band. */
   var h = topOnly ? (RAIN_TOP_MIN + Math.random()*RAIN_TOP_SPAN)
                   : (RAIN_SPREAD_MIN + Math.random()*RAIN_SPREAD_SPAN);
-  drop.position.y = trackY(-drop.position.z) + h;
+  drop.position.y = trackY(dist) + h;
   drop.rotation.set(Math.random()*6.28, Math.random()*6.28, Math.random()*6.28);
 }
 function placeRain(drop, zMin, zMax){
@@ -3012,10 +3004,12 @@ function frame(){
   pGeo.attributes.position.needsUpdate = true;
   /* Background tetrahedrons tumble slowly and recycle ahead once
      they pass behind the ball — scenery, never obstacles. Round 14:
-     the recycle re-rolls the lateral position and the WORLD-ANCHORED
-     height at the new spot (placeTetXY), so the cloud field stays
-     varied and every tet keeps streaming upward past the descending
-     player. The jump is 1400 (round 26: was 650), so a recycled tet
+     the recycle re-rolls the lateral position and the height at the new
+     spot (placeTetXY), so the cloud field stays varied. Round 67: the
+     heights are NO LONGER world-anchored — each tet's height is its
+     stratum offset above the ball's CURRENT height, re-set every frame
+     below, so the colour layers stay level while the track falls away
+     beneath them. The jump is 1400 (round 26: was 650), so a recycled tet
      lands at most ~1370 ahead of the ball — at the fog's far edge,
      fading in, never popping into view. (The field spreads over a
      longer range now, so it reads sparser — the price of the long view.) */
@@ -3023,6 +3017,11 @@ function frame(){
     var tet = tets[i];
     tet.rotation.x += tet.userData.rx*dt;
     tet.rotation.y += tet.userData.ry*dt;
+    /* Round 67: hold the tet level with the ball — its height is the
+       ball's CURRENT height + its stratum offset, re-set every frame,
+       so the layers stay flat across the screen while the track falls
+       away beneath them (instead of sloping down with the track). */
+    tet.position.y = trackY(dist) + tet.userData.layerOff;
     if(tet.position.z > ballZ + 30){
       tet.position.z -= 1400;   // round 26: was 650 — must land at the new fog far edge or the tet pops in visibly mid-fade
       placeTetXY(tet);
