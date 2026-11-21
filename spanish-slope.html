@@ -854,6 +854,7 @@ const FALL_TIME = 0.9;                    // round 8: the fall lasts a touch lon
 const EDGE_FALL = 5.5;                    // round 33: was 5.3 — the ball's centre only 0.3 past the edge meant a sliver of the ball was still over the track when it died, which read as a bogus death; now the centre must be a full ball-radius (0.5) past the half-width (5.0), so the ball is visibly off the track before it falls
 var zBefore = 0;   // ball z at the start of the frame (swept collision checks)
 var frameDZ = 0;   // round 70: this frame's forward travel (ballZ - zBefore, negative) — the rain rides it so the drops move with the ball instead of rushing at the camera
+var _projV = new THREE.Vector3();   // round 76: scratch vector for the off-screen respawn check — a falling drop/tet/square is projected to the screen and only respawns once it is below the bottom edge
 var xBefore = 0, hopYBefore = 0;   // round 33: ball x and hop height at the start of the frame — the swept checks interpolate to the crossing instant (see checkCollisions)
 var best = 0;
 try{ best = parseInt(localStorage.getItem("slopeEspanol_best") || "0", 10) || 0; }catch(e){}
@@ -2394,6 +2395,53 @@ for(var ri=0; ri<RAIN_COUNT; ri++){
   rains.push(drop);
 }
 
+/* ---------- electric matrix rain (round 76, Brant) ----------
+   A dense field of small electric-blue SQUARES falling straight down
+   alongside the tetrahedrons, like the digital rain in The Matrix.
+   Brant: there's a cloud of blue little squares at game start and it
+   disappears — I want a bunch of that sort of texture coming down with
+   the tetrahedrons, like electric matrix rain, all falling in the same
+   line. So these are actual squares (small cubes, axis-aligned so they
+   always read as squares — they never tumble), 200 of them, denser than
+   the rain, in electric blue, falling at the same rate as the rain and
+   the cloud tets (6..12 units/s) from the clouds to the track — and
+   past it, until they are off the screen (round 76). They never fall on
+   the track (|x| 7..40, clear of the 5-wide track) and never cause a
+   crash — pure scenery, like the rain and the cloud. */
+var MATRIX_COUNT = 200;   // round 76: a bunch — denser than the 96 rain drops, so the square texture reads as a field, not a sprinkle
+var MATRIX_SIZE_MIN = 0.7, MATRIX_SIZE_MAX = 1.4;   // small squares — finer than the rain tets (1.5..3.0), so they read as texture, not as more tetrahedrons
+var MATRIX_FALL_MIN = 6, MATRIX_FALL_MAX = 12;   // steady fall speed, units/s — same range as the rain and the cloud tets, so the squares fall in the same line as everything else
+var MATRIX_CLOUD_MIN = 50, MATRIX_CLOUD_SPAN = 30;   // the fall starts IN the clouds, 50..80 above the ball — same top as the rain and the cloud tets
+var MATRIX_X_MIN = 7, MATRIX_X_SPAN = 33;   // 7..40 out on either side (same as the rain) — clear of the track, on both sides
+var matrixGeo = new THREE.BoxGeometry(1, 1, 1);   // one shared cube geometry — each square's size comes from its mesh scale, not a new geometry
+var matrixMat = new THREE.MeshBasicMaterial({color:0x38bdf8});   // electric blue — distinct from the cyan rain, the same family
+var matrix = [];
+function placeMatrixXY(sq, topOnly){
+  sq.position.x = (Math.random() < 0.5 ? -1 : 1) * (MATRIX_X_MIN + Math.random()*MATRIX_X_SPAN);
+  /* Respawn goes to the top of the fall column; the first scatter
+     starts in the TOP HALF of the fall (the round-74 rain lesson — a
+     near square spawning low at game start would pop in big right in
+     front of the camera and vanish in ~2 seconds). The top is 50..80
+     above the ball, expressed as height above the square's LOCAL track. */
+  var topH = (MATRIX_CLOUD_MIN + Math.random()*MATRIX_CLOUD_SPAN) + SLOPE_GRADE*(-sq.position.z);
+  var h = topOnly ? topH : topH * (0.5 + Math.random()*0.5);
+  sq.userData.h = h;   // height above the LOCAL track — the fall is measured in height, not raw y, so a square falls the same long distance at any speed
+  sq.position.y = trackY(-sq.position.z) + h;
+}
+function placeMatrix(sq, zMin, zMax){
+  sq.position.z = -(zMin + Math.random()*(zMax - zMin));
+  placeMatrixXY(sq, false);
+}
+for(var mi=0; mi<MATRIX_COUNT; mi++){
+  var sq = new THREE.Mesh(matrixGeo, matrixMat);
+  var mSize = MATRIX_SIZE_MIN + Math.random()*(MATRIX_SIZE_MAX - MATRIX_SIZE_MIN);
+  sq.scale.set(mSize, mSize, mSize);
+  sq.userData.fall = MATRIX_FALL_MIN + Math.random()*(MATRIX_FALL_MAX - MATRIX_FALL_MIN);
+  placeMatrix(sq, 40, 400);   // 40..400 ahead, like the rain — big and visible, never fogged away
+  scene.add(sq);
+  matrix.push(sq);
+}
+
 /* ---------- hop ---------- */
 /* Ground height at distance d: the platform height on a raised platform
    segment, or the wedge height while on a launch-ramp wedge (the ball
@@ -2757,6 +2805,7 @@ function startRun(){
      wasn't even there). Re-placing them here restores the rain
      instantly on every fresh run. */
   rains.forEach(function(drop){ placeRain(drop, 40, 400); });   // round 71: was 50..1400 (see the load scatter)
+  matrix.forEach(function(sq){ placeMatrix(sq, 40, 400); });   // round 76: re-scatter the matrix rain too — same bug as the rain in round 69
   menuEl.classList.add("hidden");
   overEl.classList.add("hidden");
   pauseEl.classList.add("hidden");
@@ -3064,7 +3113,12 @@ function frame(){
     tet.userData.h -= tet.userData.fall*dt;   // the fall is the height above the local track shrinking
     tet.position.y = trackY(-tet.position.z) + tet.userData.h;
     if(tet.userData.h < -2){
-      placeTetXY(tet, true);   // reached the track — back to the clouds
+      // round 76: don't respawn at the track — keep falling until the tet
+      // is OFF the bottom of the screen, then respawn at the clouds
+      // (Brant: they disappear right when they reach the slope — make
+      // them go down farther until they are off the screen).
+      _projV.set(tet.position.x, tet.position.y, tet.position.z).project(camera);
+      if(_projV.y < -1.05){ placeTetXY(tet, true); }
     }
     if(tet.position.z > ballZ + 30){
       tet.position.z -= 1400;   // safety net: a jump of 1400 lands back in the 50..1400 band
@@ -3102,11 +3156,39 @@ function frame(){
     drop.rotation.x += drop.userData.rx*dt;
     drop.rotation.y += drop.userData.ry*dt;
     if(drop.userData.h < -2){
-      placeRainXY(drop, true);   // reached the track — back to the clouds
+      // round 76: don't respawn at the track — keep falling until the drop
+      // is OFF the bottom of the screen, then respawn at the clouds
+      // (Brant: they disappear right when they reach the slope — make
+      // them go down farther until they are off the screen).
+      _projV.set(drop.position.x, drop.position.y, drop.position.z).project(camera);
+      if(_projV.y < -1.05){ placeRainXY(drop, true); }
     }
     if(drop.position.z > ballZ + 30){
       drop.position.z -= 360;   // round 71: was 1400 — the rain band is 40..400 now (span 360), so a jump of 360 lands back in the band
       placeRainXY(drop, true);
+    }
+  }
+  /* Electric matrix rain (round 76): small blue squares falling straight
+     down alongside the tetrahedrons, like the digital rain in The Matrix.
+     They ride the ball (frameDZ) and fall from the clouds to the track —
+     and past it, until they are off the bottom of the screen — then
+     respawn at the top. They never tumble, so they always read as
+     squares. Runs every frame like the rain, so the matrix falls on the
+     menu too. */
+  for(var mi2=0; mi2<matrix.length; mi2++){
+    var sq = matrix[mi2];
+    sq.position.z += frameDZ;   // travel forward with the ball — the square's distance from the camera never changes, so its only on-screen motion is straight DOWN
+    sq.userData.h -= sq.userData.fall*dt;   // the fall is the height above the local track shrinking
+    sq.position.y = trackY(-sq.position.z) + sq.userData.h;
+    if(sq.userData.h < -2){
+      // round 76: don't respawn at the track — keep falling until the square
+      // is OFF the bottom of the screen, then respawn at the clouds.
+      _projV.set(sq.position.x, sq.position.y, sq.position.z).project(camera);
+      if(_projV.y < -1.05){ placeMatrixXY(sq, true); }
+    }
+    if(sq.position.z > ballZ + 30){
+      sq.position.z -= 360;   // safety net: the matrix band is 40..400 (span 360), so a jump of 360 lands back in the band
+      placeMatrixXY(sq, true);
     }
   }
   /* Camera follows the ball, looking forward and down the slope. Round 26:
