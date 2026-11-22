@@ -2308,7 +2308,16 @@ function placeTetXY(mesh, topOnly){
      the first scatter starts in the TOP HALF of the fall, so a big tet
      never spawns low and near right in front of the camera at game
      start (the round-74 rain lesson, applied to the cloud tets). */
-  var topH = (TET_CLOUD_MIN + Math.random()*TET_CLOUD_SPAN) + SLOPE_GRADE*(-mesh.position.z);
+  // round 80: the top of the fall is 50..80 above the BALL, so the grade term
+  // must use the distance AHEAD of the ball (dAhead = ballZ - position.z),
+  // not -position.z (the distance from the ORIGIN). The old code used the
+  // origin distance, so the grade term cancelled the track's descent and a
+  // respawned tet landed at absolute y 50..80 — at 7,382 m that is ~1,600
+  // above the ball, and it never fell back into view (the ball descends as
+  // fast as the tet falls), so the sky emptied. At load/startRun ballZ is 0,
+  // so dAhead equals -position.z and the scatter is unchanged.
+  var dAhead = ballZ - mesh.position.z;
+  var topH = (TET_CLOUD_MIN + Math.random()*TET_CLOUD_SPAN) + SLOPE_GRADE*dAhead;
   var h = topOnly ? topH : topH * (0.5 + Math.random()*0.5);
   mesh.userData.h = h;   // round 75: height above the LOCAL track — the fall is measured in height, not raw y, so a tet falls the same way at any speed
   mesh.position.y = trackY(-mesh.position.z) + h;
@@ -2386,7 +2395,11 @@ function placeRainXY(drop, topOnly){
      game starts and disappear after two seconds). Starting in the top
      half, every drop falls DOWN into view on both sides instead,
      along with the rest of the rain. */
-  var topH = (RAIN_CLOUD_MIN + Math.random()*RAIN_CLOUD_SPAN) + SLOPE_GRADE*(-drop.position.z);
+  // round 80: same fix as placeTetXY — the grade term uses the distance ahead
+  // of the ball (dAhead), not the distance from the origin, so a respawned
+  // drop lands 50..80 above the ball at any distance, not at absolute y 50..80.
+  var dAhead = ballZ - drop.position.z;
+  var topH = (RAIN_CLOUD_MIN + Math.random()*RAIN_CLOUD_SPAN) + SLOPE_GRADE*dAhead;
   var h = topOnly ? topH : topH * (0.5 + Math.random()*0.5);
   drop.userData.h = h;   // round 73: height above the LOCAL track again (round 71 used height above the ball, which capped the fall at a 50-unit band) — the fall is measured in height, not raw y, so a drop falls the same long distance at any speed
   drop.position.y = trackY(-drop.position.z) + h;
@@ -2440,7 +2453,10 @@ function placeMatrixXY(sq, topOnly){
      drops away, not a big blue square flying at the camera. The top is
      50..80 above the ball, expressed as height above the square's LOCAL
      track. */
-  var topH = (MATRIX_CLOUD_MIN + Math.random()*MATRIX_CLOUD_SPAN) + SLOPE_GRADE*(-sq.position.z);
+  // round 80: same fix as placeTetXY — the grade term uses the distance ahead
+  // of the ball (dAhead), not the distance from the origin.
+  var dAhead = ballZ - sq.position.z;
+  var topH = (MATRIX_CLOUD_MIN + Math.random()*MATRIX_CLOUD_SPAN) + SLOPE_GRADE*dAhead;
   var h = topOnly ? topH : topH * Math.random();
   sq.userData.h = h;   // height above the LOCAL track — the fall is measured in height, not raw y, so a square falls the same long distance at any speed
   sq.position.y = trackY(-sq.position.z) + h;
