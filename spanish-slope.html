@@ -3154,7 +3154,13 @@ function frame(){
     // track (measured against the real portrait camera — a drop at 40 ahead
     // goes off-screen 32 below the track, at 100 ahead 77 below, at 400
     // ahead 303 below). It cannot fail: h only ever decreases.
-    if(tet.userData.h < -(0.75 * (-tet.position.z) + 10)){
+    // round 81: d is the distance AHEAD of the ball (ballZ - position.z), not
+    // -position.z (the distance from the ORIGIN). The old code used the origin
+    // distance, so the threshold deepened as the ball travelled and a shape
+    // took MINUTES to respawn — the sky went black about a minute in and
+    // stayed black. With dAhead the cycle time is constant at any distance,
+    // so the flow never stops.
+    if(tet.userData.h < -(0.75 * (ballZ - tet.position.z) + 10)){
       placeTetXY(tet, true);   // off the bottom of the screen — back to the clouds
     }
     if(tet.position.z > ballZ + 30){
@@ -3196,7 +3202,9 @@ function frame(){
     // drop is (0.75*d + 10) below the track, where d is its distance ahead.
     // (Round 76's screen projection did not trigger live, so the sky
     // emptied out; this plain distance rule cannot fail.)
-    if(drop.userData.h < -(0.75 * (-drop.position.z) + 10)){
+    // round 81: same fix as the cloud tets — the threshold uses the distance
+    // ahead of the ball (ballZ - position.z), not the distance from the origin.
+    if(drop.userData.h < -(0.75 * (ballZ - drop.position.z) + 10)){
       placeRainXY(drop, true);   // off the bottom of the screen — back to the clouds
     }
     if(drop.position.z > ballZ + 30){
@@ -3220,7 +3228,9 @@ function frame(){
     // respawn once the square is (0.75*d + 10) below the track, where d is
     // its distance ahead. (Round 76's screen projection did not trigger
     // live, so the sky emptied out; this plain distance rule cannot fail.)
-    if(sq.userData.h < -(0.75 * (-sq.position.z) + 10)){
+    // round 81: same fix as the cloud tets — the threshold uses the distance
+    // ahead of the ball (ballZ - position.z), not the distance from the origin.
+    if(sq.userData.h < -(0.75 * (ballZ - sq.position.z) + 10)){
       placeMatrixXY(sq, true);   // off the bottom of the screen — back to the clouds
     }
     if(sq.position.z > ballZ + 30){
