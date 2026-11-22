@@ -3,11 +3,20 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Slope Español — Pollito Productions</title>
 <style>
   *{ box-sizing:border-box; margin:0; padding:0; }
-  html,body{ width:100%; height:100%; overflow:hidden; background:#050510; }
+  html,body{ width:100%; height:100%; height:100dvh; overflow:hidden; background:#050510; }
+  /* Round 79 (Brant, landscape hitbox): in iOS Safari horizontal mode the
+     layout viewport and the visual viewport drift apart, so a fixed button
+     renders in one place and its tap target sits well BELOW it — you have
+     to tap below the button to hit it (same issue as Spanish Dash in
+     landscape). viewport-fit=cover (above) lets the page use the full
+     screen including the safe areas, and 100dvh (dynamic viewport height)
+     makes the layout track the actually-visible height as the toolbar
+     shows and hides, so fixed elements and their tap targets line up.
+     Browsers without dvh ignore that line and keep height:100%. */
   body{ font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:#f1f5f9;
     -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
   #game{ position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; }
@@ -15,7 +24,10 @@
 
   /* ---------- HUD (only while playing) ---------- */
   #hud{ position:fixed; top:0; left:0; right:0; display:none; justify-content:space-between;
-    align-items:flex-start; padding:10px 12px; pointer-events:none; z-index:5; }
+    align-items:flex-start; padding:calc(10px + env(safe-area-inset-top, 0px)) calc(12px + env(safe-area-inset-right, 0px)) 10px calc(12px + env(safe-area-inset-left, 0px)); pointer-events:none; z-index:5; }
+  /* Round 79: the safe-area padding above keeps the HUD (score + buttons)
+     clear of the notch / status bar in horizontal mode now that
+     viewport-fit=cover lets the page extend under them. */
   #hud.on{ display:flex; }
   .hudBox{ background:rgba(2,6,23,.62); border:1px solid rgba(148,163,184,.35); border-radius:12px;
     padding:8px 12px; line-height:1.35; }
