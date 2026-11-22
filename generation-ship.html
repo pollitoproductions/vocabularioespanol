@@ -1651,13 +1651,67 @@ function makeKioskScreenTexture(labelText, colorCss) {
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
+// Metallic plating texture (Brant Nov 22): the kiosk bodies read as flat
+// gray, so the plating is a real canvas texture — brushed steel with
+// panel seams, beveled edges, and rivets — on the body and plinth of
+// every kiosk. One shared texture; the body material color stays white
+// so the texture shows true (color multiplies map), the plinth is
+// tinted slightly darker.
+function makeMetalPlatingTexture() {
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 512;
+  const g = c.getContext('2d');
+  // Brushed steel base.
+  const grad = g.createLinearGradient(0, 0, 512, 0);
+  grad.addColorStop(0, '#7d8896');
+  grad.addColorStop(0.5, '#9aa4b2');
+  grad.addColorStop(1, '#7d8896');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 512, 512);
+  // Fine vertical brushed lines.
+  for (let i = 0; i < 220; i++) {
+    const x = Math.random() * 512;
+    g.strokeStyle = Math.random() < 0.5 ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)';
+    g.lineWidth = 1 + Math.random() * 2;
+    g.beginPath(); g.moveTo(x, 0); g.lineTo(x + (Math.random() - 0.5) * 8, 512); g.stroke();
+  }
+  // Panel seams: 2 columns x 3 rows, dark seam + light bevel highlight.
+  const cols = 2, rows = 3;
+  for (let i = 1; i < cols; i++) {
+    const x = (512 / cols) * i;
+    g.fillStyle = '#2e343b'; g.fillRect(x - 3, 0, 6, 512);
+    g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(x + 3, 0, 2, 512);
+  }
+  for (let j = 1; j < rows; j++) {
+    const y = (512 / rows) * j;
+    g.fillStyle = '#2e343b'; g.fillRect(0, y - 3, 512, 6);
+    g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(0, y + 3, 512, 2);
+  }
+  // Rivets at panel corners (inset from the canvas edge so none is cut).
+  for (let i = 0; i <= cols; i++) {
+    for (let j = 0; j <= rows; j++) {
+      let x = (512 / cols) * i;
+      let y = (512 / rows) * j;
+      x = Math.max(16, Math.min(512 - 16, x));
+      y = Math.max(16, Math.min(512 - 16, y));
+      g.fillStyle = '#1c2126';
+      g.beginPath(); g.arc(x, y, 9, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#c8d4e0';
+      g.beginPath(); g.arc(x - 2, y - 2, 3, 0, Math.PI * 2); g.fill();
+    }
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+const metalPlatingTex = makeMetalPlatingTexture();
 // Kiosk hardware (shared across all consoles): brushed-steel body,
 // bright corner posts, dark bezel, plinth base. One set of materials
 // and geometries, reused by every console.
-const kioskBodyMat = new THREE.MeshStandardMaterial({ color: 0x8a94a6, roughness: 0.35, metalness: 0.9 });
+const kioskBodyMat = new THREE.MeshStandardMaterial({ map: metalPlatingTex, color: 0xffffff, roughness: 0.35, metalness: 0.9 });
 const kioskPostMat = new THREE.MeshStandardMaterial({ color: 0xb8c2d0, roughness: 0.25, metalness: 1.0 });
 const kioskBezelMat = new THREE.MeshStandardMaterial({ color: 0x3a434e, roughness: 0.4, metalness: 0.8 });
-const kioskPlinthMat = new THREE.MeshStandardMaterial({ color: 0x6b7686, roughness: 0.45, metalness: 0.85 });
+const kioskPlinthMat = new THREE.MeshStandardMaterial({ map: metalPlatingTex, color: 0x9aa4b2, roughness: 0.45, metalness: 0.85 });
 const kioskPlinthGeo = new THREE.BoxGeometry(2.6, 0.3, 1.5);
 const kioskBodyGeo = new THREE.BoxGeometry(2.2, 2.3, 1.1);
 const kioskPostGeo = new THREE.BoxGeometry(0.16, 2.3, 1.14);
@@ -8350,6 +8404,16 @@ window.addEventListener('resize', onResize);
 onResize();
 
 // ---------- Main loop: EVERYTHING moves by delta time, clamped ----------
+// Pause when the player leaves the window/tab or opens the pause menu
+// (Brant Nov 22): the world must not keep running while the player is
+// in another window or has the menu open. Tab-hidden stops rAF on its
+// own, but a blurred window (split screen, second monitor) keeps
+// animating, so both visibility and focus are watched. menuOn is the
+// ship/pause menu; it joins the prompt freeze below.
+let tabHidden = false;
+document.addEventListener('visibilitychange', () => { tabHidden = document.hidden; });
+window.addEventListener('blur', () => { tabHidden = true; });
+window.addEventListener('focus', () => { tabHidden = false; });
 const clock = new THREE.Clock();
 function animate() {
   const dt = Math.min(clock.getDelta(), MAX_DT); // seconds since last frame, clamped
@@ -8357,7 +8421,7 @@ function animate() {
   // tile bobbing, no walk/flight input. Rendering continues so the prompt
   // sits over a live (frozen) scene. A mining hold also freezes, because
   // its progress only advances inside updateFlight.
-  if (!collectOpen && !toolOpen && !titleOpen && !reviewOpen) {
+  if (!collectOpen && !toolOpen && !titleOpen && !reviewOpen && !menuOn && !tabHidden) {
     cylAngle += OMEGA * dt;                        // cylinder spin
     ship.rotation.z = cylAngle;
     // Round 38: the sun disc on the observation screen counter-rotates
