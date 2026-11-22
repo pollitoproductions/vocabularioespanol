@@ -761,16 +761,20 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.m
 var TRACK_W = 10;            // track width (x from -5 to +5)
 var SEG_LEN = 20;            // one track segment, in units
 var BALL_R = 0.6;   // round 82 (Brant): was 0.5 — the ball is a little bigger now. EDGE_FALL and GAP_HIT below are a full ball-radius, so they move with it (5.5→5.6 and 0.5→0.6).
-/* Round 83 (Brant): the ball does NOT spin around X while playing — the
-   face is baked into the skin texture, so any roll tumbles it away, and
-   Brant wants the face upright and facing the camera as it rolls.
-   Rounds 5–6 had decoupled the visual spin from the physical roll and
-   slowed it (SPIN_FACTOR/SPIN_MAX, now removed) so the art stayed
-   readable, but even the slowed roll turned the face over at full speed.
-   Now rotation.x is held at 0 while playing (face upright, facing the
-   camera); the forward motion and the track convey the speed, not the
-   spin. Theoretically the ball is rolling backwards — the face staying
-   visible is what matters. It still tumbles while falling (crash). */
+/* Round 84 (Brant): the ball rolls again AND the face stays upright. Round
+   83 held rotation.x at 0 so the face stayed put, but then the ball no
+   longer looked like it was rolling. The fix is a separate face layer
+   (faceMesh, an unlit sphere over the ball): the face lives there and
+   never rotates, while the ball underneath rolls with the old slowed
+   spin (SPIN_FACTOR/SPIN_MAX, rounds 5–6) so the body art stays readable
+   and the roll reads. The face is unlit, so it can never be whited out
+   by the scene lights. Theoretically the face is not rolling with the
+   ball — but it is always upright and visible, which is what matters. */
+var SPIN_FACTOR = 0.25;      // ball roll slowed so the body art stays readable (round 6: was 0.4; round 19: up from 0.15 so the roll reads a bit livelier)
+var SPIN_MAX = 2.5;          // max visible roll, rad/s — at full speed the physical
+                             // roll is ~170 rad/s (a blur); the roll is slowed so the
+                             // body art stays readable. Forward motion + track convey
+                             // the speed, not the spin.
 var LAT_SPEED = 30;          // max lateral (steering) speed, units/s — raised for the old top speed 120 (was 24 at 87); kept at 100 (round 9)
 var BASE_SPEED = 31.5;       // starting forward speed — round 5: 25% down from the doubled 42
 var MAX_SPEED = 92;          // top forward speed — round 60: Brant asked for 92 (was 85; the 0.92c nod)
@@ -929,7 +933,7 @@ scene.add(new THREE.AmbientLight(0x99aaff, 1.5));
 var dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
 dirLight.position.set(4, 10, 6);
 scene.add(dirLight);
-var ballLight = new THREE.PointLight(0xffa040, 70, 28, 1.5);
+var ballLight = new THREE.PointLight(0xffa040, 30, 28, 1.5);   // round 84 (Brant): intensity was 70 — the light sits right over the ball and blasted the face to a pale washed-out white (Nov 22 photo: the Alien's face whited out). 30 still lights a bright pool on the track around the ball without blowing the face out.
 scene.add(ballLight);
 
 /* ---------- ball skins (choose your ball) ----------
@@ -1083,15 +1087,9 @@ function skinTexture(kind){
        orange beak. This is the default skin and it MUST read as Pollito. */
     tex = makeSkinTexture(function(g,W,H){
       g.fillStyle = "#facc15"; g.fillRect(0, 0, W, H);
-      /* comb: three red scallops across the top of the face */
-      g.fillStyle = "#ef4444";
-      g.beginPath(); g.ellipse(96, 42, 20, 24, 0, 0, 6.29); g.fill();
-      g.beginPath(); g.ellipse(128, 32, 22, 28, 0, 0, 6.29); g.fill();
-      g.beginPath(); g.ellipse(160, 42, 20, 24, 0, 0, 6.29); g.fill();
-      skinEyes(g, 128, 98, 17, 20);
-      /* beak: big orange diamond */
-      g.fillStyle = "#f97316";
-      g.beginPath(); g.moveTo(128, 124); g.lineTo(160, 142); g.lineTo(128, 164); g.lineTo(96, 142); g.closePath(); g.fill();
+      /* Round 84: the front face lives on the face layer now (faceTexture),
+         so the ball texture is just the body — it can spin freely while the
+         face stays upright. The back of the head stays here. */
       /* back of the head: orange tail feathers + a hint of comb */
       g.fillStyle = "#f97316";
       g.beginPath(); g.moveTo(384, 150); g.lineTo(410, 110); g.lineTo(420, 150); g.closePath(); g.fill();
@@ -1104,24 +1102,8 @@ function skinTexture(kind){
        forehead, curved horns, and a lighter tan muzzle. No spots. */
     tex = makeSkinTexture(function(g,W,H){
       g.fillStyle = "#92400e"; g.fillRect(0, 0, W, H);
-      /* horns: curved cream horns sweeping out from the sides of the head */
-      g.fillStyle = "#fef3c7";
-      g.beginPath(); g.moveTo(64, 70); g.quadraticCurveTo(28, 40, 20, 8); g.quadraticCurveTo(52, 22, 78, 48); g.closePath(); g.fill();
-      g.beginPath(); g.moveTo(192, 70); g.quadraticCurveTo(228, 40, 236, 8); g.quadraticCurveTo(204, 22, 178, 48); g.closePath(); g.fill();
-      /* shaggy fringe: long dark-brown hair hanging over the forehead,
-         drawn as overlapping strands down to just above the eyes */
-      g.fillStyle = "#78350f";
-      for(var i=0;i<9;i++){
-        var fx = 62 + i*16;
-        g.beginPath(); g.moveTo(fx, 30); g.lineTo(fx+16, 30); g.lineTo(fx+8, 78 + (i%2)*10); g.closePath(); g.fill();
-      }
-      /* face: dark eyes below the fringe + big tan muzzle with nostrils */
-      skinEyes(g, 128, 104, 15, 18);
-      g.fillStyle = "#d4a373";
-      g.beginPath(); g.ellipse(128, 158, 40, 24, 0, 0, 6.29); g.fill();
-      g.fillStyle = "#3f2d20";
-      g.beginPath(); g.ellipse(112, 158, 6, 9, 0, 0, 6.29); g.fill();
-      g.beginPath(); g.ellipse(144, 158, 6, 9, 0, 0, 6.29); g.fill();
+      /* Round 84: front face (horns, fringe, eyes, muzzle) is on the face
+         layer now; the ball texture is just the body. */
       /* back: solid brown with a darker shaggy patch */
       g.fillStyle = "#78350f";
       g.beginPath(); g.ellipse(384, 110, 46, 40, 0.3, 0, 6.29); g.fill();
@@ -1131,13 +1113,9 @@ function skinTexture(kind){
        a coal smile and a button. */
     tex = makeSkinTexture(function(g,W,H){
       g.fillStyle = "#f1f5f9"; g.fillRect(0, 0, W, H);
-      skinEyes(g, 128, 96, 19, 22);
-      g.fillStyle = "#f97316";
-      g.beginPath(); g.moveTo(128, 122); g.lineTo(206, 140); g.lineTo(128, 160); g.closePath(); g.fill();
+      /* Round 84: front face (eyes, nose, smile) is on the face layer now;
+         the ball texture keeps the body button + back buttons. */
       g.fillStyle = "#0f172a";
-      for(var i=0;i<5;i++){
-        g.beginPath(); g.ellipse(88 + i*20, 182 - Math.abs(i-2)*6, 8, 8, 0, 0, 6.29); g.fill();
-      }
       g.beginPath(); g.ellipse(128, 224, 11, 11, 0, 0, 6.29); g.fill();
       /* back: two more coal buttons */
       g.beginPath(); g.ellipse(384, 90, 11, 11, 0, 0, 6.29); g.fill();
@@ -1163,39 +1141,35 @@ function skinTexture(kind){
         }
         g.closePath(); g.fill(); g.stroke();
       }
-      /* turtle face inside the centre scute */
-      g.fillStyle = "#14532d";
-      g.beginPath(); g.ellipse(112, 96, 8, 10, 0, 0, 6.29); g.fill();
-      g.beginPath(); g.ellipse(144, 96, 8, 10, 0, 0, 6.29); g.fill();
-      g.strokeStyle = "#14532d"; g.lineWidth = 5;
-      g.beginPath(); g.arc(128, 112, 16, 0.25*Math.PI, 0.75*Math.PI); g.stroke();
+      /* Round 84: the turtle face (eyes + smile inside the centre scute)
+         is on the face layer now; the shell pattern stays here and spins. */
     });
   } else if(kind === "panda"){
     /* Panda: Dash's panda face, big on the front, smaller on the back. */
     tex = makeSkinTexture(function(g,W,H){
       g.fillStyle = "#f8fafc"; g.fillRect(0, 0, W, H);
-      drawPandaFace(g, 128, 108, 6);
+      /* Round 84: front panda face is on the face layer now. */
       drawPandaFace(g, 384, 108, 4);
     });
   } else if(kind === "fox"){
     /* Fox: Dash's fox face, big on the front, smaller on the back. */
     tex = makeSkinTexture(function(g,W,H){
       g.fillStyle = "#f97316"; g.fillRect(0, 0, W, H);
-      drawFoxFace(g, 128, 108, 6);
+      /* Round 84: front fox face is on the face layer now. */
       drawFoxFace(g, 384, 108, 4);
     });
   } else if(kind === "frog"){
     /* Frog: Dash's frog face, big on the front, smaller on the back. */
     tex = makeSkinTexture(function(g,W,H){
       g.fillStyle = "#22c55e"; g.fillRect(0, 0, W, H);
-      drawFrogFace(g, 128, 108, 6);
+      /* Round 84: front frog face is on the face layer now. */
       drawFrogFace(g, 384, 108, 4);
     });
   } else if(kind === "alien"){
     /* Alien: Dash's alien face, big on the front, smaller on the back. */
     tex = makeSkinTexture(function(g,W,H){
       g.fillStyle = "#4ade80"; g.fillRect(0, 0, W, H);
-      drawAlienFace(g, 128, 108, 6);
+      /* Round 84: front alien face is on the face layer now. */
       drawAlienFace(g, 384, 108, 4);
     });
   } else { /* skull — sugar skull: cream with two BIG dark eye sockets, nose, teeth, festive dots */
@@ -1207,11 +1181,8 @@ function skinTexture(kind){
         g.fillStyle = cols[i % 4];
         g.beginPath(); g.ellipse(rng()*512, rng()*256, 10, 10, 0, 0, 6.29); g.fill();
       }
-      g.fillStyle = "#1f2937";
-      g.beginPath(); g.ellipse(88, 104, 34, 42, 0, 0, 6.29); g.fill();
-      g.beginPath(); g.ellipse(168, 104, 34, 42, 0, 0, 6.29); g.fill();
-      g.beginPath(); g.moveTo(128, 156); g.lineTo(148, 188); g.lineTo(108, 188); g.closePath(); g.fill();
-      for(var t=0;t<5;t++) g.fillRect(88 + t*20, 208, 7, 30);
+      /* Round 84: front skull face (eye sockets, nose, teeth) is on the
+         face layer now; the festive dots + back flower stay here. */
       /* back: a festive flower */
       g.fillStyle = "#ec4899";
       for(var p=0;p<6;p++){
@@ -1225,16 +1196,92 @@ function skinTexture(kind){
   skinTextures[kind] = tex;
   return tex;
 }
+var faceTextures = {};
+/* Round 84 (Brant): the face is a separate layer — a slightly larger,
+   unlit sphere over the ball that never rotates, so the face stays
+   upright and facing the camera while the ball rolls underneath, and so
+   the face can never be whited out by the scene lights (an unlit
+   material shows the face colours exactly). faceTexture draws ONLY the
+   big front face (the one that was at 128,108, scale 6) on a transparent
+   canvas, same UV layout as the ball texture, so it lands in the same
+   place on the sphere. The ball texture keeps only the body + back. */
+function faceTexture(kind){
+  if(faceTextures[kind]) return faceTextures[kind];
+  var c = document.createElement("canvas"); c.width = 512; c.height = 256;
+  var g = c.getContext("2d");
+  if(kind === "pollito"){
+    /* comb: three red scallops across the top of the face */
+    g.fillStyle = "#ef4444";
+    g.beginPath(); g.ellipse(96, 42, 20, 24, 0, 0, 6.29); g.fill();
+    g.beginPath(); g.ellipse(128, 32, 22, 28, 0, 0, 6.29); g.fill();
+    g.beginPath(); g.ellipse(160, 42, 20, 24, 0, 0, 6.29); g.fill();
+    skinEyes(g, 128, 98, 17, 20);
+    /* beak: big orange diamond */
+    g.fillStyle = "#f97316";
+    g.beginPath(); g.moveTo(128, 124); g.lineTo(160, 142); g.lineTo(128, 164); g.lineTo(96, 142); g.closePath(); g.fill();
+  } else if(kind === "cow"){
+    /* horns: curved cream horns sweeping out from the sides of the head */
+    g.fillStyle = "#fef3c7";
+    g.beginPath(); g.moveTo(64, 70); g.quadraticCurveTo(28, 40, 20, 8); g.quadraticCurveTo(52, 22, 78, 48); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(192, 70); g.quadraticCurveTo(228, 40, 236, 8); g.quadraticCurveTo(204, 22, 178, 48); g.closePath(); g.fill();
+    /* shaggy fringe: long dark-brown hair hanging over the forehead */
+    g.fillStyle = "#78350f";
+    for(var i=0;i<9;i++){
+      var fx = 62 + i*16;
+      g.beginPath(); g.moveTo(fx, 30); g.lineTo(fx+16, 30); g.lineTo(fx+8, 78 + (i%2)*10); g.closePath(); g.fill();
+    }
+    /* face: dark eyes below the fringe + big tan muzzle with nostrils */
+    skinEyes(g, 128, 104, 15, 18);
+    g.fillStyle = "#d4a373";
+    g.beginPath(); g.ellipse(128, 158, 40, 24, 0, 0, 6.29); g.fill();
+    g.fillStyle = "#3f2d20";
+    g.beginPath(); g.ellipse(112, 158, 6, 9, 0, 0, 6.29); g.fill();
+    g.beginPath(); g.ellipse(144, 158, 6, 9, 0, 0, 6.29); g.fill();
+  } else if(kind === "snowman"){
+    skinEyes(g, 128, 96, 19, 22);
+    g.fillStyle = "#f97316";
+    g.beginPath(); g.moveTo(128, 122); g.lineTo(206, 140); g.lineTo(128, 160); g.closePath(); g.fill();
+    g.fillStyle = "#0f172a";
+    for(var i=0;i<5;i++){
+      g.beginPath(); g.ellipse(88 + i*20, 182 - Math.abs(i-2)*6, 8, 8, 0, 0, 6.29); g.fill();
+    }
+  } else if(kind === "turtle"){
+    /* turtle face inside the centre scute */
+    g.fillStyle = "#14532d";
+    g.beginPath(); g.ellipse(112, 96, 8, 10, 0, 0, 6.29); g.fill();
+    g.beginPath(); g.ellipse(144, 96, 8, 10, 0, 0, 6.29); g.fill();
+    g.strokeStyle = "#14532d"; g.lineWidth = 5;
+    g.beginPath(); g.arc(128, 112, 16, 0.25*Math.PI, 0.75*Math.PI); g.stroke();
+  } else if(kind === "panda"){
+    drawPandaFace(g, 128, 108, 6);
+  } else if(kind === "fox"){
+    drawFoxFace(g, 128, 108, 6);
+  } else if(kind === "frog"){
+    drawFrogFace(g, 128, 108, 6);
+  } else if(kind === "alien"){
+    drawAlienFace(g, 128, 108, 6);
+  } else { /* skull */
+    g.fillStyle = "#1f2937";
+    g.beginPath(); g.ellipse(88, 104, 34, 42, 0, 0, 6.29); g.fill();
+    g.beginPath(); g.ellipse(168, 104, 34, 42, 0, 0, 6.29); g.fill();
+    g.beginPath(); g.moveTo(128, 156); g.lineTo(148, 188); g.lineTo(108, 188); g.closePath(); g.fill();
+    for(var t=0;t<5;t++) g.fillRect(88 + t*20, 208, 7, 30);
+  }
+  var tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = 4;
+  faceTextures[kind] = tex;
+  return tex;
+}
 var SKINS = [
-  {id:"pollito", label:"Pollito", tex:"pollito", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xfacc15},
-  {id:"panda", label:"Panda", tex:"panda", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xe2e8f0},
-  {id:"fox", label:"Fox", tex:"fox", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xfb923c},
-  {id:"frog", label:"Frog", tex:"frog", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0x4ade80},
-  {id:"alien", label:"Alien", tex:"alien", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0x86efac},
-  {id:"cow", label:"Cow", tex:"cow", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xd97706},
-  {id:"snowman", label:"Snowman", tex:"snowman", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xe0f2fe},
-  {id:"turtle", label:"Turtle", tex:"turtle", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0x86efac},
-  {id:"skull", label:"Sugar skull", tex:"skull", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.35, light:0xfbcfe8}
+  {id:"pollito", label:"Pollito", tex:"pollito", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.2, light:0xfacc15},
+  {id:"panda", label:"Panda", tex:"panda", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.2, light:0xe2e8f0},
+  {id:"fox", label:"Fox", tex:"fox", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.2, light:0xfb923c},
+  {id:"frog", label:"Frog", tex:"frog", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.2, light:0x4ade80},
+  {id:"alien", label:"Alien", tex:"alien", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.2, light:0x86efac},
+  {id:"cow", label:"Cow", tex:"cow", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.2, light:0xd97706},
+  {id:"snowman", label:"Snowman", tex:"snowman", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.2, light:0xe0f2fe},
+  {id:"turtle", label:"Turtle", tex:"turtle", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.2, light:0x86efac},
+  {id:"skull", label:"Sugar skull", tex:"skull", color:0xffffff, emissive:0xffffff, emissiveIntensity:0.2, light:0xfbcfe8}
 ];
 function applySkin(id){
   var s = null;
@@ -1257,6 +1304,13 @@ function applySkin(id){
   ballMat.emissive.set(s.emissive);
   ballMat.emissiveIntensity = s.emissiveIntensity;
   ballMat.needsUpdate = true;
+  /* Round 84: the face layer gets this skin's face-only texture. The face
+     layer is unlit (MeshBasicMaterial), so the face shows its true colours
+     and can never be whited out by the scene lights. */
+  if(typeof faceMat !== "undefined" && faceMat){
+    faceMat.map = faceTexture(s.tex);
+    faceMat.needsUpdate = true;
+  }
   ballLight.color.set(s.light);
   try{ localStorage.setItem(SKIN_KEY, skinName); }catch(e){}
 }
@@ -1265,6 +1319,19 @@ var ballMat = new THREE.MeshStandardMaterial({color:0xff7a1a, emissive:0xff5e00,
 var ballMesh = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 24, 18), ballMat);
 ballMesh.position.set(0, BALL_R, 0);
 scene.add(ballMesh);
+/* Round 84 (Brant): the face layer — a sphere a hair larger than the ball
+   (BALL_R + 0.02, so it sits just outside the ball and never z-fights),
+   with the skin's face-only texture on an UNLIT transparent material.
+   Unlit means the face shows its true colours and can never be whited out
+   by the ball light or the scene lights (the Nov 22 photo: the Alien's
+   face was a pale washed-out white). It never rotates, so the face stays
+   upright and facing the camera while the ball rolls underneath; it
+   follows the ball's position (and hop/fall) every frame, and it still
+   tumbles with the ball while falling (crash) so the tumble reads. */
+var faceMat = new THREE.MeshBasicMaterial({map:faceTexture("pollito"), transparent:true});
+var faceMesh = new THREE.Mesh(new THREE.SphereGeometry(BALL_R + 0.02, 24, 18), faceMat);
+faceMesh.position.set(0, BALL_R, 0);
+scene.add(faceMesh);
 
 /* Shared materials (reused by every segment — keeps it fast). Round 27:
    the shared flat geometries (floorGeo / edgeGeo / gapEdgeGeo /
@@ -3092,20 +3159,23 @@ function frame(){
   var bankNow = bankAt(dist);
   ballY = BALL_R + trackY(dist) - ballX * Math.sin(bankNow);   // round 72: was "var ballY" — the var is module-level now (see the ballX declaration)
   ballMesh.position.set(ballX, ballY + ballHopY - fallDrop, ballZ);
-  /* Round 83 (Brant): the face stays upright and facing the camera while
-     the ball rolls. The face is baked into the skin texture (front face at
-     U=0.25, the +Z side toward the camera), so any spin around X tumbles
-     it away — the old slowed roll (rounds 5–6, SPIN_FACTOR/SPIN_MAX) still
-     turned the face over at full speed. Now the ball holds rotation.x = 0
-     while playing (face upright, facing the camera) and the forward motion
-     + track convey the speed. Theoretically it is rolling backwards — but
-     the face is always visible, which is what matters. It still tumbles
-     while falling (crash). */
-  if(state === "playing") ballMesh.rotation.x = 0;
+  /* Round 84 (Brant): the ball rolls again (slowed spin, SPIN_FACTOR /
+     SPIN_MAX) and the face layer stays upright. The ball's visible roll
+     follows its forward speed, slowed so the body art stays readable;
+     the face layer never spins while playing (face upright, facing the
+     camera) but tumbles with the ball while falling (crash). The face
+     layer follows the ball's position (and hop/fall) and blinks with it
+     while invincible. */
+  var spinRate = Math.min(curSpeed()*SPIN_FACTOR/BALL_R, SPIN_MAX);
+  ballMesh.rotation.x -= spinRate*dt * (state === "playing" ? 1 : 0);
   if(state === "falling") ballMesh.rotation.x -= 8*dt;   // tumble while falling
   ballMesh.rotation.z = -ballVX*0.03 - bankNow*0.5;   // lean: steer + bank tilt
   ballMesh.visible = !(state === "playing" && isInvincible() && Math.floor(t*10) % 2 === 0);
-  ballLight.position.set(ballX, ballY + ballHopY - fallDrop + 1.7, ballZ + 1);
+  faceMesh.position.set(ballX, ballY + ballHopY - fallDrop, ballZ);
+  faceMesh.rotation.x = (state === "falling") ? ballMesh.rotation.x : 0;
+  faceMesh.rotation.z = 0;   // face stays upright — it does not lean with the bank
+  faceMesh.visible = ballMesh.visible;
+  ballLight.position.set(ballX, ballY + ballHopY - fallDrop + 2.4, ballZ + 1);   // round 84: was +1.7 above the ball — the light was so close it blasted the face white. +2.4 moves it further off the face while it still lights the track around the ball.
   /* Word tiles bob gently. */
   segments.forEach(function(seg){
     if(seg.tileMesh && !seg.tileTaken){
