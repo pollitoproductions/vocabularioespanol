@@ -1209,27 +1209,67 @@ function skinTexture(kind){
       drawAlienFace(g, 128, 108, 6);
       drawAlienFace(g, 384, 108, 4);
     });
-  } else { /* skull — sugar skull: cream with two BIG dark eye sockets, nose, teeth, festive dots */
+  } else { /* skull — sugar skull, redrawn to match the game card (Brant Nov 22):
+      marigold flower rings around the eyes (pink left, orange right),
+      an inverted-heart nose, and a grinning mouth with white teeth. */
     tex = makeSkinTexture(function(g,W,H){
       g.fillStyle = "#fef3c7"; g.fillRect(0, 0, W, H);
+      /* Festive background dots (drawn first; the face covers the middle). */
       var rng = mulberry32(41);
-      var cols = ["#ec4899","#22d3ee","#facc15","#a78bfa"];
-      for(var i=0;i<24;i++){
-        g.fillStyle = cols[i % 4];
-        g.beginPath(); g.ellipse(rng()*512, rng()*256, 10, 10, 0, 0, 6.29); g.fill();
+      var cols = ["#ec4899","#f97316","#22d3ee","#a78bfa","#facc15"];
+      for(var i=0;i<16;i++){
+        g.fillStyle = cols[i % 5];
+        g.beginPath(); g.ellipse(rng()*512, rng()*256, 8, 8, 0, 0, 6.29); g.fill();
       }
+      /* Flower ring around an eye: petals radiate from the socket. */
+      function flowerRing(cx, cy, petal, dark, n) {
+        for(var p=0;p<n;p++){
+          var a = p*Math.PI*2/n - Math.PI/2;
+          var px = cx + Math.cos(a)*44;
+          var py = cy + Math.sin(a)*44;
+          g.fillStyle = dark;
+          g.beginPath(); g.arc(px, py, 15, 0, 6.29); g.fill();
+          g.fillStyle = petal;
+          g.beginPath(); g.arc(px, py, 12, 0, 6.29); g.fill();
+        }
+      }
+      /* Eyes: pink marigold left, orange marigold right (like the card). */
+      flowerRing(88, 104, "#ec4899", "#9d174d", 12);
+      flowerRing(168, 104, "#f97316", "#7c2d12", 12);
       g.fillStyle = "#1f2937";
-      g.beginPath(); g.ellipse(88, 104, 34, 42, 0, 0, 6.29); g.fill();
-      g.beginPath(); g.ellipse(168, 104, 34, 42, 0, 0, 6.29); g.fill();
-      g.beginPath(); g.moveTo(128, 156); g.lineTo(148, 188); g.lineTo(108, 188); g.closePath(); g.fill();
-      for(var t=0;t<5;t++) g.fillRect(88 + t*20, 208, 7, 30);
-      /* back: a festive flower */
-      g.fillStyle = "#ec4899";
-      for(var p=0;p<6;p++){
-        var a = p*Math.PI/3;
+      g.beginPath(); g.ellipse(88, 104, 30, 38, 0, 0, 6.29); g.fill();
+      g.beginPath(); g.ellipse(168, 104, 30, 38, 0, 0, 6.29); g.fill();
+      /* Nose: inverted heart — two lobes on top, point at the bottom. */
+      g.beginPath(); g.ellipse(117, 158, 11, 11, 0, 0, 6.29); g.fill();
+      g.beginPath(); g.ellipse(139, 158, 11, 11, 0, 0, 6.29); g.fill();
+      g.beginPath(); g.moveTo(106, 160); g.lineTo(150, 160); g.lineTo(128, 192); g.closePath(); g.fill();
+      /* Grin: dark mouth, white teeth clipped to it. */
+      g.beginPath(); g.ellipse(128, 222, 46, 17, 0, 0, 6.29); g.fill();
+      g.save();
+      g.beginPath(); g.ellipse(128, 222, 46, 17, 0, 0, 6.29); g.clip();
+      g.fillStyle = "#ffffff";
+      for(var t=0;t<5;t++) g.fillRect(90 + t*16, 206, 11, 32);
+      g.restore();
+      /* Forehead flower + cheek flowers. */
+      function miniFlower(cx, cy, petal, centre) {
+        g.fillStyle = petal;
+        for(var p=0;p<6;p++){
+          var a = p*Math.PI/3;
+          g.beginPath(); g.ellipse(cx + 12*Math.cos(a), cy + 12*Math.sin(a), 7, 7, 0, 0, 6.29); g.fill();
+        }
+        g.fillStyle = centre;
+        g.beginPath(); g.ellipse(cx, cy, 6, 6, 0, 0, 6.29); g.fill();
+      }
+      miniFlower(128, 48, "#22d3ee", "#facc15");
+      miniFlower(58, 168, "#a78bfa", "#facc15");
+      miniFlower(198, 168, "#ec4899", "#facc15");
+      /* back: a marigold, orange petals, dark centre */
+      g.fillStyle = "#f97316";
+      for(var p=0;p<10;p++){
+        var a = p*Math.PI/5;
         g.beginPath(); g.ellipse(384 + 26*Math.cos(a), 110 + 26*Math.sin(a), 12, 12, 0, 0, 6.29); g.fill();
       }
-      g.fillStyle = "#facc15";
+      g.fillStyle = "#1f2937";
       g.beginPath(); g.ellipse(384, 110, 12, 12, 0, 0, 6.29); g.fill();
     });
   }
