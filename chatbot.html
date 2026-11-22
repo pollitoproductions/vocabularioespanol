@@ -440,6 +440,12 @@ async function send() {
   const text = textEl.value.trim();
   if (!text) return;
   textEl.value = "";
+  // Brant (Nov 21): after sending, the mic must start fresh. Clear the base
+  // text and stop listening, so the next listen doesn't add on to the last
+  // thing said — and a late recognition result can't put the sent text back
+  // in the (now empty) box.
+  micBase = "";
+  if (listening) { try { recog.stop(); } catch (e) {} stopListen(); }
   addMsg(text, "user");
   history.push({ role: "user", text });
 
