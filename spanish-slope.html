@@ -866,6 +866,7 @@ var freePasses = 0;  // banked free revives: one per correctly-spoken collected 
                      // each one skips the quiz on the next crash (round 6)
 var ballX = 0, ballVX = 0, ballZ = 0, ballY = BALL_R, invincibleUntil = 0;   // round 72: ballY is module-level now — round 71 used it in placeRainXY (module scope) but it was only a frame-local var, so the whole script died at load with "ballY is not defined" and the Start button did nothing on both live sites
 var ballHopY = 0, ballHopV = 0, nextHopAt = 0;   // hop state (height above track)
+var rampLaunched = false;   // round 88 (Brant): true while the ball is airborne from a launch-ramp boost (set when the ramp fires, cleared on landing) — a ramp launch is FORCED, not a choice, so the ball still collects word tiles it flies over; a voluntary hop over a tile still skips it (round 21)
 var fallDrop = 0, fallV = 0, fallT = 0, fallSpeed = 0;   // fall animation (gap or side); fallSpeed = forward speed at the moment of the fall (round 30)
 var fallCause = "gap";                    // which fall is playing: "gap" | "side"
 const FALL_TIME = 0.9;                    // round 8: the fall lasts a touch longer
@@ -1332,22 +1333,45 @@ var edgeMatL = new THREE.MeshBasicMaterial({color:0x22d3ee});   /* cyan, left */
 var edgeMatR = new THREE.MeshBasicMaterial({color:0xec4899});   /* hot pink, right */
 var crossGeo = new THREE.BoxGeometry(TRACK_W, 0.06, 0.14);
 var crossMat = new THREE.MeshBasicMaterial({color:0x7c3aed});
-/* Round 8: launch-ramp pad — a yellow/orange pad with chevrons, like the
-   Dash jump pad. Rolling over it AUTOMATICALLY launches the ball (a
-   vertical boost, no tap needed). The pad spans the full track width,
-   so the ball can never miss it and roll into the wide gap / platform
-   face beyond. Shared geometry/material (the chevron texture is drawn
-   once). */
+/* Round 8: launch-ramp pad — rolling over it AUTOMATICALLY launches the
+   ball (a vertical boost, no tap needed). The pad spans the full track
+   width, so the ball can never miss it and roll into the wide gap /
+   platform face beyond. Round 88 (Brant): the ramps looked much less
+   like the rest of the game — a flat solid amber slab in a neon grid
+   world. Now the ramp is the same neon-grid treatment as the blocks:
+   a dark base with glowing amber grid lines and glowing chevrons, the
+   texture used as both the diffuse map AND the emissive map so the
+   lines and chevrons glow. It still reads amber (a launch pad), but
+   it reads as part of the same neon world as the track and blocks. */
 function makeRampTexture(){
   var c = document.createElement("canvas"); c.width = 256; c.height = 128;
   var g = c.getContext("2d");
-  g.fillStyle = "#f59e0b"; g.fillRect(0, 0, 256, 128);   /* amber pad */
-  g.fillStyle = "#fde68a";
-  for(var i=0;i<3;i++){   /* three chevrons pointing forward (up the track) */
+  g.fillStyle = "#2a1500"; g.fillRect(0, 0, 256, 128);   /* dark amber base — the neon reads on top, like the blocks' dark red base */
+  /* Neon grid lines (same glow technique as the blocks: a wide amber
+     pass with a shadow glow, then a thin near-white core). */
+  function gridLine(x0, y0, x1, y1){
+    g.strokeStyle = "#f59e0b"; g.lineWidth = 7;
+    g.shadowColor = "#f59e0b"; g.shadowBlur = 16;
+    g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+    g.strokeStyle = "#fef3c7"; g.lineWidth = 2; g.shadowBlur = 0;
+    g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+  }
+  gridLine(0, 0, 256, 0); gridLine(0, 64, 256, 64); gridLine(0, 128, 256, 128);
+  gridLine(0, 0, 0, 128); gridLine(128, 0, 128, 128); gridLine(256, 0, 256, 128);
+  /* Three chevrons pointing forward (up the track), glowing: a wide
+     amber fill with a shadow glow, then a brighter core fill. */
+  for(var i=0;i<3;i++){
     var y = 18 + i*38;
+    g.fillStyle = "#f59e0b";
+    g.shadowColor = "#f59e0b"; g.shadowBlur = 16;
     g.beginPath();
     g.moveTo(28, y+22); g.lineTo(128, y); g.lineTo(228, y+22);
     g.lineTo(228, y+34); g.lineTo(128, y+12); g.lineTo(28, y+34);
+    g.closePath(); g.fill();
+    g.fillStyle = "#fde68a"; g.shadowBlur = 0;
+    g.beginPath();
+    g.moveTo(52, y+22); g.lineTo(128, y+6); g.lineTo(204, y+22);
+    g.lineTo(204, y+28); g.lineTo(128, y+12); g.lineTo(52, y+28);
     g.closePath(); g.fill();
   }
   var tex = new THREE.CanvasTexture(c);
@@ -1360,7 +1384,8 @@ function makeRampTexture(){
    wedge geometry is built in the track-segments section below (after
    RAMP_SLANTS is defined) — one geometry per slant class, the chevron
    texture mapping onto the sloped top, pointing forward. */
-var rampMat = new THREE.MeshStandardMaterial({map:makeRampTexture(), emissive:0xf59e0b, emissiveIntensity:0.7, roughness:0.4});
+var rampTex = makeRampTexture();
+var rampMat = new THREE.MeshStandardMaterial({map:rampTex, emissive:0xf59e0b, emissiveMap:rampTex, emissiveIntensity:2.0, roughness:0.35});   /* round 88 (Brant): neon grid like the blocks — the texture is the diffuse map AND the emissive map, so the amber grid + chevrons glow instead of reading as a flat solid slab */
 var blockGeo = new THREE.BoxGeometry(1, 1, 1);
 /* Round 8: grid-patterned blocks (Brant: "like the grid on the ramp").
    A neon red grid texture in the same style as the track grid — dark
@@ -2761,7 +2786,7 @@ function continueRun(){
   dist = s.dist; score = Math.floor(s.dist); wordsGot = s.wordsGot || 0; rampDist = s.rampDist || 0;
   reviveNum = s.reviveNum || 0; freePasses = s.freePasses || 0;
   ballX = s.ballX || 0; ballVX = s.ballVX || 0; ballZ = -s.dist; invincibleUntil = 0;
-  ballHopY = 0; ballHopV = 0; nextHopAt = 0; fallDrop = 0; fallV = 0; fallT = 0; zBefore = 0;
+  ballHopY = 0; ballHopV = 0; rampLaunched = false; nextHopAt = 0; fallDrop = 0; fallV = 0; fallT = 0; zBefore = 0;
   PAIR_USED = s.pairUsed || {};
   REVIVE_Q = s.reviveQ || {};
   TILE_SPOKEN = {};   // round 45: restore before the replay (second-pass tiles skip these)
@@ -2838,7 +2863,7 @@ function startRun(){
   dist = 0; score = 0; wordsGot = 0; rampDist = 0;
   reviveNum = 0; freePasses = 0;
   ballX = 0; ballVX = 0; ballZ = 0; invincibleUntil = 0;
-  ballHopY = 0; ballHopV = 0; nextHopAt = 0; fallDrop = 0; fallV = 0; fallT = 0; zBefore = 0;
+  ballHopY = 0; ballHopV = 0; rampLaunched = false; nextHopAt = 0; fallDrop = 0; fallV = 0; fallT = 0; zBefore = 0;
   PAIR_USED = {};   // fresh question session each run
   REVIVE_Q = {};    // fresh revive queues (blocks of ten) each run
   tileIdx = 0;
@@ -2919,7 +2944,7 @@ function showMenu(){
   el("menuBest").textContent = best > 0 ? ("Best distance: " + best + " m") : "";
   refreshContinueBtn();
   /* Park the ball at the start so the menu shows the slope behind it. */
-  ballX = 0; ballZ = 0; ballHopY = 0; ballHopV = 0; fallDrop = 0; fallV = 0; fallT = 0;
+  ballX = 0; ballZ = 0; ballHopY = 0; ballHopV = 0; rampLaunched = false; fallDrop = 0; fallV = 0; fallT = 0;
   resetTrack();
 }
 var overCap = false;   // round 36: true when the run ended because all 50 revives were used (set in afterCrash, read once in gameOver)
@@ -3011,7 +3036,7 @@ function respawn(){
   reviveEl.classList.add("hidden");
   ballX = 0; ballVX = 0;    // respawn CENTRED on the track (never at the edge you fell off — else you'd fall off again at once)
   ballZ -= 10;               // roll past the crash site
-  ballHopY = 0; ballHopV = 0; fallDrop = 0; fallV = 0; fallT = 0;
+  ballHopY = 0; ballHopV = 0; rampLaunched = false; fallDrop = 0; fallV = 0; fallT = 0;
   rampDist = 0;              // speed resets to base — the ramp climbs again from here
   invincibleUntil = nowSec() + 2;   // 2 s of flashing invincibility
   state = "playing";
@@ -3085,7 +3110,7 @@ function frame(){
          ball is already below the platform top it ran into the
          platform's face (checkCollisions crashes it); never snap it
          up onto the ledge. */
-      if(prevHopY > groundH && ballHopY <= groundH){ ballHopY = groundH; ballHopV = 0; }
+      if(prevHopY > groundH && ballHopY <= groundH){ ballHopY = groundH; ballHopV = 0; rampLaunched = false; }   // round 88: landed — a ramp launch no longer carries the ball over word tiles
     }
     score = Math.floor(dist);   // score is distance only — no points for words
     ensureSegments();
@@ -3313,10 +3338,14 @@ function checkCollisions(){
      post-revive blink still pauses the run for its Say-it. Round 21:
      hopping OVER a tile SKIPS it — the ball must be on the ground
      (not airborne) to collect, so the player can choose to take the
-     word or jump past it. */
+     word or jump past it. Round 88 (Brant): a launch ramp fires the
+     ball over words a lot of the time — but a ramp launch is FORCED,
+     not a choice, so while rampLaunched is true the ball collects a
+     tile it flies over (it still has to be right over the word). A
+     voluntary hop over a tile still skips it. */
   if(plan.tile && !seg.tileTaken){
     var tileZ = blockZ;
-    if(!airborneAtCross && ballZ <= tileZ + 1.3 && zBefore >= tileZ - 1.3 && Math.abs(xAtCross - plan.tile.x) < 2.0){
+    if((!airborneAtCross || rampLaunched) && ballZ <= tileZ + 1.3 && zBefore >= tileZ - 1.3 && Math.abs(xAtCross - plan.tile.x) < 2.0){
       /* Collect the word: the game pauses and asks the player to SAY it.
          Saying it correctly earns ONE free revive (a "skip the quiz"
          pass for the next crash; passes stack, one per word). No
@@ -3339,7 +3368,7 @@ function checkCollisions(){
   if(plan.ramp > 0){
     var rampZ = -segIdx*SEG_LEN - 3.5;
     if(ballZ <= rampZ && zBefore >= rampZ){
-      if(ballHopV < plan.ramp) ballHopV = plan.ramp;
+      if(ballHopV < plan.ramp){ ballHopV = plan.ramp; rampLaunched = true; }   // round 88: a ramp launch is forced, so the ball collects word tiles it flies over until it lands
     }
   }
   /* Platform face (round 8): if the ball reaches a raised platform
