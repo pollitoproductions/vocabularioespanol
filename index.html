@@ -544,7 +544,7 @@ async function send(){
   // thing said — and a late recognition result can't put the sent text back
   // in the (now empty) box.
   cwMicBase = "";
-  if (cwListening) { try { cwRecog.stop(); } catch (e) {} cwStopListen(); }
+  if (cwListening) { try { cwRecog.onresult = null; cwRecog.abort(); } catch (e) {} cwStopListen(); }
   addMsg(text, "user");
   history.push({ role: "user", text: text });
   var typing = addMsg(learning === "english" ? "Pollito is writing…" : "Pollito está escribiendo…", "bot typing");

@@ -445,7 +445,7 @@ async function send() {
   // thing said — and a late recognition result can't put the sent text back
   // in the (now empty) box.
   micBase = "";
-  if (listening) { try { recog.stop(); } catch (e) {} stopListen(); }
+  if (listening) { try { recog.onresult = null; recog.abort(); } catch (e) {} stopListen(); }
   addMsg(text, "user");
   history.push({ role: "user", text });
 
