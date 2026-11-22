@@ -1755,7 +1755,7 @@ function maxFreeLane(blocks, gap){
   for(var i=0;i<f.length;i++) m = Math.max(m, f[i][1]-f[i][0]);
   return m;
 }
-function planSegment(idx, dist, rng, prevGap){
+function planSegment(idx, dist, rng, prevGap, tileClear){
   var d = Math.min(1, dist/1500);
   var plan = {blocks:[], gap:null, tile:null, bank:bankFor(idx), tunnel:tunnelFor(idx), ramp:0, rampSlant:-1, rampH:0, widegap:false, floorH:0};
   /* Ramp feature (round 8): a ramp segment, a wide gap, or a platform
@@ -1774,8 +1774,19 @@ function planSegment(idx, dist, rng, prevGap){
      player has time to react. (A gap segment in the opening stretch
      was dropping the ball ~half of all runs.) Word tiles are still
      allowed in the safe zone. Tunnel segments are plain too (a tunnel
-     never hides an obstacle, a gap, or a word tile). */
-  if(idx >= 5 && !plan.tunnel){
+     never hides an obstacle, a gap, or a word tile).
+     Round 87 (Brant): the same plain-track rule for the 2 segments
+     after a word tile (tileClear > 0) — collecting a tile pauses the
+     run, and the player resumes into whatever is next; a wall or a pit
+     right after the tile is undodgeable no matter how fast they tap
+     (the resume tap + the hop tap take ~0.3-0.5 s, and at top speed the
+     ball covers 28-46 units in that time), so the free revive just
+     earned is spent at once. With 2 clear segments the next obstacle
+     is >= 50 units past the tile (~0.54 s at top speed, ~0.83 s at 60),
+     room to see it and hop. Ramp features are NOT suppressed (they
+     return early above): a ramp launches the ball over its wide gap
+     automatically, so it is safe after a tile. */
+  if(idx >= 5 && !plan.tunnel && !tileClear){
   var r = rng();
   /* Round 5: obstacle density down 25% (Brant: "I am dying quick") —
      gap and block spawn rates are both multiplied by 0.75. Round 9:
@@ -1840,7 +1851,7 @@ function planSegment(idx, dist, rng, prevGap){
 
 /* ---------- track segments (Three.js) ---------- */
 var segments = new Map();   // idx -> {group, plan, tileMesh, tileTaken}
-var nextSegIdx = 0, prevSegGap = false, runSeed = 1;
+var nextSegIdx = 0, prevSegGap = false, tileClear = 0, runSeed = 1;   // round 87 (Brant): tileClear counts the upcoming segments that must stay clear because a word tile was just placed — a tile pauses the run, and the player resumes into whatever is next; a wall or pit right after the tile is undodgeable (the resume tap + the hop tap take ~0.3-0.5 s, and at top speed the ball covers 28-46 units in that time), so the free revive just earned is spent at once. tileClear = 2 after a tile, decremented per segment; while > 0 the segment is plain (no random gap/blocks).
 
 /* Round 9: the launch-ramp wedge geometry. One triangular prism per slant
    class (the peak height differs); the chevron texture maps onto the
@@ -1895,8 +1906,12 @@ function makeTileTexture(em){   // round 24: the tile shows the EMOJI, not the w
 function buildSegment(idx){
   var dist = idx * SEG_LEN;
   var rng = mulberry32((runSeed*1000003 + idx*7919) >>> 0);
-  var plan = planSegment(idx, dist, rng, prevSegGap);
+  var plan = planSegment(idx, dist, rng, prevSegGap, tileClear);
   prevSegGap = !!plan.gap;
+  /* Round 87 (Brant): a tile buys 2 clear segments after it — the player
+     resumes from the tile pause into plain track, never straight into a
+     wall or a pit they cannot hop over in time. */
+  if(plan.tile) tileClear = 2; else if(tileClear > 0) tileClear--;
   return buildSegmentFromPlan(idx, plan);
 }
 /* ---------- Round 27: smooth-bank track geometry ----------
@@ -2154,7 +2169,7 @@ function ensureSegments(){
 function resetTrack(){
   segments.forEach(function(seg){ disposeSegment(seg); });
   segments.clear();
-  nextSegIdx = 0; prevSegGap = false;
+  nextSegIdx = 0; prevSegGap = false; tileClear = 0;   // round 87: tileClear resets with the run, like prevSegGap
   runSeed = (Math.random()*2147483647)|0;
   TILE_WORDS = buildTileWords(runSeed);   // tile words are seeded by the run (save/continue reproduces them exactly)
   ensureSegments();
@@ -2705,16 +2720,17 @@ function clearSave(){
   try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
 }
 /* Rebuild the track from a save: replay the pure plan chain from segment
-   0 (no meshes — fast even for very long runs) so prevSegGap and tileIdx
-   land exactly where the saved run had them, then build meshes only for
-   the segments near the ball. The replayed plans carry the exact tile
-   words the saved run showed. */
+   0 (no meshes — fast even for very long runs) so prevSegGap, tileClear
+   and tileIdx land exactly where the saved run had them, then build meshes
+   only for the segments near the ball. The replayed plans carry the exact
+   tile words the saved run showed. */
 function rebuildTrackFromSave(s){
   segments.forEach(function(seg){ disposeSegment(seg); });
   segments.clear();
   runSeed = s.seed;
   TILE_WORDS = buildTileWords(runSeed);
   prevSegGap = false;
+  tileClear = 0;   // round 87: replayed alongside prevSegGap so the clear-after-tile rule reproduces exactly
   tileIdx = 0;
   pass2Idx = 0;   // round 45: the replay reproduces it (same as tileIdx)
   var ballSeg = Math.floor(s.dist / SEG_LEN);
@@ -2723,8 +2739,9 @@ function rebuildTrackFromSave(s){
   var plans = {};
   for(var idx = 0; idx < s.nextSegIdx; idx++){
     var rng = mulberry32((runSeed*1000003 + idx*7919) >>> 0);
-    var plan = planSegment(idx, idx*SEG_LEN, rng, prevSegGap);
+    var plan = planSegment(idx, idx*SEG_LEN, rng, prevSegGap, tileClear);
     prevSegGap = !!plan.gap;
+    if(plan.tile) tileClear = 2; else if(tileClear > 0) tileClear--;   // round 87: same clear-after-tile rule as buildSegment
     if(idx >= firstIdx && idx <= lastIdx) plans[idx] = plan;
   }
   /* tileIdx now equals the saved run's (the replay reproduced it). */
