@@ -760,7 +760,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.m
 /* ---------- constants ---------- */
 var TRACK_W = 10;            // track width (x from -5 to +5)
 var SEG_LEN = 20;            // one track segment, in units
-var BALL_R = 0.5;
+var BALL_R = 0.6;   // round 82 (Brant): was 0.5 — the ball is a little bigger now. EDGE_FALL and GAP_HIT below are a full ball-radius, so they move with it (5.5→5.6 and 0.5→0.6).
 /* Round 5: the ball's VISUAL spin is decoupled from its physical roll.
    At full speed the ball spun so fast the skin texture blurred into
    noise and the designs (cow spots, snowman face, turtle shell, sugar
@@ -779,7 +779,7 @@ var MAX_SPEED = 92;          // top forward speed — round 60: Brant asked for 
 var RAMP_DIST = 1420;        // ramp distance: top speed reached after this far — 1420 so 92 still arrives in ~21.3 s, same feel as round 24
                              // (round 7: concave ramp — see curSpeed)
 var BLOCK_HIT = 0.4;         // block half-width inflation for a hit (ball radius, forgiving)
-var GAP_HIT = 0.5;          // gap inset for a fall (round 33: was 0.25 — the ball's centre only 0.25 inside the hole meant half the ball was still over solid floor when it died, which read as a bogus death; now the centre must be a full ball-radius inside, so the ball is visibly over the hole before it falls)
+var GAP_HIT = 0.6;          // gap inset for a fall (round 33: was 0.25 — the ball's centre only 0.25 inside the hole meant half the ball was still over solid floor when it died, which read as a bogus death; now the centre must be a full ball-radius inside, so the ball is visibly over the hole before it falls; round 82: 0.5→0.6 with BALL_R)
 var GAP_EDGE = 1.0;         // round 49 (Brant): far-edge grace for a gap — a ball that lands within 1.0 of the segment's far edge has half of itself already on solid track, so it reads as having made it; only a ball clearly still over the hole (further than 1.0 from the far edge) falls in
 /* Revives are UNLIMITED (Brant, round 6): every crash offers the quiz,
    pass it (4 of 5) and you keep rolling, fail it and the run is over.
@@ -863,7 +863,7 @@ var fallCause = "gap";                    // which fall is playing: "gap" | "sid
 const FALL_TIME = 0.9;                    // round 8: the fall lasts a touch longer
                                           // than the old 0.65 s, so the player
                                           // sees the ball tumble away
-const EDGE_FALL = 5.5;                    // round 33: was 5.3 — the ball's centre only 0.3 past the edge meant a sliver of the ball was still over the track when it died, which read as a bogus death; now the centre must be a full ball-radius (0.5) past the half-width (5.0), so the ball is visibly off the track before it falls
+const EDGE_FALL = 5.6;                    // round 33: was 5.3 — the ball's centre only 0.3 past the edge meant a sliver of the ball was still over the track when it died, which read as a bogus death; now the centre must be a full ball-radius (0.6) past the half-width (5.0), so the ball is visibly off the track before it falls; round 82: 5.5→5.6 with BALL_R
 var zBefore = 0;   // ball z at the start of the frame (swept collision checks)
 var frameDZ = 0;   // round 70: this frame's forward travel (ballZ - zBefore, negative) — the rain rides it so the drops move with the ball instead of rushing at the camera
 var xBefore = 0, hopYBefore = 0;   // round 33: ball x and hop height at the start of the frame — the swept checks interpolate to the crossing instant (see checkCollisions)
@@ -1263,7 +1263,7 @@ function applySkin(id){
   try{ localStorage.setItem(SKIN_KEY, skinName); }catch(e){}
 }
 
-var ballMat = new THREE.MeshStandardMaterial({color:0xff7a1a, emissive:0xff5e00, emissiveIntensity:1.4, roughness:0.25});
+var ballMat = new THREE.MeshStandardMaterial({color:0xff7a1a, emissive:0xff5e00, emissiveIntensity:1.4, roughness:0.6});   // round 82 (Brant): roughness was 0.25 — the ball was so glossy the specular shine washed out the skin colours and they read as not vivid. 0.6 is satin: the shine is soft, the colours show.
 var ballMesh = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 24, 18), ballMat);
 ballMesh.position.set(0, BALL_R, 0);
 scene.add(ballMesh);
