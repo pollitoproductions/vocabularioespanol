@@ -854,7 +854,6 @@ const FALL_TIME = 0.9;                    // round 8: the fall lasts a touch lon
 const EDGE_FALL = 5.5;                    // round 33: was 5.3 — the ball's centre only 0.3 past the edge meant a sliver of the ball was still over the track when it died, which read as a bogus death; now the centre must be a full ball-radius (0.5) past the half-width (5.0), so the ball is visibly off the track before it falls
 var zBefore = 0;   // ball z at the start of the frame (swept collision checks)
 var frameDZ = 0;   // round 70: this frame's forward travel (ballZ - zBefore, negative) — the rain rides it so the drops move with the ball instead of rushing at the camera
-var _projV = new THREE.Vector3();   // round 76: scratch vector for the off-screen respawn check — a falling drop/tet/square is projected to the screen and only respawns once it is below the bottom edge
 var xBefore = 0, hopYBefore = 0;   // round 33: ball x and hop height at the start of the frame — the swept checks interpolate to the crossing instant (see checkCollisions)
 var best = 0;
 try{ best = parseInt(localStorage.getItem("slopeEspanol_best") || "0", 10) || 0; }catch(e){}
@@ -3118,13 +3117,17 @@ function frame(){
     tet.position.z += frameDZ;   // round 75: travel forward WITH the ball (like the rain) — before, the cloud tets sat still in world space, so a tet ahead approached at the ball's speed and rushed AT the camera, then vanished when it recycled. Locked to the ball, a tet's distance from the camera never changes, so its only on-screen motion is straight DOWN.
     tet.userData.h -= tet.userData.fall*dt;   // the fall is the height above the local track shrinking
     tet.position.y = trackY(-tet.position.z) + tet.userData.h;
-    if(tet.userData.h < -2){
-      // round 76: don't respawn at the track — keep falling until the tet
-      // is OFF the bottom of the screen, then respawn at the clouds
-      // (Brant: they disappear right when they reach the slope — make
-      // them go down farther until they are off the screen).
-      _projV.set(tet.position.x, tet.position.y, tet.position.z).project(camera);
-      if(_projV.y < -1.05){ placeTetXY(tet, true); }
+    // round 78: respawn once the tet is OFF the bottom of the screen.
+    // Round 76 used a screen projection (_projV.project(camera)) for this,
+    // but the sky went EMPTY at ~3000 m — the shapes fell and never came
+    // back, so the projection was not triggering live. This is a plain
+    // distance rule instead, no camera involved: a tet at distance d ahead
+    // leaves the bottom of the frame once it is (0.75*d + 10) below the
+    // track (measured against the real portrait camera — a drop at 40 ahead
+    // goes off-screen 32 below the track, at 100 ahead 77 below, at 400
+    // ahead 303 below). It cannot fail: h only ever decreases.
+    if(tet.userData.h < -(0.75 * (-tet.position.z) + 10)){
+      placeTetXY(tet, true);   // off the bottom of the screen — back to the clouds
     }
     if(tet.position.z > ballZ + 30){
       tet.position.z -= 1400;   // safety net: a jump of 1400 lands back in the 50..1400 band
@@ -3161,13 +3164,12 @@ function frame(){
     drop.position.y = trackY(-drop.position.z) + drop.userData.h;
     drop.rotation.x += drop.userData.rx*dt;
     drop.rotation.y += drop.userData.ry*dt;
-    if(drop.userData.h < -2){
-      // round 76: don't respawn at the track — keep falling until the drop
-      // is OFF the bottom of the screen, then respawn at the clouds
-      // (Brant: they disappear right when they reach the slope — make
-      // them go down farther until they are off the screen).
-      _projV.set(drop.position.x, drop.position.y, drop.position.z).project(camera);
-      if(_projV.y < -1.05){ placeRainXY(drop, true); }
+    // round 78: same off-screen rule as the cloud tets — respawn once the
+    // drop is (0.75*d + 10) below the track, where d is its distance ahead.
+    // (Round 76's screen projection did not trigger live, so the sky
+    // emptied out; this plain distance rule cannot fail.)
+    if(drop.userData.h < -(0.75 * (-drop.position.z) + 10)){
+      placeRainXY(drop, true);   // off the bottom of the screen — back to the clouds
     }
     if(drop.position.z > ballZ + 30){
       drop.position.z -= 360;   // round 71: was 1400 — the rain band is 40..400 now (span 360), so a jump of 360 lands back in the band
@@ -3186,11 +3188,12 @@ function frame(){
     sq.position.z += frameDZ;   // travel forward with the ball — the square's distance from the camera never changes, so its only on-screen motion is straight DOWN
     sq.userData.h -= sq.userData.fall*dt;   // the fall is the height above the local track shrinking
     sq.position.y = trackY(-sq.position.z) + sq.userData.h;
-    if(sq.userData.h < -2){
-      // round 76: don't respawn at the track — keep falling until the square
-      // is OFF the bottom of the screen, then respawn at the clouds.
-      _projV.set(sq.position.x, sq.position.y, sq.position.z).project(camera);
-      if(_projV.y < -1.05){ placeMatrixXY(sq, true); }
+    // round 78: same off-screen rule as the rain and the cloud tets —
+    // respawn once the square is (0.75*d + 10) below the track, where d is
+    // its distance ahead. (Round 76's screen projection did not trigger
+    // live, so the sky emptied out; this plain distance rule cannot fail.)
+    if(sq.userData.h < -(0.75 * (-sq.position.z) + 10)){
+      placeMatrixXY(sq, true);   // off the bottom of the screen — back to the clouds
     }
     if(sq.position.z > ballZ + 30){
       sq.position.z -= 360;   // safety net: the matrix band is 40..400 (span 360), so a jump of 360 lands back in the band
