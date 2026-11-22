@@ -761,18 +761,16 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.m
 var TRACK_W = 10;            // track width (x from -5 to +5)
 var SEG_LEN = 20;            // one track segment, in units
 var BALL_R = 0.6;   // round 82 (Brant): was 0.5 — the ball is a little bigger now. EDGE_FALL and GAP_HIT below are a full ball-radius, so they move with it (5.5→5.6 and 0.5→0.6).
-/* Round 5: the ball's VISUAL spin is decoupled from its physical roll.
-   At full speed the ball spun so fast the skin texture blurred into
-   noise and the designs (cow spots, snowman face, turtle shell, sugar
-   skull) were unreadable. The ball still rolls forward fast; only its
-   spin is slowed, to 40% of the physically-accurate rate, so a design
-   stays on screen long enough to read. */
-var SPIN_FACTOR = 0.25;      // ball roll slowed so the skin art stays readable (round 6: was 0.4; round 19: up from 0.15 so the roll reads a bit livelier)
-var SPIN_MAX = 2.5;          // max visible roll, rad/s — at full speed the physical
-                             // roll is ~170 rad/s (a blur); the face must stay
-                             // recognisable, so the ball never tumbles faster
-                             // than a slow roll. Forward motion + track convey
-                             // the speed, not the spin.
+/* Round 83 (Brant): the ball does NOT spin around X while playing — the
+   face is baked into the skin texture, so any roll tumbles it away, and
+   Brant wants the face upright and facing the camera as it rolls.
+   Rounds 5–6 had decoupled the visual spin from the physical roll and
+   slowed it (SPIN_FACTOR/SPIN_MAX, now removed) so the art stayed
+   readable, but even the slowed roll turned the face over at full speed.
+   Now rotation.x is held at 0 while playing (face upright, facing the
+   camera); the forward motion and the track convey the speed, not the
+   spin. Theoretically the ball is rolling backwards — the face staying
+   visible is what matters. It still tumbles while falling (crash). */
 var LAT_SPEED = 30;          // max lateral (steering) speed, units/s — raised for the old top speed 120 (was 24 at 87); kept at 100 (round 9)
 var BASE_SPEED = 31.5;       // starting forward speed — round 5: 25% down from the doubled 42
 var MAX_SPEED = 92;          // top forward speed — round 60: Brant asked for 92 (was 85; the 0.92c nod)
@@ -1263,7 +1261,7 @@ function applySkin(id){
   try{ localStorage.setItem(SKIN_KEY, skinName); }catch(e){}
 }
 
-var ballMat = new THREE.MeshStandardMaterial({color:0xff7a1a, emissive:0xff5e00, emissiveIntensity:1.4, roughness:0.6});   // round 82 (Brant): roughness was 0.25 — the ball was so glossy the specular shine washed out the skin colours and they read as not vivid. 0.6 is satin: the shine is soft, the colours show.
+var ballMat = new THREE.MeshStandardMaterial({color:0xff7a1a, emissive:0xff5e00, emissiveIntensity:1.4, roughness:0.8});   // round 83 (Brant): roughness was 0.25 (round 82 took it to 0.6) — the ball was so glossy the specular shine washed out the skin colours and they read as not vivid, and the light's reflection was a big bright patch. 0.8 is a soft gloss: the big reflection fades away, the colours are vivid, and the ball still reads as polished, not chalky.
 var ballMesh = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 24, 18), ballMat);
 ballMesh.position.set(0, BALL_R, 0);
 scene.add(ballMesh);
@@ -3094,13 +3092,16 @@ function frame(){
   var bankNow = bankAt(dist);
   ballY = BALL_R + trackY(dist) - ballX * Math.sin(bankNow);   // round 72: was "var ballY" — the var is module-level now (see the ballX declaration)
   ballMesh.position.set(ballX, ballY + ballHopY - fallDrop, ballZ);
-  /* The ball's visible roll follows its forward speed, slowed by
-     SPIN_FACTOR and capped at SPIN_MAX rad/s so the skin art stays
-     readable at any speed (round 6) — the face must be recognisable,
-     so the ball never tumbles faster than a slow roll; the forward
-     motion and the track convey the speed, not the spin. */
-  var spinRate = Math.min(curSpeed()*SPIN_FACTOR/BALL_R, SPIN_MAX);
-  ballMesh.rotation.x -= spinRate*dt * (state === "playing" ? 1 : 0);
+  /* Round 83 (Brant): the face stays upright and facing the camera while
+     the ball rolls. The face is baked into the skin texture (front face at
+     U=0.25, the +Z side toward the camera), so any spin around X tumbles
+     it away — the old slowed roll (rounds 5–6, SPIN_FACTOR/SPIN_MAX) still
+     turned the face over at full speed. Now the ball holds rotation.x = 0
+     while playing (face upright, facing the camera) and the forward motion
+     + track convey the speed. Theoretically it is rolling backwards — but
+     the face is always visible, which is what matters. It still tumbles
+     while falling (crash). */
+  if(state === "playing") ballMesh.rotation.x = 0;
   if(state === "falling") ballMesh.rotation.x -= 8*dt;   // tumble while falling
   ballMesh.rotation.z = -ballVX*0.03 - bankNow*0.5;   // lean: steer + bank tilt
   ballMesh.visible = !(state === "playing" && isInvincible() && Math.floor(t*10) % 2 === 0);
