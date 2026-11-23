@@ -126,27 +126,34 @@
   button.ctl .lbl { display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; line-height: 1.2; }
   /* JUMP is the fixed corner anchor: bottom-right corner (right 16,
      bottom 26), visible in every walk state, never moved or hidden by
-     other buttons appearing/disappearing. DEPART (64 px) sits beside
-     it at right 92 — gap 28 px. */
-  #btn-mode { width: 64px; height: 64px; right: calc(92px + env(safe-area-inset-right, 0px)); bottom: calc(26px + env(safe-area-inset-bottom, 0px)); }
-  #btn-jump { right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(26px + env(safe-area-inset-bottom, 0px)); font-size: 17px; }
-  /* Breakout pattern, copied from backrooms-breakout: right-edge columns
-     right 16 / right 91 (48px button + 27px gap), rows bottom 26 / bottom 101
-     (48px + 27px gap). All eight buttons live in this bottom-right zone. */
+     other buttons appearing/disappearing. JUMP, BRAKE and STEER are
+     72 px now (50% bigger than the 48 px base, Brant Nov 22 — thumb
+     buttons on a phone), so the column beside them moved out to
+     right 120 (32 px gap) and the row above moved up to bottom 130.
+     DEPART (64 px) sits beside it at right 120 — same slot as STEER. */
+  #btn-mode { width: 64px; height: 64px; right: calc(120px + env(safe-area-inset-right, 0px)); bottom: calc(26px + env(safe-area-inset-bottom, 0px)); }
+  #btn-jump { width: 72px; height: 72px; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(26px + env(safe-area-inset-bottom, 0px)); font-size: 26px; }
+  #btn-jump .lbl { font-size: 15px; }
+  #btn-brake, #btn-looksteer { width: 72px; height: 72px; font-size: 16px; }
+  /* Breakout pattern, copied from backrooms-breakout: the big three
+     (JUMP/BRAKE/STEER, 72 px) sit in the bottom row at right 16 /
+     right 120 (72 px button + 32 px gap), and the 56 px buttons stack
+     above them at bottom 130 / 205 / 280 (75 px pitch). All eight
+     buttons live in this bottom-right zone. */
   /* MINE is 56 px + cyan accent so it stands out at a glance in range;
      it sits at right 91 / bottom 101 (row top 157), with no overlap
      with LOOK. The right 16–72 slot at bottom 101 is empty since
      CENTER was removed (Oct 31 — camera is fully manual via look). */
-  #btn-mine { width: 56px; height: 56px; right: calc(91px + env(safe-area-inset-right, 0px)); bottom: calc(101px + env(safe-area-inset-bottom, 0px)); border: 2px solid rgba(127, 227, 255, 0.9); background: linear-gradient(160deg, rgba(127, 227, 255, 0.35), rgba(127, 227, 255, 0.12)); box-shadow: 0 0 18px rgba(127, 227, 255, 0.55), 0 6px 18px rgba(0, 0, 0, 0.30); }
-  #btn-looksteer { right: calc(91px + env(safe-area-inset-right, 0px)); bottom: calc(26px + env(safe-area-inset-bottom, 0px)); }
+  #btn-mine { width: 56px; height: 56px; right: calc(120px + env(safe-area-inset-right, 0px)); bottom: calc(130px + env(safe-area-inset-bottom, 0px)); border: 2px solid rgba(127, 227, 255, 0.9); background: linear-gradient(160deg, rgba(127, 227, 255, 0.35), rgba(127, 227, 255, 0.12)); box-shadow: 0 0 18px rgba(127, 227, 255, 0.55), 0 6px 18px rgba(0, 0, 0, 0.30); }
+  #btn-looksteer { right: calc(120px + env(safe-area-inset-right, 0px)); bottom: calc(26px + env(safe-area-inset-bottom, 0px)); }
   #btn-brake { right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(26px + env(safe-area-inset-bottom, 0px)); }
-  /* DEPART sits at right 92 (docked/walk), and JUMP keeps the corner
+  /* DEPART sits at right 120 (docked/walk), and JUMP keeps the corner
      in both states. REVIEW keeps its rung above JUMP
-     (right 16, bottom 176). LEARN sits between them (right 16, bottom
-     101) with MINE's cyan accent so it pops at a glance in range. */
-  #btn-station { width: 56px; height: 56px; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(101px + env(safe-area-inset-bottom, 0px)); border: 2px solid rgba(127, 227, 255, 0.9); background: linear-gradient(160deg, rgba(127, 227, 255, 0.35), rgba(127, 227, 255, 0.12)); box-shadow: 0 0 18px rgba(127, 227, 255, 0.55), 0 6px 18px rgba(0, 0, 0, 0.30); }
-  #btn-terminal { width: 56px; height: 56px; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(176px + env(safe-area-inset-bottom, 0px)); }
-  #btn-deposit { width: 56px; height: 56px; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(251px + env(safe-area-inset-bottom, 0px)); }
+     (right 16, bottom 205). LEARN sits between them (right 16, bottom
+     130) with MINE's cyan accent so it pops at a glance in range. */
+  #btn-station { width: 56px; height: 56px; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(130px + env(safe-area-inset-bottom, 0px)); border: 2px solid rgba(127, 227, 255, 0.9); background: linear-gradient(160deg, rgba(127, 227, 255, 0.35), rgba(127, 227, 255, 0.12)); box-shadow: 0 0 18px rgba(127, 227, 255, 0.55), 0 6px 18px rgba(0, 0, 0, 0.30); }
+  #btn-terminal { width: 56px; height: 56px; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(205px + env(safe-area-inset-bottom, 0px)); }
+  #btn-deposit { width: 56px; height: 56px; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(280px + env(safe-area-inset-bottom, 0px)); }
   /* Mini menu button: small, rounded, cyber-blue synthetic look. */
   #btn-menu {
     position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); right: calc(12px + env(safe-area-inset-right, 0px)); z-index: 9;
