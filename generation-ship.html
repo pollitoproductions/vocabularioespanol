@@ -1470,8 +1470,11 @@ function fitTextTexture(text, colorCss) {
   const g = c.getContext('2d');
   g.fillStyle = 'rgba(6, 10, 16, 0.88)';
   g.fillRect(0, 0, 1024, 256);
+  // Glowing frame in the sign's color.
   g.strokeStyle = colorCss; g.lineWidth = 10;
+  g.shadowColor = colorCss; g.shadowBlur = 18;
   g.strokeRect(16, 16, 992, 224);
+  g.shadowBlur = 0;
   const maxW = 1024 - 2 * 48; // 48px padding inside the frame, each side
   let font = 150;
   g.textAlign = 'center'; g.textBaseline = 'middle';
@@ -1480,8 +1483,21 @@ function fitTextTexture(text, colorCss) {
     font -= 2;
     g.font = 'bold ' + font + 'px monospace';
   }
+  // LED sign treatment (Brant Nov 22): the text glows like a lit sign,
+  // with faint scanlines and a glass sheen over the plate, so the banner
+  // reads as a real LED display, not a flat HTML label.
+  g.shadowColor = colorCss; g.shadowBlur = 26;
   g.fillStyle = colorCss;
   g.fillText(text, 512, 128);
+  g.shadowBlur = 0;
+  g.fillStyle = 'rgba(0,0,0,0.20)';
+  for (let y = 0; y < 256; y += 4) g.fillRect(0, y, 1024, 1);
+  const sheen = g.createLinearGradient(0, 0, 1024, 256);
+  sheen.addColorStop(0, 'rgba(255,255,255,0.08)');
+  sheen.addColorStop(0.4, 'rgba(255,255,255,0.02)');
+  sheen.addColorStop(0.6, 'rgba(255,255,255,0)');
+  g.fillStyle = sheen;
+  g.fillRect(0, 0, 1024, 256);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
@@ -1626,8 +1642,11 @@ function makeKioskScreenTexture(labelText, colorCss) {
     font -= 2;
     g.font = 'bold ' + font + 'px monospace';
   }
+  // Backlit label: a soft white glow so the text looks lit by the screen.
+  g.shadowColor = '#ffffff'; g.shadowBlur = 10;
   g.fillStyle = '#ffffff';
   g.fillText(labelText, 256, 38);
+  g.shadowBlur = 0;
   // Three menu rows: dark card, colored chip, fake text lines, arrow.
   for (let r = 0; r < 3; r++) {
     const y = 96 + r * 88;
@@ -1640,8 +1659,28 @@ function makeKioskScreenTexture(labelText, colorCss) {
     g.fillRect(80, y + 42, 180, 8);
     g.fillStyle = colorCss;
     g.font = 'bold 30px monospace';
+    g.shadowColor = colorCss; g.shadowBlur = 8;
     g.fillText('>', 452, y + 34);
+    g.shadowBlur = 0;
   }
+  // LED screen treatment (Brant Nov 22): scanlines, a faint pixel grid,
+  // a glass sheen and a soft vignette — so the panel reads as a real LED
+  // display behind glass, not a flat HTML page.
+  g.fillStyle = 'rgba(0,0,0,0.22)';
+  for (let y = 0; y < 400; y += 4) g.fillRect(0, y, 512, 1);
+  g.fillStyle = 'rgba(255,255,255,0.05)';
+  for (let y = 2; y < 400; y += 4) for (let x = 2; x < 512; x += 4) g.fillRect(x, y, 1, 1);
+  const sheen = g.createLinearGradient(0, 0, 512, 400);
+  sheen.addColorStop(0, 'rgba(255,255,255,0.09)');
+  sheen.addColorStop(0.35, 'rgba(255,255,255,0.02)');
+  sheen.addColorStop(0.6, 'rgba(255,255,255,0)');
+  g.fillStyle = sheen;
+  g.fillRect(0, 0, 512, 400);
+  const vig = g.createRadialGradient(256, 200, 80, 256, 200, 330);
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(1, 'rgba(0,0,0,0.22)');
+  g.fillStyle = vig;
+  g.fillRect(0, 0, 512, 400);
   // Glowing border in the console's color.
   g.strokeStyle = colorCss; g.lineWidth = 6;
   g.shadowColor = colorCss; g.shadowBlur = 16;
