@@ -2392,8 +2392,16 @@ const cropBeds = [];
 // as an obvious exit, not a hidden gap.
 {
   function ceilMatFor(rx, ry) {
-    const m = new THREE.MeshStandardMaterial({ color: 0x878f99, roughness: 0.9, side: THREE.DoubleSide });
-    applyGameTexture(m, 'https://pollitoproductions.github.io/Vocabulario-Espanol/ceiling-panels.jpg', rx, ry); // Round 30: paneled ceiling (flat dark stays the fallback)
+    // Residential ceiling wears the terminals' dark metal plating
+    // (Brant Nov 22): the brushed-steel panel texture, tinted with the
+    // bezel's dark color so it reads as the dark metal of the terminals.
+    // A fresh texture per segment, like applyGameTexture did — each
+    // segment carries its own repeat.
+    const tex = makeMetalPlatingTexture();
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(rx, ry);
+    const m = new THREE.MeshStandardMaterial({ map: tex, color: 0x3a434e, roughness: 0.4, metalness: 0.8, side: THREE.DoubleSide });
     return m;
   }
   // Arc segments that KEEP the shell (the complement of the stairwell
@@ -2678,8 +2686,14 @@ const cropBeds = [];
 {
   const OSEG = 6;
   const obsSegW = (OBS_A1 - OBS_A0) / OSEG * 140.4 + 0.6;
-  const obsDeckMat = new THREE.MeshStandardMaterial({ color: 0x39424e, roughness: 0.85 });
-  applyGameTexture(obsDeckMat, 'https://pollitoproductions.github.io/Vocabulario-Espanol/deck-floor.jpg', 4, 4);
+  // Observation deck floor wears the terminals' dark metal plating
+  // (Brant Nov 22): the brushed-steel panel texture, tinted with the
+  // bezel's dark color so it reads as the dark metal of the terminals.
+  const obsDeckPlatingTex = makeMetalPlatingTexture();
+  obsDeckPlatingTex.wrapS = THREE.RepeatWrapping;
+  obsDeckPlatingTex.wrapT = THREE.RepeatWrapping;
+  obsDeckPlatingTex.repeat.set(4, 4);
+  const obsDeckMat = new THREE.MeshStandardMaterial({ map: obsDeckPlatingTex, color: 0x3a434e, roughness: 0.4, metalness: 0.8 });
   const obsRailMat = new THREE.MeshStandardMaterial({ color: 0x8a97a5, roughness: 0.5, metalness: 0.5 });
   const obsPillarMat = new THREE.MeshStandardMaterial({ color: 0x4a5560, roughness: 0.8, metalness: 0.3 });
   const obsStepMat = new THREE.MeshStandardMaterial({ color: 0x4a5560, roughness: 0.85 });
