@@ -1849,13 +1849,16 @@ function makeMetalPlatingTexture() {
   return tex;
 }
 const metalPlatingTex = makeMetalPlatingTexture();
-// Kiosk hardware (shared across all consoles): brushed-steel body,
-// bright corner posts, dark bezel, plinth base. One set of materials
-// and geometries, reused by every console.
+// Kiosk hardware (shared across all consoles): every metal part wears
+// the same light metal plating (Brant Nov 22 — the dark version looked
+// terrible, so the posts, bezel and plinth match the body now). One set
+// of materials and geometries, reused by every console. The glowing
+// screen and the cyan top strip stay as they are — those are lights,
+// not metal.
 const kioskBodyMat = new THREE.MeshStandardMaterial({ map: metalPlatingTex, color: 0xffffff, roughness: 0.35, metalness: 0.9 });
-const kioskPostMat = new THREE.MeshStandardMaterial({ color: 0xb8c2d0, roughness: 0.25, metalness: 1.0 });
-const kioskBezelMat = new THREE.MeshStandardMaterial({ color: 0x3a434e, roughness: 0.4, metalness: 0.8 });
-const kioskPlinthMat = new THREE.MeshStandardMaterial({ map: metalPlatingTex, color: 0x9aa4b2, roughness: 0.45, metalness: 0.85 });
+const kioskPostMat = new THREE.MeshStandardMaterial({ map: metalPlatingTex, color: 0xffffff, roughness: 0.35, metalness: 0.9 });
+const kioskBezelMat = new THREE.MeshStandardMaterial({ map: metalPlatingTex, color: 0xffffff, roughness: 0.35, metalness: 0.9 });
+const kioskPlinthMat = new THREE.MeshStandardMaterial({ map: metalPlatingTex, color: 0xffffff, roughness: 0.35, metalness: 0.9 });
 const kioskPlinthGeo = new THREE.BoxGeometry(2.6, 0.3, 1.5);
 const kioskBodyGeo = new THREE.BoxGeometry(2.2, 2.3, 1.1);
 const kioskPostGeo = new THREE.BoxGeometry(0.16, 2.3, 1.14);
@@ -2392,16 +2395,16 @@ const cropBeds = [];
 // as an obvious exit, not a hidden gap.
 {
   function ceilMatFor(rx, ry) {
-    // Residential ceiling wears the terminals' dark metal plating
-    // (Brant Nov 22): the brushed-steel panel texture, tinted with the
-    // bezel's dark color so it reads as the dark metal of the terminals.
-    // A fresh texture per segment, like applyGameTexture did — each
-    // segment carries its own repeat.
+    // Residential ceiling wears the terminals' LIGHT metal plating
+    // (Brant Nov 22 — the dark version looked terrible). Same brushed-
+    // steel panel texture as the kiosk bodies and the end walls, white
+    // so it shows true. A fresh texture per segment, like
+    // applyGameTexture did — each segment carries its own repeat.
     const tex = makeMetalPlatingTexture();
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.RepeatWrapping;
     tex.repeat.set(rx, ry);
-    const m = new THREE.MeshStandardMaterial({ map: tex, color: 0x3a434e, roughness: 0.4, metalness: 0.8, side: THREE.DoubleSide });
+    const m = new THREE.MeshStandardMaterial({ map: tex, color: 0xffffff, roughness: 0.35, metalness: 0.9, side: THREE.DoubleSide });
     return m;
   }
   // Arc segments that KEEP the shell (the complement of the stairwell
@@ -2686,14 +2689,15 @@ const cropBeds = [];
 {
   const OSEG = 6;
   const obsSegW = (OBS_A1 - OBS_A0) / OSEG * 140.4 + 0.6;
-  // Observation deck floor wears the terminals' dark metal plating
-  // (Brant Nov 22): the brushed-steel panel texture, tinted with the
-  // bezel's dark color so it reads as the dark metal of the terminals.
+  // Observation deck floor wears the terminals' LIGHT metal plating
+  // (Brant Nov 22 — the dark version looked terrible). Same brushed-
+  // steel panel texture as the kiosk bodies and the end walls, white
+  // so it shows true.
   const obsDeckPlatingTex = makeMetalPlatingTexture();
   obsDeckPlatingTex.wrapS = THREE.RepeatWrapping;
   obsDeckPlatingTex.wrapT = THREE.RepeatWrapping;
   obsDeckPlatingTex.repeat.set(4, 4);
-  const obsDeckMat = new THREE.MeshStandardMaterial({ map: obsDeckPlatingTex, color: 0x3a434e, roughness: 0.4, metalness: 0.8 });
+  const obsDeckMat = new THREE.MeshStandardMaterial({ map: obsDeckPlatingTex, color: 0xffffff, roughness: 0.35, metalness: 0.9 });
   const obsRailMat = new THREE.MeshStandardMaterial({ color: 0x8a97a5, roughness: 0.5, metalness: 0.5 });
   const obsPillarMat = new THREE.MeshStandardMaterial({ color: 0x4a5560, roughness: 0.8, metalness: 0.3 });
   const obsStepMat = new THREE.MeshStandardMaterial({ color: 0x4a5560, roughness: 0.85 });
