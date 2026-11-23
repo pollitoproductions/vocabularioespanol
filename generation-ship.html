@@ -2396,15 +2396,18 @@ const cropBeds = [];
 {
   function ceilMatFor(rx, ry) {
     // Residential ceiling wears the terminals' LIGHT metal plating
-    // (Brant Nov 22 — the dark version looked terrible). Same brushed-
-    // steel panel texture as the kiosk bodies and the end walls, white
-    // so it shows true. A fresh texture per segment, like
-    // applyGameTexture did — each segment carries its own repeat.
+    // (Brant Nov 22 — the dark version looked terrible, and the first
+    // light pass still read pitch black). Same brushed-steel panel
+    // texture as the kiosk bodies and the end walls, but with LOW
+    // metalness and higher roughness: a horizontal ceiling barely
+    // catches the directional sun, and a high-metalness metal goes
+    // mirror-black there. Low metalness keeps it diffuse so it reads
+    // as light metal like the far wall does.
     const tex = makeMetalPlatingTexture();
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.RepeatWrapping;
     tex.repeat.set(rx, ry);
-    const m = new THREE.MeshStandardMaterial({ map: tex, color: 0xffffff, roughness: 0.35, metalness: 0.9, side: THREE.DoubleSide });
+    const m = new THREE.MeshStandardMaterial({ map: tex, color: 0xffffff, roughness: 0.55, metalness: 0.25, side: THREE.DoubleSide });
     return m;
   }
   // Arc segments that KEEP the shell (the complement of the stairwell
@@ -2690,14 +2693,18 @@ const cropBeds = [];
   const OSEG = 6;
   const obsSegW = (OBS_A1 - OBS_A0) / OSEG * 140.4 + 0.6;
   // Observation deck floor wears the terminals' LIGHT metal plating
-  // (Brant Nov 22 — the dark version looked terrible). Same brushed-
-  // steel panel texture as the kiosk bodies and the end walls, white
-  // so it shows true.
+  // (Brant Nov 22 — the dark version looked terrible, and the first
+  // light pass still read pitch black). Same brushed-steel panel
+  // texture as the kiosk bodies and the end walls, but with LOW
+  // metalness and higher roughness: a horizontal floor barely catches
+  // the directional sun, and a high-metalness metal goes mirror-black
+  // there. Low metalness keeps it diffuse so it reads as light metal
+  // like the far wall does.
   const obsDeckPlatingTex = makeMetalPlatingTexture();
   obsDeckPlatingTex.wrapS = THREE.RepeatWrapping;
   obsDeckPlatingTex.wrapT = THREE.RepeatWrapping;
   obsDeckPlatingTex.repeat.set(4, 4);
-  const obsDeckMat = new THREE.MeshStandardMaterial({ map: obsDeckPlatingTex, color: 0xffffff, roughness: 0.35, metalness: 0.9 });
+  const obsDeckMat = new THREE.MeshStandardMaterial({ map: obsDeckPlatingTex, color: 0xffffff, roughness: 0.55, metalness: 0.25 });
   const obsRailMat = new THREE.MeshStandardMaterial({ color: 0x8a97a5, roughness: 0.5, metalness: 0.5 });
   const obsPillarMat = new THREE.MeshStandardMaterial({ color: 0x4a5560, roughness: 0.8, metalness: 0.3 });
   const obsStepMat = new THREE.MeshStandardMaterial({ color: 0x4a5560, roughness: 0.85 });
