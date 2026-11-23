@@ -1541,8 +1541,12 @@ function makeMountedSign(text, colorCss, w, bothSides) {
   front.position.z = 0.12;
   grp.add(front);
   if (bothSides !== false) {
+    // Back face sits on the OTHER side of the plate (z -0.12, just
+    // outside the plate's back face at -0.11), so it is visible from
+    // behind. (Round 13 put it coincident at +0.12, where the solid
+    // plate occluded it — the banner read as one-sided. Brant Nov 22.)
     const back = new THREE.Mesh(new THREE.PlaneGeometry(w, h), faceMat);
-    back.position.z = 0.12; back.rotation.y = Math.PI;
+    back.position.z = -0.12; back.rotation.y = Math.PI;
     grp.add(back);
   }
   return grp;
@@ -5900,16 +5904,18 @@ function updateWalk(dt) {
   // the sun disc + corona shift with the player's position (ship
   // frame, so the spin does not move them), and the starfield shifts
   // less — differential parallax, so the sun feels like a real view
-  // through the window at a distance, not a painting. The sun is the
-  // most distant layer, so it moves least in absolute terms but most
-  // relative to the frame: it follows the player's lateral position
-  // (up to ~35 m on the screen), while the stars shift only ~11 m.
-  // The frame stays fixed. Only when in the interior (the screen is
-  // hidden from the first level).
+  // through the window at a distance, not a painting. The sun tracks
+  // the player's lateral position closely (factor 0.7, up to ~110 m on
+  // the screen) so the ship's +Z end reads as pointing directly at the
+  // sun instead of below it (Brant Nov 22: it looked like it was
+  // pointing down — at 0.25 the disc sat ~24 deg above the player's
+  // forward horizontal); the stars shift only ~11 m. The frame stays
+  // fixed. Only when in the interior (the screen is hidden from the
+  // first level).
   if (inObsInterior && obsSunDisc && obsSunCorona && obsScreenTex) {
     const px = playerEyeR * Math.cos(playerAngle), py = playerEyeR * Math.sin(playerAngle);
-    obsSunDisc.position.x = px * 0.25; obsSunDisc.position.y = py * 0.25;
-    obsSunCorona.position.x = px * 0.25; obsSunCorona.position.y = py * 0.25;
+    obsSunDisc.position.x = px * 0.7; obsSunDisc.position.y = py * 0.7;
+    obsSunCorona.position.x = px * 0.7; obsSunCorona.position.y = py * 0.7;
     // Starfield shifts the same direction but less (farther layer).
     // Screen faces -Z (rotation.y = PI), so its local +x is world -x:
     // the x texture offset flips sign to match the sun's world shift.
@@ -8884,9 +8890,9 @@ btnTitleResume.addEventListener('pointerdown', function (e) {
 // also lands the descent nearly on the main-street line (1.5)), z 85
 // (top of staircase 1: interior, eye 138.3, past the ramp top at
 // z 80 and clear of the stairwell hole at z 60-80), yaw 0 (facing
-// +z, toward the sun screen at z +318), pitch 0.45 (centers the sun
-// disc; the parallax-shifted disc sits ~24 deg above the axial
-// horizontal from here).
+// +z, toward the sun screen at z +318), pitch 0.18 (centers the sun
+// disc; with the 0.7 parallax the disc sits ~10 deg above the axial
+// horizontal from here, down from ~24 deg at the old 0.25 factor).
 // inObsInterior = true: the player starts IN the interior, so the sun
 // screen is visible on the very first frame. Walking down the stairs
 // (toward -z) descends to the opposite landing and heads through
@@ -8895,7 +8901,7 @@ btnTitleResume.addEventListener('pointerdown', function (e) {
 // (angle 1.5) straight to the fountain plaza town center at
 // (1.55, 180) — the route Brant asked for.
 function placeAtObservationStairs() {
-  playerAngle = 1.52; playerZ = 85; yaw = 0; pitch = 0.45;
+  playerAngle = 1.52; playerZ = 85; yaw = 0; pitch = 0.18;
   inObsInterior = true; interiorDescending = false; interiorExitHold = 0;
   jumpH = 0; jumpV = 0;
 }
