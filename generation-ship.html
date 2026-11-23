@@ -1190,12 +1190,27 @@ let obsSunDisc = null, obsSunCorona = null, obsScreenTex = null, obsSunScreen = 
 }
 
 // Exterior hull + caps (offset slightly outward to avoid coplanar faces).
+// Brant Nov 22: the outside of the ship wears the SAME light metal
+// plating as the observation deck floor and the big agriculture end
+// wall — the procedural brushed-steel panels, white, low metalness so
+// it reads as light metal from every angle (a high-metalness metal
+// goes mirror-black on the shadowed side, like the floor did).
+// The hull gets its own plating instance (repeat 28,7, same panel
+// density as the old hull-panels.jpg); the caps share one (20,20,
+// same as the interior end walls).
+const extHullPlatingTex = makeMetalPlatingTexture();
+extHullPlatingTex.wrapS = THREE.RepeatWrapping;
+extHullPlatingTex.wrapT = THREE.RepeatWrapping;
+extHullPlatingTex.repeat.set(28, 7);
 const hullGeo = new THREE.CylinderGeometry(RADIUS + 1, RADIUS + 1, LENGTH, 64, 1, true);
 hullGeo.rotateX(Math.PI / 2);
-const extHullMat = new THREE.MeshStandardMaterial({ color: 0x878f99, roughness: 0.55, metalness: 0.25, side: THREE.FrontSide });
+const extHullMat = new THREE.MeshStandardMaterial({ map: extHullPlatingTex, color: 0xffffff, roughness: 0.55, metalness: 0.25, side: THREE.FrontSide });
 shipExterior.add(new THREE.Mesh(hullGeo, extHullMat));
-applyGameTexture(extHullMat, 'https://pollitoproductions.github.io/Vocabulario-Espanol/hull-panels.jpg', 28, 7);
-const capOutMat = new THREE.MeshStandardMaterial({ color: 0x7d858f, roughness: 0.55, metalness: 0.25 });
+const capOutPlatingTex = makeMetalPlatingTexture();
+capOutPlatingTex.wrapS = THREE.RepeatWrapping;
+capOutPlatingTex.wrapT = THREE.RepeatWrapping;
+capOutPlatingTex.repeat.set(20, 20);
+const capOutMat = new THREE.MeshStandardMaterial({ map: capOutPlatingTex, color: 0xffffff, roughness: 0.55, metalness: 0.25 });
 for (const s of [1, -1]) {
   if (s > 0) {
     // +Z cap: a ring with the same round window as the interior cap
