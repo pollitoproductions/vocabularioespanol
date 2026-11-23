@@ -47,8 +47,18 @@
     -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
     padding: 10px 14px; border-radius: 18px;
     max-width: min(92vw, 440px, calc(100vw - 84px));
+    /* Brant Nov 23: the quest box dropped past the bottom of the
+       screen (worst in landscape, where the screen is short) and
+       could not be scrolled to. It now caps at the viewport height
+       and scrolls inside itself, with pan-y so touch scrolling works
+       despite the page's touch-action: none (same pattern as the
+       ship-status menu panel). pointer-events auto so the scroll
+       gesture lands on the box instead of passing to the canvas. */
+    max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    touch-action: pan-y; -webkit-overflow-scrolling: touch;
     font-size: clamp(12px, 2.6vw, 15px); line-height: 1.5;
-    pointer-events: none;
+    pointer-events: auto;
     display: none;
   }
   #questTitle { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 800; letter-spacing: 0.10em; color: #7fe3ff; font-size: clamp(12px, 2.6vw, 14px); margin-bottom: 2px; }
@@ -348,10 +358,24 @@
     background: rgba(2, 10, 20, 0.85); padding: 20px;
   }
   #titleCard {
-    width: min(560px, 94vw); max-height: 88vh; overflow-y: auto;
+    width: min(560px, 94vw); max-height: calc(100dvh - 40px); overflow-y: auto;
+    /* Brant Nov 23: in landscape the opening menu did not fit and
+       could not be scrolled. It now uses the dynamic viewport height
+       (minus the panel padding) and pan-y so touch scrolling works
+       despite the page's touch-action: none (same pattern as the
+       ship-status menu panel). */
+    touch-action: pan-y; -webkit-overflow-scrolling: touch;
     background: rgba(8, 24, 44, 0.96); color: #eaf2ff;
     border: 1px solid rgba(89, 214, 255, 0.65); border-radius: 20px; padding: 26px;
     text-align: center; font-family: monospace;
+  }
+  /* Landscape is short: tighten the opening card so more of it fits
+     without scrolling (smaller padding, tighter story, smaller buttons). */
+  @media (orientation: landscape) {
+    #titleCard { padding: 14px 18px; }
+    #titleStory { margin-top: 8px; font-size: 14px; line-height: 1.5; }
+    #titleCard button.ctl2 { padding: 10px 16px; font-size: 15px; margin: 4px; }
+    #titleCopy { margin-top: 10px; }
   }
   #titleCard h1 { margin: 0; font-size: clamp(24px, 6vw, 34px); letter-spacing: 0.12em; color: #7fe3ff; }
   #titleStory { margin-top: 16px; font-size: 16px; line-height: 1.7; color: #d7e3f4; text-align: left; }
