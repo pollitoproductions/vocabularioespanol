@@ -1050,13 +1050,22 @@ for (const [zC, mat] of [[-LENGTH / 4, agriHullMat], [LENGTH / 4, chromeHullMat]
 // ringMat stays: the exterior hull collars (below) still use it.
 const ringMat = new THREE.MeshStandardMaterial({ color: 0x2e343b, roughness: 0.6, metalness: 0.3 });
 
-// Interior end caps (seen from inside). The -Z (aft) cap stays paneled.
-// The +Z (forward) cap is GONE (Round 32): that end wall is replaced by
-// the giant observation screen below — the end of the ship that faces
-// the sun. The exterior +Z cap (capOutMat) stays, so the ship still
-// reads correctly from outside.
-const capInMat = new THREE.MeshStandardMaterial({ color: 0x878f99, roughness: 0.9, metalness: 0.2, side: THREE.DoubleSide });
-applyGameTexture(capInMat, 'https://pollitoproductions.github.io/Vocabulario-Espanol/hull-panels.jpg', 16, 16); // paneled end caps
+// Interior end caps (seen from inside). The -Z (aft) cap and the +Z
+// (forward) cap share this material. The +Z (forward) cap is GONE
+// (Round 32): that end wall is replaced by the giant observation
+// screen below — the end of the ship that faces the sun. The exterior
+// +Z cap (capOutMat) stays, so the ship still reads correctly from
+// outside.
+// The big end walls wear the same light metal plating as the terminals
+// (Brant Nov 22, from a photo: the biggest empty wall was plain gray).
+// A separate texture instance from the kiosks' — a shared texture can't
+// carry a different repeat. Tiled 20x20 so each panel reads ~8 m wide
+// on the 320 m wall.
+const capPlatingTex = makeMetalPlatingTexture();
+capPlatingTex.wrapS = THREE.RepeatWrapping;
+capPlatingTex.wrapT = THREE.RepeatWrapping;
+capPlatingTex.repeat.set(20, 20);
+const capInMat = new THREE.MeshStandardMaterial({ map: capPlatingTex, color: 0xffffff, roughness: 0.35, metalness: 0.9, side: THREE.DoubleSide });
 {
   const cap = new THREE.Mesh(new THREE.CircleGeometry(RADIUS, 48), capInMat);
   cap.position.z = -LENGTH / 2;
