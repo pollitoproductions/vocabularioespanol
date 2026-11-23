@@ -1504,7 +1504,7 @@ function fitTextTexture(text, colorCss) {
 }
 // ---------- Scrolling ticker signs (Brant Nov 22) ----------
 // The mounted signs are Times Square-style tickers now, not stationary
-// labels: the text scrolls left to right across the sign, continuously.
+// labels: the text scrolls right to left across the sign, continuously.
 // Two layers per face, so the frame stays put while only the text moves:
 // a static background (dark plate + glowing frame + scanlines + sheen,
 // shared per color) and a transparent text plane just in front of it.
@@ -1512,11 +1512,11 @@ function fitTextTexture(text, colorCss) {
 // canvas evenly), so animating texture.offset.x scrolls it forever with
 // no jump. Front and back faces get SEPARATE textures (one offset each)
 // but the same offset sense: the flipped back plane maps local +U to
-// the back viewer's right, so the same decreasing offset reads left
-// to right from either side.
+// the back viewer's right, so the same increasing offset reads right
+// to left from either side.
 // Revert: restore generation-ship.html.bak-ticker (pre-ticker state).
 const tickerSigns = []; // { tex, dir } — advanced in animate()
-const TICKER_SPEED = 0.06; // texture-widths per second (~17 s per pass)
+const TICKER_SPEED = 0.09; // texture-widths per second (~11 s per pass)
 const signBgTexCache = {};
 function makeSignBackgroundTexture(colorCss) {
   if (signBgTexCache[colorCss]) return signBgTexCache[colorCss];
@@ -1613,7 +1613,7 @@ function makeMountedSign(text, colorCss, w, bothSides) {
     new THREE.MeshBasicMaterial({ map: tickTexF, transparent: true, depthWrite: false }));
   tickFront.position.z = 0.13; tickFront.renderOrder = 1;
   grp.add(tickFront);
-  tickerSigns.push({ tex: tickTexF, dir: -1 }); // offset down = content moves left to right
+  tickerSigns.push({ tex: tickTexF, dir: 1 }); // offset up = content moves right to left
   if (bothSides !== false) {
     // Back face sits on the OTHER side of the plate (z -0.12, just
     // outside the plate's back face at -0.11), so it is visible from
@@ -1627,7 +1627,7 @@ function makeMountedSign(text, colorCss, w, bothSides) {
       new THREE.MeshBasicMaterial({ map: tickTexB, transparent: true, depthWrite: false }));
     tickBack.position.z = -0.13; tickBack.rotation.y = Math.PI; tickBack.renderOrder = 1;
     grp.add(tickBack);
-    tickerSigns.push({ tex: tickTexB, dir: -1 }); // same offset sense as the front: the flipped plane maps local +U to the back viewer's right, so the text also reads left to right from behind
+    tickerSigns.push({ tex: tickTexB, dir: 1 }); // same offset sense as the front: the flipped plane maps local +U to the back viewer's right, so the text also reads right to left from behind
   }
   return grp;
 }
@@ -8556,9 +8556,8 @@ function animate() {
     // rate (OMEGA, 1.37 RPM). Parallax (position) is untouched, and it
     // freezes with the ship spin when a prompt is open (same block).
     if (obsSunDisc) obsSunDisc.rotation.z = cylAngle;
-    // Ticker signs: scroll the text left to right (offset.x down moves
-    // the content right on the front face; the back face uses the
-    // opposite sign). Freezes with the world when a prompt is open.
+    // Ticker signs: scroll the text right to left (offset.x up moves
+    // the content left). Freezes with the world when a prompt is open.
     for (let i = 0; i < tickerSigns.length; i++) {
       const t = tickerSigns[i];
       t.tex.offset.x += t.dir * TICKER_SPEED * dt;
