@@ -1544,7 +1544,7 @@ function makeSignBackgroundTexture(colorCss) {
 }
 function makeTickerTextTexture(text, colorCss) {
   const c = document.createElement('canvas');
-  c.width = 1024; c.height = 256;
+  c.width = 1024; c.height = 224; // inner-area aspect (~4.57:1), matches the clipped text plane below
   const g = c.getContext('2d');
   // Size the text big (fit to ~760 px) with a clear gap between repeats.
   let font = 140;
@@ -1562,7 +1562,7 @@ function makeTickerTextTexture(text, colorCss) {
   const unit = 1024 / n;
   g.shadowColor = colorCss; g.shadowBlur = 40;
   g.fillStyle = colorCss;
-  for (let i = 0; i < n; i++) g.fillText(text, (i + 0.5) * unit, 128);
+  for (let i = 0; i < n; i++) g.fillText(text, (i + 0.5) * unit, 112);
   g.shadowBlur = 0;
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -1608,8 +1608,13 @@ function makeMountedSign(text, colorCss, w, bothSides) {
   bgFront.position.z = 0.12;
   grp.add(bgFront);
   // Scrolling ticker text, a transparent plane just in front of the bg.
+  // The plane is clipped to just INSIDE the frame (0.95w x 0.83h, aspect
+  // matching the 1024x224 ticker canvas), so the letters appear and
+  // disappear AT the border instead of scrolling past it and vanishing
+  // at the plate's outer edge (Brant Nov 22, from a photo: the border
+  // sat inside where the letters appeared/disappeared).
   const tickTexF = makeTickerTextTexture(text, colorCss);
-  const tickFront = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+  const tickFront = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.95, h * 0.83),
     new THREE.MeshBasicMaterial({ map: tickTexF, transparent: true, depthWrite: false }));
   tickFront.position.z = 0.13; tickFront.renderOrder = 1;
   grp.add(tickFront);
@@ -1623,7 +1628,7 @@ function makeMountedSign(text, colorCss, w, bothSides) {
     bgBack.position.z = -0.12; bgBack.rotation.y = Math.PI;
     grp.add(bgBack);
     const tickTexB = makeTickerTextTexture(text, colorCss);
-    const tickBack = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+    const tickBack = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.95, h * 0.83),
       new THREE.MeshBasicMaterial({ map: tickTexB, transparent: true, depthWrite: false }));
     tickBack.position.z = -0.13; tickBack.rotation.y = Math.PI; tickBack.renderOrder = 1;
     grp.add(tickBack);
