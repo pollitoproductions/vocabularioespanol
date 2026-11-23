@@ -1502,6 +1502,73 @@ function fitTextTexture(text, colorCss) {
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
+// ---------- Scrolling ticker signs (Brant Nov 22) ----------
+// The mounted signs are Times Square-style tickers now, not stationary
+// labels: the text scrolls left to right across the sign, continuously.
+// Two layers per face, so the frame stays put while only the text moves:
+// a static background (dark plate + glowing frame + scanlines + sheen,
+// shared per color) and a transparent text plane just in front of it.
+// The text texture tiles seamlessly (the repeat unit divides the 1024
+// canvas evenly), so animating texture.offset.x scrolls it forever with
+// no jump. Front and back faces get SEPARATE textures (one offset each)
+// but the same offset sense: the flipped back plane maps local +U to
+// the back viewer's right, so the same decreasing offset reads left
+// to right from either side.
+// Revert: restore generation-ship.html.bak-ticker (pre-ticker state).
+const tickerSigns = []; // { tex, dir } — advanced in animate()
+const TICKER_SPEED = 0.06; // texture-widths per second (~17 s per pass)
+const signBgTexCache = {};
+function makeSignBackgroundTexture(colorCss) {
+  if (signBgTexCache[colorCss]) return signBgTexCache[colorCss];
+  const c = document.createElement('canvas');
+  c.width = 1024; c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = 'rgba(6, 10, 16, 0.88)';
+  g.fillRect(0, 0, 1024, 256);
+  g.strokeStyle = colorCss; g.lineWidth = 10;
+  g.shadowColor = colorCss; g.shadowBlur = 30;
+  g.strokeRect(16, 16, 992, 224);
+  g.shadowBlur = 0;
+  g.fillStyle = 'rgba(0,0,0,0.32)';
+  for (let y = 0; y < 256; y += 6) g.fillRect(0, y, 1024, 2);
+  const sheen = g.createLinearGradient(0, 0, 1024, 256);
+  sheen.addColorStop(0, 'rgba(255,255,255,0.08)');
+  sheen.addColorStop(0.4, 'rgba(255,255,255,0.02)');
+  sheen.addColorStop(0.6, 'rgba(255,255,255,0)');
+  g.fillStyle = sheen;
+  g.fillRect(0, 0, 1024, 256);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  signBgTexCache[colorCss] = tex;
+  return tex;
+}
+function makeTickerTextTexture(text, colorCss) {
+  const c = document.createElement('canvas');
+  c.width = 1024; c.height = 256;
+  const g = c.getContext('2d');
+  // Size the text big (fit to ~760 px) with a clear gap between repeats.
+  let font = 140;
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = 'bold ' + font + 'px monospace';
+  while (g.measureText(text).width > 760 && font > 20) {
+    font -= 2;
+    g.font = 'bold ' + font + 'px monospace';
+  }
+  const w = g.measureText(text).width;
+  // Repeat unit = text + gap; snap the unit so it divides 1024 evenly,
+  // which is what makes the wrap seamless under RepeatWrapping.
+  const gap = Math.max(120, w * 0.35);
+  const n = Math.max(1, Math.round(1024 / (w + gap)));
+  const unit = 1024 / n;
+  g.shadowColor = colorCss; g.shadowBlur = 40;
+  g.fillStyle = colorCss;
+  for (let i = 0; i < n; i++) g.fillText(text, (i + 0.5) * unit, 128);
+  g.shadowBlur = 0;
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = THREE.RepeatWrapping;
+  return tex;
+}
 function makeTextSprite(text, colorCss, scaleX, scaleY) {
   const tex = fitTextTexture(text, colorCss);
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
@@ -1531,23 +1598,36 @@ function makeTextSprite(text, colorCss, scaleX, scaleY) {
 // inside a portrait phone frame at normal walking distance.
 function makeMountedSign(text, colorCss, w, bothSides) {
   const h = w / 4;
-  const tex = fitTextTexture(text, colorCss);
   const grp = new THREE.Group();
   const plate = new THREE.Mesh(new THREE.BoxGeometry(w + 0.3, h + 0.3, 0.22),
     new THREE.MeshStandardMaterial({ color: 0x0a0f14, roughness: 0.9 }));
   grp.add(plate);
-  const faceMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true });
-  const front = new THREE.Mesh(new THREE.PlaneGeometry(w, h), faceMat);
-  front.position.z = 0.12;
-  grp.add(front);
+  // Static background face (frame + scanlines + sheen, no text).
+  const bgMat = new THREE.MeshBasicMaterial({ map: makeSignBackgroundTexture(colorCss), transparent: true });
+  const bgFront = new THREE.Mesh(new THREE.PlaneGeometry(w, h), bgMat);
+  bgFront.position.z = 0.12;
+  grp.add(bgFront);
+  // Scrolling ticker text, a transparent plane just in front of the bg.
+  const tickTexF = makeTickerTextTexture(text, colorCss);
+  const tickFront = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+    new THREE.MeshBasicMaterial({ map: tickTexF, transparent: true, depthWrite: false }));
+  tickFront.position.z = 0.13; tickFront.renderOrder = 1;
+  grp.add(tickFront);
+  tickerSigns.push({ tex: tickTexF, dir: -1 }); // offset down = content moves left to right
   if (bothSides !== false) {
     // Back face sits on the OTHER side of the plate (z -0.12, just
     // outside the plate's back face at -0.11), so it is visible from
     // behind. (Round 13 put it coincident at +0.12, where the solid
     // plate occluded it — the banner read as one-sided. Brant Nov 22.)
-    const back = new THREE.Mesh(new THREE.PlaneGeometry(w, h), faceMat);
-    back.position.z = -0.12; back.rotation.y = Math.PI;
-    grp.add(back);
+    const bgBack = new THREE.Mesh(new THREE.PlaneGeometry(w, h), bgMat);
+    bgBack.position.z = -0.12; bgBack.rotation.y = Math.PI;
+    grp.add(bgBack);
+    const tickTexB = makeTickerTextTexture(text, colorCss);
+    const tickBack = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+      new THREE.MeshBasicMaterial({ map: tickTexB, transparent: true, depthWrite: false }));
+    tickBack.position.z = -0.13; tickBack.rotation.y = Math.PI; tickBack.renderOrder = 1;
+    grp.add(tickBack);
+    tickerSigns.push({ tex: tickTexB, dir: -1 }); // same offset sense as the front: the flipped plane maps local +U to the back viewer's right, so the text also reads left to right from behind
   }
   return grp;
 }
@@ -8476,6 +8556,13 @@ function animate() {
     // rate (OMEGA, 1.37 RPM). Parallax (position) is untouched, and it
     // freezes with the ship spin when a prompt is open (same block).
     if (obsSunDisc) obsSunDisc.rotation.z = cylAngle;
+    // Ticker signs: scroll the text left to right (offset.x down moves
+    // the content right on the front face; the back face uses the
+    // opposite sign). Freezes with the world when a prompt is open.
+    for (let i = 0; i < tickerSigns.length; i++) {
+      const t = tickerSigns[i];
+      t.tex.offset.x += t.dir * TICKER_SPEED * dt;
+    }
     // Round 39: the starfield backdrop turns with the sun, same rate
     // and sense (inertially fixed, so the rotating player sees sun +
     // stars move together). The screen faces -Z like the disc, so the
