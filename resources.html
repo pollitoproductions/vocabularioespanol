@@ -37,6 +37,120 @@ ul.links li{padding:11px 0;border-bottom:1px solid #dddddd}
 ul.links li:last-child{border-bottom:0}
 ul.links span{display:block;font-size:.88rem;color:#333333}
 @media(max-width:520px){ul.words{columns:1}.keyboard-controls{grid-template-columns:1fr}}</style>
+<!-- Pollito dark-theme toggle: styles + apply saved theme early (no flash) -->
+<style id="pp-theme-css">
+/* Pollito Productions — dark theme overrides.
+   Activated by <html class="pp-dark">; toggled by #pp-theme-toggle and
+   persisted in localStorage under key "pp-theme". Light theme is the
+   default. This stylesheet only changes colors, never layout.
+   Orange accent (#f97316) becomes Pollito yellow (#facc15).
+   Quiz feedback colors are kept meaningful (green/red) in dark-readable form. */
+
+/* Toggle button — visible in BOTH modes, so NOT scoped to .pp-dark. */
+#pp-theme-toggle{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:10000;background:#facc15;color:#000;border:2px solid #000;border-radius:999px;padding:10px 16px;font:700 .95rem 'Segoe UI',system-ui,-apple-system,sans-serif;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.35)}
+#pp-theme-toggle:hover,#pp-theme-toggle:focus-visible{background:#eab308;outline:3px solid #fff;outline-offset:2px}
+@media (max-width:520px){#pp-theme-toggle{padding:9px 13px;font-size:.9rem}}
+
+/* ---- page base ---- */
+html.pp-dark{color-scheme:dark;background:#000!important}
+html.pp-dark body{background:#000!important;color:#fff!important}
+html.pp-dark main,html.pp-dark article,html.pp-dark section{background:#000!important;color:#fff!important}
+html.pp-dark ::selection{background:#facc15!important;color:#000!important}
+html.pp-dark :focus-visible{outline-color:#facc15!important}
+html.pp-dark h1,html.pp-dark .welcome h1{color:#fff!important}
+html.pp-dark h2{color:#facc15!important}
+html.pp-dark .game h2,html.pp-dark .tool h2{color:#fff!important}
+html.pp-dark h3,html.pp-dark .box-body h3,html.pp-dark .box-body h3 a{color:#fff!important}
+html.pp-dark p,html.pp-dark .lead{color:#e5e5e5!important}
+html.pp-dark i{color:#fff!important}
+html.pp-dark a{color:#facc15!important}
+html.pp-dark input,html.pp-dark select,html.pp-dark textarea{background:#111!important;color:#fff!important;border-color:#444!important}
+html.pp-dark input::placeholder,html.pp-dark textarea::placeholder{color:#999!important}
+
+/* ---- muted / secondary text ---- */
+html.pp-dark .key-row,html.pp-dark .stat,html.pp-dark .trans,html.pp-dark .feedback,html.pp-dark .opt label,html.pp-dark .card .hint,html.pp-dark .tool .count,html.pp-dark .tool .privacy,html.pp-dark .tool .qbox span,html.pp-dark .tool .fcard span,html.pp-dark .qarea span,html.pp-dark #cogtool #cogcount,html.pp-dark #cogtool .cog-hint,html.pp-dark #cogtool .cog-privacy,html.pp-dark #vcount,html.pp-dark .vpriv,html.pp-dark .adlabel,html.pp-dark ul.links span,html.pp-dark .box-body p,html.pp-dark .reveal{color:#e5e5e5!important}
+html.pp-dark .hint,html.pp-dark .qctx,html.pp-dark .tool .qbox .qctx,html.pp-dark .lang,html.pp-dark #chatWidget .cwFoot,html.pp-dark #chatWidget .cwRow{color:#d4d4d4!important}
+html.pp-dark .qarea b,html.pp-dark .tool .qbox b,html.pp-dark .tool .fcard b,html.pp-dark .reveal b,html.pp-dark ul.words b,html.pp-dark #cogtool ul.cog-list b.es,html.pp-dark #cogtool .cog-target,html.pp-dark .vsay,html.pp-dark .card .big,html.pp-dark .tool label.chk,html.pp-dark .qarea .subj{color:#fff!important}
+html.pp-dark ul.words li,html.pp-dark .known-row,html.pp-dark ul.links li,html.pp-dark .opt-row+.opt-row,html.pp-dark .reveal,html.pp-dark #sideMenu details{border-color:#444!important}
+
+/* ---- cards, boxes, notes, tags ---- */
+html.pp-dark .card,html.pp-dark .tool,html.pp-dark #cogtool,html.pp-dark .game,html.pp-dark .box,html.pp-dark .contact{background:#111!important;border-color:#444!important;box-shadow:0 6px 18px rgba(255,255,255,.06)!important}
+html.pp-dark .box .accent,html.pp-dark .bar i{background:#facc15!important}
+html.pp-dark .bar{background:#333!important}
+html.pp-dark .game img{background:#000!important}
+html.pp-dark .note,html.pp-dark .result{background:#111!important;border-left-color:#facc15!important}
+html.pp-dark .tag{background:#333!important;color:#fff!important}
+html.pp-dark .tag.warn{background:#facc15!important;color:#000!important}
+html.pp-dark .key{background:#111!important;border-color:#444!important;color:#fff!important}
+html.pp-dark .letters a{background:#111!important;border-color:#444!important;color:#fff!important}
+html.pp-dark .hearbox,html.pp-dark .qarea,html.pp-dark .tool .qbox,html.pp-dark .tool .fcard,html.pp-dark #cogtool .cog-card{border-color:#fff!important}
+html.pp-dark .tool .qbox,html.pp-dark .tool .fcard,html.pp-dark #cogtool .cog-card{background:#111!important}
+html.pp-dark .tool .listening{outline-color:#facc15!important}
+html.pp-dark .box.game-card:hover,html.pp-dark .box.tool-card:hover{box-shadow:0 6px 18px rgba(255,255,255,.12)!important}
+html.pp-dark .box.game-card .game-link:focus-visible,html.pp-dark .box.tool-card .tool-link:focus-visible{outline-color:#facc15!important}
+html.pp-dark .box-body h3 a:hover,html.pp-dark .box-body h3 a:focus-visible{text-decoration-color:#facc15!important}
+html.pp-dark .contact a{color:#facc15!important}
+
+/* ---- primary buttons: orange -> yellow ---- */
+html.pp-dark a.back,html.pp-dark a.btn,html.pp-dark .btn,html.pp-dark .box-btn,html.pp-dark .act button,html.pp-dark .tool button.btn,html.pp-dark #menuBtn,html.pp-dark .chatBtn,html.pp-dark #send,html.pp-dark #chatWidget #cwSend,html.pp-dark .langbtn.on,html.pp-dark .tabs button[aria-selected="true"],html.pp-dark .dirbtn.on,html.pp-dark .tool .catbar button.on,html.pp-dark #cogtool button.cog-btn.on,html.pp-dark .cwRow button.active,html.pp-dark .cwModes button.active,html.pp-dark .modes button.active,html.pp-dark .topics button.active,html.pp-dark .lang button.active{background:#facc15!important;color:#000!important;border-color:#facc15!important}
+html.pp-dark a.back{box-shadow:0 2px 0 #555!important}
+html.pp-dark a.btn,html.pp-dark .btn,html.pp-dark .act button,html.pp-dark .tool button.btn{box-shadow:0 3px 0 #555!important}
+html.pp-dark a.btn:hover,html.pp-dark a.btn:focus-visible,html.pp-dark .btn:hover,html.pp-dark .btn:focus-visible,html.pp-dark .tool button.btn:hover,html.pp-dark .tool button.btn:focus-visible,html.pp-dark .chatBtn:hover,html.pp-dark .chatBtn:focus-visible,html.pp-dark #send:hover,html.pp-dark #chatWidget #cwSend:hover{background:#eab308!important;color:#000!important}
+
+/* ---- secondary / outline buttons: dark card, light border ---- */
+html.pp-dark a.btn.alt,html.pp-dark .btn.alt,html.pp-dark .box-btn.alt,html.pp-dark .act button.alt,html.pp-dark .tool button.btn.alt,html.pp-dark .langbtn,html.pp-dark .tabs button,html.pp-dark .dirbtn,html.pp-dark .tool .catbar button,html.pp-dark #cogtool button.cog-btn{background:#111!important;color:#fff!important;border-color:#fff!important}
+html.pp-dark .choices button,html.pp-dark .opt,html.pp-dark .vbtn{background:#111!important;color:#fff!important;border-color:#555!important}
+html.pp-dark .accents button,html.pp-dark #chatWidget .cwAccents button,html.pp-dark .modes button,html.pp-dark .topics button,html.pp-dark .lang button,html.pp-dark #chatWidget .cwRow button{background:#111!important;color:#facc15!important;border-color:#facc15!important}
+html.pp-dark .accents button:hover,html.pp-dark #chatWidget .cwAccents button:hover{background:#222!important}
+html.pp-dark .accents button:active,html.pp-dark #chatWidget .cwAccents button:active{background:#facc15!important;color:#000!important}
+html.pp-dark .choices button:hover:not(:disabled),html.pp-dark .opt:hover{border-color:#facc15!important}
+html.pp-dark .opt:hover,html.pp-dark .vbtn:hover{background:#222!important}
+html.pp-dark #cogtool input#cogsearch,html.pp-dark #vsearch,html.pp-dark .opt select{background:#111!important;color:#fff!important;border-color:#444!important}
+
+/* ---- quiz feedback: keep the meaning, dark-readable ---- */
+html.pp-dark .choices button.good,html.pp-dark .opt.correct{background:#14532d!important;border-color:#4ade80!important;color:#bbf7d0!important}
+html.pp-dark .choices button.bad,html.pp-dark .opt.wrong{background:#7f1d1d!important;border-color:#f87171!important;color:#fecaca!important}
+html.pp-dark .feedback.ok{color:#4ade80!important}
+html.pp-dark .feedback.bad{color:#fbbf24!important}
+html.pp-dark .tool .qbox span.not{color:#fbbf24!important}
+html.pp-dark #cogtool button.cog-hear.listening,html.pp-dark .vbtn.listening{color:#f87171!important}
+
+/* ---- chat (page + widget) ---- */
+html.pp-dark #chat{background:#111!important;border-color:#444!important}
+html.pp-dark .msg.bot,html.pp-dark #chatWidget .cwMsg.bot{background:#1f1f1f!important;color:#fde68a!important}
+html.pp-dark .msg.sys,html.pp-dark #chatWidget .cwMsg.sys{background:#1f2937!important;color:#fcd34d!important}
+html.pp-dark .msg.user,html.pp-dark #chatWidget .cwMsg.user{background:#facc15!important;color:#000!important}
+html.pp-dark .msgAvatar img,html.pp-dark #chatWidget .cwMsgAvatar img{background:#111!important;border-color:#facc15!important}
+html.pp-dark .msgFlag:hover,html.pp-dark .msgHear:hover,html.pp-dark #chatWidget .cwMsgFlag:hover,html.pp-dark #chatWidget .cwMsgHear:hover{color:#facc15!important}
+html.pp-dark #chatWidget{background:#111!important;border-color:#facc15!important}
+html.pp-dark #chatWidget #cwChat{background:#000!important;border-color:#444!important}
+html.pp-dark #chatWidget .cwHead{background:#facc15!important;color:#000!important}
+html.pp-dark #chatWidget .cwHead button{color:#000!important}
+html.pp-dark #chatWidget .cwInput,html.pp-dark .inputrow{background:#111!important;border-color:#facc15!important}
+html.pp-dark #chatWidget .cwInput:focus-within,html.pp-dark .inputrow:focus-within{border-color:#eab308!important}
+html.pp-dark .inBoxBtn,html.pp-dark #chatWidget .cwInBoxBtn{color:#facc15!important}
+html.pp-dark .inBoxBtn:hover,html.pp-dark #chatWidget .cwInBoxBtn:hover{color:#eab308!important}
+html.pp-dark header{background:#facc15!important;color:#000!important}
+html.pp-dark header a{color:#000!important}
+
+/* ---- landing: top bar, side menu, footer ---- */
+html.pp-dark .topbar{background:#000!important;color:#fff!important}
+html.pp-dark #sideMenu{background:#000!important;color:#fff!important}
+html.pp-dark #sideMenu summary::before{color:#facc15!important}
+html.pp-dark #sideMenu li a{color:#fff!important}
+html.pp-dark #sideMenu li a:hover,html.pp-dark #sideMenu li a:focus-visible{color:#facc15!important}
+html.pp-dark #menuClose{background:#facc15!important;color:#000!important}
+html.pp-dark .menu-title{color:#fff!important}
+html.pp-dark #menuBackdrop{background:rgba(0,0,0,.7)!important}
+html.pp-dark .section-label{color:#fff!important;border-bottom-color:#facc15!important}
+html.pp-dark .intro-more{color:#facc15!important}
+html.pp-dark footer{background:#000!important;color:#fff!important;border-top-color:#444!important}
+html.pp-dark footer a{color:#facc15!important}
+html.pp-dark footer a:hover,html.pp-dark footer a:focus-visible{color:#facc15!important}
+html.pp-dark footer p{color:#d4d4d4!important}
+
+</style>
+<script>try{if(localStorage.getItem('pp-theme')==='dark'){document.documentElement.classList.add('pp-dark');}}catch(e){}</script>
 </head>
 <body>
 <main>
@@ -90,4 +204,7 @@ ul.links span{display:block;font-size:.88rem;color:#333333}
 <p>Questions or ideas for a packet? Email <a href="mailto:pollitoproductions@gmail.com">pollitoproductions@gmail.com</a>.</p>
 
 <footer><a href="index.html">Game</a><a href="guides.html">Guides</a><a href="play.html">Play</a><a href="practice.html">Practice</a><a href="resources.html">Resources</a><a href="about.html">About</a><a href="vocabulary.html">Vocabulary</a><a href="privacy.html">Privacy Policy</a><p>Copyright © All Rights Reserved — Brant Fuller 2026</p></footer>
-</main></body></html>
+</main><!-- Pollito dark-theme toggle button -->
+<button id="pp-theme-toggle" type="button" aria-label="Switch between dark and light theme">🌙 Dark mode</button>
+<script>(function(){var b=document.getElementById('pp-theme-toggle');if(!b){return;}function lbl(){b.textContent=document.documentElement.classList.contains('pp-dark')?'☀️ Light mode':'🌙 Dark mode';}lbl();b.addEventListener('click',function(){var d=document.documentElement.classList.toggle('pp-dark');try{localStorage.setItem('pp-theme',d?'dark':'light');}catch(e){}lbl();});})();</script>
+</body></html>
