@@ -37,11 +37,14 @@ ul.links li{padding:11px 0;border-bottom:1px solid #dddddd}
 ul.links li:last-child{border-bottom:0}
 ul.links span{display:block;font-size:.88rem;color:#333333}
 @media(max-width:520px){ul.words{columns:1}.keyboard-controls{grid-template-columns:1fr}}
-.games-wrap{display:flex;gap:28px;align-items:flex-start}
-.pollito-side{flex:0 0 220px;position:sticky;top:24px}
+.games-wrap{display:flex;gap:24px;align-items:flex-start}
+.pollito-side{flex:0 0 200px;position:sticky;top:24px}
 .pollito-side img{width:100%;height:auto;display:block;border-radius:18px}
 .games-col{flex:1;min-width:0}
 @media (max-width:899px){
+.pollito-side{flex-basis:170px}
+}
+@media (max-width:639px){
 .games-wrap{flex-direction:column}
 .pollito-side{position:static;flex:none;width:180px;margin:0 auto}
 }
