@@ -48,16 +48,25 @@ footer a{margin-right:12px;display:inline-block;color:#fff}footer a:hover,footer
 </style><!-- Pollito dark-theme toggle: styles + apply saved theme early (no flash) -->
 <style id="pp-theme-css">
 /* Pollito Productions — dark theme overrides.
-   Activated by <html class="pp-dark">; toggled by #pp-theme-toggle and
-   persisted in localStorage under key "pp-theme". Light theme is the
-   default. This stylesheet only changes colors, never layout.
+   Activated by <html class="pp-dark">; toggled by the .pp-theme-toggle
+   buttons (side menu + footer) and persisted in localStorage under key
+   "pp-theme". Light theme is the default. This stylesheet only changes
+   colors, never layout.
    Orange accent (#f97316) becomes Pollito yellow (#facc15).
    Quiz feedback colors are kept meaningful (green/red) in dark-readable form. */
 
-/* Toggle button — visible in BOTH modes, so NOT scoped to .pp-dark. */
-#pp-theme-toggle{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:10000;background:#facc15;color:#000;border:2px solid #000;border-radius:999px;padding:10px 16px;font:700 .95rem 'Segoe UI',system-ui,-apple-system,sans-serif;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.35)}
-#pp-theme-toggle:hover,#pp-theme-toggle:focus-visible{background:#eab308;outline:3px solid #fff;outline-offset:2px}
-@media (max-width:520px){#pp-theme-toggle{padding:9px 13px;font-size:.9rem}}
+/* Toggle buttons — visible in BOTH modes, so NOT scoped to .pp-dark.
+   No fixed positioning: one lives at the bottom of the side menu (landing
+   pages only — it is the only page with a menu), one in the footer, and a
+   plain inline one on the few pages that have neither. */
+.pp-theme-toggle{cursor:pointer;font:700 .95rem 'Segoe UI',system-ui,-apple-system,sans-serif;border-radius:999px}
+.pp-theme-toggle.menu{display:block;width:100%;text-align:center;margin:14px 0 4px;padding:11px 12px;background:#f97316;color:#fff;border:2px solid #f97316}
+.pp-theme-toggle.menu:hover,.pp-theme-toggle.menu:focus-visible{background:#ea580c;outline:3px solid #facc15;outline-offset:2px}
+.pp-theme-toggle.foot{display:inline-block;padding:6px 12px;background:transparent;border:1px solid currentColor;color:inherit}
+.pp-theme-toggle.foot:hover,.pp-theme-toggle.foot:focus-visible{border-color:#facc15;color:#facc15}
+.pp-theme-toggle.inline{display:inline-block;margin:16px 0;padding:9px 14px;background:transparent;border:2px solid currentColor;color:inherit}
+html.pp-dark .pp-theme-toggle.menu{background:#facc15!important;color:#000!important;border-color:#facc15!important}
+html.pp-dark .pp-theme-toggle.menu:hover,html.pp-dark .pp-theme-toggle.menu:focus-visible{background:#eab308!important}
 
 /* ---- page base ---- */
 html.pp-dark{color-scheme:dark;background:#000!important}
@@ -101,6 +110,10 @@ html.pp-dark .contact a{color:#facc15!important}
 
 /* ---- primary buttons: orange -> yellow ---- */
 html.pp-dark a.back,html.pp-dark a.btn,html.pp-dark .btn,html.pp-dark .box-btn,html.pp-dark .act button,html.pp-dark .tool button.btn,html.pp-dark #menuBtn,html.pp-dark .chatBtn,html.pp-dark #send,html.pp-dark #chatWidget #cwSend,html.pp-dark .langbtn.on,html.pp-dark .tabs button[aria-selected="true"],html.pp-dark .dirbtn.on,html.pp-dark .tool .catbar button.on,html.pp-dark #cogtool button.cog-btn.on,html.pp-dark .cwRow button.active,html.pp-dark .cwModes button.active,html.pp-dark .modes button.active,html.pp-dark .topics button.active,html.pp-dark .lang button.active{background:#facc15!important;color:#000!important;border-color:#facc15!important}
+/* "More articles" button carries an inline orange background (#f97316),
+   so it needs its own !important override in dark mode. */
+html.pp-dark .more-btn{background:#facc15!important;color:#000!important}
+html.pp-dark .more-btn:hover,html.pp-dark .more-btn:focus-visible{background:#eab308!important}
 html.pp-dark a.back{box-shadow:0 2px 0 #555!important}
 html.pp-dark a.btn,html.pp-dark .btn,html.pp-dark .act button,html.pp-dark .tool button.btn{box-shadow:0 3px 0 #555!important}
 html.pp-dark a.btn:hover,html.pp-dark a.btn:focus-visible,html.pp-dark .btn:hover,html.pp-dark .btn:focus-visible,html.pp-dark .tool button.btn:hover,html.pp-dark .tool button.btn:focus-visible,html.pp-dark .chatBtn:hover,html.pp-dark .chatBtn:focus-visible,html.pp-dark #send:hover,html.pp-dark #chatWidget #cwSend:hover{background:#eab308!important;color:#000!important}
@@ -297,8 +310,8 @@ shuffleDeck();show();
 
 
 <div class="ad"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7858482153655813" data-ad-slot="2555609557" data-ad-format="auto" data-full-width-responsive="true"></ins><script>(adsbygoogle = window.adsbygoogle || []).push({});</script></div>
-<footer><a href="/">Home</a><a href="game.html">Game</a><a href="guides.html">Guides</a><a href="play.html">Play</a><a href="practice.html">Practice</a><a href="resources.html">Teacher Resources</a><a href="about.html">About</a><a href="vocabulary.html">Vocabulary</a><a href="privacy.html">Privacy Policy</a><p>Copyright © All Rights Reserved — Brant Fuller 2026</p></footer>
-</main><!-- Pollito dark-theme toggle button -->
-<button id="pp-theme-toggle" type="button" aria-label="Switch between dark and light theme">🌙 Dark mode</button>
-<script>(function(){var b=document.getElementById('pp-theme-toggle');if(!b){return;}function lbl(){b.textContent=document.documentElement.classList.contains('pp-dark')?'☀️ Light mode':'🌙 Dark mode';}lbl();b.addEventListener('click',function(){var d=document.documentElement.classList.toggle('pp-dark');try{localStorage.setItem('pp-theme',d?'dark':'light');}catch(e){}lbl();});})();</script>
+<footer><a href="/">Home</a><a href="game.html">Game</a><a href="guides.html">Guides</a><a href="play.html">Play</a><a href="practice.html">Practice</a><a href="resources.html">Teacher Resources</a><a href="about.html">About</a><a href="vocabulary.html">Vocabulary</a><a href="privacy.html">Privacy Policy</a><p>Copyright © All Rights Reserved — Brant Fuller 2026</p><button class="pp-theme-toggle foot" type="button" aria-label="Switch between dark and light theme">🌙 Dark mode</button>
+</footer>
+</main><!-- Pollito dark-theme toggle wiring -->
+<script>(function(){var bs=document.querySelectorAll('.pp-theme-toggle');if(!bs.length){return;}function lbl(){var d=document.documentElement.classList.contains('pp-dark');for(var i=0;i<bs.length;i++){bs[i].textContent=d?'☀️ Light mode':'🌙 Dark mode';}}lbl();for(var j=0;j<bs.length;j++){bs[j].addEventListener('click',function(){var d=document.documentElement.classList.toggle('pp-dark');try{localStorage.setItem('pp-theme',d?'dark':'light');}catch(e){}lbl();});}})();</script>
 </body></html>
