@@ -70,7 +70,7 @@ body.no-emoji .card .em{display:none}
 /* Pollito Productions — dark theme overrides.
    Activated by <html class="pp-dark">; toggled by the .pp-theme-toggle
    buttons (side menu + footer) and persisted in localStorage under key
-   "pp-theme". Light theme is the default. This stylesheet only changes
+   "pp-theme". Dark theme is the default. This stylesheet only changes
    colors, never layout.
    Orange accent (#f97316) becomes Pollito yellow (#facc15).
    Quiz feedback colors are kept meaningful (green/red) in dark-readable form. */
@@ -191,7 +191,7 @@ html.pp-dark footer a:hover,html.pp-dark footer a:focus-visible{color:#facc15!im
 html.pp-dark footer p{color:#d4d4d4!important}
 
 </style>
-<script>try{if(localStorage.getItem('pp-theme')==='dark'){document.documentElement.classList.add('pp-dark');}}catch(e){}</script>
+<script>try{if(localStorage.getItem('pp-theme')!=='light'){document.documentElement.classList.add('pp-dark');}}catch(e){}</script>
 </head>
 <body><main>
 <a class="back" href="/">&larr; Back to home</a>
