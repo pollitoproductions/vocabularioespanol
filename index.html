@@ -80,6 +80,14 @@
         z-index: 40;
       }
       .burger {
+        /* Floats over the top bar, out of the flex flow, so the
+           greeting centers on the full width of the screen instead
+           of only the space left of this button. Vertically centered
+           against the greeting block, as the flex row had it. */
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
         width: 46px; height: 46px;
         border-radius: 13px;
         border: 2px solid var(--line);
@@ -101,7 +109,7 @@
       .burger[aria-expanded="true"] span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
       .burger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
       .burger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
-      .burger:active { transform: scale(.95); }
+      .burger:active { transform: translateY(-50%) scale(.95); }
       .today {
         font-family: "Baloo 2", sans-serif;
         font-weight: 700;
@@ -110,7 +118,8 @@
         letter-spacing: .01em;
         flex: 1 1 auto;
         min-width: 0;
-        padding-right: 10px;
+        /* No side padding: with the menu button floating out of the
+           flow, the greeting centers on the full width of the bar. */
         /* Portrait: the four greeting lines are centered (landscape
            centers them too, in its block below). */
         text-align: center;
