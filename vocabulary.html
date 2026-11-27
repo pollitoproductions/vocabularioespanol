@@ -5,9 +5,9 @@
 <style>html{box-sizing:border-box}
 body{margin:0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#ffffff linear-gradient(180deg,#ffffff 0,#ffffff 280px) no-repeat;color:#111111;line-height:1.7}
 main{max-width:720px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top,0px)) 18px calc(40px + env(safe-area-inset-bottom,0px))}
-a.back{display:inline-block;padding:9px 16px;border-radius:999px;background:#f97316;color:#000;text-decoration:none;font-weight:700;letter-spacing:.06em;font-size:.85rem;box-shadow:0 2px 0 #000000}
+a.back{display:inline-block;padding:9px 16px;border-radius:999px;background:#ffc93c;color:#000;text-decoration:none;font-weight:700;letter-spacing:.06em;font-size:.85rem;box-shadow:0 2px 0 #000000}
 h1{font-size:clamp(1.7rem,5vw,2.3rem);color:#000000;margin:22px 0 8px;line-height:1.2}
-h2{font-size:.95rem;letter-spacing:.14em;text-transform:uppercase;color:#f97316;margin:28px 0 8px}
+h2{font-size:.95rem;letter-spacing:.14em;text-transform:uppercase;color:#8a5f00;margin:28px 0 8px}
 a{color:#000000}p{margin:0 0 12px;color:#333333}
 i{color:#000000}
 .keyboard-controls{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 14px;margin:8px 0 16px}
@@ -21,12 +21,12 @@ footer a{margin-right:12px;display:inline-block}footer p{margin-top:10px;color:#
 .game img{display:block;width:100%;height:auto;background:#000000}
 .game .body{padding:16px 18px 20px}
 .game h2{font-size:1.3rem;letter-spacing:0;text-transform:none;color:#000000;margin:0 0 8px}
-.tag{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:999px;background:#f97316;color:#000000;margin:0 6px 10px 0}
+.tag{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:999px;background:#ffc93c;color:#000000;margin:0 6px 10px 0}
 .tag.warn{background:#000000;color:#ffffff}
-a.btn{display:inline-block;margin:6px 8px 0 0;padding:12px 22px;border-radius:12px;background:#f97316;color:#000;text-decoration:none;font-weight:700;letter-spacing:.04em;box-shadow:0 3px 0 #000000}
+a.btn{display:inline-block;margin:6px 8px 0 0;padding:12px 22px;border-radius:12px;background:#ffc93c;color:#000;text-decoration:none;font-weight:700;letter-spacing:.04em;box-shadow:0 3px 0 #000000}
 a.btn:hover,a.btn:focus-visible{background:#000000;color:#fff}
 a.btn.alt{background:#fff;color:#000000;border:2px solid #000000;box-shadow:none;padding:10px 20px}
-.note{background:#ffffff;border-left:4px solid #f97316;padding:10px 14px;border-radius:8px;margin:14px 0}
+.note{background:#ffffff;border-left:4px solid #ffc93c;padding:10px 14px;border-radius:8px;margin:14px 0}
 .note p{margin:0}
 .lead{font-size:1.08rem;color:#333333}
 ul.links{list-style:none;margin:0;padding:0}
@@ -51,7 +51,7 @@ ul.words li .vword{font-size:.95rem}
    buttons (side menu + footer) and persisted in localStorage under key
    "pp-theme". Dark theme is the default. This stylesheet only changes
    colors, never layout.
-   Orange accent (#f97316) becomes Pollito yellow (#facc15).
+   Accent is Pollito yellow (#facc15) in both modes.
    Quiz feedback colors are kept meaningful (green/red) in dark-readable form. */
 
 /* Toggle buttons — visible in BOTH modes, so NOT scoped to .pp-dark.
@@ -59,8 +59,8 @@ ul.words li .vword{font-size:.95rem}
    pages only — it is the only page with a menu), one in the footer, and a
    plain inline one on the few pages that have neither. */
 .pp-theme-toggle{cursor:pointer;font:700 .95rem 'Segoe UI',system-ui,-apple-system,sans-serif;border-radius:999px}
-.pp-theme-toggle.menu{display:block;width:100%;text-align:center;margin:14px 0 4px;padding:11px 12px;background:#f97316;color:#fff;border:2px solid #f97316}
-.pp-theme-toggle.menu:hover,.pp-theme-toggle.menu:focus-visible{background:#ea580c;outline:3px solid #facc15;outline-offset:2px}
+.pp-theme-toggle.menu{display:block;width:100%;text-align:center;margin:14px 0 4px;padding:11px 12px;background:#ffc93c;color:#000;border:2px solid #ffc93c}
+.pp-theme-toggle.menu:hover,.pp-theme-toggle.menu:focus-visible{background:#eab308;outline:3px solid #facc15;outline-offset:2px}
 .pp-theme-toggle.foot{display:inline-block;padding:6px 12px;background:transparent;border:1px solid currentColor;color:inherit}
 .pp-theme-toggle.foot:hover,.pp-theme-toggle.foot:focus-visible{border-color:#facc15;color:#facc15}
 .pp-theme-toggle.inline{display:inline-block;margin:16px 0;padding:9px 14px;background:transparent;border:2px solid currentColor;color:inherit}
@@ -109,7 +109,7 @@ html.pp-dark .contact a{color:#facc15!important}
 
 /* ---- primary buttons: orange -> yellow ---- */
 html.pp-dark a.back,html.pp-dark a.btn,html.pp-dark .btn,html.pp-dark .box-btn,html.pp-dark .act button,html.pp-dark .tool button.btn,html.pp-dark #menuBtn,html.pp-dark .chatBtn,html.pp-dark #send,html.pp-dark #chatWidget #cwSend,html.pp-dark .langbtn.on,html.pp-dark .tabs button[aria-selected="true"],html.pp-dark .dirbtn.on,html.pp-dark .tool .catbar button.on,html.pp-dark #cogtool button.cog-btn.on,html.pp-dark .cwRow button.active,html.pp-dark .cwModes button.active,html.pp-dark .modes button.active,html.pp-dark .topics button.active,html.pp-dark .lang button.active{background:#facc15!important;color:#000!important;border-color:#facc15!important}
-/* "More articles" button carries an inline orange background (#f97316),
+/* "More articles" button carries an inline yellow background (#ffc93c),
    so it needs its own !important override in dark mode. */
 html.pp-dark .more-btn{background:#facc15!important;color:#000!important}
 html.pp-dark .more-btn:hover,html.pp-dark .more-btn:focus-visible{background:#eab308!important}

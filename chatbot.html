@@ -6,27 +6,27 @@
 <title>Chat with Pollito — Practice Spanish | Pollito Productions</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #f6f1e7; color: #222; min-height: 100vh; display: flex; flex-direction: column; }
-  header { background: #f97316; color: #fff; padding: 18px 20px; text-align: center; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #fffdf3; color: #222; min-height: 100vh; display: flex; flex-direction: column; }
+  header { background: #ffc93c; color: #000; padding: 18px 20px; text-align: center; }
   header h1 { font-size: 1.6rem; }
   header p { opacity: .9; margin-top: 4px; font-size: .95rem; }
-  header a { color: #ffedd5; }
+  header a { color: #000; }
   main { flex: 1; max-width: 720px; width: 100%; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
   .modes { display: flex; gap: 8px; }
   .lang { display: flex; gap: 8px; align-items: center; justify-content: center; font-weight: 700; color: #444; }
-  .lang button { padding: 8px 14px; font-size: .95rem; border-radius: 999px; border: 2px solid #f97316; background: #fff; color: #c2410c; cursor: pointer; font-weight: 700; }
-  .lang button.active { background: #f97316; color: #fff; }
-  .modes button { flex: 1; padding: 12px; font-size: 1rem; border-radius: 12px; border: 2px solid #f97316; background: #fff; color: #f97316; cursor: pointer; font-weight: 700; }
-  .modes button.active { background: #f97316; color: #fff; }
+  .lang button { padding: 8px 14px; font-size: .95rem; border-radius: 999px; border: 2px solid #ffc93c; background: #fff; color: #8a5f00; cursor: pointer; font-weight: 700; }
+  .lang button.active { background: #ffc93c; color: #000; }
+  .modes button { flex: 1; padding: 12px; font-size: 1rem; border-radius: 12px; border: 2px solid #ffc93c; background: #fff; color: #8a5f00; cursor: pointer; font-weight: 700; }
+  .modes button.active { background: #ffc93c; color: #000; }
   .topics { display: none; flex-wrap: wrap; gap: 8px; }
   .topics.show { display: flex; }
-  .topics button { padding: 8px 14px; font-size: .95rem; border-radius: 999px; border: 2px solid #f97316; background: #fff; color: #c2410c; cursor: pointer; font-weight: 600; }
-  .topics button.active { background: #f97316; color: #fff; }
+  .topics button { padding: 8px 14px; font-size: .95rem; border-radius: 999px; border: 2px solid #ffc93c; background: #fff; color: #8a5f00; cursor: pointer; font-weight: 600; }
+  .topics button.active { background: #ffc93c; color: #000; }
   #chat { flex: 1; min-height: 320px; max-height: 55vh; overflow-y: auto; background: #fff; border: 1px solid #e5ddd0; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
   .msg { max-width: 85%; padding: 10px 14px; border-radius: 16px; line-height: 1.45; white-space: pre-wrap; word-wrap: break-word; }
-  .msg.bot { background: #ffedd5; color: #7c2d12; align-self: flex-start; border-bottom-left-radius: 4px; }
-  .msg.user { background: #f97316; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
-  .msg.sys { background: #fef3c7; color: #92400e; align-self: center; font-size: .9rem; text-align: center; max-width: 95%; }
+  .msg.bot { background: #ffedb3; color: #2e2603; align-self: flex-start; border-bottom-left-radius: 4px; }
+  .msg.user { background: #ffc93c; color: #000; align-self: flex-end; border-bottom-right-radius: 4px; }
+  .msg.sys { background: #fff3c2; color: #2e2603; align-self: center; font-size: .9rem; text-align: center; max-width: 95%; }
   .msg.typing { opacity: .7; font-style: italic; }
   /* Per-message Pollito (Nov 19): every bot reply carries its own avatar
      (bigger), a listen button below it, and the flag tucked in the
@@ -35,35 +35,35 @@
   .msg.bot { display: flex; gap: 10px; align-items: flex-start; }
   .msgSide { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 6px; }
   .msgAvatar { width: 52px; height: 52px; flex-shrink: 0; }
-  .msgAvatar img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; display: block; background: #fff; border: 2px solid #f97316; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+  .msgAvatar img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; display: block; background: #fff; border: 2px solid #ffc93c; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
   .msgAvatar.speaking img { animation: bob .35s ease-in-out infinite alternate, ring 1.2s ease-out infinite; }
   @keyframes bob { from { transform: translateY(0); } to { transform: translateY(-3px); } }
   /* Ring radiating out from the avatar and fading, while it speaks. */
-  @keyframes ring { 0% { box-shadow: 0 2px 6px rgba(0,0,0,.25), 0 0 0 0 rgba(249,115,22,.55); } 100% { box-shadow: 0 2px 6px rgba(0,0,0,.25), 0 0 0 16px rgba(249,115,22,0); } }
+  @keyframes ring { 0% { box-shadow: 0 2px 6px rgba(0,0,0,.25), 0 0 0 0 rgba(250,204,21,.55); } 100% { box-shadow: 0 2px 6px rgba(0,0,0,.25), 0 0 0 16px rgba(250,204,21,0); } }
   .msgHear { background: none; border: none; cursor: pointer; font-size: 1.15rem; opacity: .6; padding: 2px; line-height: 1; }
-  .msgHear:hover { opacity: 1; color: #f97316; }
+  .msgHear:hover { opacity: 1; color: #8a5f00; }
   .msgMain { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   .msgBody { line-height: 1.45; white-space: pre-wrap; word-wrap: break-word; }
   .msgFoot { display: flex; justify-content: flex-end; margin-top: 6px; }
   .msgFlag { background: none; border: none; cursor: pointer; font-size: 1rem; opacity: .55; padding: 2px 6px; line-height: 1; }
-  .msgFlag:hover { opacity: 1; color: #f97316; }
+  .msgFlag:hover { opacity: 1; color: #8a5f00; }
   .msgFlag:disabled { opacity: .3; cursor: default; }
   /* Nov 19: ONE full-width input box — the textarea, mic and send arrow
      all live inside it. No side column, no speaker toggle (each bot
      message already has its own listen button). */
-  .inputrow { display: flex; flex-shrink: 0; gap: 0; align-items: stretch; border: 2px solid #f97316; border-radius: 12px; background: #fff; overflow: hidden; }
-  .inputrow:focus-within { border-color: #ea580c; }
+  .inputrow { display: flex; flex-shrink: 0; gap: 0; align-items: stretch; border: 2px solid #ffc93c; border-radius: 12px; background: #fff; overflow: hidden; }
+  .inputrow:focus-within { border-color: #eab308; }
   #text { flex: 1; padding: 12px 6px 12px 14px; font-size: 1rem; line-height: 1.4; border: none; outline: none; min-width: 0; resize: none; font-family: inherit; background: transparent; }
-  .inBoxBtn { flex: 0 0 auto; align-self: center; background: none; border: none; cursor: pointer; font-size: 1.25rem; padding: 8px 6px; line-height: 1; color: #c2410c; }
-  .inBoxBtn:hover { color: #ea580c; }
-  #send { background: #f97316; color: #fff; border-radius: 50%; width: 38px; height: 38px; padding: 0; margin: 0 8px 0 2px; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; }
-  #send:hover { background: #ea580c; color: #fff; }
+  .inBoxBtn { flex: 0 0 auto; align-self: center; background: none; border: none; cursor: pointer; font-size: 1.25rem; padding: 8px 6px; line-height: 1; color: #8a5f00; }
+  .inBoxBtn:hover { color: #8a5f00; }
+  #send { background: #ffc93c; color: #000; border-radius: 50%; width: 38px; height: 38px; padding: 0; margin: 0 8px 0 2px; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; }
+  #send:hover { background: #eab308; color: #000; }
   #send:disabled { opacity: .5; cursor: wait; }
   /* Accent letters (Nov 18): tap to insert á é í ó ú ñ ü ¡ ¿ at the cursor. */
   .accents { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
-  .accents button { padding: 7px 13px; font-size: 1.05rem; border-radius: 10px; border: 2px solid #f97316; background: #fff; color: #c2410c; cursor: pointer; font-weight: 700; line-height: 1; }
-  .accents button:hover { background: #ffedd5; }
-  .accents button:active { background: #f97316; color: #fff; }
+  .accents button { padding: 7px 13px; font-size: 1.05rem; border-radius: 10px; border: 2px solid #ffc93c; background: #fff; color: #8a5f00; cursor: pointer; font-weight: 700; line-height: 1; }
+  .accents button:hover { background: #ffedb3; }
+  .accents button:active { background: #ffc93c; color: #000; }
   .hint { font-size: .9rem; color: #666; text-align: center; margin: 4px 0; }
   .inBoxBtn.listening { background: #dc2626; color: #fff; border-radius: 50%; animation: pulse 1s ease-in-out infinite alternate; }
   @keyframes pulse { from { opacity: 1; } to { opacity: .55; } }
@@ -79,7 +79,7 @@
     .msgAvatar, .msgAvatar img { width: 44px; height: 44px; }
   }
   footer { text-align: center; padding: 14px; font-size: .85rem; color: #666; }
-  footer a { color: #ea580c; }
+  footer a { color: #8a5f00; }
 </style>
 <!-- Pollito dark-theme toggle: styles + apply saved theme early (no flash) -->
 <style id="pp-theme-css">
@@ -88,7 +88,7 @@
    buttons (side menu + footer) and persisted in localStorage under key
    "pp-theme". Dark theme is the default. This stylesheet only changes
    colors, never layout.
-   Orange accent (#f97316) becomes Pollito yellow (#facc15).
+   Accent is Pollito yellow (#facc15) in both modes.
    Quiz feedback colors are kept meaningful (green/red) in dark-readable form. */
 
 /* Toggle buttons — visible in BOTH modes, so NOT scoped to .pp-dark.
@@ -96,8 +96,8 @@
    pages only — it is the only page with a menu), one in the footer, and a
    plain inline one on the few pages that have neither. */
 .pp-theme-toggle{cursor:pointer;font:700 .95rem 'Segoe UI',system-ui,-apple-system,sans-serif;border-radius:999px}
-.pp-theme-toggle.menu{display:block;width:100%;text-align:center;margin:14px 0 4px;padding:11px 12px;background:#f97316;color:#fff;border:2px solid #f97316}
-.pp-theme-toggle.menu:hover,.pp-theme-toggle.menu:focus-visible{background:#ea580c;outline:3px solid #facc15;outline-offset:2px}
+.pp-theme-toggle.menu{display:block;width:100%;text-align:center;margin:14px 0 4px;padding:11px 12px;background:#ffc93c;color:#000;border:2px solid #ffc93c}
+.pp-theme-toggle.menu:hover,.pp-theme-toggle.menu:focus-visible{background:#eab308;outline:3px solid #facc15;outline-offset:2px}
 .pp-theme-toggle.foot{display:inline-block;padding:6px 12px;background:transparent;border:1px solid currentColor;color:inherit}
 .pp-theme-toggle.foot:hover,.pp-theme-toggle.foot:focus-visible{border-color:#facc15;color:#facc15}
 .pp-theme-toggle.inline{display:inline-block;margin:16px 0;padding:9px 14px;background:transparent;border:2px solid currentColor;color:inherit}
@@ -146,7 +146,7 @@ html.pp-dark .contact a{color:#facc15!important}
 
 /* ---- primary buttons: orange -> yellow ---- */
 html.pp-dark a.back,html.pp-dark a.btn,html.pp-dark .btn,html.pp-dark .box-btn,html.pp-dark .act button,html.pp-dark .tool button.btn,html.pp-dark #menuBtn,html.pp-dark .chatBtn,html.pp-dark #send,html.pp-dark #chatWidget #cwSend,html.pp-dark .langbtn.on,html.pp-dark .tabs button[aria-selected="true"],html.pp-dark .dirbtn.on,html.pp-dark .tool .catbar button.on,html.pp-dark #cogtool button.cog-btn.on,html.pp-dark .cwRow button.active,html.pp-dark .cwModes button.active,html.pp-dark .modes button.active,html.pp-dark .topics button.active,html.pp-dark .lang button.active{background:#facc15!important;color:#000!important;border-color:#facc15!important}
-/* "More articles" button carries an inline orange background (#f97316),
+/* "More articles" button carries an inline yellow background (#ffc93c),
    so it needs its own !important override in dark mode. */
 html.pp-dark .more-btn{background:#facc15!important;color:#000!important}
 html.pp-dark .more-btn:hover,html.pp-dark .more-btn:focus-visible{background:#eab308!important}
