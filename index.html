@@ -40,6 +40,15 @@
 
       * { box-sizing: border-box; }
       html, body { height: 100%; }
+      /* Never let the browser inflate text on its own. iOS Safari
+         "boosts" font sizes in landscape when it judges a block
+         too small, which silently breaks sizes the CSS chose to
+         fit a line beside the menu button — the greeting rendered
+         larger than its vw-based size and ran underneath the
+         button even though the same CSS measured as fitting in
+         desktop browsers. 100% pins every size to what the CSS
+         (and the fit check in the script) actually picked. */
+      html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
       body {
         margin: 0;
         font-family: "Nunito", system-ui, sans-serif;
@@ -667,7 +676,11 @@
            Spanish line on a narrow phone turned sideways — fits
            in the width beside the menu button, which now sits in
            the bar's flow, instead of spilling "practicar?" onto
-           a line of its own. */
+           a line of its own. As a guarantee on top of the vw
+           estimate, the script measures the painted lines against
+           the width the bar actually leaves them and trims the
+           size to fit whenever a browser renders the font wider
+           than the estimate assumed (see fitGreeting). */
         .today .gl { display: inline; }
         .today-main, .today-sub { white-space: nowrap; }
         .today-sub { font-family: "Baloo 2", sans-serif; font-size: inherit; font-weight: 700; color: inherit; margin-top: 0; }
@@ -1557,7 +1570,49 @@
           todayMain.innerHTML = enLine;
           if (todaySub) todaySub.innerHTML = esLine;
         }
+        fitGreeting();
       }
+      /* Landscape guarantee: the two greeting lines are nowrap and
+         the button sits in the bar's flow, so a line wider than
+         the box the bar leaves it doesn't wrap — it runs under
+         the button. The vw-based size is an estimate of the font's
+         width; when a browser renders wider than the estimate
+         (a heavier font cut, a substituted font), measure the
+         painted lines and trim the size until both fit the box.
+         Outside the nowrap layout the inline size is cleared and
+         the CSS size rules again. Runs on repaint, on resize and
+         rotation, and once the webfont arrives, since the swap
+         from fallback to Baloo 2 changes the lines' widths. */
+      function fitGreeting() {
+        var line = document.getElementById('todayLine');
+        var main = document.getElementById('todayMain');
+        if (!line || !main) return;
+        var sub = document.getElementById('todaySub');
+        if (window.getComputedStyle(main).whiteSpace !== 'nowrap') {
+          line.style.fontSize = '';
+          return;
+        }
+        line.style.fontSize = '';
+        var size = parseFloat(window.getComputedStyle(line).fontSize) || 16;
+        function widest() {
+          var w = 0;
+          [main, sub].forEach(function (el) {
+            if (!el) return;
+            var range = document.createRange();
+            range.selectNodeContents(el);
+            w = Math.max(w, range.getBoundingClientRect().width);
+          });
+          return w;
+        }
+        var guard = 0;
+        while (guard++ < 24 && size > 10 && widest() > line.clientWidth) {
+          size = Math.max(10, size * (line.clientWidth / widest()) * 0.98);
+          line.style.fontSize = size + 'px';
+        }
+      }
+      window.addEventListener('resize', fitGreeting);
+      window.addEventListener('orientationchange', fitGreeting);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitGreeting);
       paintToday();
 
       var audioCtx = null;
