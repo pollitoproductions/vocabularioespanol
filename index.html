@@ -72,17 +72,21 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        /* Extra top room in the stacked (portrait) layout so the
-           greeting's first line sits fully on screen, clear of the
-           top edge; landscape restores the tighter padding below. */
+        /* Extra top room so the greeting's first line sits fully
+           on screen, clear of the top edge; landscape restores the
+           tighter padding below, and portrait trims it again in
+           its block under the greeting rules, where the stacked
+           layout gives the bar its height from the button's row. */
         padding: calc(26px + env(safe-area-inset-top)) 16px 6px;
         position: relative;
         z-index: 40;
       }
       .burger {
-        /* Sits in the top bar's flex row at its full 46px size, so
-           the greeting only ever gets the width left of the button
-           and can never run underneath it. */
+        /* Landscape: sits in the top bar's flex row at its full
+           46px size, so the greeting only ever gets the width left
+           of the button and can never run underneath it. Portrait
+           stacks it on its own row instead — see the portrait
+           block under the greeting rules below. */
         flex: none;
         margin-left: 12px;
         width: 46px; height: 46px;
@@ -115,10 +119,11 @@
         letter-spacing: .01em;
         flex: 1 1 auto;
         min-width: 0;
-        /* No side padding: the greeting centers in the width the
-           top bar leaves it, beside the in-flow menu button. */
-        /* Portrait: the four greeting lines are centered (landscape
-           centers them too, in its block below). */
+        /* No side padding. Landscape: the greeting centers in the
+           width the top bar leaves it, beside the in-flow menu
+           button. Portrait: it spans the bar's full width under
+           the button's own row, so it centers on the screen
+           itself (portrait block below). */
         text-align: center;
       }
       .today strong { color: var(--sun); }
@@ -137,6 +142,30 @@
         font-size: inherit;
         font-weight: 700;
         margin-top: 0;
+      }
+      /* Portrait: the menu button gets a row of its own at the top
+         right and the greeting drops below it, spanning the bar's
+         full width, so the four lines center on the screen itself.
+         In the side-by-side row the button reserved 58px on the
+         right with nothing matching on the left, so the "centered"
+         greeting actually sat off-center, left of the button; and
+         reserving the same 58px on the left instead would squeeze
+         the longest line ("¿Listo para practicar?" nearly fills
+         the row width on a phone) into wrapping. Stacking costs a
+         little height and centers the text for real, at the same
+         size, with the button never over it. The dropdown menu's
+         fixed top offset (64px) still lands just under the button
+         in this layout. Landscape keeps the in-flow row: there the
+         greeting is two nowrap lines sized to fit beside the
+         button. */
+      @media (orientation: portrait) {
+        .topbar {
+          flex-direction: column;
+          align-items: stretch;
+          padding-top: calc(14px + env(safe-area-inset-top));
+        }
+        .burger { order: -1; align-self: flex-end; margin-left: 0; }
+        .today { margin-top: 8px; }
       }
       .lang-chip {
         font-family: "Baloo 2", sans-serif;
