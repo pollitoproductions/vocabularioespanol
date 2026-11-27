@@ -565,6 +565,13 @@
          keeps the stacked layout exactly as it was. */
       @media (orientation: landscape) and (min-width: 620px) {
         .app { max-width: 1080px; }
+        /* Greeting: centered over Pollito's column, time-of-day line
+           on top and the "ready to practice?" question under it. The
+           box is the greeter column's 330px plus the 4px difference
+           between the view's 20px side padding and the topbar's 16px,
+           so its center lands on the column's center. */
+        .today { flex: 0 0 334px; text-align: center; }
+        .today strong { display: block; }
         #view-home.active {
           display: grid;
           grid-template-columns: minmax(250px, 330px) minmax(0, 1fr);
@@ -573,9 +580,17 @@
         }
         #view-home .pollito-stage { width: min(240px, 30vw); }
         #view-home .greeter .sub { white-space: normal; }
+        /* Tagline: back under Pollito, centered, one language per
+           line and big enough to fill most of the column's width. */
+        #view-home .greeter .streak-note {
+          white-space: normal; text-align: center;
+          font-size: 1.08rem; line-height: 1.5; margin-top: 12px;
+        }
+        .streak-note .tag-l1, .streak-note .tag-l2 { display: block; }
+        .streak-note .tag-sep { display: none; }
         .home-side { display: flex; flex-direction: column; min-width: 0; }
-        .home-side .streak-note { text-align: left; margin-top: 2px; }
-        .home-side .lang-row { justify-content: flex-start; }
+        /* "I'm learning" switch: centered over the door cards. */
+        .home-side .lang-row { justify-content: center; }
         .home-side .home-note { text-align: left; margin-left: 0; margin-right: 0; }
       }
       /* Short landscape screens (a phone turned sideways): trim the
@@ -712,10 +727,10 @@
               </div>
             </div>
             <p class="sub"><span data-bi data-es="¿Qué quieres hacer hoy?" data-en="What do you want to do today?">What do you want to do today? · ¿Qué quieres hacer hoy?</span></p>
+            <p class="streak-note"><span data-h-es="<span class=&quot;tag-l1&quot;>Today's a good day to start.</span><span class=&quot;tag-sep&quot;> · </span><span class=&quot;tag-l2&quot;>Hoy es un buen día para empezar</span>" data-h-en="<span class=&quot;tag-l1&quot;>Hoy es un buen día para empezar</span><span class=&quot;tag-sep&quot;> · </span><span class=&quot;tag-l2&quot;>Today's a good day to start.</span>"><span class="tag-l1">Today's a good day to start.</span><span class="tag-sep"> · </span><span class="tag-l2">Hoy es un buen día para empezar</span></span></p>
           </div>
 
           <div class="home-side">
-            <p class="streak-note"><span data-bi data-es="Hoy es un buen día para empezar" data-en="Today's a good day to start.">Today's a good day to start. · Hoy es un buen día para empezar</span></p>
           <div class="lang-row" role="group" aria-label="What are you learning?">
             <span class="lang-label" data-one data-mode-es="I'm learning:" data-mode-en="Estoy aprendiendo:">I'm learning:</span>
             <button type="button" class="lang-chip" data-learn="es" aria-pressed="true">🇪🇸 Spanish</button>
