@@ -628,14 +628,21 @@
            columns — the welcome, the time-of-day greeting, and the
            "ready to practice?" question on one line, with the
            translation on its own line directly under it. */
-        .today { flex: 1 1 auto; text-align: center; font-size: 1.12rem; padding-right: 0; }
+        .today { flex: 1 1 auto; text-align: center; font-size: clamp(.85rem, 2.05vw, 1.25rem); padding-right: 0; }
         /* Landscape keeps the two-line greeting: each language's
            parts run inline on one line, with the translation on
            its own line directly underneath styled exactly like
            the main line — same font, size, weight, and colors,
            with the question in the sun yellow in both — and the
-           top bar keeps its original tighter top padding. */
+           top bar keeps its original tighter top padding. The
+           first line must stay on ONE line: it never wraps, and
+           the size above scales with the screen's width (2.05vw,
+           capped at 1.25rem) so even the longest greeting — the
+           Spanish line on a narrow phone turned sideways — fits
+           across the bar, clear of the menu button, instead of
+           spilling "practicar?" onto a line of its own. */
         .today .gl { display: inline; }
+        .today-main, .today-sub { white-space: nowrap; }
         .today-sub { font-family: "Baloo 2", sans-serif; font-size: inherit; font-weight: 700; color: inherit; margin-top: 0; }
         .topbar { padding-top: calc(10px + env(safe-area-inset-top)); }
         #view-home.active {
