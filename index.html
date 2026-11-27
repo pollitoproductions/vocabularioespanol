@@ -105,8 +105,20 @@
         font-size: .95rem;
         color: var(--ink-soft);
         letter-spacing: .01em;
+        flex: 1 1 auto;
+        min-width: 0;
+        padding-right: 10px;
       }
       .today strong { color: var(--sun); }
+      /* The greeting's translation sits on its own line directly
+         under the greeting, smaller and quieter. */
+      .today-sub {
+        display: block;
+        font-family: "Nunito", sans-serif;
+        font-size: .78rem;
+        font-weight: 600;
+        margin-top: 1px;
+      }
       .lang-chip {
         font-family: "Baloo 2", sans-serif;
         font-weight: 700;
@@ -570,13 +582,12 @@
            to breathe and the two sides balance. The width lives in
            one variable so the greeting box up top can track it. */
         .app { max-width: 1080px; --greeter-w: clamp(300px, 38%, 400px); }
-        /* Greeting: centered over Pollito's column, time-of-day line
-           on top and the "ready to practice?" question under it. The
-           box is the greeter column's width plus the 4px difference
-           between the view's 20px side padding and the topbar's 16px,
-           so its center lands on the column's center. */
-        .today { flex: 0 0 calc(var(--greeter-w) + 4px); text-align: center; }
-        .today strong { display: block; }
+        /* Greeting: spans the whole top of the screen, across both
+           columns — the welcome, the time-of-day greeting, and the
+           "ready to practice?" question on one line, with the
+           translation on its own line directly under it. */
+        .today { flex: 1 1 auto; text-align: center; font-size: 1.12rem; padding-right: 0; }
+        .today-sub { font-size: .88rem; margin-top: 2px; }
         #view-home.active {
           display: grid;
           grid-template-columns: var(--greeter-w) minmax(0, 1fr);
@@ -646,7 +657,7 @@
 
       <!-- Top bar -->
       <div class="topbar">
-        <div class="today" id="todayLine">¡Buenas! <strong>¿Listo para practicar?</strong></div>
+        <div class="today" id="todayLine"><span class="today-main" id="todayMain">¡Bienvenido a Pollito Productions! ¡Buenos días! <strong>¿Listo para practicar?</strong></span><span class="today-sub" id="todaySub">Welcome to Pollito Productions! Good morning! Ready to practice?</span></div>
         <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="menu">
           <span></span><span></span><span></span>
         </button>
@@ -1436,19 +1447,30 @@
       }
       setInterval(nextPhrase, 5000);
 
-      var todayLine = document.getElementById('todayLine');
+      var todayMain = document.getElementById('todayMain');
+      var todaySub = document.getElementById('todaySub');
+      /* The top greeting line leads with the welcome, then the
+         time-of-day greeting and the "ready to practice?" question;
+         the line directly under it is the same greeting translated.
+         Both lines flip with the "I'm learning" switch: learning
+         Spanish puts the Spanish greeting on top with English below,
+         learning English the other way around. */
       function paintToday() {
-        if (!todayLine) return;
+        if (!todayMain) return;
         var hourNow = new Date().getHours();
-        var daypart, q;
+        var dpEs = hourNow < 12 ? '¡Buenos días!' : (hourNow < 19 ? '¡Buenas tardes!' : '¡Buenas noches!');
+        var dpEn = hourNow < 12 ? 'Good morning!' : (hourNow < 19 ? 'Good afternoon!' : 'Good evening!');
+        var esLine = '¡Bienvenido a Pollito Productions! ' + dpEs + ' <strong>¿Listo para practicar?</strong>';
+        var enLine = 'Welcome to Pollito Productions! ' + dpEn + ' <strong>Ready to practice?</strong>';
+        var esSub = '¡Bienvenido a Pollito Productions! ' + dpEs + ' ¿Listo para practicar?';
+        var enSub = 'Welcome to Pollito Productions! ' + dpEn + ' Ready to practice?';
         if (learnMode === 'es') {
-          daypart = hourNow < 12 ? '¡Buenos días!' : (hourNow < 19 ? '¡Buenas tardes!' : '¡Buenas noches!');
-          q = '¿Listo para practicar?';
+          todayMain.innerHTML = esLine;
+          if (todaySub) todaySub.textContent = enSub;
         } else {
-          daypart = hourNow < 12 ? 'Good morning!' : (hourNow < 19 ? 'Good afternoon!' : 'Good evening!');
-          q = 'Ready to practice?';
+          todayMain.innerHTML = enLine;
+          if (todaySub) todaySub.textContent = esSub;
         }
-        todayLine.innerHTML = daypart + ' <strong>' + q + '</strong>';
       }
       paintToday();
 
