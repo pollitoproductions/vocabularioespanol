@@ -80,14 +80,11 @@
         z-index: 40;
       }
       .burger {
-        /* Floats over the top bar, out of the flex flow, so the
-           greeting centers on the full width of the screen instead
-           of only the space left of this button. Vertically centered
-           against the greeting block, as the flex row had it. */
-        position: absolute;
-        right: 16px;
-        top: 50%;
-        transform: translateY(-50%);
+        /* Sits in the top bar's flex row at its full 46px size, so
+           the greeting only ever gets the width left of the button
+           and can never run underneath it. */
+        flex: none;
+        margin-left: 12px;
         width: 46px; height: 46px;
         border-radius: 13px;
         border: 2px solid var(--line);
@@ -109,7 +106,7 @@
       .burger[aria-expanded="true"] span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
       .burger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
       .burger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
-      .burger:active { transform: translateY(-50%) scale(.95); }
+      .burger:active { transform: scale(.95); }
       .today {
         font-family: "Baloo 2", sans-serif;
         font-weight: 700;
@@ -118,8 +115,8 @@
         letter-spacing: .01em;
         flex: 1 1 auto;
         min-width: 0;
-        /* No side padding: with the menu button floating out of the
-           flow, the greeting centers on the full width of the bar. */
+        /* No side padding: the greeting centers in the width the
+           top bar leaves it, beside the in-flow menu button. */
         /* Portrait: the four greeting lines are centered (landscape
            centers them too, in its block below). */
         text-align: center;
@@ -628,7 +625,7 @@
            columns — the welcome, the time-of-day greeting, and the
            "ready to practice?" question on one line, with the
            translation on its own line directly under it. */
-        .today { flex: 1 1 auto; text-align: center; font-size: clamp(.85rem, 2.05vw, 1.25rem); padding-right: 0; }
+        .today { flex: 1 1 auto; text-align: center; font-size: clamp(.8rem, 1.9vw, 1.25rem); padding-right: 0; }
         /* Landscape keeps the two-line greeting: each language's
            parts run inline on one line, with the translation on
            its own line directly underneath styled exactly like
@@ -636,11 +633,12 @@
            with the question in the sun yellow in both — and the
            top bar keeps its original tighter top padding. The
            first line must stay on ONE line: it never wraps, and
-           the size above scales with the screen's width (2.05vw,
+           the size above scales with the screen's width (1.9vw,
            capped at 1.25rem) so even the longest greeting — the
            Spanish line on a narrow phone turned sideways — fits
-           across the bar, clear of the menu button, instead of
-           spilling "practicar?" onto a line of its own. */
+           in the width beside the menu button, which now sits in
+           the bar's flow, instead of spilling "practicar?" onto
+           a line of its own. */
         .today .gl { display: inline; }
         .today-main, .today-sub { white-space: nowrap; }
         .today-sub { font-family: "Baloo 2", sans-serif; font-size: inherit; font-weight: 700; color: inherit; margin-top: 0; }
