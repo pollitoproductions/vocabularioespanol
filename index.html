@@ -72,7 +72,10 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: calc(10px + env(safe-area-inset-top)) 16px 6px;
+        /* Extra top room in the stacked (portrait) layout so the
+           greeting's first line sits fully on screen, clear of the
+           top edge; landscape restores the tighter padding below. */
+        padding: calc(26px + env(safe-area-inset-top)) 16px 6px;
         position: relative;
         z-index: 40;
       }
@@ -110,14 +113,21 @@
         padding-right: 10px;
       }
       .today strong { color: var(--sun); }
-      /* The greeting's translation sits on its own line directly
-         under the greeting, smaller and quieter. */
+      .today { line-height: 1.35; }
+      /* Portrait: the greeting is four lines — welcome, then the
+         daypart line, in the main language, then the same two lines
+         in the other language. Each part is its own block line, and
+         the translation block is styled exactly like the main one:
+         same font, size, weight, and colors, with the question in
+         the sun yellow in both languages. Landscape puts the parts
+         back inline on two lines (see the landscape block below). */
+      .today .gl { display: block; }
       .today-sub {
         display: block;
-        font-family: "Nunito", sans-serif;
-        font-size: .78rem;
-        font-weight: 600;
-        margin-top: 1px;
+        font-family: "Baloo 2", sans-serif;
+        font-size: inherit;
+        font-weight: 700;
+        margin-top: 0;
       }
       .lang-chip {
         font-family: "Baloo 2", sans-serif;
@@ -587,7 +597,15 @@
            "ready to practice?" question on one line, with the
            translation on its own line directly under it. */
         .today { flex: 1 1 auto; text-align: center; font-size: 1.12rem; padding-right: 0; }
-        .today-sub { font-size: .88rem; margin-top: 2px; }
+        /* Landscape keeps the two-line greeting: each language's
+           parts run inline on one line, with the translation on
+           its own line directly underneath styled exactly like
+           the main line — same font, size, weight, and colors,
+           with the question in the sun yellow in both — and the
+           top bar keeps its original tighter top padding. */
+        .today .gl { display: inline; }
+        .today-sub { font-family: "Baloo 2", sans-serif; font-size: inherit; font-weight: 700; color: inherit; margin-top: 0; }
+        .topbar { padding-top: calc(10px + env(safe-area-inset-top)); }
         #view-home.active {
           display: grid;
           grid-template-columns: var(--greeter-w) minmax(0, 1fr);
@@ -657,7 +675,7 @@
 
       <!-- Top bar -->
       <div class="topbar">
-        <div class="today" id="todayLine"><span class="today-main" id="todayMain">¡Bienvenido a Pollito Productions! ¡Buenos días! <strong>¿Listo para practicar?</strong></span><span class="today-sub" id="todaySub">Welcome to Pollito Productions! Good morning! Ready to practice?</span></div>
+        <div class="today" id="todayLine"><span class="today-main" id="todayMain"><span class="gl">¡Bienvenido a Pollito Productions!</span> <span class="gl">¡Buenos días! <strong>¿Listo para practicar?</strong></span></span><span class="today-sub" id="todaySub"><span class="gl">Welcome to Pollito Productions!</span> <span class="gl">Good morning! <strong>Ready to practice?</strong></span></span></div>
         <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="menu">
           <span></span><span></span><span></span>
         </button>
@@ -1460,16 +1478,19 @@
         var hourNow = new Date().getHours();
         var dpEs = hourNow < 12 ? '¡Buenos días!' : (hourNow < 19 ? '¡Buenas tardes!' : '¡Buenas noches!');
         var dpEn = hourNow < 12 ? 'Good morning!' : (hourNow < 19 ? 'Good afternoon!' : 'Good evening!');
-        var esLine = '¡Bienvenido a Pollito Productions! ' + dpEs + ' <strong>¿Listo para practicar?</strong>';
-        var enLine = 'Welcome to Pollito Productions! ' + dpEn + ' <strong>Ready to practice?</strong>';
-        var esSub = '¡Bienvenido a Pollito Productions! ' + dpEs + ' ¿Listo para practicar?';
-        var enSub = 'Welcome to Pollito Productions! ' + dpEn + ' Ready to practice?';
+        /* Each language's greeting is two parts — the welcome and
+           the daypart line with its question in <strong> — wrapped
+           in .gl spans. In portrait each part sits on its own line
+           (four lines total, both languages styled the same); in
+           landscape the parts run inline as before. */
+        var esLine = '<span class="gl">¡Bienvenido a Pollito Productions!</span> <span class="gl">' + dpEs + ' <strong>¿Listo para practicar?</strong></span>';
+        var enLine = '<span class="gl">Welcome to Pollito Productions!</span> <span class="gl">' + dpEn + ' <strong>Ready to practice?</strong></span>';
         if (learnMode === 'es') {
           todayMain.innerHTML = esLine;
-          if (todaySub) todaySub.textContent = enSub;
+          if (todaySub) todaySub.innerHTML = enLine;
         } else {
           todayMain.innerHTML = enLine;
-          if (todaySub) todaySub.textContent = esSub;
+          if (todaySub) todaySub.innerHTML = esLine;
         }
       }
       paintToday();
