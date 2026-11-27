@@ -86,8 +86,13 @@
            on screen, clear of the top edge; landscape restores the
            tighter padding below, and portrait trims it again in
            its block under the greeting rules, where the stacked
-           layout gives the bar its height from the button's row. */
-        padding: calc(26px + env(safe-area-inset-top)) 16px 6px;
+           layout gives the bar its height from the button's row.
+           The side padding also carries the left/right safe-area
+           insets, so in landscape on a notched phone the bar's
+           buttons stay clear of the camera inlay instead of
+           running underneath it; the insets are 0 on screens
+           without cutouts, so nothing shifts there. */
+        padding: calc(26px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 6px calc(16px + env(safe-area-inset-left));
         position: relative;
         z-index: 40;
       }
@@ -231,7 +236,7 @@
       .menu {
         position: absolute;
         top: calc(64px + env(safe-area-inset-top));
-        right: 12px;
+        right: calc(12px + env(safe-area-inset-right));
         width: min(330px, calc(100vw - 24px));
         max-height: min(74dvh, 640px);
         overflow-y: auto;
@@ -301,7 +306,11 @@
       .menu-divider { height: 2px; background: var(--line); margin: 6px 10px; border-radius: 2px; }
       /* ---------- Views ---------- */
       main { flex: 1; display: flex; flex-direction: column; }
-      .view { display: none; flex: 1; flex-direction: column; padding: 4px 20px 20px; animation: viewIn .3s ease; }
+      /* Side padding carries the left/right safe-area insets for
+         the same reason as the top bar: view content (the back
+         button, headings, cards) never slides under a camera
+         inlay in landscape. */
+      .view { display: none; flex: 1; flex-direction: column; padding: 4px calc(20px + env(safe-area-inset-right)) 20px calc(20px + env(safe-area-inset-left)); animation: viewIn .3s ease; }
       .view.active { display: flex; }
       @keyframes viewIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
@@ -668,7 +677,7 @@
       .appfoot {
         border-top: 2px solid var(--line);
         background: var(--surface);
-        padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+        padding: 10px calc(16px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
         display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;
         font-size: .88rem; font-weight: 700;
         position: relative; z-index: 30;
