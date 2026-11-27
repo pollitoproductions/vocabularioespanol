@@ -270,7 +270,10 @@
       /* ---------- Home: greeter ---------- */
       .greeter { text-align: center; padding-top: 2px; }
       .bubble {
-        display: inline-block;
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
         position: relative;
         background: var(--surface);
         border: 2px solid var(--line);
@@ -281,7 +284,7 @@
         font-weight: 700;
         font-size: 1.12rem;
         max-width: 92%;
-        min-height: 54px;
+        min-height: 70px;
       }
       .bubble::after {
         content: "";
@@ -811,7 +814,7 @@
         <!-- ============ HOME ============ -->
         <section class="view active" id="view-home">
           <div class="greeter">
-            <div class="bubble"><span class="bubble-text" id="bubbleText">¡Hola! Soy Pollito.</span><span class="bubble-sub" id="bubbleSub">Hi! I'm Pollito.<br>What do you want to do today?</span></div>
+            <div class="bubble"><span class="bubble-text" id="bubbleText">¡Hola! Soy Pollito.</span><span class="bubble-sub" id="bubbleSub">Hi! I'm Pollito.</span></div>
 
             <div class="pollito-stage" id="pollitoStage" role="button" tabindex="0" aria-label="Say hi to Pollito">
               <div class="pollito-photo-wrap">
@@ -1466,7 +1469,7 @@
 
       /* ---------- Pollito greeter ---------- */
       var phrases = [
-        { es: '¡Hola! Soy Pollito.', en: "Hi! I'm Pollito.<br>What do you want to do today?" },
+        { es: '¡Hola! Soy Pollito.', en: "Hi! I'm Pollito." },
         { es: '¡Pío pío! ¡Qué bueno verte!', en: 'Peep peep! So good to see you!' },
         { es: '¿Jugamos algo hoy?', en: 'Shall we play something today?' },
         { es: '¿Practicamos un poco de español?', en: 'Shall we practice a little Spanish?', enMain: 'Shall we practice a little English?', enSub: '¿Practicamos un poco de inglés?' },
