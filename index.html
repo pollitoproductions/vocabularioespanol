@@ -373,7 +373,17 @@
       }
       .bubble .bubble-sub.swap { opacity: 0; transform: translateY(4px); }
 
-      .pollito-stage { margin: 10px auto 0; width: 196px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+      /* A slight floaty bob at idle, so Pollito's card isn't
+         completely static: the whole stage drifts up a few pixels
+         and settles back, slow and gentle, on a loop. It lives on
+         the outer stage while the tap bounce (below) lives on the
+         inner photo wrap, so the two compose instead of fighting
+         over the same transform. */
+      .pollito-stage { margin: 10px auto 0; width: 196px; cursor: pointer; -webkit-tap-highlight-color: transparent; animation: pollitoFloat 3.8s ease-in-out infinite; }
+      @keyframes pollitoFloat {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+      }
       .pollito-photo-wrap {
         position: relative;
         border: 2px solid var(--line);
@@ -797,6 +807,7 @@
 
       @media (prefers-reduced-motion: reduce) {
         .view { animation: none; }
+        .pollito-stage { animation: none; }
         .pollito-photo-wrap.bobbing { animation: none; }
         * { transition: none !important; }
       }
@@ -1723,13 +1734,15 @@
       }
 
       /* Pollito is the still photo again — no video, no head turn, no
-         tilting, no morphing. The only idle movement is a quick blink:
-         the closed-eye copy of the same photo fades in and back out in
+         tilting, no morphing. Idle movement is a quick blink — the
+         closed-eye copy of the same photo fades in and back out in
          about a quarter of a second, every few seconds (with an
-         occasional quick double blink). Tapping him works the same as
-         before — a greeting line in the bubble and a little chirp —
-         plus a small happy bob of the whole greeter. Reduced-motion
-         visitors get a still, unblinking Pollito and no bob. */
+         occasional quick double blink) — plus a slight floaty bob of
+         the whole stage (see pollitoFloat in the CSS). Tapping him
+         works the same as before — a greeting line in the bubble and
+         a little chirp — plus a small happy bob of the whole greeter.
+         Reduced-motion visitors get a still, unblinking Pollito and
+         no bob of either kind. */
       var stage = document.getElementById('pollitoStage');
       var photoWrap = stage ? stage.querySelector('.pollito-photo-wrap') : null;
       var blinkImg = document.getElementById('pollitoBlink');
