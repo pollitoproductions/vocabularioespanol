@@ -3340,17 +3340,21 @@ function frame(){
      the road disappears at the angle Brant drew — while the ball stays
      big, round, and low on screen (~82% down portrait, ~89% landscape).
      The camera
-     does NOT follow the hop — it rides the track height, so the view
-     stays steady while the ball bounces. But it DOES follow the fall
+     DOES follow the hop (round 90, Brant's ask): it rises with the
+     ball when it jumps or launches off a ramp (camHopY), so the ball
+     stays in frame instead of bouncing up out of the view. During a
+     fall the hop is ignored, so the Round 33 fall framing (camera
+     drops only a third) is untouched. But it DOES follow the fall
      (round 8): while the ball is tumbling down through a hole or off
      the side, the camera descends with it (camDrop), so the player sees
      the ball fall away instead of the view freezing — then it returns
      to its normal position on revive/respawn, when fallDrop resets. */
   var camDrop = (state === "falling") ? fallDrop : 0;
+  var camHopY = (state === "falling") ? 0 : ballHopY;   // round 90: hop height the camera follows (0 while falling)
   camera.position.x += ((ballX*0.9) - camera.position.x) * Math.min(1, dt*20);   // round 69: was ballX*0.5 at dt*6 — the camera lagged so far behind a hard steer that the ball left the frame at the track edges in portrait (Brant: all the way left or right, you can't even see it). The camera now rides almost on the ball's line, and fast enough to keep up, so the ball stays in frame at both edges (sim-verified at the track edge in edge/flick/weave steers).
-  camera.position.y += ((ballY + (camera.aspect < 1 ? PORTRAIT_CAM_HEIGHT : CAM_HEIGHT) - camDrop*0.35) - camera.position.y) * Math.min(1, dt*40);   // round 33: the camera used to plunge WITH the ball (full camDrop), so the view fell too and the player couldn't tell where they fell — now it only drops a third as far and tilts down to watch the ball fall away, so the track stays in frame and the death reads clearly. The lookAt below still drops the full fallDrop, so the ball stays in frame.
+  camera.position.y += ((ballY + camHopY + (camera.aspect < 1 ? PORTRAIT_CAM_HEIGHT : CAM_HEIGHT) - camDrop*0.35) - camera.position.y) * Math.min(1, dt*40);   // round 90: was ballY only — the camera ignored the hop, so the ball bounced up out of the view on a jump/ramp launch; now it rises with ballHopY, so the ball stays in frame. Round 33: the camera used to plunge WITH the ball (full camDrop), so the view fell too and the player couldn't tell where they fell — now it only drops a third as far and tilts down to watch the ball fall away, so the track stays in frame and the death reads clearly. The lookAt below still drops the full fallDrop, so the ball stays in frame.
   camera.position.z = ballZ + (camera.aspect < 1 ? PORTRAIT_CAM_BACK : 9.2);   // round 26: landscape back 9.5 -> 9.2 (solver value for the VP/ball targets); portrait back 5.85
-  camera.lookAt(ballX, ballY + (camera.aspect < 1 ? PORTRAIT_CAM_LOOK_HEIGHT : CAM_LOOK_HEIGHT) - camDrop, ballZ - 16);   // round 69: was ballX*0.75 — the view now looks straight at the ball's line, so the ball stays centred laterally while the track ahead stays fully visible; round 26: portrait look -1.6, landscape look 1.0 — the view pitches DOWN now (portrait ~14 deg, landscape ~7 deg), lifting the VP to ~47% down (portrait) / ~62% (landscape) — the angle Brant drew — while the raised camera keeps the ball big, round, and low on screen
+  camera.lookAt(ballX, ballY + camHopY + (camera.aspect < 1 ? PORTRAIT_CAM_LOOK_HEIGHT : CAM_LOOK_HEIGHT) - camDrop, ballZ - 16);   // round 90: was ballY only — the look point ignored the hop, so the view didn't tilt up with the ball on a jump/ramp launch; now it rises with ballHopY, so the ball stays centred. Round 69: was ballX*0.75 — the view now looks straight at the ball's line, so the ball stays centred laterally while the track ahead stays fully visible; round 26: portrait look -1.6, landscape look 1.0 — the view pitches DOWN now (portrait ~14 deg, landscape ~7 deg), lifting the VP to ~47% down (portrait) / ~62% (landscape) — the angle Brant drew — while the raised camera keeps the ball big, round, and low on screen
   renderer.render(scene, camera);
 }
 function checkCollisions(){
