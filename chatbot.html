@@ -8,8 +8,8 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #fffdf3; color: #222; min-height: 100vh; display: flex; flex-direction: column; }
   header { background: #ffc93c; color: #000; padding: 18px 20px; text-align: center; }
-  header h1 { font-size: 1.6rem; }
-  header p { opacity: .9; margin-top: 4px; font-size: .95rem; }
+  header h1 { font-size: 1.6rem; color: #000; }
+  header p { opacity: .9; margin-top: 4px; font-size: .95rem; color: #000; }
   header a { color: #000; }
   main { flex: 1; max-width: 720px; width: 100%; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
   .modes { display: flex; gap: 8px; }
@@ -189,6 +189,8 @@ html.pp-dark .inBoxBtn,html.pp-dark #chatWidget .cwInBoxBtn{color:#facc15!import
 html.pp-dark .inBoxBtn:hover,html.pp-dark #chatWidget .cwInBoxBtn:hover{color:#eab308!important}
 html.pp-dark header{background:#facc15!important;color:#000!important}
 html.pp-dark header a{color:#000!important}
+html.pp-dark header h1{color:#000!important}
+html.pp-dark header p{color:#000!important}
 
 /* ---- landing: top bar, side menu, footer ---- */
 html.pp-dark .topbar{background:#000!important;color:#fff!important}
@@ -211,8 +213,8 @@ html.pp-dark footer p{color:#d4d4d4!important}
 </head>
 <body>
 <header>
-  <h1>🐣 Chat with Pollito</h1>
-  <p id="pageSub">Practice Spanish with a friendly chatbot — in Spanish, with English help when you need it. <a href="../index.html">← Back to Pollito Productions</a></p>
+  <h1 id="pageTitle">🐣 Chat with Pollito</h1>
+  <p id="pageSub">Practice Spanish with a friendly chatbot — in Spanish, with English help when you need it. <a id="backLink" href="../index.html">← Back to Pollito Productions</a></p>
 </header>
 <main>
   <div class="lang"><span id="learnLabel">I'm learning:</span>
@@ -437,11 +439,13 @@ function setLearning(l) {
   document.getElementById("hintTutor").textContent = l === "english" ? "Pollito es un tutor de IA. Puede cometer errores — si algo parece incorrecto, pregúntale a tu maestro." : "Pollito is an AI tutor. It can make mistakes — if something looks wrong, ask your teacher.";
   document.getElementById("hintSafe").textContent = l === "english" ? "🛡️ Pollito es un robot, no una persona real. Nunca compartas información personal. Si te sientes inseguro, díselo a un adulto de confianza de inmediato." : "🛡️ Pollito is a robot, not a real person. Never share personal information. If you feel unsafe, tell a trusted adult right away.";
   document.getElementById("hintPriv").innerHTML = l === "english" ? "🔒 Privacidad: tus mensajes se envían a Groq (el servicio de IA que hace funcionar a Pollito) solo para generar una respuesta. Groq no usa tus mensajes para entrenar sus modelos. Tu maestro guarda un registro privado de los chats para mantener a los estudiantes seguros — solo el maestro puede verlo. Pollito nunca te pide tu nombre ni información personal — por favor, no compartas nada sensible. Consulta nuestra <a href=\"../privacy-policy.html\">Política de privacidad</a>." : "🔒 Privacy: your messages are sent to Groq (the AI service that powers Pollito) only to generate a reply. Groq does not use your messages to train its models. Your teacher keeps a private log of chats to keep students safe — only the teacher can see it. Pollito never asks for your name or personal information — please don't share anything sensitive. See our <a href=\"../privacy-policy.html\">Privacy Policy</a>.";
+  document.getElementById("pageTitle").textContent = l === "english" ? "🐣 Chatea con Pollito" : "🐣 Chat with Pollito";
+  document.getElementById("backLink").textContent = l === "english" ? "← Volver a Pollito Productions" : "← Back to Pollito Productions";
   document.getElementById("pageSub").firstChild.textContent = l === "english"
-    ? "Practice English with a friendly chatbot — in English, with Spanish help when you need it. "
+    ? "Practica inglés con un chatbot amigable — en inglés, con ayuda en español cuando la necesites. "
     : "Practice Spanish with a friendly chatbot — in Spanish, with English help when you need it. ";
   document.title = l === "english"
-    ? "Chat with Pollito — Practice English | Pollito Productions"
+    ? "Chatea con Pollito — Practica inglés | Pollito Productions"
     : "Chat with Pollito — Practice Spanish | Pollito Productions";
   // Topic chips show in the student's native language: English when learning
   // Spanish, Spanish when learning English.
