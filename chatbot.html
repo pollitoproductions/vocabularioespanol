@@ -509,6 +509,10 @@ function addMsg(text, who, userMsg) {
       flag.setAttribute("aria-label", "Report this reply");
       flag.addEventListener("click", async () => {
         if (flag.disabled) return;
+        var msg = learning === "english"
+          ? "Si marcas esto, se lo envías a tu maestro, quien lo leerá. ¿Estás seguro?"
+          : "Flagging this sends it to your teacher, who will read it. Are you sure?";
+        if (!confirm(msg)) return;
         flag.disabled = true;
         try {
           await fetch(BACKEND_URL, {
