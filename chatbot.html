@@ -13,8 +13,8 @@
   header a { color: #ffedd5; }
   main { flex: 1; max-width: 720px; width: 100%; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
   .modes { display: flex; gap: 8px; }
-  .lang { display: flex; gap: 8px; align-items: center; justify-content: center; font-weight: 700; color: #444; }
-  .lang button { padding: 8px 14px; font-size: .95rem; border-radius: 999px; border: 2px solid #f97316; background: #fff; color: #c2410c; cursor: pointer; font-weight: 700; }
+  .lang { display: flex; gap: 6px; align-items: center; justify-content: center; flex-wrap: nowrap; white-space: nowrap; font-weight: 700; color: #444; font-size: .95rem; }
+  .lang button { padding: 8px 10px; font-size: .9rem; border-radius: 999px; border: 2px solid #f97316; background: #fff; color: #c2410c; cursor: pointer; font-weight: 700; }
   .lang button.active { background: #f97316; color: #fff; }
   .modes button { flex: 1; padding: 12px; font-size: 1rem; border-radius: 12px; border: 2px solid #f97316; background: #fff; color: #f97316; cursor: pointer; font-weight: 700; }
   .modes button.active { background: #f97316; color: #fff; }
@@ -64,7 +64,7 @@
   .accents button { padding: 7px 13px; font-size: 1.05rem; border-radius: 10px; border: 2px solid #f97316; background: #fff; color: #c2410c; cursor: pointer; font-weight: 700; line-height: 1; }
   .accents button:hover { background: #ffedd5; }
   .accents button:active { background: #f97316; color: #fff; }
-  .hint { font-size: .9rem; color: #666; text-align: center; margin: 4px 0; }
+  .hint { font-size: .9rem; color: #666; text-align: center; margin: 0; line-height: 1.35; }
   .inBoxBtn.listening { background: #dc2626; color: #fff; border-radius: 50%; animation: pulse 1s ease-in-out infinite alternate; }
   @keyframes pulse { from { opacity: 1; } to { opacity: .55; } }
   /* Mobile: shrink the input row and pop-up so everything fits on a phone. */
@@ -297,6 +297,8 @@ function setLearning(l) {
   learning = l;
   langEsBtn.classList.toggle("active", l === "spanish");
   langEnBtn.classList.toggle("active", l === "english");
+  langEsBtn.textContent = l === "english" ? "🇪🇸 Español" : "🇪🇸 Spanish";
+  langEnBtn.textContent = l === "english" ? "🇺🇸 Inglés" : "🇺🇸 English";
   textEl.placeholder = l === "english"
     ? "Write in English… (o en español si te atoras)"
     : "Escribe en español… (or in English if you're stuck)";
