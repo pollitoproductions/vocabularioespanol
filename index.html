@@ -1780,6 +1780,8 @@
 #chatWidget .cwHead button{background:none;border:none;color:#1f1f1f;font-size:1.2rem;cursor:pointer;padding:2px 6px;line-height:1}
 #chatWidget .cwBody{padding:10px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
 #chatWidget .cwRow{display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap;font-weight:700;color:#e5e5e5;font-size:.9rem}
+#chatWidget .cwRow:not(.cwModes){flex-wrap:nowrap;white-space:nowrap;gap:4px;font-size:.85rem}
+#chatWidget .cwRow:not(.cwModes) button{padding:6px 8px;font-size:.8rem}
 #chatWidget .cwRow button{padding:6px 10px;font-size:.85rem;border-radius:999px;border:2px solid #facc15;background:#1f1f1f;color:#facc15;cursor:pointer;font-weight:700}
 #chatWidget .cwRow button.active{background:#facc15;color:#1f1f1f}
 #chatWidget .cwModes button{flex:1;border-radius:10px;padding:8px 6px;font-size:.9rem}
@@ -1824,7 +1826,8 @@
 #chatWidget #cwSend{background:#facc15;color:#1f1f1f;border-radius:50%;width:32px;height:32px;padding:0;margin:0 6px 0 2px;font-size:.95rem;display:flex;align-items:center;justify-content:center}
 #chatWidget #cwSend:hover{background:#eab308;color:#1f1f1f}
 #chatWidget #cwSend:disabled{opacity:.5;cursor:wait}
-#chatWidget .cwFoot{font-size:.75rem;color:#a3a3a3;text-align:center;margin:0}
+#chatWidget .cwFoot{font-size:.75rem;color:#a3a3a3;text-align:center;margin:0;line-height:1.35}
+#chatWidget .cwFoot + .cwFoot{margin-top:-4px}
 #chatWidget .cwFoot a{color:#eab308}
 #chatWidget .cwInBoxBtn.listening{background:#dc2626;color:#1f1f1f;border-radius:50%;animation:cwPulse 1s ease-in-out infinite alternate}
 @keyframes cwPulse{from{opacity:1}to{opacity:.55}}
@@ -2042,6 +2045,8 @@ function setLearning(l){
   learning = l;
   langEsBtn.classList.toggle("active", l === "spanish");
   langEnBtn.classList.toggle("active", l === "english");
+  langEsBtn.textContent = l === "english" ? "🇪🇸 Español" : "🇪🇸 Spanish";
+  langEnBtn.textContent = l === "english" ? "🇺🇸 Inglés" : "🇺🇸 English";
   textEl.placeholder = l === "english" ? "Write in English… (o en español si te atoras)" : "Escribe en español… (or in English if you're stuck)";
   document.getElementById("cwFootWrite").textContent = l === "english" ? "Write in English, o en español si te atoras." : "Write in Spanish, or in English if you're stuck.";
   document.getElementById("cwLearnLabel").textContent = l === "english" ? "Estoy aprendiendo:" : "I'm learning:";
