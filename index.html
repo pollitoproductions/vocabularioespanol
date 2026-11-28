@@ -1054,7 +1054,7 @@
         <span class="sep">·</span>
         <a href="https://pollitoproductions.github.io/privacy-policy.html" target="_blank" rel="noopener" data-one data-mode-es="Privacy Policy" data-mode-en="Política de privacidad">Privacy Policy</a>
         <span class="sep">·</span>
-        <button id="invertBtn" type="button" aria-pressed="false"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="margin-right:5px"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg><span data-one data-mode-es="Invert colors" data-mode-en="Invertir colores">Invert colors</span></button>
+        <button id="invertBtn" type="button" aria-pressed="false"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="margin-right:5px"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg><span data-one data-mode-es="☀️ Light mode" data-mode-en="☀️ Modo claro">☀️ Light mode</span></button>
       </footer>
     </div>
 
@@ -1562,7 +1562,9 @@
         });
       });
 
-      /* ---------- Invert colors (dark ⇄ light), button in the footer — persisted as pp-theme, shared with tool/article pages ---------- */
+      /* ---------- Theme toggle (dark ⇄ light), button in the footer — persisted as pp-theme, shared with tool/article pages.
+         The label names the mode you switch TO, matching the chatbot/tool pages:
+         dark mode shows "☀️ Light mode", light mode shows "🌙 Dark mode". ---------- */
       var invertBtn = document.getElementById('invertBtn');
       if (invertBtn) {
         var savedTheme = null;
@@ -1570,10 +1572,19 @@
         var startLight = savedTheme === 'light';
         document.documentElement.classList.toggle('light', startLight);
         invertBtn.setAttribute('aria-pressed', startLight ? 'true' : 'false');
+        var themeLabel = invertBtn.querySelector('span');
+        function syncThemeLabel(on) {
+          if (!themeLabel) return;
+          themeLabel.setAttribute('data-mode-es', on ? '🌙 Dark mode' : '☀️ Light mode');
+          themeLabel.setAttribute('data-mode-en', on ? '🌙 Modo oscuro' : '☀️ Modo claro');
+          themeLabel.textContent = themeLabel.getAttribute('data-mode-' + learnMode) || '';
+        }
+        syncThemeLabel(startLight);
         invertBtn.addEventListener('click', function () {
           var on = document.documentElement.classList.toggle('light');
           invertBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
           try { localStorage.setItem('pp-theme', on ? 'light' : 'dark'); } catch (e) {}
+          syncThemeLabel(on);
         });
       }
 
