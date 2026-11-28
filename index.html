@@ -1875,7 +1875,7 @@
     </div>
     <p class="cwFoot"><span id="cwFootTutor">Pollito is an AI tutor — it can make mistakes.</span> <span id="cwFootWrite">Write in Spanish, or in English if you're stuck.</span> <a id="cwFootOpen" href="vocabularioespanol/chatbot.html">Open the full chat page →</a></p>
     <p class="cwFoot" id="cwFootSafe">🛡️ Pollito is a robot, not a real person. Never share personal information. If you feel unsafe, tell a trusted adult right away.</p>
-    <p class="cwFoot" id="cwFootPriv">🔒 Messages go to Groq only to reply — never used for training. Your teacher keeps a private log. <a href="privacy-policy.html">Privacy Policy</a></p>
+    <p class="cwFoot" id="cwFootPriv">🔒 Messages go to Groq only to reply — never used for training. Messages are not stored, unless flagged for safety. <a href="privacy-policy.html">Privacy Policy</a></p>
   </div>
 </div>
 <script>
@@ -2066,7 +2066,9 @@ function setLearning(l){
   document.getElementById("cwFootTutor").textContent = l === "english" ? "Pollito es un tutor de IA — puede cometer errores." : "Pollito is an AI tutor — it can make mistakes.";
   document.getElementById("cwFootOpen").textContent = l === "english" ? "Abrir la página completa del chat →" : "Open the full chat page →";
   document.getElementById("cwFootSafe").textContent = l === "english" ? "🛡️ Pollito es un robot, no una persona real. Nunca compartas información personal. Si te sientes inseguro, díselo a un adulto de confianza de inmediato." : "🛡️ Pollito is a robot, not a real person. Never share personal information. If you feel unsafe, tell a trusted adult right away.";
-  document.getElementById("cwFootPriv").innerHTML = l === "english" ? "🔒 Los mensajes van a Groq solo para responder — nunca se usan para entrenar. Tu maestro guarda un registro privado. <a href=\"privacy-policy.html\">Política de privacidad</a>" : "🔒 Messages go to Groq only to reply — never used for training. Your teacher keeps a private log. <a href=\"privacy-policy.html\">Privacy Policy</a>";
+  var logEn = "public" === "class" ? "Your teacher keeps a private log." : "Messages are not stored, unless flagged for safety.";
+  var logEs = "public" === "class" ? "Tu maestro guarda un registro privado." : "Los mensajes no se guardan, salvo que se marquen por seguridad.";
+  document.getElementById("cwFootPriv").innerHTML = l === "english" ? "🔒 Los mensajes van a Groq solo para responder — nunca se usan para entrenar. " + logEs + " <a href=\"privacy-policy.html\">Política de privacidad</a>" : "🔒 Messages go to Groq only to reply — never used for training. " + logEn + " <a href=\"privacy-policy.html\">Privacy Policy</a>";
   // Topic chips show in the student's native language: English when learning
   // Spanish, Spanish when learning English.
   topicsEl.querySelectorAll("button").forEach(function(b){
